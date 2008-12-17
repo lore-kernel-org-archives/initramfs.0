@@ -1,112 +1,44 @@
-From: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
+From: David Zeuthen <davidz-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Dracut -- Cross distribution initramfs infrastructure
-Date: Wed, 17 Dec 2008 16:06:45 -0500
-Message-ID: <20081217210645.GC7356@hmsreliant.think-freely.org>
+Date: Wed, 17 Dec 2008 16:15:07 -0500
+Message-ID: <1229548507.1229.4.camel@x61.fubar.dk>
 References: <1229540094.28858.150.camel@aglarond.local>
 	 <20081217193151.GA7356@hmsreliant.think-freely.org>
 	 <1229543309.28858.163.camel@aglarond.local>
 	 <ac3eb2510812171229g57eee496o6ad9e2fa97609455@mail.gmail.com>
+	 <20081217210645.GC7356@hmsreliant.think-freely.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Return-Path: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Content-Disposition: inline
-In-Reply-To: <ac3eb2510812171229g57eee496o6ad9e2fa97609455-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
+Return-Path: davidz-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+In-Reply-To: <20081217210645.GC7356-B26myB8xz7F8NnZeBjwnZQMhkBWG/bsMQH7oEaQurus@public.gmane.org>
+List-Id: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
-Cc: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cjwatson-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
+Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cjwatson-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Wed, Dec 17, 2008 at 09:29:51PM +0100, Kay Sievers wrote:
-> On Wed, Dec 17, 2008 at 20:48, Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Wed, 2008-12-17 at 14:31 -0500, Neil Horman wrote:
-> >> Not that I don't think a unifying tool to create an initramfs is a bad idea
-> >> (quite the contrary, I think it would be great), but I'd like to point out that
-> >> one of your underlying premises is a bit shaky.  That an initramfs has one
-> >> purpose, that being to get the rootfs mounted, isn't entirely accurate.  Kdump
-> >> and various embedded systems being the prime examples here.  Many embedded
-> >> systems run entirely out of the initramfs, and contain all the code they need to
-> >> do so in them.  Additionally, kdump in most environments, attemps to capture
-> >> core files entirely from the initramfs as well, operating under the assumption
-> >> that the rootfs may not be functioning properly after a crash.  By and large
-> >> these initramfs images tend to be larger and offer a more typical (if not
-> >> standard) user operating environment.
-> >
-> > While I'd like to think that embedded systems are not going to do
-> > something custom, you, I and everyone else know that's unlikely. ;-)
-> >
-> > The kdump case is one that I think is at least reasonable to get to
-> > eventually (and also, installer initramfsen), but I think that getting
-> > the cases of "initramfs for booting a system" consolidated first makes
-> > the most sense.
-> 
-> Maybe Bernhard Walle, who currently maintains the SUSE initramfs, can
-> possibly take care of that. He's is working on kdump stuff.
-> 
-I do to, thats why I brought it up :)
+On Wed, 2008-12-17 at 16:06 -0500, Neil Horman wrote:
+> > Busybox is nice as an option to be able to rescue/hack. It should
+> > definitely be provided as an optional "plugin" for people who need it.
+> > But there is no chance to depend on it by default, for the very same
+> > reason klibc, or any other libc is not an option.
+> > 
+> > Full-featured distros who make their money with support, can just not
+> > afford to support tools compiled differently from the tools in the
+> > real rootfs. SUSE used klibc for one release, and stopped doing that
+> > immediately, because you go crazy if you run into problems with bootup
+> > problems on cutomer setups you can not reproduce with the tools from
+> > the real rootfs.
+> > 
+> This is all hyperbolie.  
 
-> >> I'm looking at your tree now, and it
-> >> looks like a good start on standardizing the initramfs for the nominal case.  Do
-> >> you have plans to include (or are you interested in including) support for
-> >> alternate infrastructure (like busybox instead of nash), interactive setup, etc?
-> >
-> > Well, the use of nash right now is due to the fact that there isn't
-> > historically any switchroot utility shipped in util-linux.  Hopefully
-> > we'll get something there and then the only user of nash that's there
-> > right now can go away.
-> 
-> SUSE uses a small binary run-init copied from klibc:
->   http://git.kernel.org/?p=libs/klibc/klibc.git;a=blob;f=usr/kinit/run-init/run-init.c;hb=HEAD
->  Maybe it's time to add something like that to util-linux? Karel?
-> 
-> > busybox, etc are really all just extra pain as compared to using real
-> > system utilities... once you accept that you're dynamically linked,
-> > you're better off just maintaining one set of the utilities as opposed
-> > to having one set in coreutils and one set in busybox.
-> 
-> Busybox is nice as an option to be able to rescue/hack. It should
-> definitely be provided as an optional "plugin" for people who need it.
-> But there is no chance to depend on it by default, for the very same
-> reason klibc, or any other libc is not an option.
-> 
-> Full-featured distros who make their money with support, can just not
-> afford to support tools compiled differently from the tools in the
-> real rootfs. SUSE used klibc for one release, and stopped doing that
-> immediately, because you go crazy if you run into problems with bootup
-> problems on cutomer setups you can not reproduce with the tools from
-> the real rootfs.
-> 
-This is all hyperbolie.  Yes, its nice to be able to use the same tools and the
-same environment, but busybox works perfectly well in a kdump environment.  I've
-used busybox in Fedora and RHEL, and since RHEL5 and FC-6 shipped, I've
-encounted I think 3 bugs that dealt with minor differences in how busybox worked
-from the rootfs tools
+Hardly. Having to support two different C libraries in a real production
+environment, for reasons like "just because we can" and "it's about
+freedom" is not something I ever want this project to see or support. In
+there lies madness.
 
-> We need to use tools in initramfs which will not work realibly, or not
-> at all, with other libcs. We will have one dynamic glibc there anyway,
-> so there is no valid reason to also use any single statically linked
-> binary, or any other libc by default. Really, it's just nice to use
-> the same environment in the real root and in initramfs, and you also
-> get the smallest possible size that way, if you need to include only a
-> single "advanced" tool.
-> 
-busybox is dynamically linked now too, so C library issues are irrelevant at
-this point.  And busybox provides, at my last count 255 utilities in the Fedora
-build.  Compare that to the cumulative size of all the corresponding individual
-utilities and see who comes out taking up less space.
+FWIW, as Kay said, it's fine to have an unsupported "--with-busybox" or
+whatever option but please don't think that people using it can expect
+any kind of real support or attention to their bug reports.
 
-Neil
+     David
 
-> Thanks,
-> Kay
-> 
-
--- 
-/****************************************************
- * Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
- * Software Engineer, Red Hat
- ****************************************************/
---
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
