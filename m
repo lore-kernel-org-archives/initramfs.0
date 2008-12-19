@@ -1,67 +1,62 @@
-From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Dracut questions
-Date: Fri, 19 Dec 2008 09:03:03 +0100
-Message-ID: <494B5537.7020307@bfh.ch>
-References: <494B2E2F.5090203@redhat.com>
+From: Bernhard Walle <bwalle-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: Dracut -- Cross distribution initramfs infrastructure
+Date: Fri, 19 Dec 2008 09:18:41 +0100
+Message-ID: <20081219091841.207bc951@kopernikus.site>
+References: <1229540094.28858.150.camel@aglarond.local>
+	<20081217190700.GA15377@infradead.org>
+	<4949FD67.6040906@suse.de>
+	<494B5031.5080306@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <494B2E2F.5090203-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <494B5031.5080306-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cjwatson-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, Bernhard Walle <bwalle-Et1tbQHTxzrQT0dZR+AlfA@public.gmane.org>
 
-Warren Togami wrote:
-> https://fedoraproject.org/wiki/Initrdrewrite
->> Probe at runtime instead of buildtime - Include all drivers, not just
->> the drivers necessary for the hardware being run. (For storage, the
->> common ones will be built-in to the kernel anyway)
-> 
-> This means include all storage drivers and firmware for the storage 
-> drivers?
+* Seewer Philippe [2008-12-19 08:41]:
+>
+> Hannes Reinecke wrote:
+> [snip]
+> > If anyone is interested I can give a short overview of it.
+> Please do so, would be appreciated.
 
- From the description I'd guess so. Although I'd like to see both 
-options. A full one with all drivers for generic boots and another one 
-tailored for specific systems and fast booting (and maybe small memory 
-footprint).
+A good start is the manual page in section 5:
+http://git.opensuse.org/?p=projects/mkinitrd.git;a=blob_plain;f=man/mkinitrd.5.txt;hb=7583c3cc047edc3e8f1a06e8b7925bd27ac0228c
 
-> 
-> Does this also mean we only add network drivers if the initrd is 
-> explicitly built for netboot?
-Makes sense, otherwise the image gets huge! My current 2.6.27 netboot 
-initrd reaches almost 8Megs...
+(The git.kernel.org and the opensuse.org repos are basically the same,
+we just switched to opensuse.org after the internal maintainership has
+been transferred from Hannes to myself because it was easier to add
+new users there. The opensuse.org git repo site didn't exist when the
+kernel.org mkinitrd repo was created.)
 
-> 
-> How do we plan on dealing with the location of various standard 
-> utilities being different on other Linux distributions?
-> 
-> Fedora        Debian
-> /sbin/lspci    /usr/bin/lspci
-> /sbin/lsmod    /bin/lsmod
-> (just off the top of my head)
-> 
-> Perhaps use "which" to find it?  But then how do we choose its 
-> destination path in the initrd chroot if the distributions disagree on 
-> where they expect a command to go?  Will they disagree?
+Anyway:
 
-Maybe the LSB might help a bit. It doesn't say anything about where the 
-utilities actually have to go, but read this:
-[quote]
-16.4. Path For System Administration Utilities
+The basic idea is to have most stuff not in the main 'mkinitrd' script
+but in modules. Each module has (normally) a setup script part that is
+executed when the initrd is created, and a boot part that is executed
+when the initrd is running. For example, NFS root is in the 'nfs-util'
+package, not in 'mkinitrd'. Same for iSCSI. Or the kdump part is
+not in the main mkinitrd but in our 'kdump' package [1]. So the main
+initrd  package is quite small but still very flexible.
 
-Certain utilities used for system administration (and other privileged 
-commands) may be stored in /sbin, /usr/sbin, and /usr/local/sbin. 
-Applications requiring to use commands identified as system 
-administration utilities should add these directories to their PATH. By 
-default, as described in ISO POSIX (2003), standard utilities shall be 
-found on the PATH returned by getconf PATH (or command -p getconf PATH 
-to be guaranteed to invoke the correct version of getconf).
-[/quote]
+It's also flexible enough to use Busybox as module that resides in the
+'busybox' package and can then be enabled with -F busybox (feature)
+when building the initrd.
 
-Cheers,
-Philippe
+Only documentation is at the current time a bit weak, one has to fiddle
+some stuff from the sources when writing new modules. But that's easy
+to fix. :-)
+
+Hannes may explain more ...
+
+
+
+    Bernhard
+
+[1] hg clone http://freehg.org/u/bwalle/kdump/
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
