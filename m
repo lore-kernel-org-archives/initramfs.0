@@ -1,114 +1,62 @@
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+From: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
 Subject: Re: Dracut -- Cross distribution initramfs infrastructure
-Date: Fri, 19 Dec 2008 14:55:26 +0100
-Message-ID: <494BA7CE.2020007@suse.de>
-References: <1229540094.28858.150.camel@aglarond.local>	<20081217190700.GA15377@infradead.org>	<4949FD67.6040906@suse.de>	<494B5031.5080306@bfh.ch> <20081219091841.207bc951@kopernikus.site>
+Date: Fri, 19 Dec 2008 10:27:08 -0500
+Message-ID: <20081219152708.GE9871@mit.edu>
+References: <1229540094.28858.150.camel@aglarond.local> <20081217190700.GA15377@infradead.org> <4949FD67.6040906@suse.de> <494B5031.5080306@bfh.ch> <20081219091841.207bc951@kopernikus.site> <494BA7CE.2020007@suse.de>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20081219091841.207bc951-Hxm9IJOWyO+kWa+peg0mPg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <494BA7CE.2020007-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: Bernhard Walle <bwalle-l3A5Bk7waGM@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cjwatson-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, Bernhard Walle <bwalle-Et1tbQHTxzrQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Cc: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, Bernhard Walle <bwalle-l3A5Bk7waGM@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cjwatson-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, Bernhard Walle <bwalle-Et1tbQHTxzrQT0dZR+AlfA@public.gmane.org>
 
-Hi all,
+On Fri, Dec 19, 2008 at 02:55:26PM +0100, Hannes Reinecke wrote:
+>
+> The goal of the initrd is to activate and mount the root fs.
+> And the root fs _only_. Every other system should be configured
+> once the main system is running.
 
-Bernhard Walle wrote:
-> * Seewer Philippe [2008-12-19 08:41]:
->> Hannes Reinecke wrote:
->> [snip]
->>> If anyone is interested I can give a short overview of it.
->> Please do so, would be appreciated.
->=20
-> A good start is the manual page in section 5:
-> http://git.opensuse.org/?p=3Dprojects/mkinitrd.git;a=3Dblob_plain;f=3D=
-man/mkinitrd.5.txt;hb=3D7583c3cc047edc3e8f1a06e8b7925bd27ac0228c
->=20
-> (The git.kernel.org and the opensuse.org repos are basically the same=
-,
-> we just switched to opensuse.org after the internal maintainership ha=
-s
-> been transferred from Hannes to myself because it was easier to add
-> new users there. The opensuse.org git repo site didn't exist when the
-> kernel.org mkinitrd repo was created.)
->=20
-> Anyway:
->=20
-> The basic idea is to have most stuff not in the main 'mkinitrd' scrip=
-t
-> but in modules. Each module has (normally) a setup script part that i=
-s
-> executed when the initrd is created, and a boot part that is executed
-> when the initrd is running. For example, NFS root is in the 'nfs-util=
-'
-> package, not in 'mkinitrd'. Same for iSCSI. Or the kdump part is
-> not in the main mkinitrd but in our 'kdump' package [1]. So the main
-> initrd  package is quite small but still very flexible.
->=20
-> It's also flexible enough to use Busybox as module that resides in th=
-e
-> 'busybox' package and can then be enabled with -F busybox (feature)
-> when building the initrd.
->=20
-> Only documentation is at the current time a bit weak, one has to fidd=
-le
-> some stuff from the sources when writing new modules. But that's easy
-> to fix. :-)
->=20
-> Hannes may explain more ...
->=20
-Yes, quite so. The design principles are as follows:
+Don't forget resuming from hibernation....
 
-The goal of the initrd is to activate and mount the root fs.
-And the root fs _only_. Every other system should be configured
-once the main system is running.
+And of course, activating and mounting the root filesystem can be
+quite complicated --- it can involve loading driver modules,
+activiating md and/or lvm, prompting for a password, setting up
+networking (dhcp, routing, dns) for iSCSI and/or NFS/AFS/Lustre/et.al,
+the equivalent setup for Fiber Channel attached disks, etc.  If
+there's any cryptography involved, the user may need to be prompted
+for a password and/or key and/or fingerprint scan to unlock TPM unit
+to access the key, etc.
 
-So mkinitrd has two parts:
-a) Detect the configuration of the rootfs and create the
-   initramfs
-b) Configure the rootfs on boot.
+There may also be times when it is useful to operate on the root
+filesystem in some way before it is mounted; in most cases the
+operation can bedone on a filesystem mounted read-only, yes --- but at
+the cost of needing to reboot afterwards if the root filesystem needs
+to be modified by said userspace tool.
 
-Therefore there are two distinct script types:
+Finally, note that part the discussion at the Kernel Summit, and also
+what David Jones was looking to work at, was to do something that
+could included as part of the kernel sources.  The idea is that as
+responsibility for early boot is moved from the kernel, an mkinitramfs
+which is fixed and distributed by the distribution might not work with
+a newer kernel.org kernel.  So the idea that was explored was adding a
+common mkinitramfs with basic functionality into kernel sources, with
+the ability for distributions to add various "value add" enhancements
+if they like.  This way if the kernel wants to move more functionality
+(for example, in the area of resuming from hibernation) out of the
+kernel into initramfs, it can do so without breaking the ability of
+older distributions from being able to use kernel.org kernels.
 
-setup-XXX.sh - run during initrd creation time to detect
-  and record the configuration
+So IMHO, it's important not only that the distributions standardize on
+a single initramfs framework, but that framework get integrated into
+the kernel sources.
 
-boot-XXX.sh - run during boot to configure the subsystem
+Regards,
 
-The setup scripts have these tasks:
-- Detect the rootfs
-- Unwind the storage stack and record the configuration
-  on each level
-- Copy the required contents into the initramfs
-- Pack initramfs for use
-
-The boot scripts have these tasks:
-- Initial configuration (create required device nodes, start udev)
-- Configure the storage stack
-- fsck and mount the root fs
-
-So basically the boot scripts have to be called in reverse
-order to the setup scripts.
-To ensure the order is preserved during each run I've
-introduced some 'stages', which are run consecutively.
-These stages are documented in mkinitrd.5
-
-The neat thing here is that we've split off each
-configuration into small scripts, which will be called
-if present. This allows for a pretty modular setup
-and avoid the massive requirement setting of an
-monolithic script.
-
-Cheers,
-
-Hannes
---=20
-Dr. Hannes Reinecke		      zSeries & Storage
-hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
-SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
-GF: Markus Rex, HRB 16746 (AG N=FCrnberg)
+						- Ted
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
