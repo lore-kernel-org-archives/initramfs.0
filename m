@@ -1,108 +1,87 @@
-From: "=?ISO-8859-1?Q?Lo=EFc_Greni=E9?=" <loic.grenie-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Hannes Reinecke <hare@suse.de>
 Subject: Re: Dracut -- Cross distribution initramfs infrastructure
-Date: Thu, 18 Dec 2008 10:27:40 +0100
-Message-ID: <9b06e8d20812180127s2b6cdbl410333336c7c9beb__4232.81161715767$1232286223$gmane$org@mail.gmail.com>
-References: <1229540094.28858.150.camel@aglarond.local>
-	 <20081217193151.GA7356@hmsreliant.think-freely.org>
+Date: Wed, 07 Jan 2009 17:04:50 +0100
+Message-ID: <4964D2A2.2010109@suse.de>
+References: <1229540094.28858.150.camel@aglarond.local> <20081217190700.GA15377@infradead.org> <4949FD67.6040906@suse.de> <494B5031.5080306@bfh.ch> <20081219091841.207bc951@kopernikus.site> <494BA7CE.2020007@suse.de> <20081219152708.GE9871@mit.edu> <9C4F1B7D-CCBC-48D7-8624-9A7C314C1590@redhat.com> <87skojrm5e.fsf@rimspace.net> <20081220182254.GA2996@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-Return-Path: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com;
- s=gamma; h=domainkey-signature:received:received:message-id:date:from:to
- :subject:cc:in-reply-to:mime-version:content-type
- :content-transfer-encoding:content-disposition:references;
- bh=pmXJeOXg/Hgl3cTCe2Lm1XBs2H0tqLoGqcU/R1zhlnE=;
- b=C5qn9NFbOoVNCLxyO4c/H7bEkUNWNgQ/EAVCZ0OqzxiPtcirqj1+v51n/ozR5fjOga
- iuNFpYjA4NrXWPKSBk8I0yOpNlFv2+I8OOsJGMU/jFxybdzz7tCViReEU+WVq0b8/UDF
- zp5uZ6VJHvtYVkRdYS4uquYfqYzUniLhQb7Go=
-In-Reply-To: <20081217193151.GA7356-B26myB8xz7F8NnZeBjwnZQMhkBWG/bsMQH7oEaQurus@public.gmane.org>
-Content-Disposition: inline
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759850AbZAGQFH@vger.kernel.org>
+In-Reply-To: <20081220182254.GA2996@redhat.com>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cjwatson-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
+To: Dave Jones <davej@redhat.com>, Daniel Pittman <daniel@rimspace.net>, Jeremy Katz <katzj@redhat.com>, Theodore Tso <tytso@mit.edu>, initramfs@vger.kernel.org, linux-kernel@vger.kernel.org
 
-2008/12/17 Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>:
-> On Wed, Dec 17, 2008 at 01:54:54PM -0500, Jeremy Katz wrote:
-
-[snip]
-
->> Therefore I've started on a new project, dracut, to try to be a new
->> initramfs tool that can be used across various distributions.  From the
->> README...
->>
->> Unlike existing initramfs's, this is an attempt at having as little as
->> possible hard-coded into the initramfs as possible.  The initramfs has
->> (basically) one purpose in life -- getting the rootfs mounted so that we
->> can transition to the real rootfs.
-
-[snip]
-
-> Not that I don't think a unifying tool to create an initramfs is a bad id=
-ea
-> (quite the contrary, I think it would be great), but I'd like to point ou=
-t that
-> one of your underlying premises is a bit shaky.  That an initramfs has one
-> purpose, that being to get the rootfs mounted, isn't entirely accurate.  =
-Kdump
-> and various embedded systems being the prime examples here.  Many embedded
-> systems run entirely out of the initramfs, and contain all the code they =
-need to
-> do so in them.  Additionally, kdump in most environments, attemps to capt=
-ure
-> core files entirely from the initramfs as well, operating under the assum=
-ption
-> that the rootfs may not be functioning properly after a crash.  By and la=
-rge
-> these initramfs images tend to be larger and offer a more typical (if not
-> standard) user operating environment.  I'm looking at your tree now, and =
-it
-> looks like a good start on standardizing the initramfs for the nominal ca=
-se.  Do
-> you have plans to include (or are you interested in including) support for
-> alternate infrastructure (like busybox instead of nash), interactive setu=
-p, etc?
-
-    Seconded: as a user of (various) distributions, I've come across
-the following
-  problem: sometimes the initramfs, for whatever reason, does not manage to
-  find or mount the rootfs. In those cases I hate the developpers of
-the distribution
-  because there is basically nothing that can be done in the initramfs
-to see, test,
-  try, mount, modprobe, umount, ping, telnet, etc... Please, please, throw =
-in a
-  full-featured busybox. Here is a good compromise I use:
-
-Currently defined functions:
-        [, [[, arp, arping, ash, awk, basename, brctl, bunzip2, bzcat,
-        bzip2, cat, chgrp, chmod, chown, chroot, chvt, clear, cmp, comm,
-        cp, cpio, cut, date, dc, dd, deallocvt, depmod, df, diff, dirname,
-        dmesg, dos2unix, dpkg, dpkg-deb, du, dumpkmap, echo, egrep, eject,
-        env, expr, false, fbset, fdflush, fdformat, fdisk, fgrep, find,
-        findfs, ftpget, ftpput, grep, gunzip, gzip, halt, head, hexdump,
-        hostname, hwclock, ifconfig, ifenslave, insmod, ip, ipcalc, kbd_mod=
+Dave Jones wrote:
+> On Sun, Dec 21, 2008 at 12:50:21AM +1100, Daniel Pittman wrote:
+>=20
+>  > One of the features of the Debian / Ubuntu initramfs infrastructur=
 e,
-        kill, killall, killall5, less, linux32, linux64, ln, loadfont,
-        loadkmap, losetup, ls, lsmod, md5sum, microcom, mkdir, mkfifo,
-        mknod, mkswap, mktemp, more, mount, mv, nice, od, openvt, patch,
-        pgrep, pidof, ping, ping6, pivot_root, pkill, poweroff, printf,
-        ps, pwd, readlink, reboot, reset, rm, rmdir, rmmod, route, rpm2cpio,
-        rtcwake, sed, setarch, setkeycodes, sh, sha1sum, sleep, sort,
-        stat, strings, stty, su, swapoff, swapon, switch_root, sync, tac,
-        tail, tar, tee, telnet, test, touch, tr, traceroute, true, tty,
-        udhcpc, umount, uname, uniq, unix2dos, unzip, vi, wc, wget, which,
-        xargs, yes, zcat
-
-  (linux32 and linux64 are probably not useful for general initramfs). With=
+>  > which sounds remarkably like your design (or vice-versa), is that =
+it
+>  > drops all the "standard" drivers into the initramfs.
+>  >=20
+>  > This is, to me, worth several minutes of additional boot time, in =
+terms
+>  > of flexibility: being able to modify the hardware and be confident=
  that
-  configuration, busybox (v1.13.0.svn, x86-32 executable) is 416224 bytes l=
-ong
-  (dynamically linked with libc as only library needed).
+>  > the appropriate drivers are in place already makes life much, much
+>  > easier.
+>=20
+> There's another reason this is really useful.
+> If something goes wrong, remotely debugging a users initrd right is
+> a lot easier if you know what it looks like.  Right now, in Fedora fo=
+r eg,
+> where we generate an initrd for each users system at runtime, we need
+> to get a copy of the generated initrd, and pull it apart just to find
+> out what modules ended up in there, what didn't, and then somehow
+> try to work backwards to try and figure out how the generator got int=
+o
+> that state.  After doing this for five years, let me tell you it's
+> _really_ _really_ painful.
+>=20
+Whom do you tell.
 
-          Lo=EFc Greni=E9
---
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I ended up on adding lots of shell escapes; everytime something goes
+wrong you'll be dropped into a shell, which will resume execution
+of the initrd once exited.
+Quite handy for fixing up most things.
+
+>  > (In practice I doubt this adds more than a second or five to boot =
+time;
+>  >  certainly, it takes no longer to get to rootfs mounted than the R=
+HEL 4
+>  >  systems that have nothing but what is essential in the initrd...)
+>=20
+> At least in theory, with a kernel-event/udev driven system, the addit=
+ional
+> modules shouldn't cause any additional boot time. There wouldn't be
+> events generated to cause them to be loaded, so they'd just be taking
+> up space.  And the additional load time for a bigger initrd should be
+> really lost in the noise of the overall boot.
+>=20
+One can but hope. You certainly will notice a load time increase if the=
+ size
+of the initrd increases by orders of magnitude.
+Plus kdump / kexec will need to be configured to have more memory avail=
+able.
+
+Actually, I do like the callout idea:
+Have the initrd configure a 'standard' system, and add some API which w=
+ill
+allow you to hook in additional scripts / services / whatever to config=
+ure
+non-standard systems.
+Which then can be distributed by the individual packages / vendors.
+And then we would have a small common initramfs which well could be inc=
+luded
+with the kernel sources.
+
+Cheers,
+
+Hannes
+--=20
+Dr. Hannes Reinecke		      zSeries & Storage
+hare@suse.de			      +49 911 74053 688
+SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
+GF: Markus Rex, HRB 16746 (AG N=FCrnberg)
