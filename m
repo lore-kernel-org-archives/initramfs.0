@@ -1,11 +1,8 @@
 From: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/3] Go to an emergency shell if mounting the root filesystem fails.
-Date: Sat, 10 Jan 2009 14:59:13 -0500
-Message-ID: <1231617553-4206-3-git-send-email-notting@redhat.com>
-References: <1231617553-4206-1-git-send-email-notting@redhat.com>
- <1231617553-4206-2-git-send-email-notting@redhat.com>
+Subject: [PATCH 1/3] Fix 'root=LABEL=/'
+Date: Sat, 10 Jan 2009 14:59:11 -0500
+Message-ID: <1231617553-4206-1-git-send-email-notting@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1231617553-4206-2-git-send-email-notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -14,23 +11,28 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
+As you can't have /dev/disk/by-label//, we need to escape the '/'
+character in the same way that udev does.
 ---
- init |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ init |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
 diff --git a/init b/init
-index 9b7cfe9..ce6359b 100755
+index 5b94e3d..12144d2 100755
 --- a/init
 +++ b/init
-@@ -83,7 +83,7 @@ while [ ! -e $root ]; do
- done
- echo -e "\n\nMounting rootfs after $tries seconds"
- ln -s "$root" /dev/root    
--mount -o ro /dev/root $NEWROOT
-+mount -o ro /dev/root $NEWROOT || emergency_shell
- 
- # now we need to prepare to switchroot
- mount --bind /dev $NEWROOT/dev
+@@ -64,7 +64,10 @@ if [ -z "$root" ]; then
+   echo "Warning: no root specified"
+   root="/dev/sda1"
+ elif [ "${root#LABEL=}" != $root ]; then
+-  root="/dev/disk/by-label/${root#LABEL=}"
++  # FIXME: may need to do more escaping here
++  l=${root#LABEL=}
++  label=${l//\//\\x2f}
++  root="/dev/disk/by-label/${label}"
+ elif [ "${root#UUID=}" != $root ]; then
+   root="/dev/disk/by-uuid/${root#UUID=}"
+ fi
 -- 
 1.6.1
 
