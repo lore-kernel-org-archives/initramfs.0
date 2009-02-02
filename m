@@ -1,63 +1,45 @@
 From: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Current status of dracut.
-Date: Mon, 2 Feb 2009 15:12:51 -0500
-Message-ID: <20090202201251.GB31858@redhat.com>
-References: <20090202163708.GA27474@redhat.com> <20090202165736.GB29131@redhat.com> <20090202195008.GA23229@redhat.com>
+Date: Mon, 2 Feb 2009 15:14:56 -0500
+Message-ID: <20090202201456.GC31858@redhat.com>
+References: <20090202163708.GA27474@redhat.com> <20090202165736.GB29131@redhat.com> <20090202195008.GA23229@redhat.com> <ac3eb2510902021209j2de84cc7ue4538b3685d071e5@mail.gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090202195008.GA23229-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <ac3eb2510902021209j2de84cc7ue4538b3685d071e5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+Cc: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, Feb 02, 2009 at 02:50:09PM -0500, Jeremy Katz wrote:
- > On Monday, February 02 2009, Dave Jones said:
+On Mon, Feb 02, 2009 at 09:09:16PM +0100, Kay Sievers wrote:
+
+ > We are using the same rules as in the real root since we use udev in
+ > initramfs. Only one initramfs specific rule is created on-the-fly by
+ > the initramfs itself, based on the vales from the boot command line.
  > 
- > > On Mon, Feb 02, 2009 at 11:37:08AM -0500, Dave Jones wrote:
- > >  > Things that still need doing include, but are not limited to..
- > >  > 
- > > 
- > > A few more things..
- > > 
- > > The current Fedora mkinitrd generates initrds in the ~3MB range.
- > > A dracut generated image is ~17MB.
- > 
- > 17?  I'm seeing along the lines of 7 on my box
+ > I'm not against adding such a directory, but what kind of rules do you
+ > think would go there? I'm at the moment not sure, that they would need
+ > to be different.
 
-you're right.  I was looking at an ungzipped image.
- 
- > > * selinux policy loading.
- > >   I don't think there's any real reason this has to be in the initrd.
- > >   Though it means that either upstart or whatever init you use has to
- > >   do it, or your /sbin/init needs to become
- > 
- > Right.  /sbin/init had it with sysvinit, but Scott was against adding it
- > in upstart.  Feel free to restart that discussion
+The LVM case for example, to auto-assemble volume groups.
 
-with the two line init, upstart doesn't need to change
-(other than the executable changing name).
+What we have now is..
 
- > > Finally, the udev rules currently in dracut are kind of hacky.
- > > It'd be good to just have a set of rules provided by the
- > > system udev that we can drop in there.
- > 
- > Yep.  Kay and I had a very brief discussion about it before the
- > holidays.  And, eg, the dm/lvm rules that are there are almost entirely
- > there because those tools don't ship sane rules themselves.  If they
- > did, we could just suck them in.
+SUBSYSTEM!="block", GOTO="lvm_end"
+ACTION!="add|change", GOTO="lvm_end"
 
-*nod*  The hack we have now isn't pretty, but works at least.
+KERNEL!="sr*", IMPORT{program}="vol_id --export $tempnode"
+ENV{ID_FS_TYPE}=="LVM2_member", RUN+="/sbin/lvm vgscan", RUN+="/sbin/lvm vgchange -ay"
 
- > I do think that there needs to be /lib/udev/initrules.d or similar to
- > say "these rules matter for booting" as opposed to the full set of rules
- > in /lib/udev or the hard-coded list of rules files currently present
+LABEL="lvm_end"
 
-I'm curious if any other distros have already solved this and are
-shipping rules that aren't upstream yet?
+which isn't great..
+
+
+dmraid is another case.
 
 	Dave
 
