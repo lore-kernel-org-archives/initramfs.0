@@ -1,12 +1,12 @@
-From: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
 Subject: Re: Current status of dracut.
-Date: Mon, 2 Feb 2009 15:26:26 -0500
-Message-ID: <20090202202626.GB23009@nostromo.devel.redhat.com>
-References: <20090202163708.GA27474@redhat.com> <20090202165736.GB29131@redhat.com>
+Date: Mon, 2 Feb 2009 22:41:43 +0100
+Message-ID: <20090202214143.GA12625@stro.at>
+References: <20090202163708.GA27474@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20090202165736.GB29131-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20090202163708.GA27474-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
@@ -14,23 +14,25 @@ Content-Transfer-Encoding: 7bit
 To: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Dave Jones (davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) said: 
-> * selinux policy loading.
->   I don't think there's any real reason this has to be in the initrd.
->   Though it means that either upstart or whatever init you use has to
->   do it, or your /sbin/init needs to become
-> 
->   #!/bin/sh
->   /usr/sbin/loadpolicy
->   /sbin/realinit
-> 
-> Thoughts?
+On Mon, 02 Feb 2009, Dave Jones wrote:
 
-While you can do the latter, it means that init (whatever version)
-is packaged differently on distros wheter or not they support
-SELinux. That's a little bizarre.
+> The current code at git://fedorapeople.org/~katzj/dracut.git
+> is just over 600 lines of shell script, and manages to generate an
+> initramfs capable of mount root filesystems on raw disk (/dev/sda etc),
+> and lvm (/dev/mapper/..)
 
-Bill
+btw why do we need dracut at all?
+your blog has vague allusion against initramfs-tools,
+which is much better tested and has seen the field.
+
+beside having more features and flexibility it does not hardcode udev usage,
+nor bash, why should it not be considered at first!?
+
+# initramfs-tools repo
+git clone git://git.debian.org/kernel/initramfs-tools.git
+ 
+-- 
+maks
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
