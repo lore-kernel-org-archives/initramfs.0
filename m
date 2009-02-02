@@ -1,37 +1,68 @@
-From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Current status of dracut.
-Date: Mon, 2 Feb 2009 17:16:05 -0200
-Message-ID: <82ecf08e0902021116v592da5aye9f20d545d0be06e@mail.gmail.com>
-References: <20090202163708.GA27474@redhat.com>
-	 <20090202174600.GA7193@uranus.ravnborg.org>
+Date: Mon, 2 Feb 2009 14:50:09 -0500
+Message-ID: <20090202195008.GA23229@redhat.com>
+References: <20090202163708.GA27474@redhat.com> <20090202165736.GB29131@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:in-reply-to:references
-         :date:message-id:subject:from:to:cc:content-type
-         :content-transfer-encoding;
-        bh=Eek/NCN4JGkHmvWhruFdqIOYsrfgqqXthfdLZlLkyk8=;
-        b=eHz+CGWrR1Lix4ZgJdEjUASDyuNCL3c83AsJgCiKAPHkJwAo8MEl3WmrcCnh37rIdW
-         0CEZtQ30kFBgXQXeyJEupUPDrLJUnb5dXCaiJfwYDtR0p3w5UOdVu++MGEd6VVK+Xg0/
-         j6agLSmgkUinQDyc3ZyRy6oea8mpUzzJRcRcQ=
-In-Reply-To: <20090202174600.GA7193-QabhHTsIXMSnlFQ6Q1D1Y0B+6BGkLq7r@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090202165736.GB29131-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Sam Ravnborg <sam-uyr5N9Q2VtJg9hUCZPvPmw@public.gmane.org>
-Cc: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
->
-> How about sending commit mails to this list to make development
-> a bit more visible?
+On Monday, February 02 2009, Dave Jones said:
 
-I second this! Will make things development to follow IMHO
+> On Mon, Feb 02, 2009 at 11:37:08AM -0500, Dave Jones wrote:
+>  > Things that still need doing include, but are not limited to..
+>  > 
+> 
+> A few more things..
+> 
+> The current Fedora mkinitrd generates initrds in the ~3MB range.
+> A dracut generated image is ~17MB.
 
--- 
--
-Thiago Galesi
+17?  I'm seeing along the lines of 7 on my box
+
+> The TODO in the git for some other pointed questions.
+> 
+> * NetworkManager vs dhclient for network based roots.
+>   I think the latter makes more sense, otherwise we end up
+>   sucking hal and all its dependancies into the image too.
+>   When the real rootfs starts up NM it should be able to dtrt.
+
+The reason to use NetworkManager is so that the same configuration
+engine, etc can be used as on the real system.  Otherwise, we're
+Inventing Something Else (tm).
+
+That said, I don't think that NetworkManager or its stack of deps are to
+where they can sanely be used in the initramfs yet and it may be quite
+some time before they are.
+ 
+> * selinux policy loading.
+>   I don't think there's any real reason this has to be in the initrd.
+>   Though it means that either upstart or whatever init you use has to
+>   do it, or your /sbin/init needs to become
+
+Right.  /sbin/init had it with sysvinit, but Scott was against adding it
+in upstart.  Feel free to restart that discussion
+
+> Finally, the udev rules currently in dracut are kind of hacky.
+> It'd be good to just have a set of rules provided by the
+> system udev that we can drop in there.
+
+Yep.  Kay and I had a very brief discussion about it before the
+holidays.  And, eg, the dm/lvm rules that are there are almost entirely
+there because those tools don't ship sane rules themselves.  If they
+did, we could just suck them in.
+
+I do think that there needs to be /lib/udev/initrules.d or similar to
+say "these rules matter for booting" as opposed to the full set of rules
+in /lib/udev or the hard-coded list of rules files currently present
+
+Jeremy
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
