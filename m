@@ -1,61 +1,42 @@
-From: Thiago Galesi <ro-ubUvw2JwXcZg9hUCZPvPmw@public.gmane.org>
-Subject: [PATCH] add support for -o option
-Date: Thu,  5 Feb 2009 15:52:44 -0200
-Message-ID: <1233856364-6692-1-git-send-email-ro@duskblue.org>
+From: Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: [RFC PATCH 0/3] mdraid rootfs support
+Date: Thu, 05 Feb 2009 15:49:10 -0700
+Message-ID: <20090205224808.18610.14957.stgit@dwillia2-linux.ch.intel.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: neilb-l3A5Bk7waGM@public.gmane.org, jacek.danecki-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org
 
-From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+This series is a first take at dracut support for an mdraid rootfs.  It
+includes considerations for the new external metadata formats supported in the
+latest development branch of mdadm:
 
-Here's a patch to add -o suport to dracut, like in other mkinitrds 
+	git://neil.brown.name/mdadm devel-3.0
 
+This is an RFC because it is not clear to me that a single call to "udevadm
+settle" is enough to guarantee discovery of all storage devices ahead of raid
+assembly.  A cursory test with (4) ahci attached drives was successful.
 
-Signed-off-by: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Regards,
+Dan
+
 ---
- dracut |   14 ++++++++++----
- 1 files changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/dracut b/dracut
-index ef2ca42..b6bf198 100755
---- a/dracut
-+++ b/dracut
-@@ -27,6 +27,10 @@ while [ $# -gt 0 ]; do
- 	    allowlocal="yes"
- 	    shift
- 	    ;;
-+	-o|--output)
-+	    outfile=$(readlink -f "$2")
-+	    shift 2
-+	    ;;
- 	--allow-missing)
- 	    shift
- 	    ;;
-@@ -40,10 +44,12 @@ if [ -n "$2" ]; then
- else
-     kernel=$(uname -r)
- fi
--if [ -n "$1" ]; then
--    outfile=$(readlink -f $1)
--else
--    outfile="/boot/initrd-$kernel.img"
-+if [ -z "$outfile" ]; then 
-+	if [ -n "$1" ]; then
-+	    outfile=$(readlink -f $1)
-+	else
-+	    outfile="/boot/initrd-$kernel.img"
-+	fi
- fi
- 
- if [ -f "$outfile" -a  -z "$force" ]; then
--- 
-1.5.4.3
+Dan Williams (3):
+      add more disk id helpers to udevexe
+      raid: external and internal metadata support
+      gen-mod-lists: create lists of modules that may talk to a root device
 
+
+ dracut        |   13 ++++++++++---
+ gen-mod-lists |   34 ++++++++++++++++++++++++++++++++++
+ init          |   10 ++++++++++
+ 3 files changed, 54 insertions(+), 3 deletions(-)
+ create mode 100755 gen-mod-lists
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
