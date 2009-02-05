@@ -1,32 +1,61 @@
-From: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut vs vanilla kernel: requires
-	/lib/modules/$kernel/module.block
-Date: Tue, 3 Feb 2009 14:11:38 -0500
-Message-ID: <20090203191138.GC2631@nostromo.devel.redhat.com>
-References: <e9c3a7c20902031048u4d41036cj6761baace60ed6e1@mail.gmail.com>
-Mime-Version: 1.0
+From: Thiago Galesi <ro-ubUvw2JwXcZg9hUCZPvPmw@public.gmane.org>
+Subject: [PATCH] add support for -o option
+Date: Thu,  5 Feb 2009 15:52:44 -0200
+Message-ID: <1233856364-6692-1-git-send-email-ro@duskblue.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <e9c3a7c20902031048u4d41036cj6761baace60ed6e1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Dan Williams (dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org) said: 
-> Is this something that should be added to dracut, or upstreamed into Kbuild?
+From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-The idea is that we don't want to include every single module, but we
-want to include every module that might define a block device to boot
-from, or a network device to network boot from. Having it in the upstream
-kernel would be helpful, although how it's generated now is obviously
-a hack.
+Here's a patch to add -o suport to dracut, like in other mkinitrds 
 
-Doing it at runtime in dracut would work, but would be obviously slow.
 
-Bill
+Signed-off-by: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ dracut |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/dracut b/dracut
+index ef2ca42..b6bf198 100755
+--- a/dracut
++++ b/dracut
+@@ -27,6 +27,10 @@ while [ $# -gt 0 ]; do
+ 	    allowlocal="yes"
+ 	    shift
+ 	    ;;
++	-o|--output)
++	    outfile=$(readlink -f "$2")
++	    shift 2
++	    ;;
+ 	--allow-missing)
+ 	    shift
+ 	    ;;
+@@ -40,10 +44,12 @@ if [ -n "$2" ]; then
+ else
+     kernel=$(uname -r)
+ fi
+-if [ -n "$1" ]; then
+-    outfile=$(readlink -f $1)
+-else
+-    outfile="/boot/initrd-$kernel.img"
++if [ -z "$outfile" ]; then 
++	if [ -n "$1" ]; then
++	    outfile=$(readlink -f $1)
++	else
++	    outfile="/boot/initrd-$kernel.img"
++	fi
+ fi
+ 
+ if [ -f "$outfile" -a  -z "$force" ]; then
+-- 
+1.5.4.3
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
