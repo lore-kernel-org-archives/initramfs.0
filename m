@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 05/31] Some dracut cleanups and bashification.
-Date: Sun, 08 Feb 2009 16:35:00 -0800 (PST)
-Message-ID: <2fffaa72efb1871cb26d3845611e52d96f2813f0.1234137267.git.victor.lowther@gmail.com>
+Subject: [PATCH 06/31] Some dracut cleanups and bashification.
+Date: Sun, 08 Feb 2009 16:35:03 -0800 (PST)
+Message-ID: <bcfa8bb66f276899d55681fa58798438d28a6405.1234137267.git.victor.lowther@gmail.com>
 References: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=UPRUGSNL5tgRer8NfOMFvb/K1sL1ib4oxLb/8Q3WGj0=;
-        b=XnOhQeAF3JqeOJm3usonJDTp4laIgQdRXqGsWgCBciiksVv5i0mEFudpjpOqbOkXYO
-         U7mWhCHgriWH7dY3HtoEs5ml5BF43vUTFdaws/DNV+bcgMe7HUOs6CASGIEaySs8Gc8q
-         NDAs8YL+CwBODCn/ww+Nk8tHZAIXmJW5HPmGY=
+        bh=RJFkQkbzEwgDQJWjoQAvgBAht+VUr6pf5+mGVtnLA4w=;
+        b=EgFfd2Emm69MgX08i3BTnr9gJ6XGeilaEpZNnzr4CUlxQdxBUkRkKw3F41qFcYYacK
+         iEB+BiSBdsE+1ghFCydd/Sdu99IVYDT3TFCmRMaD/no0DmndKjlNnLWCEKxBPZ/3i4Kk
+         xOhWeU7R5uFfjS2MzPCPCyvvyd4+cesFHfxhc=
 In-Reply-To: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,33 +20,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Rewrite the mount loop using bash-specific features.
+Bashify results testing for selinux policy loading
 
-This makes the loop slightly more compact and easier to read.
 ---
- init |    7 ++-----
- 1 files changed, 2 insertions(+), 5 deletions(-)
+ init |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff --git a/init b/init
-index 78f962e..2ebf1b0 100755
+index 2ebf1b0..2b7aa36 100755
 --- a/init
 +++ b/init
-@@ -71,13 +71,10 @@ esac
- 
- # should we have a timeout?
- tries=0
--while [ ! -e $root ]; do
-+until [[ -e $root ]]; do
-   echo -n "."
-   sleep 1
--  tries=$(($tries + 1))
--  if [ $tries -gt 30 ]; then
--      emergency_shell
--  fi
-+  ((tries++ > 30)) && emergency_shell
- done
- echo -e "\n\nMounting rootfs after $tries seconds"
- ln -s "$root" /dev/root    
+@@ -92,7 +92,7 @@ mount -t sysfs /sys $NEWROOT/sys
+ # FIXME: load selinux policy.  this should really be done after we switchroot 
+ if [ -x $NEWROOT/usr/sbin/load_policy ]; then
+   chroot $NEWROOT /usr/sbin/load_policy -i
+-  if [ $? -eq 3 ]; then
++  if (($? == 3)); then
+     echo "Initial SELinux policy load failed and enforcing mode requested."
+     echo "Not continuing"
+     sleep 100d
 -- 
 1.6.0.6
 
