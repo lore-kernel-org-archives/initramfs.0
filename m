@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 24/31] Some dracut cleanups and bashification.
-Date: Sun, 08 Feb 2009 16:36:29 -0800 (PST)
-Message-ID: <0b6a7c11f52cdfd456e1912a84d259f1756d18e4.1234137268.git.victor.lowther@gmail.com>
+Subject: [PATCH 23/31] Some dracut cleanups and bashification.
+Date: Sun, 08 Feb 2009 16:36:25 -0800 (PST)
+Message-ID: <f393f138baf78d7bf99d31a4912b6ae313f1842f.1234137268.git.victor.lowther@gmail.com>
 References: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=TIEnXaE5CVNqUMvJF2Z0OKKHVMTGXJ7Sx9qvtnUtR3U=;
-        b=D+1Lcv+uvJzBL10M/KUWuvJAC+eJWBSDLwPMJ2saQ59zumHkfPMBLTbqCQzS9og+8g
-         r+d/ZRlsnPlqCUw4s5mG413MdqqJKONlExEvVzqBGR1hTIo/EvavhjEjta34V4whY1rz
-         t7vwTQX2NvbrV91wINi+0iig+8MQ905azVOs8=
+        bh=Xlv32pF5cpw3z5oQ2QCSv1kIAKaYMsqaLeBJ2bIS0vs=;
+        b=APcMBsGO3+Qg8wauLzGX2iUlJIHj2LiYn2d99W8A2mORiXVKtzcOhFxqfbnRgS9PXh
+         JlmlskRMCPjyY/Pa7m/NbFL/B/BDhJ2PMyfWJm7+r7IxcM3WTcbERDeDgRIts+owIqGU
+         H9qILANebpTwCmtzg4c/QhFvQIT5Uu9/xE4co=
 In-Reply-To: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,279 +20,308 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Replace inst function with a family of specialized functions
+Rip out old recursive module loading, replace with something simpler
 
-This makes things shorter and easier to read.
+bash allows unlimited recursion and several other tricks to make
+finding all the dependencies of a kernel module much simpler.
+
+This nukes about 130 lines, most of it in dracut-functions.
+
+This diff also touches some cleanups made in the inst function, and
+tightens up findkeymap
 ---
- dracut           |   20 ++++----
- dracut-functions |  140 +++++++++++++++++++++++++++---------------------------
- init             |    2 +-
- 3 files changed, 81 insertions(+), 81 deletions(-)
+ dracut           |    6 +--
+ dracut-functions |  205 +++++++++++++-----------------------------------------
+ 2 files changed, 50 insertions(+), 161 deletions(-)
 
 diff --git a/dracut b/dracut
-index 018b5aa..8bebbd6 100755
+index 84abdb5..018b5aa 100755
 --- a/dracut
 +++ b/dracut
-@@ -50,7 +50,7 @@ udevexe="/lib/udev/vol_id /lib/udev/console_init"
- 
- # install base files
- for binary in $exe $debugexe $udevexe $lvmexe $cryptexe ; do
--  inst $binary "$initdir"
-+  inst $binary
- done
- 
- # FIXME: would be nice if we didn't have to know which rules to grab....
-@@ -73,12 +73,12 @@ if [[ -f /etc/sysconfig/keyboard || -f /etc/sysconfig/console/default.kmap ]]; t
-         [[ $KEYTABLE && -d /lib/kbd/keymaps ]] && KEYMAP="$KEYTABLE.map"
-     fi
-     if [[ $KEYMAP ]]; then
--        [ -f /etc/sysconfig/keyboard ] && inst /etc/sysconfig/keyboard "$initdir"
--        inst /bin/loadkeys "$initdir"
-+        [ -f /etc/sysconfig/keyboard ] && inst /etc/sysconfig/keyboard
-+        inst /bin/loadkeys
-         findkeymap $KEYMAP
- 
-         for FN in $KEYMAPS; do
--            inst $FN "$initdir"
-+            inst $FN
-             case $FN in
-                 *.gz) gzip -d "$initdir$FN" ;;
-                 *.bz2) bzip2 -d "$initdir$FN" ;;
-@@ -89,19 +89,19 @@ fi
- 
- if [ -f /etc/sysconfig/i18n ]; then
-     . /etc/sysconfig/i18n
--    inst /etc/sysconfig/i18n "$initdir"
-+    inst /etc/sysconfig/i18n
-     [[ $SYSFONT ]] || SYSFONT=latarcyrheb-sun16
--    inst /bin/setfont "$initdir"
-+    inst /bin/setfont
- 
-     for FN in /lib/kbd/consolefonts/$SYSFONT.* ; do
--        inst "$FN" "$initdir"
-+        inst "$FN"
-         case $FN in
-             *.gz) gzip -d "$initdir$FN" ;;
-             *.bz2) bzip2 -d "$initdir$FN" ;;
-         esac
-     done
--    [[ $SYSFONTACM ]] && inst /lib/kbd/consoletrans/$SYSFONTACM "$initdir"
--    [[ $UNIMAP ]] && inst /lib/kbd/unimaps/$UNIMAP "$initdir"
-+    [[ $SYSFONTACM ]] && inst /lib/kbd/consoletrans/$SYSFONTACM
-+    [[ $UNIMAP ]] && inst /lib/kbd/unimaps/$UNIMAP
- fi
- 
- # install our files
-@@ -113,7 +113,7 @@ for d in etc proc sys sysroot dev/pts; do mkdir -p "$initdir/$d"; done
+@@ -113,11 +113,7 @@ for d in etc proc sys sysroot dev/pts; do mkdir -p "$initdir/$d"; done
  # FIXME: hard-coded module list of doom.
  [[ $modules ]] || modules="=ata =block =drm dm-crypt aes sha256 cbc"
  
--instmod $modules
-+instmods $modules
+-mkdir -p "$initdir/lib/modules/$kernel"
+-# expand out module deps, etc
+-for mod in $(resolveAndExpandModules $modules) ; do
+-    installmodule $mod "$initdir"
+-done
++instmod $modules
  
  /sbin/depmod -a -b "$initdir" $kernel || {
      error "\"/sbin/depmod -a $kernel\" failed."
 diff --git a/dracut-functions b/dracut-functions
-index 732581e..1ded3d8 100755
+index 8a237ec..732581e 100755
 --- a/dracut-functions
 +++ b/dracut-functions
-@@ -24,9 +24,41 @@
- 
- IF_RTLD=""
- IF_dynamic=""
--get_dso_deps() {
--    local bin="$1" ; shift
--    local FILES=() LDSO NAME IO FILE ADDR I1 n f TLIBDIR
-+
-+# $1 = file to copy to ramdisk
-+# $2 (optional) Name for the file on the ramdisk
-+# Location of the image dir is assumed to be $initdir
-+inst_simple() {
-+    local src=$1 target="${initdir}${2:-$1}"
-+    [[ -f $target ]] && return 0
-+    echo "Installing $src to $target"
-+    mkdir -p "${target%/*}"
-+    cp -fL "$src" "$target"
-+}
-+
-+inst_library() {
-+    local src=$1 dest=${2:-$1}
-+    [[ -f $initdir$dest ]] && return 0
-+    if [[ -L $src ]]; then
-+	reallib="$(readlink "$src")"
-+	lib=${src##*/}
-+	realsrc="${src%/*}/$reallib"
-+	realdest="${dest%/*}/$reallib"
-+	inst_simple "$realsrc" "$realdest"
-+	(cd "${initdir}${dest%/*}" && ln -s "$reallib" "$lib")
-+    else
-+	inst_simple "$src" "$dest"
-+    fi
-+}
-+	
-+	
-+
-+# Same as above.
-+# If the file is a binary executable, install all its
-+# shared library dependencies, if any.
-+inst_binary() {
-+    local bin="$1" target="${2:-$1}"
-+    local LDSO NAME IO FILE ADDR I1 n f TLIBDIR
- 
-     LDSO=$(LANG=C eu-readelf -l $bin 2>/dev/null | \
- 	awk '/interpreter/ {print $4}' |sed -e 's/]$//')
-@@ -36,14 +68,14 @@ get_dso_deps() {
- 
-     # I love bash!
-     while read NAME I0 FILE ADDR I1 ; do
--	[[ $FILE = $bin ]] && continue
-+	[[ $FILE = $bin ]] && continue 
-         [[ $FILE = not || $NAME = not ]] && {
- 	    echo "Missing a shared library required by $bin." >&2
- 	    echo "dracut cannot create an initrd." >&2
--	    return 1
-+	    exit 1
- 	}
- 	# see if we are loading an optimized version of a shared lib.
--	[[ $FILE =~ '(/lib[^/]*).*' ]] && {
-+	[[ $FILE =~ '^(/lib[^/]*).*' ]] && {
-             TLIBDIR=${BASH_REMATCH[1]}
-             BASE="${FILE##*/}"
- 	    # prefer nosegneg libs, then unoptimized ones.
-@@ -52,80 +84,48 @@ get_dso_deps() {
- 		FILE="$f/$BASE"
- 		break
- 	    done
-+	    inst_library "$FILE" "$TLIBDIR/$BASE"
-             IF_dynamic="yes"
-+	    continue
- 	}
--        FILES+=("$FILE")
-+        inst_library "$FILE" 
-     done < <(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
-             $LDSO $bin 2>/dev/null)
-+    inst_simple "$bin" "$target"
-+}
- 
--    echo "${FILES[@]}"
-+# same as above, except for shell scripts.
-+# If your shell script does not start with shebang, it is not a shell script.
-+inst_script() {
-+    local src=$1 target=${2:-$1} line
-+    read -r -n 80 line <"$src"
-+    [[ $line =~ '(#! *)(/[^ ]+).*' ]] || return 1
-+    inst "${BASH_REMATCH[2]}" && inst_simple "$src" "$target"
+@@ -62,7 +62,7 @@ get_dso_deps() {
  }
  
-+# same as above, but specialized for symlinks
-+inst_symlink() {
-+    local src=$1 target=$initdir${2:-$1} realsrc
-+    [[ -L $1 ]] || return 1
-+    [[ -L $target ]] && return 0
-+    realsrc=$(readlink "$src")
-+    [[ $realsrc = ${realsrc##*/} ]] && realsrc="${src%/*}/$realsrc"
-+    inst "$realsrc" && ln -s "$realsrc" "$target"
-+}
-+
-+# general purpose installation function
-+# Same args as above.
-+# Just tries to install as a binary, a shell script, then a simple data file.
  inst() {
--    if (($# != 2 && $# != 3)); then
-+    if (($# != 1 && $# != 2)); then
+-    if (($# != 2 && $# != 3));then
++    if (($# != 2 && $# != 3)); then
          echo "usage: inst <file> <root> [<destination file>]"
          return 1
      fi
--    local file="$1" ; shift
--    local root="${1%%/}" ; shift
--    local dest="${1##/}"
--    [[ $dest ]] || dest="${file##/}"
--    mkdir -p "$root/${dest%/*}"
--    local RET=0
--    local target=""
--    [[ -L $file ]] && target=$(readlink "$file")
--    if [[ $target && $dest != $target ]]; then
--        if [[ -e $root/$dest ]]; then
--            RET=0
--        else
--            ln -sf "$target" "$root/$dest"
--            #inst "$target" "$root"
--            local BASE=${target##*/}
--            local LIBDIR=$(echo "$file" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,')
--            if [[ $LIBDIR = $BASE ]]; then
--                local LIBDIR=$(echo "/$dest" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,')
--            fi  
--            local TLIBDIR=$(echo "$target" | sed -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
--                -e 's,\(\(.*\)/\)[^/]\+$,\1,')
--            if [[ $TLIBDIR = $BASE ]]; then
--                local TLIBDIR=$(echo "/$dest" | sed \
--                    -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
--                    -e 's,\(\(.*\)/\)[^/]\+$,\1,')
+@@ -70,12 +70,10 @@ inst() {
+     local root="${1%%/}" ; shift
+     local dest="${1##/}"
+     [[ $dest ]] || dest="${file##/}"
+-
+     mkdir -p "$root/${dest%/*}"
+-
+     local RET=0
+     local target=""
+-    [ -L "$file" ] && target=$(readlink "$file")
++    [[ -L $file ]] && target=$(readlink "$file")
+     if [[ $target && $dest != $target ]]; then
+         if [[ -e $root/$dest ]]; then
+             RET=0
+@@ -83,25 +81,22 @@ inst() {
+             ln -sf "$target" "$root/$dest"
+             #inst "$target" "$root"
+             local BASE=${target##*/}
+-            local LIBDIR=`echo "$file" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
++            local LIBDIR=$(echo "$file" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,')
+             if [[ $LIBDIR = $BASE ]]; then
+-                local LIBDIR=`echo "/$dest" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
 -            fi
--            inst "$LIBDIR/$BASE" "$root" "$TLIBDIR/$BASE"
+-
+-            local TLIBDIR=`echo "$target" | sed -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
+-                                                -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
++                local LIBDIR=$(echo "/$dest" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,')
++            fi  
++            local TLIBDIR=$(echo "$target" | sed -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
++                -e 's,\(\(.*\)/\)[^/]\+$,\1,')
+             if [[ $TLIBDIR = $BASE ]]; then
+-                local TLIBDIR=`echo "/$dest" | sed \
+-                                                -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
+-                                                -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
++                local TLIBDIR=$(echo "/$dest" | sed \
++                    -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
++                    -e 's,\(\(.*\)/\)[^/]\+$,\1,')
+             fi
+-
+             inst "$LIBDIR/$BASE" "$root" "$TLIBDIR/$BASE"
+             RET=$?
+             return $RET
+         fi
+     fi
+-
+     local SHEBANG=$(dd if="$file" bs=2 count=1 2>/dev/null)
+     if [[ $SHEBANG = '#!' ]]; then
+         # We're intentionally not playing the "what did this moron run
+@@ -111,7 +106,6 @@ inst() {
+         RET=$?
+         return $RET
+     fi
+-
+     if [[ -e $root/$dest ]]; then
+         RET=0
+     else
+@@ -120,162 +114,61 @@ inst() {
+             RET=$?
+         else
+             cp -aL "$file" "$root/$dest"
+-
+             local DEPS=$(get_dso_deps "$file")
+             if [[ $DEPS ]]; then
+-                IF_dynamic="yes"
++		for x in $DEPS; do
++                    local TLIBDIR=$(echo "$x" | sed 's,\(/lib[^/]*\)/.*$,\1,')
++                    local BASE=$(basename "$x")
++                    inst "$x" "$root" "$TLIBDIR/$BASE"
++		done
++		RET=$?
+             fi
+-            for x in $DEPS ; do
+-                local TLIBDIR=`echo "$x" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
+-                local BASE=`basename "$x"`
+-                inst "$x" "$root" "$TLIBDIR/$BASE"
+-            done
 -            RET=$?
--            return $RET
 -        fi
--    fi
--    local SHEBANG=$(dd if="$file" bs=2 count=1 2>/dev/null)
--    if [[ $SHEBANG = '#!' ]]; then
--        # We're intentionally not playing the "what did this moron run
--        # in his shell script" game.  There's nothing but pain in that.
--        local interp=$(head -1 "$file" | sed 's/^#! *//')
--        inst "$interp" "$root"
--        RET=$?
--        return $RET
--    fi
--    if [[ -e $root/$dest ]]; then
--        RET=0
--    else
--        if [[ $target && -L $target ]]; then
--            inst "$target" "$root"
--            RET=$?
--        else
--            cp -aL "$file" "$root/$dest"
--            local DEPS=$(get_dso_deps "$file")
--            if [[ $DEPS ]]; then
--		for x in $DEPS; do
--                    local TLIBDIR=$(echo "$x" | sed 's,\(/lib[^/]*\)/.*$,\1,')
--                    local BASE=$(basename "$x")
--                    inst "$x" "$root" "$TLIBDIR/$BASE"
--		done
--		RET=$?
--            fi
--	fi
--    fi
--    return $RET
-+    local src=$1 dest=${2:-$1}
-+    for x in inst_symlink inst_binary inst_script inst_simple; do
-+	$x "$src" "$dest" && return 0
-+    done
-+    return 1
++	fi
+     fi
+     return $RET
  }
  
- modcat="/lib/modules/$kernel/modules"
-@@ -146,7 +146,7 @@ instmods() {
- 			instmods $mpargs $modname
- 			continue
- 		    }
--		    inst "$modpath" "$initdir" "/lib/modules/$kernel/$modname.ko"
-+		    inst_simple "$modpath" "/lib/modules/$kernel/$modname.ko"
- 		done
- 		;;
- 	esac
-diff --git a/init b/init
-index 599f8ad..d5095ea 100755
---- a/init
-+++ b/init
-@@ -44,7 +44,7 @@ mknod /dev/tty1 c 4 1
+-# module dep finding and installation functions
+-moduledep() {
+-    MPARGS=""
+-    if [ "$1" == "--ignore-install" ]; then
+-        MPARGS="$MPARGS --ignore-install"
+-        shift
+-    fi
+-    deps=""
+-    deps=$(modprobe $MPARGS --set-version $kernel --show-depends $1 2>/dev/null| awk '/^insmod / { print gensub(".*/","","g",$2) }' | while read foo ; do [ "${foo%%.ko}" != "$1" ] && echo -n "${foo%%.ko} " ; done)
+-}
+-
+-locatemodule() {
+-    MPARGS=""
+-    if [ "$1" == "--ignore-install" ]; then
+-        MPARGS="$MPARGS --ignore-install"
+-        shift
+-    fi
+-    fmPath=$(modprobe $MPARGS --set-version $kernel --show-depends $1 2>/dev/null | awk '/^insmod / { print $2; }' | tail -1)
+-    if [ -n "$fmPath" -a -f "$fmPath" ]; then
+-        return 0
+-    fi
+-    for modExt in o.gz o ko ; do
+-        for modDir in /lib/modules/$kernel/updates /lib/modules/$kernel ; do
+-            if [ -d $modDir ]; then
+-                fmPath=$(find $modDir -name $1.ko |awk {'print $1; exit;'})
+-                if [ -n "$fmPath" -a -f "$fmPath" ]; then
+-                    return 0
+-                fi
+-            fi
+-        done
++modcat="/lib/modules/$kernel/modules"
++instmods() {
++    local mod mpargs modpath modname cmd
++    while (($# > 0)); do
++	mod=${1%.ko}
++	case $mod in
++	    =ata) instmods $mpargs $(cat "${modcat}.block" |egrep 'ata|ahci');;
++	    =*) instmods $mpargs $(cat "${modcat}.${mod#=}");;
++	    --*) mpargs+=" $mod";;
++	    *) modprobe $mpargs --set-version $kernel --show-depends $mod \
++		2>/dev/null |while read cmd modpath; do
++		    [[ $cmd = insmod ]] || continue
++		    modname=${modpath##*/}
++		    modname=${modname%.ko}
++		    [[ ${mod/-/_} != ${modname/-/_} ]] && {
++			instmods $mpargs $modname
++			continue
++		    }
++		    inst "$modpath" "$initdir" "/lib/modules/$kernel/$modname.ko"
++		done
++		;;
++	esac
++	shift
+     done
+-    return 1
+-}
+-
+-resolveAndExpandModules() {
+-    items=$*
+-
+-    mods=$(expandModules $items)
+-    resdeps mods
+-    echo $resolved
+-}
+-
+-expandModules() {
+-    items=$*
+-
+-    for m in $items ; do
+-	char=$(echo $m | cut -c1)
+-	if [ $char = '=' ]; then
+-	    NAME=$(echo $m | cut -c2-)
+-	    if [ "$NAME" = "ata" ]; then
+-		MODS="$MODS $(cat /lib/modules/$kernel/modules.block |egrep '(ata|ahci)' |sed -e 's/.ko//')"
+-	    else
+-                # Ignore if group list does not exist
+-                if [ -e /lib/modules/$kernel/modules.$NAME ]; then
+-		    MODS="$MODS $(cat /lib/modules/$kernel/modules.$NAME |sed -e 's/.ko//')"
+-                fi
+-	    fi
+-	else
+-	    MODS="$MODS $m"
+-	fi
+-    done
+-    echo $MODS
+-}
+-
+-installmodule()
+-{
+-    MPARGS=""
+-    if [ "$1" == "--ignore-install" ]; then
+-        MPARGS="$MPARGS --ignore-install"
+-        shift
+-    fi
+-    MODULE=$1
+-    MNTIMAGE=$2
+-    fmPath=""
+-    locatemodule $MPARGS $MODULE
+-    MODULE=$fmPath
+-    if [ -z "$MODULE" ]; then
+-        return
+-    fi
+-    if [ -x /usr/bin/strip ]; then
+-        /usr/bin/strip -g  $MODULE -o $MNTIMAGE/lib/modules/$kernel/$(basename $MODULE)
+-    else
+-        inst "$MODULE" "$MNTIMAGE" "/lib/modules/$kernel/$(basename $MODULE)"
+-    fi
+-    for fw in $(/sbin/modinfo -F firmware $MODULE 2>/dev/null); do
++    for fw in $(/sbin/modinfo -F firmware $mod 2>/dev/null); do
+         if [ -f /lib/firmware/$fw ]; then
+-            inst "/lib/firmware/$fw" "$MNTIMAGE" "/lib/firmware/$fw"
++            inst_simple "/lib/firmware/$fw"
+         fi
+     done
+-}
+-
+-# This loops to make sure it resolves dependencies of dependencies of...
+-resdeps () {
+-    modlist="$1"
+-
+-    before=1
+-    after=2
+-
+-    items=$(eval echo \${$modlist})
+-    while [ $before != $after ]; do
+-        before=$(echo $items | wc -c)
+-        list=""
+-
+-        for i in $items ; do
+-            deps=""
+-            moduledep $i
+-            list="$list $deps"
+-        done
+-        items=$(for n in $items $list; do echo $n; done | sort -u)
+-        after=`echo $items | wc -c`
+-    done
+-
+-    resolved="$items"
+-}
++} 
  
- # start plymouth if it's available
- # arguably we need some of udev run first for fbmods and above devnodes :/
--[ -x /bin/plymouthd ] && plymouthd --attach-to-session
-+[ -x /bin/plymouthd ] && plymouthd
- [ -x /bin/plymouth ] && plymouth --show-splash
+ findkeymap () {
+     local MAP=$1
+-
+-    if [ ! -f "$MAP" ]; then
+-        MAP=$(find /lib/kbd/keymaps -type f -name $MAP -o -name $MAP.\* | head -n1)
+-    fi
+-
+-    case " $KEYMAPS " in
+-        *" $MAP "*)
+-            return
+-            ;;
+-    esac
+-
++    [[ ! -f $MAP ]] && \
++	MAP=$(find /lib/kbd/keymaps -type f -name $MAP -o -name $MAP.\* | head -n1)
++    [[ " $KEYMAPS " = *" $MAP "* ]] && return
+     KEYMAPS="$KEYMAPS $MAP"
+-
+     case $MAP in
+-        *.gz)
+-            cmd=zgrep
+-            ;;
+-        *.bz2)
+-            cmd=bzgrep
+-            ;;
+-        *)
+-            cmd=grep
+-            ;;
++        *.gz) cmd=zgrep;;
++        *.bz2) cmd=bzgrep;;
++        *) cmd=grep ;;
+     esac
  
- 
+     for INCL in $($cmd "^include " $MAP | cut -d' ' -f2 | tr -d '"'); do
 -- 
 1.6.0.6
 
