@@ -1,26 +1,54 @@
-From: Szabolcs Szakacsits <szaka-IyvsvuGDJ8VBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC PATCH 2/3] raid: external and internal metadata support
-Date: Sun, 8 Feb 2009 19:16:37 +0000 (UTC)
-Message-ID: <loom.20090208T191148-830@post.gmane.org>
-References: <20090206164019.GD552@redhat.com>  <A9DE54D0CD747C4CB06DCE5B6FA2246F4B496AFA@irsmsx504.ger.corp.intel.com>  <20090206165601.GF11144@nostromo.devel.redhat.com>  <e9c3a7c20902060927j2b900940kd851573469110135@mail.gmail.com>  <20090206173814.GA3541@nostromo.devel.redhat.com> <e9c3a7c20902061012w15a31e7br6ce2074b7b9db555@mail.gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 02/31] Some dracut cleanups and bashification.
+Date: Sun, 08 Feb 2009 16:34:46 -0800 (PST)
+Message-ID: <9eeb778e566a22401b45810116d76aec1040152d.1234137267.git.victor.lowther@gmail.com>
+References: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:date:message-id:in-reply-to
+         :references:from:subject:to:x-mailer;
+        bh=yee8e+ad98u43FKpYXlMK34rmXX4N1/5E7CLpyJQK/E=;
+        b=aTAN7BAfhqZCII40HdjviyEzzC7jhy+Qvo/pfOTyOYWpQYYoX7XTYAUtqt/fCXXlhW
+         aoBqN4QGGlAURuB7lMGJtyVYvbWFG/BFQ3wkOAACiGgtLPEUKHhzpUnoDMCSO+rODY9n
+         oksSDGoqv2P97XKk3g4gZ3KUJKhJ5LRNW+GCw=
+In-Reply-To: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Dan Williams <dan.j.williams@...> writes:
-> consider what extra tools the initramfs would need if we wanted to
-> support an ntfs-3g rootfs.
+Add a simple getarg function.
 
-The FUSE kernel module. Nothing else. Several distros do it.
+If we ever need to get more than one kernel command line argument, this
+function will pay for itself.  It relies on a feature of the way bash
+handles string comparisons in [[ ]] statements -- the RHS is matched
+according to globbing rules, and is not a straight string match.
+---
+ init |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-Regards, Szaka
-
-NTFS-3G: http://ntfs-3g.org 
-
+diff --git a/init b/init
+index eb8998d..b5b0b1b 100755
+--- a/init
++++ b/init
+@@ -14,6 +14,12 @@ emergency_shell()
+     bash < /dev/console
+ }
+ 
++getarg() {
++    for o in $(< /proc/cmdline); do
++	[[ $o == $1 ]] && { echo $o; break; }
++    done
++}
++
+ echo "Starting initrd..."
+ export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+ export TERM=linux
+-- 
+1.6.0.6
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
