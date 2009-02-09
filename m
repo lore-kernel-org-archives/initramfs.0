@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 21/31] Some dracut cleanups and bashification.
-Date: Sun, 08 Feb 2009 16:36:15 -0800 (PST)
-Message-ID: <f81e4c7fec7010a32da9bd6e98c19eec70874af0.1234137268.git.victor.lowther@gmail.com>
+Subject: [PATCH 22/31] Some dracut cleanups and bashification.
+Date: Sun, 08 Feb 2009 16:36:20 -0800 (PST)
+Message-ID: <bfb88c10b40a2e80d84a4a77da4ddef64a2f3839.1234137268.git.victor.lowther@gmail.com>
 References: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=uYSpVTyUP9u2+R9lmh9vXN4gnmbdlehKcKjnpKY4ubs=;
-        b=Odn7wlJWvxBcKnQ/9QcEueMmnLMtA9e21k/FcMX2WW8L7xn8KSXK07dqrIJfPg0ZHY
-         zSRt7/SBW4D/KSb3+Iy1l0UlivoIjnELC/LDXWWCUfDwwbT3956z2CSSF15RXzWRIQ/Y
-         1x8VZXGonKXvGf0WMG4726wKg+DaccqWpyCus=
+        bh=MTSTJCq8o14OhCYNvscvBWLC+GJAlj15TBJnELLIyr8=;
+        b=bJGUQaPkPatym907yhkP9X1KyRkJaRkXfDlbeE6WTi68XLhVCnF/nyE+LY1/5gZYsn
+         NwVGJvw5C7ZEEEQnFk2DaYfq3ZRjk5g6Q/JaY15YdQZY+VuoYL9WuBVCsw6dAe6E9p5J
+         HGgNhS7bELjMyE6kJXeW9N4Ea0X6S+oqRYYsA=
 In-Reply-To: <5a1ca330d81aeebf879bb7f0950b7ae448f7be22.1234137267.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,119 +20,94 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Simplified get_dso_deps
+Bashify inst function where ot makes things easier to read.
 
-This takes advantage of several bash specific constructs to make
-get_dso_deps easier to read and understand.
 ---
- dracut-functions |   85 +++++++++++++++++------------------------------------
- 1 files changed, 27 insertions(+), 58 deletions(-)
+ dracut-functions |   31 +++++++++++++++----------------
+ 1 files changed, 15 insertions(+), 16 deletions(-)
 
 diff --git a/dracut-functions b/dracut-functions
-index 26254a4..d7717d8 100755
+index d7717d8..8a237ec 100755
 --- a/dracut-functions
 +++ b/dracut-functions
-@@ -21,73 +21,42 @@
- #       Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
- #       Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
- #       Jakub Jelinek <jakub-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
--#
--#
- 
- IF_RTLD=""
- IF_dynamic=""
- get_dso_deps() {
-     local bin="$1" ; shift
-+    local FILES=() LDSO NAME IO FILE ADDR I1 n f TLIBDIR
- 
--    declare -a FILES
--    declare -a NAMES
--
--    local LDSO=$(LANG=C eu-readelf -l $bin 2>/dev/null  |grep interpreter |awk {'print $4;'} |sed -e 's/]$//')
--    [ -z "$LDSO" -o "$LDSO" == "$bin" ] && local LDSO="$IF_RTLD"
--    [ -z "$LDSO" -o "$LDSO" == "$bin" ] && return 1
--    [ -z "$IF_RTLD" ] && IF_RTLD="$LDSO"
-+    LDSO=$(LANG=C eu-readelf -l $bin 2>/dev/null | \
-+	awk '/interpreter/ {print $4}' |sed -e 's/]$//')
-+    [[ $LDSO && $LDSO != $bin ]] || LDSO="$IF_RTLD"
-+    [[ $LDSO && $LDSO != $bin ]] || return 1
-+    [[ $IF_RTLD ]] || IF_RTLD="$LDSO"
- 
--    # I hate shell.
--    declare -i n=0
-+    # I love bash!
-     while read NAME I0 FILE ADDR I1 ; do
--        [ "$FILE" == "not" ] && FILE="$FILE $ADDR"
--        [ "$NAME" == "not" ] && NAME="$NAME $I0"
--        NAMES[$n]="$NAME"
--        FILES[$n]="$FILE"
--        let n++
--    done << EOF
--        $(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
-+	[[ $FILE = $bin ]] && continue
-+        [[ $FILE = not || $NAME = not ]] && {
-+	    echo "Missing a shared library required by $bin." >&2
-+	    echo "dracut cannot create an initrd." >&2
-+	    return 1
-+	}
-+	# see if we are loading an optimized version of a shared lib.
-+	[[ $FILE =~ '(/lib[^/]*).*' ]] && {
-+            TLIBDIR=${BASH_REMATCH[1]}
-+            BASE="${FILE##*/}"
-+	    # prefer nosegneg libs, then unoptimized ones.
-+	    for f in "$TLIBDIR/i686/nosegneg" "$TLIBDIR"; do
-+		[[ -f $f/$BASE ]] || continue
-+		FILE="$f/$BASE"
-+		break
-+	    done
-+            IF_dynamic="yes"
-+	}
-+        FILES+=("$FILE")
-+    done < <(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
-             $LDSO $bin 2>/dev/null)
--EOF
--
--    [ ${#FILES[*]} -eq 0 ] && return 1
--
--    # we don't want the name of the binary in the list
--    if [ "${FILES[0]}" == "$bin" ]; then
--        FILES[0]=""
--        NAMES[0]=""
--        [ ${#FILES[*]} -eq 1 ] && return 1
--    fi
--
--    declare -i n=0
--    while [ $n -lt ${#FILES[*]} ]; do
--        local FILE="${FILES[$n]}"
--        local NAME="${NAMES[$n]}"
--        if [ "$FILE" == "not found" -o "$NAME" == "not found" ]; then
--            cat 1>&2 <<EOF
--There are missing files on your system.  The dynamic object $bin
--requires ${NAMES[$n]} n order to properly function.  mkinitrd cannot continue.
--EOF
--            return 1
--        fi
--        case "$FILE" in
--            /lib*)
--                TLIBDIR=`echo "$FILE" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
--                BASE=`basename "$FILE"`
--                # Prefer nosegneg libs over direct segment accesses on i686.
--                if [ -f "$TLIBDIR/i686/nosegneg/$BASE" ]; then
--                    FILE="$TLIBDIR/i686/nosegneg/$BASE"
--                # Otherwise, prefer base libraries rather than their optimized
--                # variants.
--                elif [ -f "$TLIBDIR/$BASE" ]; then
--                    FILE="$TLIBDIR/$BASE"
--                fi
--                FILES[$n]="$FILE"
--                ;;
--        esac
--        IF_dynamic="yes"
--        let n++
--    done
- 
-     echo "${FILES[@]}"
+@@ -62,36 +62,35 @@ get_dso_deps() {
  }
+ 
+ inst() {
+-    if [ "$#" != "2" -a "$#" != "3" ];then
++    if (($# != 2 && $# != 3));then
+         echo "usage: inst <file> <root> [<destination file>]"
+         return 1
+     fi
+     local file="$1" ; shift
+-    local root="${1%%/}/" ; shift
++    local root="${1%%/}" ; shift
+     local dest="${1##/}"
+-    [ -z "$dest" ] && local dest="${file##/}"
++    [[ $dest ]] || dest="${file##/}"
+ 
+-    mkdir -p "$root/$(dirname $dest)"
++    mkdir -p "$root/${dest%/*}"
+ 
+     local RET=0
+     local target=""
+     [ -L "$file" ] && target=$(readlink "$file")
+-    if [ -n "$target" -a "$dest" != "$target" ]; then
+-        if [ -e "$root$dest" ]; then
++    if [[ $target && $dest != $target ]]; then
++        if [[ -e $root/$dest ]]; then
+             RET=0
+         else
+-
+-            ln -sf "$target" "$root$dest"
++            ln -sf "$target" "$root/$dest"
+             #inst "$target" "$root"
+-            local BASE=`basename "$target"`
++            local BASE=${target##*/}
+             local LIBDIR=`echo "$file" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
+-            if [ "$LIBDIR" = "$BASE" ]; then
++            if [[ $LIBDIR = $BASE ]]; then
+                 local LIBDIR=`echo "/$dest" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
+             fi
+ 
+             local TLIBDIR=`echo "$target" | sed -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
+                                                 -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
+-            if [ "$TLIBDIR" = "$BASE" ]; then
++            if [[ $TLIBDIR = $BASE ]]; then
+                 local TLIBDIR=`echo "/$dest" | sed \
+                                                 -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
+                                                 -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
+@@ -104,7 +103,7 @@ inst() {
+     fi
+ 
+     local SHEBANG=$(dd if="$file" bs=2 count=1 2>/dev/null)
+-    if [ "$SHEBANG" == '#!' ]; then
++    if [[ $SHEBANG = '#!' ]]; then
+         # We're intentionally not playing the "what did this moron run
+         # in his shell script" game.  There's nothing but pain in that.
+         local interp=$(head -1 "$file" | sed 's/^#! *//')
+@@ -113,17 +112,17 @@ inst() {
+         return $RET
+     fi
+ 
+-    if [ -e "$root$dest" ]; then
++    if [[ -e $root/$dest ]]; then
+         RET=0
+     else
+-        if [ -n "$target" -a -L "$target" ]; then
++        if [[ $target && -L $target ]]; then
+             inst "$target" "$root"
+             RET=$?
+         else
+-            cp -aL "$file" "$root$dest"
++            cp -aL "$file" "$root/$dest"
+ 
+             local DEPS=$(get_dso_deps "$file")
+-            if [ -n "$DEPS" ]; then
++            if [[ $DEPS ]]; then
+                 IF_dynamic="yes"
+             fi
+             for x in $DEPS ; do
 -- 
 1.6.0.6
 
