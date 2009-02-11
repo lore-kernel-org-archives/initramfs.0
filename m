@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/5] Even more dracut cleanups
-Date: Wed, 11 Feb 2009 15:42:01 -0800 (PST)
-Message-ID: <fbab628ca7583549ed899a3b2a881f31b6e4715b.1234395178.git.victor.lowther@gmail.com>
+Subject: [PATCH 4/5] Even more dracut cleanups
+Date: Wed, 11 Feb 2009 15:42:10 -0800 (PST)
+Message-ID: <9cac0ea9cd4be27f3327f7920432903b6a2c69ce.1234395178.git.victor.lowther@gmail.com>
 References: <255e595fd4f868ab0f6e085deb0bfd4a2afc8ae7.1234395178.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=oj3XUphFhNIY7h/e3D9q4fmeod/X+ANohSclCdYHUFg=;
-        b=RnE7fbmcHfF0DEc07ImY86DkyY0VRSAqnDe2Ow4VfZ7z1+JpqK/UkaYhJKU1a5Dukf
-         9N1VTmcLkR8QDvT3ScwOTeaJ3v7rVC+86Sw75Y4kWN7nAGQ8Ej3QADvVwLRfeiSb648c
-         mgwEoen/DCflHVwhVu/ndyS03iTr7orFY8UcM=
+        bh=wTTd/KG2rD8hTXLja3pADKVl6rA0MhxcvTFEOajjVkk=;
+        b=mT7bQOjixoJXjD3idQnv89x++i5deHwt5v1J2pNujetJEbnYNw+dGm8bL1yqJXIyD9
+         TcKcTxqHX8VtoeFFUr4UG+1J5tN4qNm3npp5ttklEKIZ0n2p0jISNoany9buK3tdIfp2
+         F12eH+2vL96MdYYiCIn/lQo7a315be9fw5HdE=
 In-Reply-To: <255e595fd4f868ab0f6e085deb0bfd4a2afc8ae7.1234395178.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,151 +20,128 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Add very basic module functionality to dracut.
 
-Move the i18n stuff to it.
+Get rid of echoer script
+
+We can use sh -c to accomplish the same goal
+
+Also move cat back on to the list of debugging tools -- all the files we were
+using it on in the initrd can use read to accomplish the same goal.
 ---
- dracut                |   45 +++----------------------------------
- dracut-functions      |    2 -
- modules/10redhat-i18n |   59 +++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 63 insertions(+), 43 deletions(-)
+ Makefile              |    3 +--
+ dracut                |    6 ++----
+ echoer                |    4 ----
+ init                  |    7 ++++---
+ pre-mount/50cryptroot |    2 +-
+ rules.d/63-luks.rules |    2 +-
+ 6 files changed, 9 insertions(+), 15 deletions(-)
 
+diff --git a/Makefile b/Makefile
+index 6d7cb68..365cdf1 100644
+--- a/Makefile
++++ b/Makefile
+@@ -11,9 +11,8 @@ install:
+ 	install -m 0755 init $(DESTDIR)/usr/libexec/dracut/init
+ 	install -m 0755 switch_root $(DESTDIR)/usr/libexec/dracut/switch_root
+ 	install -m 0755 dracut-functions $(DESTDIR)/usr/libexec/dracut/functions
+-	install -m 0755 echoer $(DESTDIR)/usr/libexec/dracut/echoer
+ 	mkdir $(DESTDIR)/usr/libexec/dracut/rules.d
+-	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/usr/libexec/dracut/rules.d ; done
++	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/usr/libexec/dracut ; done
+ 	for hooks in pre-*/* ; do install -m 0755 $$hook $(DESTDIR/usr/libexec/dracut ; done
+ clean:
+ 	rm -f *~
 diff --git a/dracut b/dracut
-index 1042a0a..3e3d6f7 100755
+index 3e3d6f7..c8550c7 100755
 --- a/dracut
 +++ b/dracut
-@@ -98,47 +98,10 @@ done
- # terminfo bits make things work better if you fall into interactive mode
- for f in $(find /lib/terminfo -type f) ; do cp  --parents $f "$initdir" ; done
+@@ -36,7 +36,6 @@ fi
+ initfile=$dsrc/init
+ switchroot=$dsrc/switch_root
+ rulesdir=$dsrc/rules.d
+-echoer=$dsrc/echoer
+ hookdirs="pre-udev pre-mount pre-pivot"
  
--## this stuff should be moved out of the main dracut script
--
--# FIXME: i18n stuff isn't really distro-independent :/
--if [[ -f /etc/sysconfig/keyboard || -f /etc/sysconfig/console/default.kmap ]]; then
--    if [ -f /etc/sysconfig/console/default.kmap ]; then
--        KEYMAP=/etc/sysconfig/console/default.kmap
--    else
--        . /etc/sysconfig/keyboard
--        [[ $KEYTABLE && -d /lib/kbd/keymaps ]] && KEYMAP="$KEYTABLE.map"
--    fi
--    if [[ $KEYMAP ]]; then
--        [ -f /etc/sysconfig/keyboard ] && inst /etc/sysconfig/keyboard
--        inst /bin/loadkeys
--        findkeymap $KEYMAP
--
--        for FN in $KEYMAPS; do
--            inst $FN
--            case $FN in
--                *.gz) gzip -d "$initdir$FN" ;;
--                *.bz2) bzip2 -d "$initdir$FN" ;;
--            esac
--        done
--    fi
--fi
--
--if [ -f /etc/sysconfig/i18n ]; then
--    . /etc/sysconfig/i18n
--    inst /etc/sysconfig/i18n
--    [[ $SYSFONT ]] || SYSFONT=latarcyrheb-sun16
--    inst /bin/setfont
--
--    for FN in /lib/kbd/consolefonts/$SYSFONT.* ; do
--        inst "$FN"
--        case $FN in
--            *.gz) gzip -d "$initdir$FN" ;;
--            *.bz2) bzip2 -d "$initdir$FN" ;;
--        esac
--    done
--    [[ $SYSFONTACM ]] && inst /lib/kbd/consoletrans/$SYSFONTACM
--    [[ $UNIMAP ]] && inst /lib/kbd/unimaps/$UNIMAP
--fi
-+# source any third-party package provided modules
-+for f in "$dsrc/modules"/*; do
-+    [[ -x $f ]] && . "$f"
-+done
+ initdir=$(mktemp -d -t initramfs.XXXXXX)
+@@ -48,11 +47,11 @@ for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot dev/pts; do
+ done
  
- ## final stuff that has to happen
+ # executables that we have to have
+-exe="bash mount mknod mkdir modprobe udevd udevadm nash pidof sleep chroot echo cat sed"
++exe="bash mount mknod mkdir modprobe udevd udevadm nash pidof sleep chroot echo sed"
+ lvmexe="lvm"
+ cryptexe="cryptsetup"
+ # and some things that are nice for debugging
+-debugexe="ls ln ps grep more dmesg"
++debugexe="ls ln ps grep more dmesg cat"
+ # udev things we care about
+ udevexe="/lib/udev/vol_id /lib/udev/console_init"
  
-diff --git a/dracut-functions b/dracut-functions
-index 52ef722..8beba8b 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -120,10 +120,8 @@ inst_symlink() {
-     inst "$realsrc" && ln -s "$realsrc" "$target"
+@@ -70,7 +69,6 @@ fi
+ # install our scripts and hooks
+ inst "$initfile" "/init"
+ inst "$switchroot" "/sbin/switch_root"
+-inst "$echoer" "/echoer"
+ for hookdir in $hookdirs; do
+     for hook in "$dsrc/$hookdir"/*; do
+ 	[[ -f $hook ]] && inst "$hook" "/$hookdir/${hook##*/}"
+diff --git a/echoer b/echoer
+deleted file mode 100755
+index 9fc7abf..0000000
+--- a/echoer
++++ /dev/null
+@@ -1,4 +0,0 @@
+-#!/bin/sh
+-target=$1
+-shift
+-echo "$@" >"$target"
+\ No newline at end of file
+diff --git a/init b/init
+index 4b36e69..c8ac4e5 100755
+--- a/init
++++ b/init
+@@ -10,12 +10,13 @@ emergency_shell()
+     echo ; echo
+     echo "Bug in initramfs /init detected. Dropping to a shell. Good luck!"
+     echo
+-    exec sh -i
++    sh -i 2>/dev/console
  }
  
--
- # general purpose installation function
- # Same args as above.
--# Just tries to install as a binary, a shell script, then a simple data file.
- inst() {
-     if (($# != 1 && $# != 2)); then
-         echo "usage: inst <file> <root> [<destination file>]"
-diff --git a/modules/10redhat-i18n b/modules/10redhat-i18n
-new file mode 100644
-index 0000000..ae50bbc
---- /dev/null
-+++ b/modules/10redhat-i18n
-@@ -0,0 +1,59 @@
-+#!/bin/bash
-+findkeymap () {
-+    local MAP=$1
-+    [[ ! -f $MAP ]] && \
-+	MAP=$(find /lib/kbd/keymaps -type f -name $MAP -o -name $MAP.\* | head -n1)
-+    [[ " $KEYMAPS " = *" $MAP "* ]] && return
-+    KEYMAPS="$KEYMAPS $MAP"
-+    case $MAP in
-+        *.gz) cmd=zgrep;;
-+        *.bz2) cmd=bzgrep;;
-+        *) cmd=grep ;;
-+    esac
-+
-+    for INCL in $($cmd "^include " $MAP | cut -d' ' -f2 | tr -d '"'); do
-+        for FN in $(find /lib/kbd/keymaps -type f -name $INCL\*); do
-+            findkeymap $FN
-+        done
-+    done
-+}
-+
-+# FIXME: i18n stuff isn't really distro-independent :/
-+if [[ -f /etc/sysconfig/keyboard || -f /etc/sysconfig/console/default.kmap ]]; then
-+    if [ -f /etc/sysconfig/console/default.kmap ]; then
-+        KEYMAP=/etc/sysconfig/console/default.kmap
-+    else
-+        . /etc/sysconfig/keyboard
-+        [[ $KEYTABLE && -d /lib/kbd/keymaps ]] && KEYMAP="$KEYTABLE.map"
-+    fi
-+    if [[ $KEYMAP ]]; then
-+        [ -f /etc/sysconfig/keyboard ] && inst /etc/sysconfig/keyboard
-+        inst loadkeys
-+        findkeymap $KEYMAP
-+
-+        for FN in $KEYMAPS; do
-+            inst $FN
-+            case $FN in
-+                *.gz) gzip -d "$initdir$FN" ;;
-+                *.bz2) bzip2 -d "$initdir$FN" ;;
-+            esac
-+        done
-+    fi
-+fi
-+
-+if [ -f /etc/sysconfig/i18n ]; then
-+    . /etc/sysconfig/i18n
-+    inst /etc/sysconfig/i18n
-+    [[ $SYSFONT ]] || SYSFONT=latarcyrheb-sun16
-+    inst setfont
-+
-+    for FN in /lib/kbd/consolefonts/$SYSFONT.* ; do
-+        inst "$FN"
-+        case $FN in
-+            *.gz) gzip -d "$initdir$FN" ;;
-+            *.bz2) bzip2 -d "$initdir$FN" ;;
-+        esac
-+    done
-+    [[ $SYSFONTACM ]] && inst /lib/kbd/consoletrans/$SYSFONTACM
-+    [[ $UNIMAP ]] && inst /lib/kbd/unimaps/$UNIMAP
-+fi
+ getarg() {
+-    local o;
+-    for o in $(cat /proc/cmdline); do
++    local o line
++    read -r line </proc/cmdline
++    for o in $line; do
+ 	[ "${o%%=*}" = "$1" ] && { echo $o; break; }
+     done
+     return 1
+diff --git a/pre-mount/50cryptroot b/pre-mount/50cryptroot
+index de7eca4..0664f24 100755
+--- a/pre-mount/50cryptroot
++++ b/pre-mount/50cryptroot
+@@ -1,7 +1,7 @@
+ #!/bin/sh
+ [ -f /cryptroot ] && { 
+     echo "Encrypted root detected."
+-    cryptopts=$(cat /cryptroot)
++    read cryptopts </cryptroot
+     /sbin/cryptsetup luksOpen $cryptopts || emergency_shell
+     udevadm settle --timeout=30
+ }
+diff --git a/rules.d/63-luks.rules b/rules.d/63-luks.rules
+index ab907e9..4d6a379 100644
+--- a/rules.d/63-luks.rules
++++ b/rules.d/63-luks.rules
+@@ -8,6 +8,6 @@ SUBSYSTEM!="block", GOTO="luks_end"
+ ACTION!="add|change", GOTO="luks_end"
+ 
+ KERNEL!="sr*", IMPORT{program}="vol_id --export $tempnode"
+-ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/echoer /cryptroot $env{DEVNAME} luks-$env{ID_FS_UUID}"
++ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/bin/sh -c 'echo $env{DEVNAME} luks-$env{ID_FS_UUID} >/cryptroot'"
+ 
+ LABEL="luks_end"
 -- 
 1.6.0.6
 
