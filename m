@@ -1,62 +1,112 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/9] Dracut cleanups, part 2
-Date: Thu, 12 Feb 2009 00:17:37 +0100
-Message-ID: <20090211231737.GD21052@nb.net.home>
-References: <215b373ce2de8b9c47c7f3bd3550c7fc96a49614.1234351770.git.victor.lowther@gmail.com> <20090211220712.GC21052@nb.net.home> <921e043f0902111435v54ee1bc1yb44ce3f745459f10@mail.gmail.com>
-Mime-Version: 1.0
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 1/5] Even more dracut functionality
+Date: Wed, 11 Feb 2009 15:41:56 -0800 (PST)
+Message-ID: <255e595fd4f868ab0f6e085deb0bfd4a2afc8ae7.1234395178.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <921e043f0902111435v54ee1bc1yb44ce3f745459f10-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:date:message-id:from:subject
+         :to:x-mailer;
+        bh=SrrvDfym337eA+P9Rv/ZMOkmVY+m1TnpmHIdnYd53y4=;
+        b=lW6mFyRvPyDnXR4P0Vqkui1o1IRRJThksrvdsUBky2koq5gDIrp1YNAEOpiTbK6Q66
+         1PpCNUUvt637cc7AyfRCDoi+lpqcFcBCBG2RxAm1VJYbVJBb7rsPRSI1PHHSFOhUidb2
+         27vXhqA94cR4CXDkSGaQLChE/Uq9d2B+VwKdQ=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Feb 11, 2009 at 04:35:00PM -0600, Victor Lowther wrote:
-> On Wed, Feb 11, 2009 at 4:07 PM, Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Wed, Feb 11, 2009 at 03:46:38AM -0800, Victor Lowther wrote:
-> >> +# parsing the output of ls is Bad, but until there is a better way...
-> >> +read x x x x maj min x < <(ls -lH "$resume")
-> >
-> >  read maj min < <(stat --format="%t %T" "$resume")
-> 
-> Indeed, but that adds yet another executable to the initrd.
+Some more functionality -- no more hardcoded executable locations in the
+dracut script, usind ldd to find library dependencies instead of eu-readelf,
+and so on.
 
- I don't see ls(1) at any other place than here. It seems you can
- remove ls(1) and add stat(1).
+These patches are on the even-more-functionality branch at 
+http://git.fnordovax.org/dracut, and apply on top of the other two patch series.
 
- BTW (Fedora 10):
+--
 
-$ ls -la /bin/ls /usr/bin/stat
--rwxr-xr-x 1 root root 114400 2008-11-21 16:33 /bin/ls
--rwxr-xr-x 1 root root  56584 2008-11-21 16:33 /usr/bin/stat
+dracut will now search for files in the usual binary locations if a
+ full path is not passed to the inst function.
 
-$ ldd /bin/ls
-        linux-vdso.so.1 =>  (0x00007fffdf9ff000)
-        librt.so.1 => /lib64/librt.so.1 (0x0000003779c00000)
-        libselinux.so.1 => /lib64/libselinux.so.1 (0x0000003779800000)
-        libcap.so.2 => /lib64/libcap.so.2 (0x0000003782200000)
-        libacl.so.1 => /lib64/libacl.so.1 (0x0000003779400000)
-        libc.so.6 => /lib64/libc.so.6 (0x0000003778400000)
-        libpthread.so.0 => /lib64/libpthread.so.0 (0x0000003779000000)
-        /lib64/ld-linux-x86-64.so.2 (0x0000003778000000)
-        libdl.so.2 => /lib64/libdl.so.2 (0x0000003778c00000)
-        libattr.so.1 => /lib64/libattr.so.1 (0x0000003783600000)
+---
+ dracut           |    8 ++++----
+ dracut-functions |   17 ++++++++++++++---
+ 2 files changed, 18 insertions(+), 7 deletions(-)
 
-$ ldd /usr/bin/stat
-        linux-vdso.so.1 =>  (0x00007fff5a1fe000)
-        libselinux.so.1 => /lib64/libselinux.so.1 (0x0000003779800000)
-        libc.so.6 => /lib64/libc.so.6 (0x0000003778400000)
-        libdl.so.2 => /lib64/libdl.so.2 (0x0000003778c00000)
-        /lib64/ld-linux-x86-64.so.2 (0x0000003778000000)
-
-
-    Karel
-
+diff --git a/dracut b/dracut
+index 30f0f9d..1042a0a 100755
+--- a/dracut
++++ b/dracut
+@@ -48,11 +48,11 @@ for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot dev/pts; do
+ done
+ 
+ # executables that we have to have
+-exe="/bin/bash /bin/mount /bin/mknod /bin/mkdir /sbin/modprobe /sbin/udevd /sbin/udevadm /sbin/nash /sbin/pidof /bin/sleep /usr/sbin/chroot /bin/echo /bin/cat /bin/sed"
+-lvmexe="/sbin/lvm"
+-cryptexe="/sbin/cryptsetup"
++exe="bash mount mknod mkdir modprobe udevd udevadm nash pidof sleep chroot echo cat sed"
++lvmexe="lvm"
++cryptexe="cryptsetup"
+ # and some things that are nice for debugging
+-debugexe="/bin/ls /bin/ln /bin/ps /bin/grep /bin/more /bin/dmesg"
++debugexe="ls ln ps grep more dmesg"
+ # udev things we care about
+ udevexe="/lib/udev/vol_id /lib/udev/console_init"
+ 
+diff --git a/dracut-functions b/dracut-functions
+index 97ac626..52ef722 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -31,7 +31,6 @@ IF_dynamic=""
+ inst_simple() {
+     local src=$1 target="${initdir}${2:-$1}"
+     [[ -f $target ]] && return 0
+-    echo "Installing $src to $target"
+     mkdir -p "${target%/*}"
+     cp -fL "$src" "$target"
+ }
+@@ -51,7 +50,14 @@ inst_library() {
+     fi
+ }
+ 	
+-	
++find_binary() {
++    local binpath="/bin /sbin /usr/bin /usr/sbin" p
++    [[ ${1##*/} = $1 ]] || { echo $1; return 0; }
++    for p in $binpath; do
++	[[ -x $p/$1 ]] && { echo "$p/$1"; return 0; }
++    done
++    return 1
++}
+ 
+ # Same as above.
+ # If the file is a binary executable, install all its
+@@ -114,6 +120,7 @@ inst_symlink() {
+     inst "$realsrc" && ln -s "$realsrc" "$target"
+ }
+ 
++
+ # general purpose installation function
+ # Same args as above.
+ # Just tries to install as a binary, a shell script, then a simple data file.
+@@ -122,7 +129,11 @@ inst() {
+         echo "usage: inst <file> <root> [<destination file>]"
+         return 1
+     fi
+-    local src=$1 dest=${2:-$1}
++    local src=$(find_binary "$1") || {
++	echo "Cannot find requested file $1. Exiting."
++	exit 1
++    }
++    local dest=${2:-$src}
+     for x in inst_symlink inst_script inst_binary inst_simple; do
+ 	$x "$src" "$dest" && return 0
+     done
 -- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+1.6.0.6
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
