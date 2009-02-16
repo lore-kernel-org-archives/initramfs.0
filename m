@@ -1,7 +1,7 @@
 From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Subject: [PATCH 27/50] Don't leave cruft behind in /tmp
-Date: Mon, 16 Feb 2009 14:06:39 -0500
-Message-ID: <200902161906.n1GJ6d41028239@hera.kernel.org>
+Subject: [PATCH 25/50] Add dmesg to the list of debugging tools
+Date: Mon, 16 Feb 2009 14:06:35 -0500
+Message-ID: <200902161906.n1GJ6Zai028182@hera.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,31 +10,32 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=2c6fc388b0fc46e070b7f738bc906c42883034f5
-Commit:     2c6fc388b0fc46e070b7f738bc906c42883034f5
-Parent:     bc6b0dec9e077468d45ae3248eb196c92a9e7b31
+Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=213c781797a697b89fa1a7eb1214d1a74f71c8cb
+Commit:     213c781797a697b89fa1a7eb1214d1a74f71c8cb
+Parent:     36b24d7c532c257ef8171c8fc39e7618784f6195
 Author:     Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-AuthorDate: Fri Feb 13 04:42:36 2009 -0800
+AuthorDate: Fri Feb 13 04:42:31 2009 -0800
 Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 CommitDate: Mon Feb 16 13:56:41 2009 -0500
 
-    [PATCH 27/50] Don't leave cruft behind in /tmp
+    [PATCH 25/50] Add dmesg to the list of debugging tools
 ---
- dracut |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ dracut |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff --git a/dracut b/dracut
-index eb6632d..56695c1 100755
+index 8bebbd6..c444c92 100755
 --- a/dracut
 +++ b/dracut
-@@ -38,6 +38,7 @@ switchroot=$dsrc/switch_root
- rulesdir=$dsrc/rules.d
+@@ -44,7 +44,7 @@ exe="/bin/bash /bin/mount /bin/mknod /bin/mkdir /sbin/modprobe /sbin/udevd /sbin
+ lvmexe="/sbin/lvm"
+ cryptexe="/sbin/cryptsetup"
+ # and some things that are nice for debugging
+-debugexe="/bin/ls /bin/cat /bin/ln /bin/ps /bin/grep /bin/more"
++debugexe="/bin/ls /bin/cat /bin/ln /bin/ps /bin/grep /bin/more /bin/dmesg"
+ # udev things we care about
+ udevexe="/lib/udev/vol_id /lib/udev/console_init"
  
- initdir=$(mktemp -d -t initramfs.XXXXXX)
-+trap 'rm -rf "$initdir"' 0 # clean up after ourselves no matter how we die.
- 
- # executables that we have to have
- exe="/bin/bash /bin/mount /bin/mknod /bin/mkdir /sbin/modprobe /sbin/udevd /sbin/udevadm /sbin/nash /sbin/pidof /bin/sleep /usr/sbin/chroot"
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
