@@ -1,7 +1,7 @@
 From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Subject: [PATCH 13/50] Missed an instance of $initdir not being quoted.
-Date: Mon, 16 Feb 2009 14:06:11 -0500
-Message-ID: <200902161906.n1GJ6BaE027830@hera.kernel.org>
+Subject: [PATCH 17/50] Tighten up the font installation case statement as well.
+Date: Mon, 16 Feb 2009 14:06:19 -0500
+Message-ID: <200902161906.n1GJ6JkN027941@hera.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,32 +10,38 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=535df366535e64c716a635548346e20aa17d753a
-Commit:     535df366535e64c716a635548346e20aa17d753a
-Parent:     f9d7779e30d979bd157ae2831d5d3e9cd2c6db38
+Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=5a862b968a525b8d6fb3ac643daf0f9caa3ab186
+Commit:     5a862b968a525b8d6fb3ac643daf0f9caa3ab186
+Parent:     b2b11f55796902d18e4840410837f5d7eaa6adf4
 Author:     Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-AuthorDate: Fri Feb 13 04:42:02 2009 -0800
+AuthorDate: Fri Feb 13 04:42:11 2009 -0800
 Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 CommitDate: Mon Feb 16 13:56:41 2009 -0500
 
-    [PATCH 13/50] Missed an instance of $initdir not being quoted.
+    [PATCH 17/50] Tighten up the font installation case statement as well.
 ---
- dracut |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ dracut |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
 
 diff --git a/dracut b/dracut
-index c333173..9de5bea 100755
+index a19f910..ae53caf 100755
 --- a/dracut
 +++ b/dracut
-@@ -57,7 +57,7 @@ done
- # FIXME: would be nice if we didn't have to know which rules to grab....
- # ultimately, /lib/initramfs/rules.d or somesuch which includes links/copies
- # of the rules we want so that we just copy those in would be best
--mkdir -p $initdir/lib/udev/rules.d
-+mkdir -p "$initdir/lib/udev/rules.d"
- for rule in /lib/udev/rules.d/10-console* /lib/udev/rules.d/40-redhat* /lib/udev/rules.d/50* /lib/udev/rules.d/60-persistent-storage.rules /lib/udev/rules.d/61*edd* /lib/udev/rules.d/64* /lib/udev/rules.d/80* /lib/udev/rules.d/95* $rulesdir/*.rules ; do
-   cp "$rule" "$initdir/lib/udev/rules.d"
- done
+@@ -97,12 +97,8 @@ if [ -f /etc/sysconfig/i18n ]; then
+     for FN in /lib/kbd/consolefonts/$SYSFONT.* ; do
+         inst "$FN" "$initdir"
+         case $FN in
+-            *.gz)
+-                gzip -d "$initdir$FN"
+-                ;;
+-            *.bz2)
+-                bzip2 -d "$initdir$FN"
+-                ;;
++            *.gz) gzip -d "$initdir$FN" ;;
++            *.bz2) bzip2 -d "$initdir$FN" ;;
+         esac
+     done
+     [[ $SYSFONTACM ]] && inst /lib/kbd/consoletrans/$SYSFONTACM "$initdir"
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
