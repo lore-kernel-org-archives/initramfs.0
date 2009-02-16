@@ -1,7 +1,7 @@
 From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Subject: [PATCH 34/50] Use inst to install hooks.
-Date: Mon, 16 Feb 2009 14:06:53 -0500
-Message-ID: <200902161906.n1GJ6rWf028445@hera.kernel.org>
+Subject: [PATCH 33/50] We now have a simple hook structure and 3 defined hook points.
+Date: Mon, 16 Feb 2009 14:06:51 -0500
+Message-ID: <200902161906.n1GJ6pgC028418@hera.kernel.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,34 +10,146 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=4b3f76dbe2f57c847c4804150be367abf5ffd574
-Commit:     4b3f76dbe2f57c847c4804150be367abf5ffd574
-Parent:     ec1ad3347c423f27dd546858032a73edccbcc806
+Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=ec1ad3347c423f27dd546858032a73edccbcc806
+Commit:     ec1ad3347c423f27dd546858032a73edccbcc806
+Parent:     cd20f1f6ebed3c50d69db35d22519d57ae846ecc
 Author:     Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-AuthorDate: Fri Feb 13 04:42:52 2009 -0800
+AuthorDate: Fri Feb 13 04:42:50 2009 -0800
 Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 CommitDate: Mon Feb 16 13:56:42 2009 -0500
 
-    [PATCH 34/50] Use inst to install hooks.
+    [PATCH 33/50] We now have a simple hook structure and 3 defined hook points.
     
-    This will ensure that pathname mangling is handled correctly, and that
-    whatever interpreter is handling /bin/sh is installed as /bin/sh
+    Any script placed in /pre-udev will be sourced just before udev starts
+    device scanning and loading.
+    
+    Any script placed in /pre-mount will be sourced just before we try to
+    mount a root filesystem.
+    
+    Any script placed in /pre-pivot will be sourced just before we switch to the
+    new root filesystem.
+    
+    These hooks should be the minimum needed to add back plymouth and deal with
+    more advanced filesysem mounting needs (multipath, iscsi, nfs, nbd, etc.)
 ---
- dracut |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ Makefile                       |    5 ++++-
+ dracut                         |    5 +++++
+ init                           |   19 ++++++-------------
+ pre-pivot/50selinux-loadpolicy |   10 ++++++++++
+ 4 files changed, 25 insertions(+), 14 deletions(-)
 
+diff --git a/Makefile b/Makefile
+index a4d1348..6d7cb68 100644
+--- a/Makefile
++++ b/Makefile
+@@ -4,6 +4,9 @@ all:
+ install:
+ 	mkdir -p $(DESTDIR)/usr/libexec/dracut
+ 	mkdir -p $(DESTDIR)/sbin
++	mkdir -p $(DESTDIR)/usr/libexec/dracut/pre-mount
++	mkdir -p $(DESTDIR)/usr/libexec/dracut/pre-udev
++	mkdir -p $(DESTDIR)/usr/libexec/dracut/pre-pivot
+ 	install -m 0755 dracut $(DESTDIR)/sbin/dracut
+ 	install -m 0755 init $(DESTDIR)/usr/libexec/dracut/init
+ 	install -m 0755 switch_root $(DESTDIR)/usr/libexec/dracut/switch_root
+@@ -11,7 +14,7 @@ install:
+ 	install -m 0755 echoer $(DESTDIR)/usr/libexec/dracut/echoer
+ 	mkdir $(DESTDIR)/usr/libexec/dracut/rules.d
+ 	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/usr/libexec/dracut/rules.d ; done
+-
++	for hooks in pre-*/* ; do install -m 0755 $$hook $(DESTDIR/usr/libexec/dracut ; done
+ clean:
+ 	rm -f *~
+ 
 diff --git a/dracut b/dracut
-index ecf58dc..aec20c0 100755
+index 382290e..ecf58dc 100755
 --- a/dracut
 +++ b/dracut
-@@ -37,6 +37,7 @@ initfile=$dsrc/init
- switchroot=$dsrc/switch_root
- rulesdir=$dsrc/rules.d
- echoer=$dsrc/echoer
-+hookdirs="pre-udev pre-mount pre-pivot"
+@@ -110,6 +110,11 @@ fi
+ cp $initfile "$initdir/init"
+ cp $switchroot "$initdir/sbin/switch_root"
+ cp $echoer "$initdir/echoer"
++for hookdir in $hookdirs; do
++    for hook in "$dsrc/$hookdir"/*; do
++	[[ -f $hook ]] && inst "$hook" "/$hookdir/${hook##*/}"
++    done
++done
  
- initdir=$(mktemp -d -t initramfs.XXXXXX)
- trap 'rm -rf "$initdir"' 0 # clean up after ourselves no matter how we die.
+ # and create some directory structure
+ for d in etc proc sys sysroot dev/pts; do mkdir -p "$initdir/$d"; done
+diff --git a/init b/init
+index 0b158dc..611781c 100755
+--- a/init
++++ b/init
+@@ -23,8 +23,8 @@ getarg() {
+ 
+ source_all() {
+     local f
+-    [[ -d $1 ]] || return
+-    for f in "$d"/*; do; . "$f"; done
++    [[ $1 &&  -d /$1 ]] || return
++    for f in "/$1"/*; do [[ -f $f ]] && . "$f"; done
+ }
+ 
+ echo "Starting initrd..."
+@@ -51,6 +51,8 @@ mknod /dev/tty0 c 4 0
+ mknod /dev/tty1 c 4 1
+ mknod /dev/null c 1 3
+ 
++source_all pre-udev
++
+ # start up udev and trigger cold plugs
+ udevd --daemon
+ udevadm trigger >/dev/null 2>&1
+@@ -75,7 +77,7 @@ esac
+ tries=0
+ echo "Waiting up to 30 seconds for $root to become available"
+ udevadm settle --timeout=30
+-source_all /pre-mount
++source_all pre-mount
+ 
+ echo "Trying to mount rootfs $root"
+ [[ -e $root ]] || emergency_shell
+@@ -91,16 +93,7 @@ mount --bind /dev $NEWROOT/dev
+ mount -t proc /proc $NEWROOT/proc
+ mount -t sysfs /sys $NEWROOT/sys
+ 
+-# FIXME: load selinux policy.  this should really be done after we switchroot 
+-if [ -x $NEWROOT/usr/sbin/load_policy ]; then
+-  chroot $NEWROOT /usr/sbin/load_policy -i
+-  if (($? == 3)); then
+-    echo "Initial SELinux policy load failed and enforcing mode requested."
+-    echo "Not continuing"
+-    sleep 100d
+-    exit 1
+-  fi
+-fi
++source_all pre-pivot
+ 
+ # kill off udev
+ kill $(pidof udevd)
+diff --git a/pre-mount/50cryptroot b/pre-mount/50cryptroot
+old mode 100644
+new mode 100755
+diff --git a/pre-mount/99resume b/pre-mount/99resume
+old mode 100644
+new mode 100755
+diff --git a/pre-pivot/50selinux-loadpolicy b/pre-pivot/50selinux-loadpolicy
+new file mode 100755
+index 0000000..8cc3133
+--- /dev/null
++++ b/pre-pivot/50selinux-loadpolicy
+@@ -0,0 +1,10 @@
++#!/bin/bash
++# FIXME: load selinux policy.  this should really be done after we switchroot 
++[[ -x $NEWROOT/usr/sbin/load_policy ]] || return
++chroot $NEWROOT /usr/sbin/load_policy -i
++if (($? == 3)); then
++   echo "Initial SELinux policy load failed and enforcing mode requested."
++   echo "Not continuing"
++   sleep 100d
++   exit 1
++fi
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
