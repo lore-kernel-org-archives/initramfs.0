@@ -1,47 +1,62 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 1/1] added extention to module files
-Date: Wed, 18 Feb 2009 13:11:20 -0600
-Message-ID: <512D2182-5B29-4D94-B39A-D8C474F774E0@gmail.com>
-References: <1234960574-32612-1-git-send-email-ro@duskblue.org> <9594AD60-9303-4345-8FC6-B59FAA2C60EE@gmail.com> <82ecf08e0902180756u2e007426vdd7116c03e72925e@mail.gmail.com> <ac3eb2510902180817y380a7cddh940ba268bb46da97@mail.gmail.com> <82ecf08e0902180831k8f3fe85hc6e72b9687faa35c@mail.gmail.com>
-Mime-Version: 1.0 (iPhone Mail 5F136)
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:references:message-id:from:to
-         :in-reply-to:content-type:content-transfer-encoding:x-mailer
-         :mime-version:subject:date:cc;
-        bh=J5+aFQxsCv2PKOmp1W+zsf5GcNg0Mdb0ohXeiAAAJ9A=;
-        b=YHhSXK3l1/JxYpgmZfkVYXMmJCtJeGMeSJLWzASudO30gXpFnDlj+GUOMBqio3b3N4
-         hbrD2uDZFFEgy63nWHVRSpsU6h4GKG7RJCFq4IU3cbLpJKJWlBFZURtHoXCH8QF5Z4WW
-         xfunXPYPwK0ffnM3ysAJ9mHzUKvvKchcntAF0=
-In-Reply-To: <82ecf08e0902180831k8f3fe85hc6e72b9687faa35c-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+From: maximilian attems <max@stro.at>
+Subject: initramfs-tools 0.93 status report
+Date: Wed, 18 Feb 2009 23:23:33 +0100
+Message-ID: <20090218222333.GA4440@stro.at>
+Mime-Version: 1.0
+Return-path: <linux-ide-owner@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-ide-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"; delsp="yes"
-To: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs@vger.kernel.org
+Cc: debian-kernel@lists.debian.org, klibc@zytor.com, Matthew Wilcox <willy@linux.intel.com>, linux-ide@vger.kernel.org
 
-On Feb 18, 2009, at 10:31 AM, Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>  
-wrote:
 
->>
->> You mean:
->> for f in "$dsrc/modules"/*.sh; do
->> ?
->
-> Silly, silly me :)
-> I was worried about the [^~] at the end , and couldn't make it work
-> with the sh but, of course, *.sh does the trick
+initramfs-tools git repo:
+git clone git://git.debian.org/kernel/initramfs-tools.git
 
-The [^~] says to skip everything that ends in ~. Since we are just  
-looking for .sh now, we do not need it.
+initramfs-tools is an hookable initramfs generator.
+It can boot on NFS, LVM2, md, LUKS, dmraid, oldstyle devices, ..
+The generated initramfs is generic, but can explicitly be tuned for small.
+It is actively deployed in Debian and Ubuntu. It is written in POSIX shell.
+It has an "end-user" friendly invocation with update-initramfs and the low
+level mkinitramfs. klibc is used for minimal initramfs. The initramfs
+comes together with a rescue shell. It is possible to ssh into it.
+run-init nukes initramfs, remounts /root, chroots, spawns init.
 
->
-> -- 
-> -
-> Thiago Galesi
---
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It may currently be distro specific as many Debian packages ship hooks
+for it (udev, mdadm, cryptsetup, lvm2, ..). But it should be quite easy
+to make it non distro specific and fix debianism (add a rpm spec, ..).
+
+initramfs-tools is badly hit on the linux-2.6 side by races due to
+SCSI_WAIT_SCAN being implemented only in some scsi drivers and
+not at all on usb and scsi side.  willy had this patch to fix it:
+http://www.parisc-linux.org/~willy/libata-async-2.diff
+
+
+0.93 features:
+- OLPC support
+- hid_* modules addition
+- fixes for MODULES=dep high minor partitions and Xen virtual block dev
+- make deb-pkg linux-2.6 target support
+- find, cpio exit codes no longer ignored
+- fixes for LABEL strings with '/' 
+- misc cleanups
+- doc fixes
+
+
+TODO:
+- monolithical linux support
+- MODULES=dep special case raid on top of lvm
+- mawk support??
+- loopback fs support (ubuntu merge)
+- mount failure hooks (ubuntu merge)
+- fix bugs http://bugs.debian.org/src:initramfs-tools
+
+
+thanks for hacking on it, sending in patches advices or whatever.
+
+-- 
+maks
+
