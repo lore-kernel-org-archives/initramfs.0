@@ -1,42 +1,43 @@
-From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 1/1] added extention to module files
-Date: Wed, 18 Feb 2009 17:17:30 +0100
-Message-ID: <ac3eb2510902180817y380a7cddh940ba268bb46da97@mail.gmail.com>
+Date: Wed, 18 Feb 2009 13:31:47 -0300
+Message-ID: <82ecf08e0902180831k8f3fe85hc6e72b9687faa35c@mail.gmail.com>
 References: <1234960574-32612-1-git-send-email-ro@duskblue.org>
 	 <9594AD60-9303-4345-8FC6-B59FAA2C60EE@gmail.com>
 	 <82ecf08e0902180756u2e007426vdd7116c03e72925e@mail.gmail.com>
+	 <ac3eb2510902180817y380a7cddh940ba268bb46da97@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <82ecf08e0902180756u2e007426vdd7116c03e72925e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:in-reply-to:references
+         :date:message-id:subject:from:to:cc:content-type
+         :content-transfer-encoding;
+        bh=M1EvG7Ho44pYvyG9JPsQWd4UscBFALlXhuSz+aB/cA4=;
+        b=HdCJOhYHzGHgXbwWhlrz8hGu8DduhQv5oNVpa5hHZqpGVF66RZiv4n+Y5aWCkWUG6Z
+         K+I81SNXE8/0vjgdFN2vxcJpHWIuL8z302pbTxv2PiPDMk7slhQ0AEuSlifUfPoo8xlR
+         2c+QnuzlDL541UjBh53gI8Hh2g3QYVl1vSNOg=
+In-Reply-To: <ac3eb2510902180817y380a7cddh940ba268bb46da97-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
 Cc: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Wed, Feb 18, 2009 at 16:56, Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->>
->> You will also need to modify the dracut script to only source modules with
->> the .sh extension, and make sure the $dracutmodules functionality still
->> works as expected.
 >
-> Well, the current match:
->
-> # source all our modules
-> for f in "$dsrc/modules"/*[^~]; do
->
-> Worked for reading the .sh files (but not only the .sh files, of course)
->
-> However, I'm not that familiar enough to bash to adapt this match to
-> only .sh files (I tried a couple of things)
+> You mean:
+>  for f in "$dsrc/modules"/*.sh; do
+> ?
 
-You mean:
-  for f in "$dsrc/modules"/*.sh; do
-?
+Silly, silly me :)
+I was worried about the [^~] at the end , and couldn't make it work
+with the sh but, of course, *.sh does the trick
 
-Thanks,
-Kay
+
+-- 
+-
+Thiago Galesi
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
