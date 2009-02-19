@@ -1,49 +1,81 @@
-From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Subject: Fix typo in hook installation.
-Date: Thu, 19 Feb 2009 05:00:01 GMT
-Message-ID: <200902190500.n1J501Z0016337@hera.kernel.org>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Docs update
+Date: Thu, 19 Feb 2009 00:21:18 -0500
+Message-ID: <499CEC4E.6060003@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/mixed;
+ boundary="------------010803060101030207020600"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Gitweb:     http://git.kernel.org/?p=3Dlinux/kernel/git/davej/dracut.gi=
-t;a=3Dcommit;h=3D1c25acaac4f0a4a7360d61ccc76174f44aee6d60
-Commit:     1c25acaac4f0a4a7360d61ccc76174f44aee6d60
-Parent:     6b0daf2e25a1fcd270eb89dc6b36d7e4432b1ca8
-Author:     Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-AuthorDate: Wed Feb 18 13:00:59 2009 -0500
-Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-CommitDate: Wed Feb 18 13:00:59 2009 -0500
+This is a multi-part message in MIME format.
+--------------010803060101030207020600
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-    Fix typo in hook installation.
-   =20
-    Spotted by Fatih A=C5=9F=C4=B1c=C4=B1 <fatih-caicS1wCkhO6A22drWdTBw@public.gmane.org>
+Lame update to the docs is attached.  I suppose you really don't want 
+patches attached, but how can I do it in the message body without 
+thunderbird screwing up the formatting?
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+
+--------------010803060101030207020600
+Content-Type: text/x-patch;
+ name="0002-Docs-update.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="0002-Docs-update.patch"
+
+From b4fcacbbaf82670479f32b2922ca0d2993feca69 Mon Sep 17 00:00:00 2001
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date: Thu, 19 Feb 2009 00:16:19 -0500
+Subject: Docs update
+
 ---
- Makefile |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ HACKING |   23 +++++++++++++++++++++--
+ 1 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 5d48a5f..70d6782 100644
---- a/Makefile
-+++ b/Makefile
-@@ -12,7 +12,7 @@ install:
- 	install -m 0755 dracut-functions $(DESTDIR)/usr/libexec/dracut/functi=
-ons
- 	mkdir $(DESTDIR)/usr/libexec/dracut/rules.d
- 	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/us=
-r/libexec/dracut ; done
--	for hooks in hooks/* ; do install -m 0755 $$hook $(DESTDIR)/usr/libex=
-ec/dracut ; done
-+	for hook in hooks/* ; do install -m 0755 $$hook $(DESTDIR)/usr/libexe=
-c/dracut ; done
- 	for module in modules/*; do install -m 0755 $$module $(DESTDIR)/usr/l=
-ibexec/dracut ; done
- clean:
- 	rm -f *~
+diff --git a/HACKING b/HACKING
+index e9efe09..73815c1 100644
+--- a/HACKING
++++ b/HACKING
+@@ -15,7 +15,26 @@ like to customize the list of modules copied in, edit /etc/dracut.conf
+ and set
+   modules="foo bar baz"
+ 
+-
+ Requirements:
+ * udev
+-* nash (for switchroot until we get in util-linux)
++
++Manifest of Dracut Source
++=========================
++dracut
++This script generates the initramfs image.
++
++init
++This script runs during boot of the generated initramfs image.
++
++modules/
++This directory contains scriptlets that are run during initramfs generation 
++in alphanumeric filename order.
++
++hooks/
++This directory contains scriptlets to be installed in the initramfs image.
++
++Development Tips
++================
++* ./dracut -l allows you to run dracut in local mode, meaning it gets files to 
++  include from the current source directory.  This is handy to use dracut
++  without installing it, or test it directly from the source tree.
+-- 
+1.6.0.6
+
+
+--------------010803060101030207020600--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
