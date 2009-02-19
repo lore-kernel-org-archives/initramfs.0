@@ -1,81 +1,48 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Docs update
-Date: Thu, 19 Feb 2009 00:21:18 -0500
-Message-ID: <499CEC4E.6060003@redhat.com>
+From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] Docs update
+Date: Thu, 19 Feb 2009 08:41:15 -0300
+Message-ID: <82ecf08e0902190341q61e1be1dwada2ee9a6aa26067@mail.gmail.com>
+References: <499CEC4E.6060003@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------010803060101030207020600"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:in-reply-to:references
+         :date:message-id:subject:from:to:cc:content-type
+         :content-transfer-encoding;
+        bh=k+0oBk8Lxc4yJbY+ekMHnhOt2+0XylggJcYEKyVFoL4=;
+        b=w0RBzQpbzthhvkb78Z6xeL6kENs97nrp44ryj6Lli5hJHi/aibplC8Jv/6Zw8qF268
+         1pjYgKA2XNNRMgANhv6k20G1yvqxDzbacx1Qf7AVNIG0QI4TsKgL3Kk4jBMMgkaEmMvj
+         NHU/1tF853u0dw6QnlCZXq6lPyj/jJOmXBDDA=
+In-Reply-To: <499CEC4E.6060003-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This is a multi-part message in MIME format.
---------------010803060101030207020600
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+On Thu, Feb 19, 2009 at 2:21 AM, Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> Lame update to the docs is attached.  I suppose you really don't want
+> patches attached, but how can I do it in the message body without
+> thunderbird screwing up the formatting?
 
-Lame update to the docs is attached.  I suppose you really don't want 
-patches attached, but how can I do it in the message body without 
-thunderbird screwing up the formatting?
+I'm not sure about thunderbird, but I'd say use a different mailer -
+and ask around ;) But don't worry, finding the right way to do it is
+somewhat involved for those who like graphical mailers ;)
 
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+As for the patch, I would add: git address for the tree and mailing list
 
---------------010803060101030207020600
-Content-Type: text/x-patch;
- name="0002-Docs-update.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="0002-Docs-update.patch"
+>
+> Warren Togami
+> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+>
 
-From b4fcacbbaf82670479f32b2922ca0d2993feca69 Mon Sep 17 00:00:00 2001
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date: Thu, 19 Feb 2009 00:16:19 -0500
-Subject: Docs update
 
----
- HACKING |   23 +++++++++++++++++++++--
- 1 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/HACKING b/HACKING
-index e9efe09..73815c1 100644
---- a/HACKING
-+++ b/HACKING
-@@ -15,7 +15,26 @@ like to customize the list of modules copied in, edit /etc/dracut.conf
- and set
-   modules="foo bar baz"
- 
--
- Requirements:
- * udev
--* nash (for switchroot until we get in util-linux)
-+
-+Manifest of Dracut Source
-+=========================
-+dracut
-+This script generates the initramfs image.
-+
-+init
-+This script runs during boot of the generated initramfs image.
-+
-+modules/
-+This directory contains scriptlets that are run during initramfs generation 
-+in alphanumeric filename order.
-+
-+hooks/
-+This directory contains scriptlets to be installed in the initramfs image.
-+
-+Development Tips
-+================
-+* ./dracut -l allows you to run dracut in local mode, meaning it gets files to 
-+  include from the current source directory.  This is handy to use dracut
-+  without installing it, or test it directly from the source tree.
 -- 
-1.6.0.6
-
-
---------------010803060101030207020600--
+-
+Thiago Galesi
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
