@@ -1,62 +1,50 @@
-From: maximilian attems <max@stro.at>
-Subject: initramfs-tools 0.93 status report
-Date: Wed, 18 Feb 2009 23:23:33 +0100
-Message-ID: <20090218222333.GA4440@stro.at>
+From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Subject: Fix typo in hook installation.
+Date: Thu, 19 Feb 2009 05:00:01 GMT
+Message-ID: <200902190500.n1J501Z0016337@hera.kernel.org>
 Mime-Version: 1.0
-Return-path: <linux-ide-owner@vger.kernel.org>
-Content-Disposition: inline
-Sender: linux-ide-owner@vger.kernel.org
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs@vger.kernel.org
-Cc: debian-kernel@lists.debian.org, klibc@zytor.com, Matthew Wilcox <willy@linux.intel.com>, linux-ide@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Gitweb:     http://git.kernel.org/?p=3Dlinux/kernel/git/davej/dracut.gi=
+t;a=3Dcommit;h=3D1c25acaac4f0a4a7360d61ccc76174f44aee6d60
+Commit:     1c25acaac4f0a4a7360d61ccc76174f44aee6d60
+Parent:     6b0daf2e25a1fcd270eb89dc6b36d7e4432b1ca8
+Author:     Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+AuthorDate: Wed Feb 18 13:00:59 2009 -0500
+Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+CommitDate: Wed Feb 18 13:00:59 2009 -0500
 
-initramfs-tools git repo:
-git clone git://git.debian.org/kernel/initramfs-tools.git
+    Fix typo in hook installation.
+   =20
+    Spotted by Fatih A=C5=9F=C4=B1c=C4=B1 <fatih-caicS1wCkhO6A22drWdTBw@public.gmane.org>
+---
+ Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-initramfs-tools is an hookable initramfs generator.
-It can boot on NFS, LVM2, md, LUKS, dmraid, oldstyle devices, ..
-The generated initramfs is generic, but can explicitly be tuned for small.
-It is actively deployed in Debian and Ubuntu. It is written in POSIX shell.
-It has an "end-user" friendly invocation with update-initramfs and the low
-level mkinitramfs. klibc is used for minimal initramfs. The initramfs
-comes together with a rescue shell. It is possible to ssh into it.
-run-init nukes initramfs, remounts /root, chroots, spawns init.
-
-It may currently be distro specific as many Debian packages ship hooks
-for it (udev, mdadm, cryptsetup, lvm2, ..). But it should be quite easy
-to make it non distro specific and fix debianism (add a rpm spec, ..).
-
-initramfs-tools is badly hit on the linux-2.6 side by races due to
-SCSI_WAIT_SCAN being implemented only in some scsi drivers and
-not at all on usb and scsi side.  willy had this patch to fix it:
-http://www.parisc-linux.org/~willy/libata-async-2.diff
-
-
-0.93 features:
-- OLPC support
-- hid_* modules addition
-- fixes for MODULES=dep high minor partitions and Xen virtual block dev
-- make deb-pkg linux-2.6 target support
-- find, cpio exit codes no longer ignored
-- fixes for LABEL strings with '/' 
-- misc cleanups
-- doc fixes
-
-
-TODO:
-- monolithical linux support
-- MODULES=dep special case raid on top of lvm
-- mawk support??
-- loopback fs support (ubuntu merge)
-- mount failure hooks (ubuntu merge)
-- fix bugs http://bugs.debian.org/src:initramfs-tools
-
-
-thanks for hacking on it, sending in patches advices or whatever.
-
--- 
-maks
-
+diff --git a/Makefile b/Makefile
+index 5d48a5f..70d6782 100644
+--- a/Makefile
++++ b/Makefile
+@@ -12,7 +12,7 @@ install:
+ 	install -m 0755 dracut-functions $(DESTDIR)/usr/libexec/dracut/functi=
+ons
+ 	mkdir $(DESTDIR)/usr/libexec/dracut/rules.d
+ 	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/us=
+r/libexec/dracut ; done
+-	for hooks in hooks/* ; do install -m 0755 $$hook $(DESTDIR)/usr/libex=
+ec/dracut ; done
++	for hook in hooks/* ; do install -m 0755 $$hook $(DESTDIR)/usr/libexe=
+c/dracut ; done
+ 	for module in modules/*; do install -m 0755 $$module $(DESTDIR)/usr/l=
+ibexec/dracut ; done
+ clean:
+ 	rm -f *~
+--
+To unsubscribe from this list: send the line "unsubscribe initramfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
