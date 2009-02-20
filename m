@@ -1,16 +1,18 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/2] Hooks and modules have a .sh extension
-Date: Fri, 20 Feb 2009 09:24:18 -0800 (PST)
-Message-ID: <101475621c53b8698d94deb257b95ad2291f4d63.1235149680.git.victor.lowther@gmail.com>
+Subject: [PATCH 2/2] Make exec failure not kill init or switch_root.
+Date: Fri, 20 Feb 2009 09:24:26 -0800 (PST)
+Message-ID: <fddb443a2ab88c15e296d7ab9e8bab0a04887f6d.1235149680.git.victor.lowther@gmail.com>
+References: <101475621c53b8698d94deb257b95ad2291f4d63.1235149680.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:from:subject
-         :to:x-mailer;
-        bh=Sma2WrH8CH2X4onuryOwnVTPqXMaHAFD3RMUh+yHtms=;
-        b=Qke1FBFn7LhjEXCDVt9+/uXWkWfvh/tfiUx43ipGuh1l0AsbKttawC2bgNNSRBTl5O
-         HyGbcg1T7OWWxMoYxZfsjvRqUVa2G77I6r6HXOjeCRZnHAkvwUXquDUGqZtqh1nohmhx
-         TP5YtXaA4gFl1HDO2tEH4PMuB4hukvEKUVRgA=
+        h=domainkey-signature:received:received:date:message-id:in-reply-to
+         :references:from:subject:to:x-mailer;
+        bh=h4z/u6OhIUx8L+2jRriU8JnHuJGQ0+qAEB2skIJvY4s=;
+        b=sMTiJGzwtd4BKELLXYGNSc037pqAjbdZbJzfOucMgj8blWykN6fIJy4jvY7bHuEaOo
+         bLA5gCWORncar9AQ4nghwEugda1YpqLRpRtwZLhtMXpfDqgTHJPlVGlNnpIY/h6Cb//W
+         w+/MNx3zqE1Q/by3PdWC1InqO++m1jYH603BI=
+In-Reply-To: <101475621c53b8698d94deb257b95ad2291f4d63.1235149680.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -18,161 +20,67 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This makes it trivial to filter out temporary files, editor backups,
-package management leftovers, etc.  Thanks, Kay for the idea.
----
- Makefile                                           |    3 ++-
- README                                             |    1 +
- dracut                                             |    6 +++---
- hooks/{cryptroot => cryptroot.sh}                  |    0
- hooks/{resume => resume.sh}                        |    0
- .../{selinux-loadpolicy => selinux-loadpolicy.sh}  |    0
- init                                               |    2 +-
- modules/{00dash => 00dash.sh}                      |    0
- modules/{10redhat-i18n => 10redhat-i18n.sh}        |    0
- modules/{90crypt => 90crypt.sh}                    |    2 +-
- modules/{90kernel-modules => 90kernel-modules.sh}  |    0
- modules/{90lvm => 90lvm.sh}                        |    0
- modules/{95debug => 95debug.sh}                    |    0
- modules/{95terminfo => 95terminfo.sh}              |    0
- modules/{95udev-rules => 95udev-rules.sh}          |    0
- modules/{99base => 99base.sh}                      |    4 ++--
- 16 files changed, 10 insertions(+), 8 deletions(-)
+If exec fails, then the shell will die unless the next command
+is part of a command list. So, exec $whatever || onoes is the way to go
 
-diff --git a/Makefile b/Makefile
-index 70d6782..a0a4bc8 100644
---- a/Makefile
-+++ b/Makefile
-@@ -13,7 +13,7 @@ install:
- 	mkdir $(DESTDIR)/usr/libexec/dracut/rules.d
- 	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/usr/libexec/dracut ; done
-- 	for hook in hooks/* ; do install -m 0755 $$hook $(DESTDIR)/usr/libexec/dracut ; done
--	for module in modules/*; do install -m 0755 $$module $(DESTDIR)/usr/libexec/dracut ; done
-+ 	for hook in hooks/*.sh ; do install -m 0755 $$hook $(DESTDIR)/usr/libexec/dracut ; done
-+	for module in modules/*.sh; do install -m 0755 $$module $(DESTDIR)/usr/libexec/dracut ; done
- clean:
- 	rm -f *~
- 
-diff --git a/README b/README
-index abc282a..1c377b4 100644
---- a/README
-+++ b/README
-@@ -37,6 +37,7 @@ Some general rules for writing modules:
-  * Generator modules should have a two digit numeric prefix -- they run in
-    ascending sort order. Anything in the 90-99 range is stuff that dracut
-    relies on, so try not to break those hooks.
-+ * Generator modules and hooks must have a .sh extension. 
- 
- Also, there is an attempt to keep things as distribution-agnostic as
- possible.  Every distribution has their own tool here and it's not
-diff --git a/dracut b/dracut
-index 1378268..c00944e 100755
---- a/dracut
-+++ b/dracut
-@@ -44,7 +44,7 @@ hookdirs="pre-udev pre-mount pre-pivot"
- initdir=$(mktemp -d -t initramfs.XXXXXX)
- trap 'rm -rf "$initdir"' 0 # clean up after ourselves no matter how we die.
- 
--export initdir hookdirs rulesdir dsrc dracutmodules kmodules
-+export initdir hookdirs rulesdir dsrc dracutmodules modules
- 
- # Create some directory structure first
- for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot dev/pts; do 
-@@ -52,8 +52,8 @@ for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot dev/pts; do
- done
- 
- # source all our modules
--for f in "$dsrc/modules"/*[^~]; do
--    mod=${f##*/}; mod=${mod#[0-9][0-9]}
-+for f in "$dsrc/modules"/*.sh; do
-+    mod=${f##*/}; mod=${mod#[0-9][0-9]}; mod=${mod%.sh}
-     if [[ $dracutmodules = all ]] || strstr "$dracutmodules" "$mod"; then 
- 	[[ -x $f ]] && . "$f"
-     fi
-diff --git a/hooks/cryptroot b/hooks/cryptroot.sh
-similarity index 100%
-rename from hooks/cryptroot
-rename to hooks/cryptroot.sh
-diff --git a/hooks/resume b/hooks/resume.sh
-similarity index 100%
-rename from hooks/resume
-rename to hooks/resume.sh
-diff --git a/hooks/selinux-loadpolicy b/hooks/selinux-loadpolicy.sh
-similarity index 100%
-rename from hooks/selinux-loadpolicy
-rename to hooks/selinux-loadpolicy.sh
+There are also some minor cleanups that were leftovers from splitting
+out switch_root in its current form.
+---
+ init        |   16 ++++++++--------
+ switch_root |    5 ++---
+ 2 files changed, 10 insertions(+), 11 deletions(-)
+
 diff --git a/init b/init
-index ad6c06f..06689a6 100755
+index 06689a6..358ef02 100755
 --- a/init
 +++ b/init
-@@ -24,7 +24,7 @@ getarg() {
- source_all() {
-     local f
-     [ "$1" ] && [  -d "/$1" ] || return
--    for f in "/$1"/*; do [ -f "$f" ] && . "$f"; done
-+    for f in "/$1"/*.sh; do [ -f "$f" ] && . "$f"; done
+@@ -57,7 +57,7 @@ udevd --daemon
+ udevadm trigger >/dev/null 2>&1
+ 
+ # mount the rootfs
+-export NEWROOT="/sysroot"
++NEWROOT="/sysroot"
+ 
+ # FIXME: there's got to be a better way ...
+ # it'd be nice if we had a udev rule that just did all of the bits for
+@@ -96,10 +96,10 @@ INIT=$(getarg init)
  }
+ 	    
+ source_all pre-pivot
+-
+-exec switch_root "$NEWROOT" "$INIT"  $CMDLINE
+-# davej doesn't like initrd bugs
+-echo "Something went very badly wrong in the initrd.  Please "
+-echo "file a bug against mkinitrd."
+-sleep 100d
+-exit 1
++echo "Switching to real root filesystem $root"
++exec switch_root "$NEWROOT" "$INIT"  $CMDLINE || {
++    # davej doesn't like initrd bugs
++    echo "Something went very badly wrong in the initrd.  Please "
++    echo "file a bug against mkinitrd."
++    emergency_shell
++}
+diff --git a/switch_root b/switch_root
+index 1cc80e9..d142e97 100755
+--- a/switch_root
++++ b/switch_root
+@@ -72,7 +72,6 @@ update_newroot_libpath
  
- echo "Starting initrd..."
-diff --git a/modules/00dash b/modules/00dash.sh
-similarity index 100%
-rename from modules/00dash
-rename to modules/00dash.sh
-diff --git a/modules/10redhat-i18n b/modules/10redhat-i18n.sh
-similarity index 100%
-rename from modules/10redhat-i18n
-rename to modules/10redhat-i18n.sh
-diff --git a/modules/90crypt b/modules/90crypt.sh
-similarity index 58%
-rename from modules/90crypt
-rename to modules/90crypt.sh
-index 66d7e70..9793a4f 100755
---- a/modules/90crypt
-+++ b/modules/90crypt.sh
-@@ -1,4 +1,4 @@
- #!/bin/bash
- inst cryptsetup
- inst_rules "$dsrc/rules.d/63-luks.rules"
--inst_hook pre-mount 50 "$dsrc/hooks/cryptroot"
-\ No newline at end of file
-+inst_hook pre-mount 50 "$dsrc/hooks/cryptroot.sh"
-\ No newline at end of file
-diff --git a/modules/90kernel-modules b/modules/90kernel-modules.sh
-similarity index 100%
-rename from modules/90kernel-modules
-rename to modules/90kernel-modules.sh
-diff --git a/modules/90lvm b/modules/90lvm.sh
-similarity index 100%
-rename from modules/90lvm
-rename to modules/90lvm.sh
-diff --git a/modules/95debug b/modules/95debug.sh
-similarity index 100%
-rename from modules/95debug
-rename to modules/95debug.sh
-diff --git a/modules/95terminfo b/modules/95terminfo.sh
-similarity index 100%
-rename from modules/95terminfo
-rename to modules/95terminfo.sh
-diff --git a/modules/95udev-rules b/modules/95udev-rules.sh
-similarity index 100%
-rename from modules/95udev-rules
-rename to modules/95udev-rules.sh
-diff --git a/modules/99base b/modules/99base.sh
-similarity index 63%
-rename from modules/99base
-rename to modules/99base.sh
-index 4963beb..1d9f86e 100755
---- a/modules/99base
-+++ b/modules/99base.sh
-@@ -3,6 +3,6 @@ dracut_install mount mknod mkdir modprobe pidof sleep chroot echo sed sh ls
- # install our scripts and hooks
- inst "$initfile" "/init"
- inst "$switchroot" "/sbin/switch_root"
--inst_hook pre-pivot 50 "$dsrc/hooks/selinux-loadpolicy"
--inst_hook pre-mount 99 "$dsrc/hooks/resume"
-+inst_hook pre-pivot 50 "$dsrc/hooks/selinux-loadpolicy.sh"
-+inst_hook pre-mount 99 "$dsrc/hooks/resume.sh"
- 
+ # start looking for required binaries and bits of infrastructure
+ BINDIRS="/bin /sbin /usr/bin /usr/sbin"
+-INITDIRS="/sbin /etc /"
+ RM=$(simple_find rm $BINDIRS) || die "Cannnot find rm on $NEWROOT"
+ CHROOT=$(simple_find chroot $BINDIRS) || die "Cannot find chroot on $NEWROOT"
+ LDD=$(simple_find ldd $BINDIRS) || die "Cannot find ldd on $NEWROOT"
+@@ -108,5 +107,5 @@ run_from_newroot "$MOUNT_LDSO" "$MOUNT" -n --move . /
+ # exec init.
+ NEWROOT="."
+ update_newroot_libpath
+-run_from_newroot "$CHROOT_LDSO" exec "$CHROOT" "$NEWROOT" "$INIT" "$@"
+-die "The chroot did not take for some reason"
++run_from_newroot "$CHROOT_LDSO" exec "$CHROOT" "$NEWROOT" "$INIT" "$@" || \
++    die "The chroot did not take for some reason"
 -- 
 1.6.0.6
 
