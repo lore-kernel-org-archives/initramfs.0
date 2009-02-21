@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/5] Support rootflags and rootfstype kernel parameters.
-Date: Sat, 21 Feb 2009 08:24:35 -0800 (PST)
-Message-ID: <549916f6823fb95dc12fbee9cd5a23f91b422e80.1235233199.git.victor.lowther@gmail.com>
+Subject: [PATCH 5/5] Make cryptroot handling act as a real producer/consumer.
+Date: Sat, 21 Feb 2009 08:24:39 -0800 (PST)
+Message-ID: <defe067eb37529f2a4844eded3e188e04928230a.1235233199.git.victor.lowther@gmail.com>
 References: <68c572a7f9fd38b23b15f8f022be29026f0d9485.1235233199.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=1RXGw8airQQeKrtWPPy/UBOhW8GkKBZ14BcDXaM70p0=;
-        b=M0qYrnoJfs215vMMiZm6XIiCgGDxIv3FD/HSuoc5/mFiAxiPxiykwag7X11Ff/cXpN
-         hXpwVYbpuiUluUuK5CfGcdU8uoysIbnIhohonHwjAd/kGEdm/uxYKpFUXibpPfslNyCJ
-         07SjkXXCuz8OR2A0dvkXxjgdBTlJE6iZ0S0o8=
+        bh=E6Qm/MFVbpr5mID87URF071hx3vGbn4tpYCtOOHDnPo=;
+        b=vngMOxHnSIoIAFSf0VMRikw6enmn19GPgz6XGL1tZH73Eht45vOa9AKrm5jpLRCNnH
+         h87NKgxGG6hzz9owIAmDevwImskB9BeKl2sdAgar2q0H40Il9tpr7Z/k+xOFkwYhY16Q
+         7tGiGL63lXfsHSBh+5BkL4M15MLmzb1lLNGaE=
 In-Reply-To: <68c572a7f9fd38b23b15f8f022be29026f0d9485.1235233199.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,35 +20,45 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This also folds in support for ro and rw flags.
----
- init |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
+This should handle the case of having more than one encrypted
+block device on the system as best we can right now.
 
-diff --git a/init b/init
-index 7b0c61b..581c2b9 100755
---- a/init
-+++ b/init
-@@ -79,10 +79,16 @@ udevadm settle --timeout=30
- source_all pre-mount
+---
+ hooks/cryptroot.sh    |   11 +++++++----
+ rules.d/63-luks.rules |    2 +-
+ 2 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/hooks/cryptroot.sh b/hooks/cryptroot.sh
+index 0664f24..739f5d3 100755
+--- a/hooks/cryptroot.sh
++++ b/hooks/cryptroot.sh
+@@ -1,7 +1,10 @@
+ #!/bin/sh
+-[ -f /cryptroot ] && { 
+-    echo "Encrypted root detected."
+-    read cryptopts </cryptroot
+-    /sbin/cryptsetup luksOpen $cryptopts || emergency_shell
++[ -s /cryptroot ] && { 
++    udevadm control --stop_exec_queue
++    while read cryptopts; do
++	/sbin/cryptsetup luksOpen $cryptopts
++    done </cryptroot
++    >/cryptroot
++    udevadm control --start_exec_queue
+     udevadm settle --timeout=30
+ }
+diff --git a/rules.d/63-luks.rules b/rules.d/63-luks.rules
+index 4d6a379..802ea06 100644
+--- a/rules.d/63-luks.rules
++++ b/rules.d/63-luks.rules
+@@ -8,6 +8,6 @@ SUBSYSTEM!="block", GOTO="luks_end"
+ ACTION!="add|change", GOTO="luks_end"
  
- echo "Trying to mount rootfs $root"
--rwopt="$(getarg rw)" || rwopt="ro"
-+if rflags="$(getarg rootflags)"; then
-+    rflags="${rflags#rootflags=}"
-+    getarg rw >/dev/null && rflags="${rflags},rw" || rflags="${rflags},ro"
-+else
-+     getarg rw >/dev/null && rflags=rw || rflags=ro
-+fi
- [ -e "$root" ] || emergency_shell
--ln -s "$root" /dev/root    
--mount -o $rwopt /dev/root $NEWROOT || emergency_shell
-+ln -s "$root" /dev/root 
-+fstype="$(getarg rootfstype)" && fstype="-t ${fstype#rootfstype=}" 
-+mount $fstype -o $rflags /dev/root $NEWROOT || emergency_shell
+ KERNEL!="sr*", IMPORT{program}="vol_id --export $tempnode"
+-ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/bin/sh -c 'echo $env{DEVNAME} luks-$env{ID_FS_UUID} >/cryptroot'"
++ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/bin/sh -c 'echo $env{DEVNAME} luks-$env{ID_FS_UUID} >>/cryptroot'"
  
- INIT=$(getarg init)
- [ "$INIT" ] || {
+ LABEL="luks_end"
 -- 
 1.6.0.6
 
