@@ -1,16 +1,18 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/5] tiny fixup to getarg to make handling more arguments slightly easier
-Date: Sat, 21 Feb 2009 08:24:20 -0800 (PST)
-Message-ID: <68c572a7f9fd38b23b15f8f022be29026f0d9485.1235233199.git.victor.lowther@gmail.com>
+Subject: [PATCH 2/5] We now support the noresume kernel parameter.
+Date: Sat, 21 Feb 2009 08:24:25 -0800 (PST)
+Message-ID: <a2c9a882aadd2b2671c7264a6962a521f1c0704d.1235233199.git.victor.lowther@gmail.com>
+References: <68c572a7f9fd38b23b15f8f022be29026f0d9485.1235233199.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:from:subject
-         :to:x-mailer;
-        bh=qj6fPvoge16W0DpSx4OVmTczYB7ZWTV0jx8ZwIPKbV8=;
-        b=fpj7pYeDemWOKR6qs+v+vHxoffh5OTe+YrSSKJIxwxXeekB2YSUkL9A0BGlpzW2oUt
-         +OfLKwmCTPir4zgM+L2WA/pojV3Rq/SDzSWHf7x6Nqgt7qOq+8QiybPejMe+XLhjImKs
-         /43IEQFryEEYPcgeP+CaBwaQ/BMNOORPeU7qI=
+        h=domainkey-signature:received:received:date:message-id:in-reply-to
+         :references:from:subject:to:x-mailer;
+        bh=GIXsX7MN6A5lD6MGlsRgTdlPuz7XKaNUasqAA1WVu8g=;
+        b=Ks16T3AstYxjwpcAQctlliiyA4e/sfp3OX/TLQA643pQVBLDBGCeyUntC6FmygOhLb
+         QBVeXNAY98Y7V97TwIUxtOg9euYqmQUg/rQs5bek3ThLm7vkr+PS09rS/piEvFpiFv5z
+         985yjwl/6m43ruRCVPetxnMpEz61V1tHoV/UA=
+In-Reply-To: <68c572a7f9fd38b23b15f8f022be29026f0d9485.1235233199.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -18,29 +20,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This patch series adds support for some common mount arguments that have to be
-handled in the initramfs.
-
-It is also available at
-http://git.fnordovax.org/dracut/log/?h=handle-more-parameters
-
 ---
- init |    2 +-
+ hooks/resume.sh |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/init b/init
-index 358ef02..ee1123c 100755
---- a/init
-+++ b/init
-@@ -16,7 +16,7 @@ emergency_shell()
- getarg() {
-     local o line
-     for o in $CMDLINE; do
--	[ "${o%%=*}" = "$1" ] && { echo $o; break; }
-+	[ "${o%%=*}" = "$1" ] && { echo $o; return 0; }
-     done
-     return 1
- }
+diff --git a/hooks/resume.sh b/hooks/resume.sh
+index 4f1d6c3..619d634 100755
+--- a/hooks/resume.sh
++++ b/hooks/resume.sh
+@@ -1,5 +1,5 @@
+ #!/bin/sh
+-resume=$(getarg resume) && {
++resume=$(getarg resume) && [ "$(getarg noresume)" = "" ] && {
+     resume=${resume#resume=}
+     [ -b "$resume" ] && {
+         # parsing the output of ls is Bad, but until there is a better way...
 -- 
 1.6.0.6
 
