@@ -1,76 +1,67 @@
-From: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Hooks and modules have a .sh extension
-Date: Mon, 23 Feb 2009 13:28:57 -0500
-Message-ID: <20090223182857.GA30637@redhat.com>
-References: <101475621c53b8698d94deb257b95ad2291f4d63.1235149680.git.victor.lowther@gmail.com>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its
+ own series of hooks.
+Date: Mon, 23 Feb 2009 15:07:27 -0500
+Message-ID: <49A301FF.2090303@redhat.com>
+References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <101475621c53b8698d94deb257b95ad2291f4d63.1235149680.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, Feb 20, 2009 at 09:24:18AM -0800, Victor Lowther wrote:
- > This makes it trivial to filter out temporary files, editor backups,
- > package management leftovers, etc.  Thanks, Kay for the idea.
+Hi Victor,
 
-I had to munge this to apply it..
- 
- > --- a/Makefile
- > +++ b/Makefile
- > @@ -13,7 +13,7 @@ install:
- >  	mkdir $(DESTDIR)/usr/libexec/dracut/rules.d
- >  	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/usr/libexec/dracut ; done
- > - 	for hook in hooks/* ; do install -m 0755 $$hook $(DESTDIR)/usr/libexec/dracut ; done
- > -	for module in modules/*; do install -m 0755 $$module $(DESTDIR)/usr/libexec/dracut ; done
- > + 	for hook in hooks/*.sh ; do install -m 0755 $$hook $(DESTDIR)/usr/libexec/dracut ; done
- > +	for module in modules/*.sh; do install -m 0755 $$module $(DESTDIR)/usr/libexec/dracut ; done
- 
-Your copy had those lines beginning space-tab, whereas the git repo was just a tab.
-I fixed it up and it applied.
+I didn't test this patch yet, but I need this kind of structure in orde=
+r=20
+to implement different kinds of netboot.
 
-Then I tried applying your other patches, and I'm suspecting something similar may have
-happened..
+root=3Ddhcp is a kernel cmdline given by the bootloader (syslinux, grub=
+,=20
+pxelinux, etc.) which directs the initrd during runtime to bring up eth=
+0=20
+and do DHCP.  It then mounts the rootfs depending on options given by=20
+the DHCP server.  Fedora 10 mkinitrd implements the following two types=
+=20
+of mounts with root=3Ddhcp.
 
+         option root-path "172.31.100.254:/path/to/target_root";
+         option root-path "nbd:172.31.100.254:2000:squashfs:ro";
 
-Applying: Hooks and modules have a .sh extension
-/home/davej/dracut/.git/rebase-apply/patch:42: trailing whitespace.
- * Generator modules and hooks must have a .sh extension. 
-warning: 1 line adds whitespace errors.
-Applying: Make exec failure not kill init or switch_root.
-Applying: tiny fixup to getarg to make handling more arguments slightly easier
-Applying: We now support the noresume kernel parameter.
-Applying: We now support mounting the rootfs rw.
-Applying: Support rootflags and rootfstype kernel parameters.
-/home/davej/dracut/.git/rebase-apply/patch:23: trailing whitespace.
-ln -s "$root" /dev/root 
-/home/davej/dracut/.git/rebase-apply/patch:24: trailing whitespace.
-fstype="$(getarg rootfstype)" && fstype="-t ${fstype#rootfstype=}" 
-warning: 2 lines add whitespace errors.
-Applying: Make cryptroot handling act as a real producer/consumer.
-/home/davej/dracut/.git/rebase-apply/patch:16: trailing whitespace.
-[ -s /cryptroot ] && { 
-warning: 1 line adds whitespace errors.
-Applying: cryptsetup does not like running in a while read loop.
-error: patch failed: hooks/cryptroot.sh:2
-error: hooks/cryptroot.sh: patch does not apply
-Patch failed at 0008.
-When you have resolved this problem run "git am --resolved".
-If you would prefer to skip this patch, instead run "git am --skip".
-To restore the original branch and stop patching run "git am --abort".
+An existing RFC specifies syntax for iscsi that could be implemented as=
+=20
+well.  (Although iscsi is problematic because some types require=20
+authentication.)  Arbitrary types of root=3Ddhcp rootfs mounts can be=20
+implemented with hooks made possible with your patch.
 
-So, everything applied up to the cryptsetup patch.
-I'll push out what applied, and you can rediff that last bit on
-top of that, and hopefully it'll all work out.
+Generation
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+=E2=88=98 read mode from dracut.conf i.e. MODE=3Dnetwork
+=E2=88=98 if network
+	=E2=80=A3 install network modules
+	=E2=80=A3 install tools (mount.nfs, nbd, etc.)
+	=E2=80=A3 install squashfs.ko
+	=E2=80=A3 install custom udev rules to handle network
 
-	Dave
+Boot (contents of udev rule)
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D
+=E2=88=98 if root=3Ddhcp (or later hard coded network)
+	=E2=80=A3 ifup eth0
+	=E2=80=A3 dhclient
+	=E2=80=A3 parse root-path
+	=E2=80=A3 if nbd
+		=E2=80=A2 modprobe nbd
+		=E2=80=A2 nbd-client with parameters
+		=E2=80=A2 (mount rootfs)
+	=E2=80=A3 if nfs
+		=E2=80=A2 (mount rootfs)
 
--- 
-http://www.codemonkey.org.uk
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
