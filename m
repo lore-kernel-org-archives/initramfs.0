@@ -1,49 +1,46 @@
-From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its 
-	own series of hooks.
-Date: Tue, 24 Feb 2009 12:50:00 -0300
-Message-ID: <82ecf08e0902240750v5a742714n1873d36321c1312c@mail.gmail.com>
-References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>
-	 <49A301FF.2090303@redhat.com> <49A3A924.9000003@bfh.ch>
-	 <1235474964.28090.53.camel@sentry-no.fnordovax.org>
-	 <82ecf08e0902240435v5ebbb37clea8c8148ce19fa95@mail.gmail.com>
-	 <49A41618.2020807@redhat.com>
+From: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into
+	its own series of hooks.
+Date: Tue, 24 Feb 2009 13:50:35 -0500
+Message-ID: <20090224185034.GA1834@redhat.com>
+References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com> <49A301FF.2090303@redhat.com> <1235434056.28090.28.camel@sentry-no.fnordovax.org> <49A3AB75.1010805@bfh.ch> <1235475578.28090.64.camel@sentry-no.fnordovax.org> <49A3F43F.6000103@bfh.ch> <644FF96C-AAA8-4309-A3C8-B38EA1DE7C45@gmail.com> <49A414CD.8070204@bfh.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:in-reply-to:references
-         :date:message-id:subject:from:to:cc:content-type
-         :content-transfer-encoding;
-        bh=zGUweYatLykGGypB8BN9MdZ9ChmFPeRAX/YvgCLVNpc=;
-        b=HKI7W+vWcYKCbRV2u9ntNx+7dEtBlKtoqc0MNROO0aKP8JpAO6CsRjxvtQR067fsz+
-         G5kIgCW1113S4JLh35PNtdB7tW2MaVB8ABAPx1CKaljCiy2KnXZMfkBr6QD27ZVrxALl
-         E1Ba2nLYbz5Xmak1YoRf94UuP/1sxBU3g9llE=
-In-Reply-To: <49A41618.2020807-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <49A414CD.8070204-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
->> I think it is important to keep backwards compatibility in this
->> specific case, and handle "root=3D/dev/nfs" kind of stuff. Really, t=
-hink
->> about keeping 2, 3 different cmdlines depending if the system is new=
-er
->> or older. It may look like a small hassle, but getting this right
->> sometimes takes some time
+On Tuesday, February 24 2009, Seewer Philippe said:
+> Victor Lowther wrote:
+> [snip]
+>>> - 'dhclient -nw': Why are you starting the dhclient in daemon mode?  
+>>> Couldn't that pose problems when dhcp takes ages to acquire an 
+>>> adress? I mean like, we've ifup'ed all interfaces and are allready in 
+>>> the mount hooks without an ip. I guess we'd have to have a blocking  
+>>> mount-script waiting for at least one interface to be really brought  
+>>> up or spew an error message after a specific time out.
+>>
+>> I run it in daemon mode so that udev does not have to wait on it. The  
+>> dhclient-script creates a file when the interface is up, and any mounts 
+>> that depend on the network can wait for those files to appear. ifup 
+>> does the same thing with static interfaces.
 >
->
-> Who's tools handled "root=3D/dev/nfs"? =A0/dev/nfs cannot be a valid =
-dev node?
+> I don't like the asynchronousnes of this. This means we have to wait in  
+> pre-mount or mount until we have at least one interface up without any  
+> knowledge if another might come up later as well.
 
-Take a look at /Documentation/filesystems/nfsroot.txt
+The problem is that the appearance of devices *is* asynchronous and you
+have to keep things as event driven.  That's why originally everything
+was being driven off of udev rules rather than hooks.  If you start
+trying to do things in hooks and assume synchronous behavior, boot will
+be slower and you also can't have, eg, usb devices being used (usb plug
+events are always async; anything else is an illusion)
 
---=20
--
-Thiago Galesi
+Jeremy
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
