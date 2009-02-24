@@ -1,15 +1,14 @@
 From: Bogdan Costescu <Bogdan.Costescu-hEciA7+sKtudPOQpRHQ53DeJuz7u0hKX@public.gmane.org>
 Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its
  own series of hooks.
-Date: Tue, 24 Feb 2009 14:49:08 +0100 (CET)
-Message-ID: <Pine.LNX.4.64.0902241446170.22015@kenzo.iwr.uni-heidelberg.de>
+Date: Tue, 24 Feb 2009 14:40:24 +0100 (CET)
+Message-ID: <Pine.LNX.4.64.0902241430270.22015@kenzo.iwr.uni-heidelberg.de>
 References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>
-  <49A301FF.2090303@redhat.com>  <1235434056.28090.28.camel@sentry-no.fnordovax.org>
-  <49A3AB75.1010805@bfh.ch> <1235475578.28090.64.camel@sentry-no.fnordovax.org>
- <49A3F43F.6000103@bfh.ch>
+  <49A301FF.2090303@redhat.com> <1235434056.28090.28.camel@sentry-no.fnordovax.org>
+ <49A3AB75.1010805@bfh.ch>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <49A3F43F.6000103-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <49A3AB75.1010805-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: TEXT/PLAIN; charset="us-ascii"; format="flowed"
@@ -19,14 +18,26 @@ Cc: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, War
 
 On Tue, 24 Feb 2009, Seewer Philippe wrote:
 
-> - Why are you killing dhclient at the end?
+> Though I see a small problem: Ever thought about what happens if 
+> there are multiple interfaces on different networks? Only one is 
+> valid to mount the root-fs...
 
-I can see at least 2 reasons:
-- dhclient coming from the initramfs is started on that FS and should
-   not be running across the switch_root
-- to give the possibility to the actual system being booted to use its
-   own network configuration mechanism, be it also DHCP or something
-   else
+The Debian initramfs-tools documents as following here the rule from 
+the kernel's nfsroot.txt which allows an ip=... kernel command line 
+parameter which can contain the name of the device. Is this an option 
+that would fit your purpose ?
+
+From what I know, there is no automated way to get that information 
+automatically in the format described, so you'd have to maintain it, 
+possibly in a PXE config file; it's possible to find out what 
+interface was used for PXE booting when using PXELINUX with the 
+'IPAPPEND 2' option which will add a BOOTIF=mac_address to the kernel 
+command line.
+
+This might however not be enough: there could be a case where the 
+booting (via PXE) is done on a different network (and interface) than 
+the one where the root NFS is exported. I know that this sounds 
+complicated, but it has been implemented in real life ;-)
 
 -- 
 Bogdan Costescu
