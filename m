@@ -1,63 +1,48 @@
-From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Subject: Make cryptroot handling act as a real producer/consumer.
-Date: Tue, 24 Feb 2009 05:00:14 GMT
-Message-ID: <200902240500.n1O50EfO011259@hera.kernel.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its
+ own series of hooks.
+Date: Tue, 24 Feb 2009 09:00:36 +0100
+Message-ID: <49A3A924.9000003@bfh.ch>
+References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com> <49A301FF.2090303@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <49A301FF.2090303-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=5ee69f0b54d301c74553fcc0ebc360110a3d1205
-Commit:     5ee69f0b54d301c74553fcc0ebc360110a3d1205
-Parent:     9689f4c8cefc72f7d95d22d557765da9acb1f883
-Author:     Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-AuthorDate: Sat Feb 21 08:24:39 2009 -0800
-Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-CommitDate: Mon Feb 23 13:22:01 2009 -0500
+Hi all
 
-    Make cryptroot handling act as a real producer/consumer.
-    
-    This should handle the case of having more than one encrypted
-    block device on the system as best we can right now.
----
- hooks/cryptroot.sh    |   11 +++++++----
- rules.d/63-luks.rules |    2 +-
- 2 files changed, 8 insertions(+), 5 deletions(-)
+Warren Togami wrote:
+[snip]
+> root=dhcp is a kernel cmdline given by the bootloader (syslinux, grub, 
+> pxelinux, etc.) which directs the initrd during runtime to bring up eth0 
+> and do DHCP.  It then mounts the rootfs depending on options given by 
+> the DHCP server.  Fedora 10 mkinitrd implements the following two types 
+> of mounts with root=dhcp.
+> 
+>         option root-path "172.31.100.254:/path/to/target_root";
+>         option root-path "nbd:172.31.100.254:2000:squashfs:ro";
+> 
+> An existing RFC specifies syntax for iscsi that could be implemented as 
+> well.  (Although iscsi is problematic because some types require 
+> authentication.)  Arbitrary types of root=dhcp rootfs mounts can be 
+> implemented with hooks made possible with your patch.
 
-diff --git a/hooks/cryptroot.sh b/hooks/cryptroot.sh
-index 0664f24..739f5d3 100755
---- a/hooks/cryptroot.sh
-+++ b/hooks/cryptroot.sh
-@@ -1,7 +1,10 @@
- #!/bin/sh
--[ -f /cryptroot ] && { 
--    echo "Encrypted root detected."
--    read cryptopts </cryptroot
--    /sbin/cryptsetup luksOpen $cryptopts || emergency_shell
-+[ -s /cryptroot ] && { 
-+    udevadm control --stop_exec_queue
-+    while read cryptopts; do
-+	/sbin/cryptsetup luksOpen $cryptopts
-+    done </cryptroot
-+    >/cryptroot
-+    udevadm control --start_exec_queue
-     udevadm settle --timeout=30
- }
-diff --git a/rules.d/63-luks.rules b/rules.d/63-luks.rules
-index 4d6a379..802ea06 100644
---- a/rules.d/63-luks.rules
-+++ b/rules.d/63-luks.rules
-@@ -8,6 +8,6 @@ SUBSYSTEM!="block", GOTO="luks_end"
- ACTION!="add|change", GOTO="luks_end"
- 
- KERNEL!="sr*", IMPORT{program}="vol_id --export $tempnode"
--ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/bin/sh -c 'echo $env{DEVNAME} luks-$env{ID_FS_UUID} >/cryptroot'"
-+ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/bin/sh -c 'echo $env{DEVNAME} luks-$env{ID_FS_UUID} >>/cryptroot'"
- 
- LABEL="luks_end"
+A question: Why not use root=/dev/nfs and the other options according to 
+kernel doc, like nfsroot=... and ip=autoconf? For me that is much more 
+readable.
+
+Maybe even leave nfsroot-mounting to the kernel as long as that features 
+remains in the tree.
+
+I guess nbd and iscsi could go the same way like root=/dev/iscsi ...
+
+Regards,
+Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
