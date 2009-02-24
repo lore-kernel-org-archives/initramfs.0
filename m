@@ -1,73 +1,61 @@
-From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its 
-	own series of hooks.
-Date: Tue, 24 Feb 2009 09:35:54 -0300
-Message-ID: <82ecf08e0902240435v5ebbb37clea8c8148ce19fa95@mail.gmail.com>
-References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>
-	 <49A301FF.2090303@redhat.com> <49A3A924.9000003@bfh.ch>
-	 <1235474964.28090.53.camel@sentry-no.fnordovax.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its
+ own series of hooks.
+Date: Tue, 24 Feb 2009 14:21:03 +0100
+Message-ID: <49A3F43F.6000103@bfh.ch>
+References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>	 <49A301FF.2090303@redhat.com>	 <1235434056.28090.28.camel@sentry-no.fnordovax.org>	 <49A3AB75.1010805@bfh.ch> <1235475578.28090.64.camel@sentry-no.fnordovax.org>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:in-reply-to:references
-         :date:message-id:subject:from:to:cc:content-type
-         :content-transfer-encoding;
-        bh=drJup9M4VuPJn3rkW5+BeQoFgacvWNkmjyTOGaqngiE=;
-        b=FwOaB335oc/oHo3uaF489WCPm6HvbsNMd16UPNLlX8E5M6zvP82v9X60OfCHeKNnQi
-         dHQ90ylw9LAwDBzHmzEhBHELBWnUa0iDGaLgfIq5vaojI+8aWLdGHEqF//l623QzaOIU
-         h6FSLl4Y0QothD1IpYAjCyO1MIGrkBv4i7kls=
-In-Reply-To: <1235474964.28090.53.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
+In-Reply-To: <1235475578.28090.64.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
->> Warren Togami wrote:
->> >
->>
->> A question: Why not use root=3D/dev/nfs and the other options accord=
-ing to
->> kernel doc, like nfsroot=3D... and ip=3Dautoconf? For me that is muc=
-h more
->> readable.
->
-> It is a matter of taste and historical contingency, I suppose. =A0The
-> current nfsroot mounting stuff was added way before initramfs/initrd =
-was
-> an option, and it was probably easier to not mess up the in-kernel ro=
-ot=3D
-> handling code (which expected a device to mount).
-
-
-I think it is important to keep backwards compatibility in this
-specific case, and handle "root=3D/dev/nfs" kind of stuff. Really, thin=
-k
-about keeping 2, 3 different cmdlines depending if the system is newer
-or older. It may look like a small hassle, but getting this right
-sometimes takes some time
-
-Since initramfs
-> handles all that stuff now (assuming you are using it, of course), th=
-e
-> kernel neither knows nor cares about the contents of the root=3D
-> parameter, and we do not have to be bound by its restrictions. We can
-> make (for example) root=3D192.168.10.2:/my/root/path do The Right Thi=
-ng
-> and mount that as an nfs filesystem.  We would still handle the other
-> case, of course.
-
-Sometimes it does care. Even thougheverybody uses initrds today,
-theoretically we should be able to use only the kernel (think really
-tiny system, embedded systems, etc)
+Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
 
---=20
--
-Thiago Galesi
+Victor Lowther wrote:
+[snip]
+>> Though I see a small problem: Ever thought about what happens if there 
+>> are multiple interfaces on different networks? Only one is valid to 
+>> mount the root-fs... Currently I've solved that by upping each interface 
+>> and then ping-testing the nfs-server... Any better ideas?
+> 
+> My current plan was to try and mount the NFS share forever, and maybe
+> panic and die if a timeout option was passed as a kernel parameter.
+> 
+> Yes, I have thought about it, and have come to the conclusion that it is
+> one of those problems that someone who actually uses it is better
+> equipped to solve.  Writing the code to bring interfaces up and mount
+> filesystems is generic, writing code to see if servers are responding
+> depends on the environment -- the best way for me to handle it is to
+> make it dead simple for site admins to handle it.
+
+I agree, the ifup and mount should be pretty generic.
+
+Browsing through the code a bit more thorougly throws up a few questions:
+
+- 'dhclient -nw': Why are you starting the dhclient in daemon mode? 
+Couldn't that pose problems when dhcp takes ages to acquire an adress? I 
+mean like, we've ifup'ed all interfaces and are allready in the mount 
+hooks without an ip. I guess we'd have to have a blocking mount-script 
+waiting for at least one interface to be really brought up or spew an 
+error message after a specific time out.
+
+- default gw handling in dhclient-script: 'ip route add default' will 
+fail if there's already another default route (Again the case of 
+multiple interfaces). Would it be an idea not set a default route at all 
+and let a mount-script handle this?
+
+- I'd suggest adding something like if-pre-up.d, etc. Would make it easy 
+to integrate wireless and/or wpa support.
+
+- Why are you killing dhclient at the end?
+
+Thanks for the great work!
+Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
