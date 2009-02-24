@@ -1,35 +1,49 @@
-From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
-Subject: Re: Stop CC'ing everyone
-Date: Tue, 24 Feb 2009 17:13:23 +0100
-Message-ID: <ac3eb2510902240813q77030249i3177003744c14da6@mail.gmail.com>
-References: <49A410E1.7050108@redhat.com>
+From: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into its 
+	own series of hooks.
+Date: Tue, 24 Feb 2009 12:50:00 -0300
+Message-ID: <82ecf08e0902240750v5a742714n1873d36321c1312c@mail.gmail.com>
+References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>
+	 <49A301FF.2090303@redhat.com> <49A3A924.9000003@bfh.ch>
+	 <1235474964.28090.53.camel@sentry-no.fnordovax.org>
+	 <82ecf08e0902240435v5ebbb37clea8c8148ce19fa95@mail.gmail.com>
+	 <49A41618.2020807@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <49A410E1.7050108-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:in-reply-to:references
+         :date:message-id:subject:from:to:cc:content-type
+         :content-transfer-encoding;
+        bh=zGUweYatLykGGypB8BN9MdZ9ChmFPeRAX/YvgCLVNpc=;
+        b=HKI7W+vWcYKCbRV2u9ntNx+7dEtBlKtoqc0MNROO0aKP8JpAO6CsRjxvtQR067fsz+
+         G5kIgCW1113S4JLh35PNtdB7tW2MaVB8ABAPx1CKaljCiy2KnXZMfkBr6QD27ZVrxALl
+         E1Ba2nLYbz5Xmak1YoRf94UuP/1sxBU3g9llE=
+In-Reply-To: <49A41618.2020807-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="iso-8859-1"
 To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Feb 24, 2009 at 16:23, Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote=
-:
-> When you reply, could you please stop CC'ing everyone? =C2=A0I alread=
-y get one
-> copy of this delivered to initramfs-u79uwXL29TaiAVqoAR/hOA@public.gmane.org =C2=A0I don't ne=
-ed a
-> redundant copy.
+>> I think it is important to keep backwards compatibility in this
+>> specific case, and handle "root=3D/dev/nfs" kind of stuff. Really, t=
+hink
+>> about keeping 2, 3 different cmdlines depending if the system is new=
+er
+>> or older. It may look like a small hassle, but getting this right
+>> sometimes takes some time
+>
+>
+> Who's tools handled "root=3D/dev/nfs"? =A0/dev/nfs cannot be a valid =
+dev node?
 
-Not everybody in Cc: is subscribed. Also people with lots of mails
-need to distinguish mails to lists from mails addressed to them
-directly.
+Take a look at /Documentation/filesystems/nfsroot.txt
 
-If you don't like it the way it is filter on your side, but please
-don't ask people to cripple their mails.
-
-Thanks,
-Kay
+--=20
+-
+Thiago Galesi
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
