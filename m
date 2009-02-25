@@ -1,46 +1,46 @@
-From: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into
-	its own series of hooks.
-Date: Tue, 24 Feb 2009 13:50:35 -0500
-Message-ID: <20090224185034.GA1834@redhat.com>
-References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com> <49A301FF.2090303@redhat.com> <1235434056.28090.28.camel@sentry-no.fnordovax.org> <49A3AB75.1010805@bfh.ch> <1235475578.28090.64.camel@sentry-no.fnordovax.org> <49A3F43F.6000103@bfh.ch> <644FF96C-AAA8-4309-A3C8-B38EA1DE7C45@gmail.com> <49A414CD.8070204@bfh.ch>
+From: initramfs mailing list <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Subject: cryptsetup does not like running in a while read loop.
+Date: Wed, 25 Feb 2009 05:00:01 GMT
+Message-ID: <200902250500.n1P501nk006385@hera.kernel.org>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49A414CD.8070204-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tuesday, February 24 2009, Seewer Philippe said:
-> Victor Lowther wrote:
-> [snip]
->>> - 'dhclient -nw': Why are you starting the dhclient in daemon mode?  
->>> Couldn't that pose problems when dhcp takes ages to acquire an 
->>> adress? I mean like, we've ifup'ed all interfaces and are allready in 
->>> the mount hooks without an ip. I guess we'd have to have a blocking  
->>> mount-script waiting for at least one interface to be really brought  
->>> up or spew an error message after a specific time out.
->>
->> I run it in daemon mode so that udev does not have to wait on it. The  
->> dhclient-script creates a file when the interface is up, and any mounts 
->> that depend on the network can wait for those files to appear. ifup 
->> does the same thing with static interfaces.
->
-> I don't like the asynchronousnes of this. This means we have to wait in  
-> pre-mount or mount until we have at least one interface up without any  
-> knowledge if another might come up later as well.
+Gitweb:     http://git.kernel.org/?p=linux/kernel/git/davej/dracut.git;a=commit;h=19e9dd9303085d3186d86999805d1a862c61aaeb
+Commit:     19e9dd9303085d3186d86999805d1a862c61aaeb
+Parent:     5ee69f0b54d301c74553fcc0ebc360110a3d1205
+Author:     Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+AuthorDate: Sun Feb 22 00:22:36 2009 -0600
+Committer:  Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+CommitDate: Tue Feb 24 14:53:42 2009 -0500
 
-The problem is that the appearance of devices *is* asynchronous and you
-have to keep things as event driven.  That's why originally everything
-was being driven off of udev rules rather than hooks.  If you start
-trying to do things in hooks and assume synchronous behavior, boot will
-be slower and you also can't have, eg, usb devices being used (usb plug
-events are always async; anything else is an illusion)
+    cryptsetup does not like running in a while read loop.
+    
+    Add some additional manglage to ensure that stdin/stdout is always pointing
+    the right thing.  A more elegant way of doing this would be much appreciated
+---
+ hooks/cryptroot.sh |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-Jeremy
+diff --git a/hooks/cryptroot.sh b/hooks/cryptroot.sh
+index 739f5d3..1bcc68f 100755
+--- a/hooks/cryptroot.sh
++++ b/hooks/cryptroot.sh
+@@ -2,7 +2,9 @@
+ [ -s /cryptroot ] && { 
+     udevadm control --stop_exec_queue
+     while read cryptopts; do
+-	/sbin/cryptsetup luksOpen $cryptopts
++       (   exec >/dev/console 2>&1 </dev/console
++           /sbin/cryptsetup luksOpen $cryptopts || emergency_shell
++       )
+     done </cryptroot
+     >/cryptroot
+     udevadm control --start_exec_queue
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
