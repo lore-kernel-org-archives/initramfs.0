@@ -1,44 +1,64 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 5/5] Do not run dhclient if the interface is already up.
-Date: Wed, 25 Feb 2009 18:42:14 -0800 (PST)
-Message-ID: <50f00b90b439c4a33db0dda1f9d29c9e4205a499.1235615754.git.victor.lowther@gmail.com>
-References: <cd38313900d1086b09e2d4279e2fed2df5bf46ec.1235615754.git.victor.lowther@gmail.com>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/4] Move actually mounting the root filesystem into
+	its own series of hooks.
+Date: Thu, 26 Feb 2009 13:20:22 +0100
+Message-ID: <20090226122022.GA6639@nb.net.home>
+References: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1235615253.git.victor.lowther@gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:in-reply-to
-         :references:from:subject:to:x-mailer;
-        bh=DiKE0otKndsg3KLrEiN+czHR6PZTp1PUWoYSinFC/r4=;
-        b=SyD6Vm85Ucf7hxQy7R/Hre4Ci9McG6mZSrA7wXUL99cfaLi8kqmhoxePtEsOcBu4LN
-         QCC24d/Ln3m5q1pfE2+6Gvu3B9mWpzGQSa7YVMcW9CzYkkiR9GBf+HlOd0OilnVQqLjW
-         EoV5doxJqlo/ZnjXhdE5s0gamvwjCXkSVzRK4=
-In-Reply-To: <cd38313900d1086b09e2d4279e2fed2df5bf46ec.1235615754.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1235615253.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
 
----
- hooks/run-dhclient.sh |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+On Wed, Feb 25, 2009 at 06:32:36PM -0800, Victor Lowther wrote:
+> We now have mount hooks.  They are sourced in an infinite loop until one of
+> them actually mounts the real root filesystem.
+> 
+> This makes it easier to add support for arbitrarily complex schemes to find
+> the root filesystem without having to patch the init script.
+> 
+> This patch series is also avaialble ass the hookify-finding-root branch at 
+> http://git.fnordovax.org/dracut
+> 
+> ---
+>  hooks/mount-partition.sh |   30 ++++++++++++++++++++++++++++
+>  init                     |   49 ++++++++++++++++-----------------------------
+>  modules/90crypt.sh       |    2 +-
+>  modules/99base.sh        |    4 +-
+>  4 files changed, 51 insertions(+), 34 deletions(-)
+> 
+> diff --git a/hooks/mount-partition.sh b/hooks/mount-partition.sh
+> new file mode 100755
+> index 0000000..53a0f4c
+> --- /dev/null
+> +++ b/hooks/mount-partition.sh
+> @@ -0,0 +1,30 @@
+> +#!/bin/sh
+> +[ "$root" ] || {
+> +    root=$(getarg root); root=${root#root=}
+> +    case $root in
+> +	LABEL=*) root=${root#LABEL=}
+> +            root="$(echo $root |sed 's,/,\\x2f,g')"
+> +            root="/dev/disk/by-label/${root}" ;;
 
-diff --git a/hooks/run-dhclient.sh b/hooks/run-dhclient.sh
-index fcf890e..afab037 100755
---- a/hooks/run-dhclient.sh
-+++ b/hooks/run-dhclient.sh
-@@ -1,6 +1,7 @@
- #!/bin/sh
- for i in /net.*.dhcp; do
-     dev=${i#net.}; dev=${i%.dhcp}
-+    [ -f "/net.$dev.up" ] && continue
-     dhclient -1 -q $dev &
- done
- wait
+ Note that this is probably not a proper way how to encode a label
+ string. I guess that LABEL= option (e.g. from grub.conf) is in human
+ readable format (like in /etc/fstab). The mount(8) also supports
+ quoted LABELs and UUIDs (e.g. LABEL="foo").
+
+ Currently we don't have a command line util that supports all these
+ features, the problem should be fixed in the next util-linux-ng
+ release by blkid(8).
+ 
+    Karel
+
 -- 
-1.6.0.6
-
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
