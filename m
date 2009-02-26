@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/5] Save any dhcp options we did not handle to net.$interface.dhcpopts
-Date: Wed, 25 Feb 2009 18:42:09 -0800 (PST)
-Message-ID: <4db8e4b16862ff81949349fc956f713b4fb16f28.1235615754.git.victor.lowther@gmail.com>
+Subject: [PATCH 4/5] Move running dhclient on DHCP interfaces into a pre-mount hook.
+Date: Wed, 25 Feb 2009 18:42:11 -0800 (PST)
+Message-ID: <655430d76f2abb69c088c4cb9f52d96c821b9aaa.1235615754.git.victor.lowther@gmail.com>
 References: <cd38313900d1086b09e2d4279e2fed2df5bf46ec.1235615754.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=IKCUxCPYHW3nEA4Lt/3w5jNZPZodHjusrW9gF42+NtU=;
-        b=QtPCfQYO5b/T2JwKN03B2Vp6TTDzpRdqWSGx0Ls7F590oBMJKNEm/7R5dVX8FGTTPG
-         DQbxzrnbxzmXcVkkA/56+vP0wBNtsyihkigIit7B5xJ5mk4JT/r9LHWQDtt8RcK/matE
-         9OxKPHCfN6XqIhHA5wRv3dGlrlfCcIFPoNSDs=
+        bh=gWGwooXfcegtBvgvznxJEeLfRrTDGu/VrvJBBFGfXFM=;
+        b=nwll28wQKwpbBWNNt9pEOXFZuQAuqg67xnE9V5t4VRNmFSg5cfuwxFg0hCp5yIT5Tv
+         5YCDLTBha5FKY1mMwI2lRHCwPjoDYaWierNVM+ZL3s0WwD3A5Lnj+jPaaeGvKOAQHgG/
+         Mu1sM6Sa4CYJpc6J6T7BFwMxsHwzqZ47PTR6o=
 In-Reply-To: <cd38313900d1086b09e2d4279e2fed2df5bf46ec.1235615754.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,22 +20,88 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Static interfaces are still configured on the fly as we add them, but
+discussions on the mailing list have suggested that we need to have finer
+control over bringing up dhcp interfaces.
+
+The default hook just runs all the requested dhclients in parallel and waits
+for them to all return.  If you need something more complicated than this, or
+need to have more control over bringing interfaces up, you will probably need
+to override some stuff in the 40network hook.
 ---
- dhclient-script |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ dhclient-script        |    4 +++-
+ hooks/run-dhclient.sh  |    7 +++++++
+ ifup                   |    5 ++---
+ modules/40network.sh   |    1 +
+ 4 files changed, 13 insertions(+), 4 deletions(-)
 
 diff --git a/dhclient-script b/dhclient-script
-index dce9878..5a2c66b 100755
+index 5a2c66b..dc2d9e1 100755
 --- a/dhclient-script
 +++ b/dhclient-script
-@@ -19,6 +19,7 @@ case $reason in
+@@ -19,7 +19,9 @@ case $reason in
  	for s in $new_domain_name_servers; do
  	    echo "nameserver $s" >> /etc/resolv.conf
  	done
-+	set |grep -e '^new_[a-z_]=' >/net.$interface.dhcpopts
+-	set |grep -e '^new_[a-z_]=' >/net.$interface.dhcpopts
++	set |grep -e '^new_[a-z_]=' |while read line; do
++	    echo "${line%%=*}=\'${line#*=}\'">>/net.$interface.dhcpopts
++	done
  	>/net.$interface.up ;;
      *) ;;
  esac
+diff --git a/hooks/kill-dhclient.sh b/hooks/kill-dhclient.sh
+old mode 100644
+new mode 100755
+diff --git a/hooks/run-dhclient.sh b/hooks/run-dhclient.sh
+new file mode 100755
+index 0000000..fcf890e
+--- /dev/null
++++ b/hooks/run-dhclient.sh
+@@ -0,0 +1,7 @@
++#!/bin/sh
++for i in /net.*.dhcp; do
++    dev=${i#net.}; dev=${i%.dhcp}
++    dhclient -1 -q $dev &
++done
++wait
++    
+\ No newline at end of file
+diff --git a/ifup b/ifup
+index 79607db..83f6522 100755
+--- a/ifup
++++ b/ifup
+@@ -1,5 +1,4 @@
+ #!/bin/sh
+->/net.$1
+ 
+ # loopback is always handled the same way
+ [ "$1" = "lo" ] && {
+@@ -14,13 +13,13 @@ for p in $(cat /proc/cmdline); do
+     p=${p#ip=}
+     case $p in
+ 	none|off) exit 0;; # we were told to not configure anything
+-	dhcp|on|any) dhclient -nw "$1"; exit 0;; 
++	dhcp|on|any) >/net.$1.dhcp; exit 0;; 
+ 	bootp|rarp|both) exit 0;; #dunno how to do this
+ 	*) echo ${ip#ip=} | \
+ 	    (IFS=':' read client server gw netmask hostname device autoconf
+ 		if [ -z "$device" -o "$device" = "$1"  ]; then
+ 		    case $autoconf in
+-			dhcp|on|any) dhclient -nw "$1";;
++			dhcp|on|any) >/net.$1.dhcp ;;
+ 			none|off|'') # do some basic configuration
+ 			    ip link set $1 up
+ 			    ip addr add $client/$netmask dev $1
+diff --git a/modules/40network.sh b/modules/40network.sh
+index 3def154..b477a9c 100755
+--- a/modules/40network.sh
++++ b/modules/40network.sh
+@@ -5,3 +5,4 @@ inst "$dsrc/dhclient-script" "/sbin/dhclient-script"
+ instmods =networking ecb arc4
+ inst_rules "$dsrc/rules.d/60-net.rules"
+ inst_hook pre-pivot 10 "$dsrc/hooks/kill-dhclient.sh"
++inst_hook pre-mount 70 "$dsrc/hooks/run-dhclient.sh"
 -- 
 1.6.0.6
 
