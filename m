@@ -1,57 +1,177 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH] Move actually mounting the root filesystem into
- its own series of hooks.
-Date: Wed, 25 Feb 2009 06:13:55 -0600
-Message-ID: <1235564035.28090.69.camel@sentry-no.fnordovax.org>
-References: <3188506a1f06de54ee7874fc45261f5c2faf9e79.1235283966.git.victor.lowther@gmail.com>
-	 <49A301FF.2090303@redhat.com>
-	 <1235434056.28090.28.camel@sentry-no.fnordovax.org>
-	 <49A3AB75.1010805@bfh.ch>
-	 <1235475578.28090.64.camel@sentry-no.fnordovax.org>
-	 <49A3F43F.6000103@bfh.ch> <644FF96C-AAA8-4309-A3C8-B38EA1DE7C45@gmail.com>
-	 <49A414CD.8070204@bfh.ch>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Subject: [PATCH 1/4] Move actually mounting the root filesystem into its own series of hooks.
+Date: Wed, 25 Feb 2009 18:32:36 -0800 (PST)
+Message-ID: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1235615253.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:date:message-id:mime-version
-         :x-mailer:content-transfer-encoding;
-        bh=kjRFMsG8WkxWKPFrFjuBrI7TmpVwkejVgzzz3kwLEkI=;
-        b=NkKdEbpGuHs/2RqAVLuQ1B8VZswAklfguDd6MjO/mECB47N3nkkkq8jnd6t7pBUs1R
-         Vpv8BH6225YINnx6LMnyu330lhlulGLIBoJw99YnjlWPjmoE+GAO9nq9EaZx6nSJMAO5
-         uO83Yg00nGkAjQ9wXR76uzOOoa+Lfn+JwDNPk=
-In-Reply-To: <49A414CD.8070204-omB+W0Dpw2o@public.gmane.org>
+        h=domainkey-signature:received:received:date:message-id:from:subject
+         :to:x-mailer;
+        bh=6EO1prAPIfqzcoTGst/+/ROjK/B+BbIBX42sOodkgvU=;
+        b=rIyT+URQ7Hgqq0omBNud8EM3MyugdDZp1arFcbj4RoXLr47THAFBuOKypzhuytWpf5
+         cFSzEIScG031Ngm4/XYA3I8eMVWF6E9VwgnnbLhYXlf9q6JJCq7j7I7+RR82NwqavSWH
+         gMfgEA5S6UYVoFonJSDe71iPsSnV279v341no=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, 2009-02-24 at 16:39 +0100, Seewer Philippe wrote:
-> 
-> Victor Lowther wrote:
-> > I run it in daemon mode so that udev does not have to wait on it. The 
-> > dhclient-script creates a file when the interface is up, and any mounts 
-> > that depend on the network can wait for those files to appear. ifup does 
-> > the same thing with static interfaces.
-> 
-> I don't like the asynchronousnes of this. This means we have to wait in 
-> pre-mount or mount until we have at least one interface up without any 
-> knowledge if another might come up later as well.
+We now have mount hooks.  They are sourced in an infinite loop until one of
+them actually mounts the real root filesystem.
 
-OK, the latest change moves handling interfaces that we requested DHCP
-on into a pre-mount hook, and the dhclient-script now saves all the
-options it got from the server into a file that should be sourceable
-(although I have not tested that yet).  Interfaces with static
-assignments are still handled on the fly as we find them.  Is this
-something that is more easily customizable to your requirements?
+This makes it easier to add support for arbitrarily complex schemes to find
+the root filesystem without having to patch the init script.
 
+This patch series is also avaialble ass the hookify-finding-root branch at 
+http://git.fnordovax.org/dracut
+
+---
+ hooks/mount-partition.sh |   30 ++++++++++++++++++++++++++++
+ init                     |   49 ++++++++++++++++-----------------------------
+ modules/90crypt.sh       |    2 +-
+ modules/99base.sh        |    4 +-
+ 4 files changed, 51 insertions(+), 34 deletions(-)
+
+diff --git a/hooks/mount-partition.sh b/hooks/mount-partition.sh
+new file mode 100755
+index 0000000..53a0f4c
+--- /dev/null
++++ b/hooks/mount-partition.sh
+@@ -0,0 +1,30 @@
++#!/bin/sh
++[ "$root" ] || {
++    root=$(getarg root); root=${root#root=}
++    case $root in
++	LABEL=*) root=${root#LABEL=}
++            root="$(echo $root |sed 's,/,\\x2f,g')"
++            root="/dev/disk/by-label/${root}" ;;
++        UUID=*) root="/dev/disk/by-uuid/${root#UUID=}" ;;
++        '') echo "Warning: no root specified"
++            root="/dev/sda1" ;;
++    esac
++}
++
++[ "$rflags" ] || {
++    if rflags="$(getarg rootflags)"; then
++	rflags="${rflags#rootflags=}"
++	getarg rw >/dev/null && rflags="${rflags},rw" || rflags="${rflags},ro"
++    else
++	getarg rw >/dev/null && rflags=rw || rflags=ro
++    fi
++}
++
++[ "$fstype" ] || {
++    fstype="$(getarg rootfstype)" && fstype="-t ${fstype#rootfstype=}"
++}
++
++[ -e "$root" ] && {
++    ln -sf "$root" /dev/root
++    mount $fstype -o $rflags /dev/root $NEWROOT && ROOTFS_MOUNTED=yes
++}
+diff --git a/init b/init
+index 581c2b9..3652216 100755
+--- a/init
++++ b/init
+@@ -50,45 +50,31 @@ mknod /dev/tty0 c 4 0
+ mknod /dev/tty1 c 4 1
+ mknod /dev/null c 1 3
+ 
++# pre-udev scripts run before udev starts, and are run only once.
+ source_all pre-udev
+ 
+ # start up udev and trigger cold plugs
+ udevd --daemon
+ udevadm trigger >/dev/null 2>&1
++udevadm settle --timeout=30
+ 
+-# mount the rootfs
+ NEWROOT="/sysroot"
+-
+-# FIXME: there's got to be a better way ...
+-# it'd be nice if we had a udev rule that just did all of the bits for
+-# figuring out what the specified root is and linking it /dev/root
+-root=$(getarg root); root=${root#root=}
+-case $root in
+-    LABEL=*) root=${root#LABEL=}
+-             root="$(echo $root |sed 's,/,\\x2f,g')"
+-	     root="/dev/disk/by-label/${root}" ;;
+-    UUID=*) root="/dev/disk/by-uuid/${root#UUID=}" ;;
+-    '') echo "Warning: no root specified"
+-	root="/dev/sda1" ;;
+-esac
+-
+-# should we have a timeout?
+-tries=0
+-echo "Waiting up to 30 seconds for $root to become available"
+-udevadm settle --timeout=30
++# pre-mount happens before we try to mount the root filesystem,
++# and happens once.
+ source_all pre-mount
+ 
+-echo "Trying to mount rootfs $root"
+-if rflags="$(getarg rootflags)"; then
+-    rflags="${rflags#rootflags=}"
+-    getarg rw >/dev/null && rflags="${rflags},rw" || rflags="${rflags},ro"
+-else
+-     getarg rw >/dev/null && rflags=rw || rflags=ro
+-fi
+-[ -e "$root" ] || emergency_shell
+-ln -s "$root" /dev/root 
+-fstype="$(getarg rootfstype)" && fstype="-t ${fstype#rootfstype=}" 
+-mount $fstype -o $rflags /dev/root $NEWROOT || emergency_shell
++# mount scripts actually try to mount the root filesystem, and may
++# be sourced any number of times. As soon as one suceeds, no more are sourced.
++while :; do
++    for f in /mount/*.sh; do
++	[ -x "$f" ] && . "$f";
++	[ "$ROOTFS_MOUNTED" ] && break;
++    done
++    [ "$ROOTFS_MOUNTED" ] && break;
++    sleep 1
++done
++
++# by the time we get here, the root filesystem should be mounted.
+ 
+ INIT=$(getarg init)
+ [ "$INIT" ] || {
+@@ -101,7 +87,8 @@ INIT=$(getarg init)
+ 	emergency_shell
+     }
+ }
+-	    
++
++# pre pivot scripts are sourced just before we switch over to the new root.
+ source_all pre-pivot
+ echo "Switching to real root filesystem $root"
+ exec switch_root "$NEWROOT" "$INIT"  $CMDLINE || {
+diff --git a/modules/90crypt.sh b/modules/90crypt.sh
+index 9793a4f..5e8f4cb 100755
+--- a/modules/90crypt.sh
++++ b/modules/90crypt.sh
+@@ -1,4 +1,4 @@
+ #!/bin/bash
+ inst cryptsetup
+ inst_rules "$dsrc/rules.d/63-luks.rules"
+-inst_hook pre-mount 50 "$dsrc/hooks/cryptroot.sh"
+\ No newline at end of file
++inst_hook mount 10 "$dsrc/hooks/cryptroot.sh"
+\ No newline at end of file
+diff --git a/modules/99base.sh b/modules/99base.sh
+index 1d9f86e..580fb03 100755
+--- a/modules/99base.sh
++++ b/modules/99base.sh
+@@ -4,5 +4,5 @@ dracut_install mount mknod mkdir modprobe pidof sleep chroot echo sed sh ls
+ inst "$initfile" "/init"
+ inst "$switchroot" "/sbin/switch_root"
+ inst_hook pre-pivot 50 "$dsrc/hooks/selinux-loadpolicy.sh"
+-inst_hook pre-mount 99 "$dsrc/hooks/resume.sh"
+-
++inst_hook mount 90 "$dsrc/hooks/resume.sh"
++inst_hook mount 99 "$dsrc/hooks/mount-partition.sh"
 -- 
-Victor Lowther
-RHCE# 805008539634727
-LPIC-2# LPI000140019
+1.6.0.6
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
