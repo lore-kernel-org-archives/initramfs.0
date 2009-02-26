@@ -1,64 +1,36 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] Move actually mounting the root filesystem into
-	its own series of hooks.
-Date: Thu, 26 Feb 2009 13:20:22 +0100
-Message-ID: <20090226122022.GA6639@nb.net.home>
+From: Bogdan Costescu <Bogdan.Costescu-hEciA7+sKtudPOQpRHQ53DeJuz7u0hKX@public.gmane.org>
+Subject: Re: [PATCH 4/4] Add some predefined break points.
+Date: Thu, 26 Feb 2009 15:04:55 +0100 (CET)
+Message-ID: <Pine.LNX.4.64.0902261501070.2766@kenzo.iwr.uni-heidelberg.de>
 References: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1235615253.git.victor.lowther@gmail.com>
+ <43ca8d3a8aed54367069b23fc43720cbf5517ec0.1235615253.git.victor.lowther@gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1235615253.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <43ca8d3a8aed54367069b23fc43720cbf5517ec0.1235615253.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: TEXT/PLAIN; charset="us-ascii"; format="flowed"
 Content-Transfer-Encoding: 7bit
 To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Feb 25, 2009 at 06:32:36PM -0800, Victor Lowther wrote:
-> We now have mount hooks.  They are sourced in an infinite loop until one of
-> them actually mounts the real root filesystem.
-> 
-> This makes it easier to add support for arbitrarily complex schemes to find
-> the root filesystem without having to patch the init script.
-> 
-> This patch series is also avaialble ass the hookify-finding-root branch at 
-> http://git.fnordovax.org/dracut
-> 
-> ---
->  hooks/mount-partition.sh |   30 ++++++++++++++++++++++++++++
->  init                     |   49 ++++++++++++++++-----------------------------
->  modules/90crypt.sh       |    2 +-
->  modules/99base.sh        |    4 +-
->  4 files changed, 51 insertions(+), 34 deletions(-)
-> 
-> diff --git a/hooks/mount-partition.sh b/hooks/mount-partition.sh
-> new file mode 100755
-> index 0000000..53a0f4c
-> --- /dev/null
-> +++ b/hooks/mount-partition.sh
-> @@ -0,0 +1,30 @@
-> +#!/bin/sh
-> +[ "$root" ] || {
-> +    root=$(getarg root); root=${root#root=}
-> +    case $root in
-> +	LABEL=*) root=${root#LABEL=}
-> +            root="$(echo $root |sed 's,/,\\x2f,g')"
-> +            root="/dev/disk/by-label/${root}" ;;
+On Wed, 25 Feb 2009, Victor Lowther wrote:
 
- Note that this is probably not a proper way how to encode a label
- string. I guess that LABEL= option (e.g. from grub.conf) is in human
- readable format (like in /etc/fstab). The mount(8) also supports
- quoted LABELs and UUIDs (e.g. LABEL="foo").
+> +getarg 'break=pre-udev' && emergency_shell
 
- Currently we don't have a command line util that supports all these
- features, the problem should be fixed in the next util-linux-ng
- release by blkid(8).
- 
-    Karel
+I would like to suggest doing something different: look for the value 
+of the 'break' parameter at the very beginning and save it in a 
+variable such that it would be possible to modify it in the shell run 
+for the breakpoint to point to a later breakpoint - this way one can 
+do a gradual checking of the initramfs progress by going from one 
+breakpoint to the next.
 
 -- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Bogdan Costescu
+
+IWR, University of Heidelberg, INF 368, D-69120 Heidelberg, Germany
+Phone: +49 6221 54 8240, Fax: +49 6221 54 8850
+E-mail: bogdan.costescu-hEciA7+sKtudPOQpRHQ53DeJuz7u0hKX@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
