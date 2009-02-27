@@ -1,7 +1,7 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH] Fix Makefile naming dracut-functions wrong
-Date: Fri, 27 Feb 2009 11:44:42 +0100
-Message-ID: <49A7C41A.40904@bfh.ch>
+Subject: [PATCH] Fix instmods recursing indefinitely
+Date: Fri, 27 Feb 2009 13:25:38 +0100
+Message-ID: <49A7DBC2.8020503@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,28 +10,36 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-dracut functions are install as /dracut/functions instead
-as /dracut/dracut-functions.
+the instmod function inside dracut-functions starts to recurses indefinitely
+if modprobe --show-depends is used and the output contains module options. 
+
+Example:
+
+#modprobe --show-depends libata
+insmod /lib/modules/2.6.27-11-generic/kernel/drivers/acpi/dock.ko 
+insmod /lib/modules/2.6.27-11-generic/kernel/drivers/scsi/scsi_mod.ko 
+insmod /lib/modules/2.6.27-11-generic/kernel/drivers/ata/libata.ko ignore_hpa=1
+
 
 This patch fixes this.
 
 --
- Makefile |    2 +-
+ dracut-functions |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index c63dddf..7874958 100644
---- a/Makefile
-+++ b/Makefile
-@@ -10,7 +10,7 @@ install:
- 	install -m 0755 dracut $(DESTDIR)/sbin/dracut
- 	install -m 0755 init $(DESTDIR)/usr/libexec/dracut/init
- 	install -m 0755 switch_root $(DESTDIR)/usr/libexec/dracut/switch_root
--	install -m 0755 dracut-functions $(DESTDIR)/usr/libexec/dracut/functions
-+	install -m 0755 dracut-functions $(DESTDIR)/usr/libexec/dracut/dracut-functions
- 	for rule in rules.d/*.rules ; do install -m 0644 $$rule $(DESTDIR)/usr/libexec/dracut/rules.d ; done
- 	for hook in hooks/*.sh ; do install -m 0755 $$hook $(DESTDIR)/usr/libexec/dracut/hooks ; done
- 	for module in modules/*.sh; do install -m 0755 $$module $(DESTDIR)/usr/libexec/dracut/modules ; done
+diff --git a/dracut-functions b/dracut-functions
+index 852ce36..56b3757 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -177,7 +177,7 @@ instmods() {
+ 	    =*) instmods $mpargs $(cat "${modcat}.${mod#=}");;
+ 	    --*) mpargs+=" $mod";;
+ 	    *) modprobe $mpargs --set-version $kernel --show-depends $mod \
+-		2>/dev/null |while read cmd modpath; do
++		2>/dev/null |while read cmd modpath options; do
+ 		    [[ $cmd = insmod ]] || continue
+ 		    modname=${modpath##*/}
+ 		    modname=${modname%.ko}
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
