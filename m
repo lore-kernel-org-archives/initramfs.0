@@ -1,8 +1,8 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] replace switch_root shell script with binary
-Date: Wed, 04 Mar 2009 16:50:01 -0600
-Message-ID: <1236207001.6500.44.camel@sentry-no.fnordovax.org>
-References: <49AE7A1F.3040508@redhat.com>
+Subject: Re: [PATCH] strip "init=" from INIT
+Date: Wed, 04 Mar 2009 16:54:10 -0600
+Message-ID: <1236207250.6500.49.camel@sentry-no.fnordovax.org>
+References: <49AE78AA.8070401@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -11,36 +11,49 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:received:received:subject:from:to:cc
          :in-reply-to:references:content-type:date:message-id:mime-version
          :x-mailer:content-transfer-encoding;
-        bh=9PgA3yr0BUuGHMg0Tfxj++uA2za5nuoY3VBI0kU7NNg=;
-        b=pIjwHNbghfju/0JnzFvRqDId5H+lglO3MOCAcoHDoEituys7Ee0thrkwEylgRsicTZ
-         20kemjXs8Jk8anNI/vZLsHO/aifhT9G3st5TFxo+SElp3gb1aT/naVp9o7SsrUXJBnVW
-         onMFY1rFRa9EElQBh/sH4nZhJlIGO1eqOCw7Q=
-In-Reply-To: <49AE7A1F.3040508-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+        bh=YygrLBYvuGDkj4hEbsnm33v/APh/92FSBuEC1dNgV/k=;
+        b=H36HSZWyQLH/lECth4l/Lj08ESVazqvQTGAA3CLTyOykMS9y+V56DCM3iio+nWTBMg
+         hhMlUlo3evEsp1bARjEEvkOu3KDSk9SMQlIjVb/4ZqecD4lNA4yRVmplUSa/uo9vgjRQ
+         KSBgyxCVPQejB5PmbO04QbHwGXPG5z/Oi17Xw=
+In-Reply-To: <49AE78AA.8070401-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, 2009-03-04 at 13:54 +0100, Harald Hoyer wrote:
-> The switch_root shell script did not work with bash-4.0-2, because
-> "exec" gets the real path of the executable which is then
-> "/sysroot/lib/ld-linux.so.2" instread of "./lib/ld-linux.so.2".
+On Wed, 2009-03-04 at 13:48 +0100, Harald Hoyer wrote:
+> plain text document attachment (0001-strip-init-from-INIT.patch)
+> From 5e043b9fd529b1cfb0358a69f263b84620ffbd1b Mon Sep 17 00:00:00 2001
+> From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Date: Wed, 4 Mar 2009 13:45:21 +0100
+> Subject: [PATCH] strip "init=" from INIT
+> 
+> ---
+>  init |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/init b/init
+> index 581c2b9..9605141 100755
+> --- a/init
+> +++ b/init
+> @@ -90,7 +90,7 @@ ln -s "$root" /dev/root
+>  fstype="$(getarg rootfstype)" && fstype="-t ${fstype#rootfstype=}" 
+>  mount $fstype -o $rflags /dev/root $NEWROOT || emergency_shell
+>  
+> -INIT=$(getarg init)
+> +INIT=$(getarg init); INIT=${INIT#init=}
+>  [ "$INIT" ] || {
+>      for i in /sbin/init /etc/init /init /bin/sh; do
+>  	[ -x "$NEWROOT$i" ] && { INIT="$i"; break; }
 
-That is a little odd -- dash does not exhibit that behaviour.  
+Fixed in the hookify-finding-root patches that I should repost to the
+list. :)
 
-The only command that tries to use ./lib/ld-linux.so.2 is the final
-chroot, and at that point /sysroot does not mean anything anymore
-because of the move mount we did.  Is this a bug in bash we can work
-around by setting $PWD?
-
-> Also the required chroot binary might live in /usr/bin, which can
-> be mounted later.
-
-yeah, but /usr/sbin and /usr/bin are stupid places to have chroot, it is
-a core utility anyways. :)
-
-[ patch snipped ]
+-- 
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
