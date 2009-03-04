@@ -1,43 +1,80 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Dracut on different distros?
-Date: Wed, 4 Mar 2009 17:44:15 +0100
-Message-ID: <49AEAFDF.6010405@bfh.ch>
-References: <49AE99D2.1000501@bfh.ch>	 <0227279C-8C23-4501-B163-04470D0C0F35@gmail.com> <82ecf08e0903040820t42775dd8s56e32d9d5dd53c36@mail.gmail.com>
-Mime-Version: 1.0
+Date: Wed, 4 Mar 2009 11:28:54 -0600
+Message-ID: <14BAD8D9-B114-4979-B9CE-BA20CEEF768D@gmail.com>
+References: <49AE99D2.1000501@bfh.ch> <0227279C-8C23-4501-B163-04470D0C0F35@gmail.com> <49AEAF16.6010008@bfh.ch>
+Mime-Version: 1.0 (iPhone Mail 5F136)
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <82ecf08e0903040820t42775dd8s56e32d9d5dd53c36-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:references:message-id:from:to
+         :in-reply-to:content-type:content-transfer-encoding:x-mailer
+         :mime-version:subject:date:cc;
+        bh=jpp0/D/8FEzjEspSlMgdhFpvxRirQ/ufWR+OwJyzqVM=;
+        b=vWEkLvf1hPwlNUAIP2/mE8S7AscvGQzdUpixFfn/7HoTbap6wGj9fES+fvSYnyDsf8
+         fhl3vXZj0YrLS2y6gmvQzc6gvsSgPUUEy9Vb6gVd3CiHRT1lPXRSKiayat8tJBkNcrHv
+         hdxGgvZF/kHf9Wx9kCNA0QcDb7ji7ns8j33b4=
+In-Reply-To: <49AEAF16.6010008-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"; delsp="yes"
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+On Mar 4, 2009, at 10:40 AM, Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>  
+wrote:
 
+> Victor Lowther wrote:
+> [snip]
+>>> Second I have to ask how far Dracut needs (and wants) to go with  
+>>> the "One initrd to rule them all". The different distros will need  
+>>> to customize the initrd anyway. Think in terms of splash-screens,  
+>>> different versions of utilities and configs or just plain 'crazy  
+>>> and convoluted'...
+>> I would have the goal of making dracut be able to generate a  
+>> working no-frills initramfs with minimal (preferably no) distro  
+>> customization, and have a hook structure that allows the distros to  
+>> customize the initrams without having to patch things.
+>
+> Yes, that's why I suggested Fallbacks (or maybe we should call them  
+> "sane defaults").
+> I see a few problems with the modules/hook structure though: If, for  
+> example, we provide a generic find-modules and the distro wants  
+> completely other functionality, that part of Dracut would have to be  
+> changed/disabled. That's a "patch" for me.
 
-Thiago Galesi wrote:
->>> Certainly stupid me can't think of a way to be sure we "really really"
->>> have all block drivers without including every single .ko. Leave it to the
->>> user to specifically set drivers or the Distro to tell Dracut which drivers
->>> to include.
->> Indeed.
->>
-> 
-> Isn't this two different things?
-> 
-> I mean, it's one thing to have a "generic" initrd for, I dunno, live
-> CDs, etc and another thing to generate for a specific
-> computer/installation. And even installation triggers run mkinitrd (or
-> similar), no?
+Hmmm... I am not seeing the difficulty here. Perhaps a code snippet or  
+a more detailed use case would help.
 
-It entirely depends on your point of view. The contents of the actually 
-generated initrd might be very different. At least the contained modules 
-could differ, the rest of the initrd could actually be the same.
+>
+>
+> [snip]
+>>> I'm thinking of a debootstrappish system of suite/target (or topic/ 
+>>> flavour) where Dracut specifically delegates those tasks away it  
+>>> cannot solve on its own. We might even provide some simple things  
+>>> like just including all drivers for testing purposes or as a  
+>>> fallback solution.
+>> Let's see how the current modules/hooks mechanism works for now. We  
+>> can extend or scrap it if it turns out to not suit our needs.
+>
+> I was thinking a bit along the line of what should be included on a  
+> netboot initrd. Personally I wouldn't want to see hooks for  
+> cryptsetup or lvm in it. Hence the idea of suite/target to select  
+> maybe a distro (could be 'dracut' for generic) and different targets  
+> (might be netboot or a combination of block,crypt,lvm).
 
-And how we generate those images might not differ from use-case to the 
-next at all.
+That can be handled by having an /etc/dracut.conf that contains a  
+dracutmodules="my modules here" line. The default is "all", which  
+loads all the modules on initramfs creation. Extending that  
+functionality should not be a problem to define some defaults other  
+than including everything.
 
+>
+> But well... I guess I'm violating list rules again. Patches speak  
+> more than words, I'll see what I can cook up.
 
+I look forward to them. :)
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
