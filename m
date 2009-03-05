@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/6] Update scripts to make things a little easier to read
-Date: Wed, 04 Mar 2009 18:56:17 -0800 (PST)
-Message-ID: <10f60b7a0c163969c4f8449473ce9c061930990f.1236221526.git.victor.lowther@gmail.com>
+Subject: [PATCH 3/6] Save any dhcp options we did not handle to net.$interface.dhcpopts
+Date: Wed, 04 Mar 2009 18:56:20 -0800 (PST)
+Message-ID: <2d178d5ecb875beda115748e15a02e37b8679274.1236221526.git.victor.lowther@gmail.com>
 References: <2ffdb552305487acbade501856904918639cc92f.1236221526.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=NomxB3+Rgf5YnnWMhKY3M1pgkTgHti93e8t5nj6ivyw=;
-        b=dOJvGBFlEjKPEHSc801985UPUE2t7DsIK/x1s8rsW/+nNIxcDu+69HkP0YOswuN5k/
-         OAbN6p1MYiCaFdR8jt9iAT5ViImwCXAya3S7/BcZChaPmy8Way1AVPfu5QGqV6nNmgzC
-         BRhLdwh96GAzgMDhpTKJ4EGNxbLCXBHfPWGDs=
+        bh=IKCUxCPYHW3nEA4Lt/3w5jNZPZodHjusrW9gF42+NtU=;
+        b=ixEJKSKPEZ+Oz2cTnZZk4EdMNbiY+12it9jQKN59tinnt05WiiADyaRljc2QQEuPY2
+         tgD1YgNtFMrOXVY190Vn+UR9+waEhnrUf8/sjwo81jSP/IuXnOP7CfQ0fdsYFcnBypAD
+         TPpcVYCtTiVPOGXKS6VgxjECP5r04SZzHIITE=
 In-Reply-To: <2ffdb552305487acbade501856904918639cc92f.1236221526.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -21,72 +21,21 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 ---
- dhclient-script |    8 ++++----
- ifup            |   26 ++++++++++++++++++++------
- 2 files changed, 24 insertions(+), 10 deletions(-)
+ dhclient-script |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
 diff --git a/dhclient-script b/dhclient-script
-index 0db5921..dce9878 100755
+index dce9878..5a2c66b 100755
 --- a/dhclient-script
 +++ b/dhclient-script
-@@ -16,9 +16,9 @@ case $reason in
- 	elif [ "$new_domain_name" ]; then
- 	    echo "search $new_domain_name" >> /etc/resolv.conf
- 	fi
--	(   IFS=",";
--	    for s in $new_domain_name_servers; do
--		echo "nameserver $s" >> /etc/resolv.conf
--	    done ) ;;
-+	for s in $new_domain_name_servers; do
-+	    echo "nameserver $s" >> /etc/resolv.conf
-+	done
-+	>/net.$interface.up ;;
+@@ -19,6 +19,7 @@ case $reason in
+ 	for s in $new_domain_name_servers; do
+ 	    echo "nameserver $s" >> /etc/resolv.conf
+ 	done
++	set |grep -e '^new_[a-z_]=' >/net.$interface.dhcpopts
+ 	>/net.$interface.up ;;
      *) ;;
  esac
-diff --git a/ifup b/ifup
-index cf5828c..79607db 100755
---- a/ifup
-+++ b/ifup
-@@ -1,5 +1,5 @@
- #!/bin/sh
--echo "$*" >>/dev/net-interfaces-found
-+>/net.$1
- 
- # loopback is always handled the same way
- [ "$1" = "lo" ] && {
-@@ -9,12 +9,26 @@ echo "$*" >>/dev/net-interfaces-found
- }
- 
- # spin through the kernel command line, looking for ip= lines
--while read p; do
-+for p in $(cat /proc/cmdline); do
-+    [ "${p%ip=*}" ] || continue
-+    p=${p#ip=}
-     case $p in
--	'ip=none'|'ip=off') exit 0;; # we were told to not configure anything
--	'ip=dhcp'|'ip=on'|'ip=any') dhclient -nw "$1"; exit 0;; 
--	'ip=bootp'|'ip=rarp'|'ip=both') exit 0;; #dunno how to do this
--	ip=*) exit 0;; #to be written
-+	none|off) exit 0;; # we were told to not configure anything
-+	dhcp|on|any) dhclient -nw "$1"; exit 0;; 
-+	bootp|rarp|both) exit 0;; #dunno how to do this
-+	*) echo ${ip#ip=} | \
-+	    (IFS=':' read client server gw netmask hostname device autoconf
-+		if [ -z "$device" -o "$device" = "$1"  ]; then
-+		    case $autoconf in
-+			dhcp|on|any) dhclient -nw "$1";;
-+			none|off|'') # do some basic configuration
-+			    ip link set $1 up
-+			    ip addr add $client/$netmask dev $1
-+			    [ "$gw" ] && ip route add default via $gw dev $1
-+			    >/net.$1.up ;;
-+		    esac
-+		fi
-+		) ;;
- 	*) continue;;
-     esac
- done
-\ No newline at end of file
 -- 
 1.6.0.6
 
