@@ -1,17 +1,17 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/6] Move running dhclient on DHCP interfaces into a pre-mount hook.
-Date: Wed, 04 Mar 2009 18:56:22 -0800 (PST)
-Message-ID: <18dd1a97a9f5902f26ce577932c7ad34c48c8a02.1236221526.git.victor.lowther@gmail.com>
+Subject: [PATCH 2/6] Update scripts to make things a little easier to read
+Date: Wed, 04 Mar 2009 18:56:17 -0800 (PST)
+Message-ID: <10f60b7a0c163969c4f8449473ce9c061930990f.1236221526.git.victor.lowther@gmail.com>
 References: <2ffdb552305487acbade501856904918639cc92f.1236221526.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=domainkey-signature:received:received:date:message-id:in-reply-to
          :references:from:subject:to:x-mailer;
-        bh=SCiRUtQl3CiysJY43kj6RZsE5fiGXRbyAgfvrHHiUA8=;
-        b=v4E6DWzRlfOw17I5e1icpxKyGE7HBshw1cKeglRqB8p5nsCWLuN5OdB9rjmYmH8LlP
-         Eqm45v8Fwtp3kAskpAuDL6k1HQPkvNOFu3/KmaB7CnYiO++1qGEmG6HlmoTM5p7ufuTt
-         yPn4pts/d/qRnxBh8qF8ccSKUXU4mxDPOHuNQ=
+        bh=NomxB3+Rgf5YnnWMhKY3M1pgkTgHti93e8t5nj6ivyw=;
+        b=dOJvGBFlEjKPEHSc801985UPUE2t7DsIK/x1s8rsW/+nNIxcDu+69HkP0YOswuN5k/
+         OAbN6p1MYiCaFdR8jt9iAT5ViImwCXAya3S7/BcZChaPmy8Way1AVPfu5QGqV6nNmgzC
+         BRhLdwh96GAzgMDhpTKJ4EGNxbLCXBHfPWGDs=
 In-Reply-To: <2ffdb552305487acbade501856904918639cc92f.1236221526.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,88 +20,73 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Static interfaces are still configured on the fly as we add them, but
-discussions on the mailing list have suggested that we need to have finer
-control over bringing up dhcp interfaces.
-
-The default hook just runs all the requested dhclients in parallel and waits
-for them to all return.  If you need something more complicated than this, or
-need to have more control over bringing interfaces up, you will probably need
-to override some stuff in the 40network hook.
 ---
- dhclient-script        |    4 +++-
- hooks/run-dhclient.sh  |    7 +++++++
- ifup                   |    5 ++---
- modules/40network.sh   |    1 +
- 4 files changed, 13 insertions(+), 4 deletions(-)
+ dhclient-script |    8 ++++----
+ ifup            |   26 ++++++++++++++++++++------
+ 2 files changed, 24 insertions(+), 10 deletions(-)
 
 diff --git a/dhclient-script b/dhclient-script
-index 5a2c66b..dc2d9e1 100755
+index 0db5921..dce9878 100755
 --- a/dhclient-script
 +++ b/dhclient-script
-@@ -19,7 +19,9 @@ case $reason in
- 	for s in $new_domain_name_servers; do
- 	    echo "nameserver $s" >> /etc/resolv.conf
- 	done
--	set |grep -e '^new_[a-z_]=' >/net.$interface.dhcpopts
-+	set |grep -e '^new_[a-z_]=' |while read line; do
-+	    echo "${line%%=*}=\'${line#*=}\'">>/net.$interface.dhcpopts
+@@ -16,9 +16,9 @@ case $reason in
+ 	elif [ "$new_domain_name" ]; then
+ 	    echo "search $new_domain_name" >> /etc/resolv.conf
+ 	fi
+-	(   IFS=",";
+-	    for s in $new_domain_name_servers; do
+-		echo "nameserver $s" >> /etc/resolv.conf
+-	    done ) ;;
++	for s in $new_domain_name_servers; do
++	    echo "nameserver $s" >> /etc/resolv.conf
 +	done
- 	>/net.$interface.up ;;
++	>/net.$interface.up ;;
      *) ;;
  esac
-diff --git a/hooks/kill-dhclient.sh b/hooks/kill-dhclient.sh
-old mode 100644
-new mode 100755
-diff --git a/hooks/run-dhclient.sh b/hooks/run-dhclient.sh
-new file mode 100755
-index 0000000..fcf890e
---- /dev/null
-+++ b/hooks/run-dhclient.sh
-@@ -0,0 +1,7 @@
-+#!/bin/sh
-+for i in /net.*.dhcp; do
-+    dev=${i#net.}; dev=${i%.dhcp}
-+    dhclient -1 -q $dev &
-+done
-+wait
-+    
-\ No newline at end of file
 diff --git a/ifup b/ifup
-index 79607db..83f6522 100755
+index cf5828c..79607db 100755
 --- a/ifup
 +++ b/ifup
-@@ -1,5 +1,4 @@
+@@ -1,5 +1,5 @@
  #!/bin/sh
-->/net.$1
+-echo "$*" >>/dev/net-interfaces-found
++>/net.$1
  
  # loopback is always handled the same way
  [ "$1" = "lo" ] && {
-@@ -14,13 +13,13 @@ for p in $(cat /proc/cmdline); do
-     p=${p#ip=}
+@@ -9,12 +9,26 @@ echo "$*" >>/dev/net-interfaces-found
+ }
+ 
+ # spin through the kernel command line, looking for ip= lines
+-while read p; do
++for p in $(cat /proc/cmdline); do
++    [ "${p%ip=*}" ] || continue
++    p=${p#ip=}
      case $p in
- 	none|off) exit 0;; # we were told to not configure anything
--	dhcp|on|any) dhclient -nw "$1"; exit 0;; 
-+	dhcp|on|any) >/net.$1.dhcp; exit 0;; 
- 	bootp|rarp|both) exit 0;; #dunno how to do this
- 	*) echo ${ip#ip=} | \
- 	    (IFS=':' read client server gw netmask hostname device autoconf
- 		if [ -z "$device" -o "$device" = "$1"  ]; then
- 		    case $autoconf in
--			dhcp|on|any) dhclient -nw "$1";;
-+			dhcp|on|any) >/net.$1.dhcp ;;
- 			none|off|'') # do some basic configuration
- 			    ip link set $1 up
- 			    ip addr add $client/$netmask dev $1
-diff --git a/modules/40network.sh b/modules/40network.sh
-index 59f523a..cee74b4 100755
---- a/modules/40network.sh
-+++ b/modules/40network.sh
-@@ -5,3 +5,4 @@ inst "$dsrc/dhclient-script" "/sbin/dhclient-script"
- instmods =drivers/net ecb arc4
- inst_rules 60-net.rules
- inst_hook pre-pivot 10 "$dsrc/hooks/kill-dhclient.sh"
-+inst_hook pre-mount 70 "$dsrc/hooks/run-dhclient.sh"
+-	'ip=none'|'ip=off') exit 0;; # we were told to not configure anything
+-	'ip=dhcp'|'ip=on'|'ip=any') dhclient -nw "$1"; exit 0;; 
+-	'ip=bootp'|'ip=rarp'|'ip=both') exit 0;; #dunno how to do this
+-	ip=*) exit 0;; #to be written
++	none|off) exit 0;; # we were told to not configure anything
++	dhcp|on|any) dhclient -nw "$1"; exit 0;; 
++	bootp|rarp|both) exit 0;; #dunno how to do this
++	*) echo ${ip#ip=} | \
++	    (IFS=':' read client server gw netmask hostname device autoconf
++		if [ -z "$device" -o "$device" = "$1"  ]; then
++		    case $autoconf in
++			dhcp|on|any) dhclient -nw "$1";;
++			none|off|'') # do some basic configuration
++			    ip link set $1 up
++			    ip addr add $client/$netmask dev $1
++			    [ "$gw" ] && ip route add default via $gw dev $1
++			    >/net.$1.up ;;
++		    esac
++		fi
++		) ;;
+ 	*) continue;;
+     esac
+ done
+\ No newline at end of file
 -- 
 1.6.0.6
 
