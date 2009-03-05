@@ -1,43 +1,32 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/6] Save any dhcp options we did not handle to net.$interface.dhcpopts
-Date: Wed, 04 Mar 2009 18:56:20 -0800 (PST)
-Message-ID: <2d178d5ecb875beda115748e15a02e37b8679274.1236221526.git.victor.lowther@gmail.com>
-References: <2ffdb552305487acbade501856904918639cc92f.1236221526.git.victor.lowther@gmail.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [Fwd: Re: merged dracut git]
+Date: Thu, 05 Mar 2009 08:20:26 +0100
+Message-ID: <49AF7D3A.70709@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:in-reply-to
-         :references:from:subject:to:x-mailer;
-        bh=IKCUxCPYHW3nEA4Lt/3w5jNZPZodHjusrW9gF42+NtU=;
-        b=ixEJKSKPEZ+Oz2cTnZZk4EdMNbiY+12it9jQKN59tinnt05WiiADyaRljc2QQEuPY2
-         tgD1YgNtFMrOXVY190Vn+UR9+waEhnrUf8/sjwo81jSP/IuXnOP7CfQ0fdsYFcnBypAD
-         TPpcVYCtTiVPOGXKS6VgxjECP5r04SZzHIITE=
-In-Reply-To: <2ffdb552305487acbade501856904918639cc92f.1236221526.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
----
- dhclient-script |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/dhclient-script b/dhclient-script
-index dce9878..5a2c66b 100755
---- a/dhclient-script
-+++ b/dhclient-script
-@@ -19,6 +19,7 @@ case $reason in
- 	for s in $new_domain_name_servers; do
- 	    echo "nameserver $s" >> /etc/resolv.conf
- 	done
-+	set |grep -e '^new_[a-z_]=' >/net.$interface.dhcpopts
- 	>/net.$interface.up ;;
-     *) ;;
- esac
--- 
-1.6.0.6
+
+-------- Original Message --------
+Subject: Re: merged dracut git
+Date: Thu, 05 Mar 2009 08:05:58 +0100
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <49AEBDE6.2080902-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> 
+<1236204496.6500.38.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
+
+Victor Lowther wrote:
+> On Wed, 2009-03-04 at 18:44 +0100, Harald Hoyer wrote:
+>> ://surfsite.org/pub/git/dracut.git
+> 
+> Is this web accessible?
+
+http://git.surfsite.org/git/gitweb.cgi?p=dracut.git;a=shortlog;h=refs/heads/merge
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
