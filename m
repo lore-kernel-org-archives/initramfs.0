@@ -1,18 +1,16 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/4] Trim out device nodes we do not have to actually create.
-Date: Wed, 04 Mar 2009 18:40:36 -0800 (PST)
-Message-ID: <1877ae16b1a8d6de63847a708db5e93168f489a8.1236220506.git.victor.lowther@gmail.com>
-References: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1236220506.git.victor.lowther@gmail.com>
+Subject: [PATCH 1/3] Modify instmods to not rely on the existence of modules.* files
+Date: Wed, 04 Mar 2009 18:51:36 -0800 (PST)
+Message-ID: <c79c304ad7c2ef19b138c43f89f9b7244b57a6f4.1236220864.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:in-reply-to
-         :references:from:subject:to:x-mailer;
-        bh=xf3//KLPqiYg8Z2DXkbZl2LEQT5fG1TAneePSQmpieE=;
-        b=jPXcofyvT139iuJVkWMQZuryHTGJpBByVtdQ2Z1xUjk9KNwFGLzl1oJjjVO/pTLFTb
-         VoKqZm/OqVBwELJd80Q8Hb01xUQeed+/9e5ugb8lLhZGWBSJco8SFYwIrybqz7bR10bQ
-         nafsdeWTkhyNwBNx0vYIy2QeuG3jbgpYDgKJg=
-In-Reply-To: <40b7db44cbcb49b1fb50445d786cd4851adba14a.1236220506.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+        h=domainkey-signature:received:received:date:message-id:from:subject
+         :to:x-mailer;
+        bh=x69FAk3zQzFg6/mxxIJf/CcHhqVETxqBhc49sGPDRjo=;
+        b=S4cKPFY3B3lvZheLYakCMER4Fb4kyEAbNg2wfOHjiEKySwFqSHlz9lo3BqxVmxbuRu
+         zgRm2Bm8glJdzG2K4rj8vLxQzTJ/ywLIPW0k70FpQHLtd4G9BvC3HWaQ+2l244gFDxsL
+         mw/Te+6BplaPpycOrS+TcFNxxFAF6fnhjzHuU=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -20,37 +18,58 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-If plymouth needs more, it can add them back in the hooks.
+This patch series is a resend of the distro independence patch series I sent
+earlier today.  It takes into account some of the feedback I recieved from the
+previous patch series, and callously ignores the rest because I am a mean, lazy
+coder. :)
 
-If there are any more nodes we can get rid of, feel free.
+It applies on top of the hookify-finding-root patch series, and is avaialble
+as the distro-independence branch at git://git.fnordovax.org/dracut
+
+depmod does not create these files on all distros (Debian, specifically),
+so modify instmods to use pathname components and find to do what we want.
+
+As a bonus, this removes the special-case for =ata.
 ---
- init |   10 +++-------
- 1 files changed, 3 insertions(+), 7 deletions(-)
+ dracut-functions |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/init b/init
-index c3f5150..f5b4177 100755
---- a/init
-+++ b/init
-@@ -40,16 +40,12 @@ mount -t sysfs /sys /sys
- mount -t tmpfs -omode=0755 udev /dev
- read CMDLINE </proc/cmdline;
+diff --git a/dracut-functions b/dracut-functions
+index 852ce36..4a98019 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -167,17 +167,17 @@ dracut_install() {
+     done
+ }
  
--
--# FIXME: what device nodes does plymouth really _need_ ?
-+# Make some basic devices first, let udev handle the rest
- mknod /dev/ptmx c 5 2
--mknod /dev/console c 5 0
--mknod /dev/fb c 29 0
-+mknod /dev/null c 1 3
-+mknod /dev/console c 5 1
- mkdir /dev/pts
- mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
--mknod /dev/tty0 c 4 0
--mknod /dev/tty1 c 4 1
--mknod /dev/null c 1 3
- 
- # pre-udev scripts run before udev starts, and are run only once.
- source_all pre-udev
+-modcat="/lib/modules/$kernel/modules"
++srcmods="/lib/modules/$kernel/"
+ instmods() {
+     local mod mpargs modpath modname cmd
+     while (($# > 0)); do
+ 	mod=${1%.ko}
+ 	case $mod in
+-	    =ata) instmods $mpargs $(cat "${modcat}.block" |egrep 'ata|ahci');;
+-	    =*) instmods $mpargs $(cat "${modcat}.${mod#=}");;
++	    =*) instmods $mpargs $(find "$srcmods" -path "*/${mod#=}/*");;
+ 	    --*) mpargs+=" $mod";;
+-	    *) modprobe $mpargs --set-version $kernel --show-depends $mod \
+-		2>/dev/null |while read cmd modpath; do
++            *)  mod=${mod##*/}
++	        modprobe $mpargs --set-version $kernel --show-depends $mod \
++		2>/dev/null |while read cmd modpath options; do
+ 		    [[ $cmd = insmod ]] || continue
+ 		    modname=${modpath##*/}
+ 		    modname=${modname%.ko}
+@@ -185,7 +185,7 @@ instmods() {
+ 			instmods $mpargs $modname
+ 			continue
+ 		    }
+-		    inst_simple "$modpath" "/lib/modules/$kernel/$modname.ko"
++		    inst_simple "$modpath"
+ 		done
+ 		;;
+ 	esac
 -- 
 1.6.0.6
 
