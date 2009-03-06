@@ -1,47 +1,68 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] Steal rules we need from the latest udev package.
-Date: Fri, 06 Mar 2009 11:57:38 +0100
-Message-ID: <49B101A2.8070504@redhat.com>
-References: <d53985b1c536e2fb845e0e3c369edd06d5018011.1236124962.git.victor.lowther@gmail.com>	 <462be3c3cfdf24ba51bc4d1a1f66cc30b8d29d82.1236124962.git.victor.lowther@gmail.com>	 <20090304002535.GB96609@redhat.com>	 <1236129369.6500.18.camel@sentry-no.fnordovax.org>	 <ac3eb2510903040212m5d68d812kbce03d831e8c3d12@mail.gmail.com>	 <1236166408.6500.37.camel@sentry-no.fnordovax.org>	 <ac3eb2510903040408w299b349aj791a2f9e0d154b9a@mail.gmail.com>	 <82ecf08e0903040418v23e68261le6c2a05f032a9b31@mail.gmail.com>	 <20090306093301.GB3301@nb.net.home> <ac3eb2510903060217l1866919ag17b778e58cadb58a@mail.gmail.com>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: dracut and ubuntu 8.10
+Date: Fri, 6 Mar 2009 16:18:53 +0100
+Message-ID: <49B13EDD.2080700@bfh.ch>
+References: <49A8602D.7020708@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <ac3eb2510903060217l1866919ag17b778e58cadb58a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <49A8602D.7020708-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Kay Sievers wrote:
-> On Fri, Mar 6, 2009 at 10:33, Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> On Wed, Mar 04, 2009 at 09:18:35AM -0300, Thiago Galesi wrote:
->>> I remember seeing something in dracut mentioning pages: "The code for
->>> the replacement of this currently lives at
->>> http://pjones.fedorapeople.org/mkstart/usr/lib/mkstart/switchroot.c "
->>>
->>> I'm not sure this could be used, but it would be good to have
->>> something merged to hack already ;)
->> From my INBOX (private discussion between DaveJ and PJones, CC to me):
->>
->>  On Mon, Feb 02, 2009 at 04:31:48PM -0500, Peter Jones wrote:
->>  I think http://pjones.fedorapeople.org/switchroot.c is actually the latest version.
->>  As a warning, I haven't actually tested past building it.
->>
->> Maybe we can start to use this version and improve it.
-> 
-> This one, or the one in Harald's dracut repo, or the one from busybox,
-> or the one from klibc, they should work fine. I guess the binary
-> should live in the dracut repo, and should be installed in
-> /usr/lib/dracut/*, as it is not useful for anything else, I expect. Or
-> is there any possible other user?
-> 
-> Kay
+Followup: Harald Hoyers "Merge" repository boots on ub8.10 with a dracut.conf similar to the following one and the attached patch applied
 
-I took this switchroot.c, replaced my switch_root.c with it and fixed it, so 
-that it works for me.
+> cat dracut.conf
+modules="ata_piix sd_mod sg"
+dracutmodules="dash kernel-modules debug terminfo udev-rules.ub810 base"
 
-
-http://git.surfsite.org/git/gitweb.cgi?p=dracut.git;a=blob;f=switch_root.c;h=638a66379cc2aebd78270487be77f7d67b058e12;hb=2394813bf3afd455796e076802c183324f2f1d65
+---
+diff --git a/modules.d/95udev-rules.ub810/install b/modules.d/95udev-rules.ub810/install
+new file mode 100755
+index 0000000..f4067dd
+--- /dev/null
++++ b/modules.d/95udev-rules.ub810/install
+@@ -0,0 +1,25 @@
++#!/bin/bash
++# udev rules for ubuntu 8.10
++# content from /usr/share/initramfs-tools/hooks/udev
++mkdir -p "$initdir/etc/udev/rules.d"
++mkdir -p "$initdir/var/run"
++
++dracut_install udevd udevadm pkill
++dracut_install /etc/udev/udev.conf
++
++for rules in 05-options.rules 20-names.rules 40-basic-permissions.rules 60-persistent-storage.rules 61-persistent-s
++    dracut_install /etc/udev/rules.d/$rules 
++done
++
++dracut_install /lib/udev/dvb_device_name 
++dracut_install /lib/udev/usb_device_name 
++dracut_install /lib/udev/ata_id 
++dracut_install /lib/udev/usb_id 
++dracut_install /lib/udev/vol_id 
++dracut_install /lib/udev/scsi_id 
++dracut_install /lib/udev/path_id 
++dracut_install /lib/udev/edd_id 
++dracut_install /lib/udev/firmware_helper 
++dracut_install /lib/udev/ide_media 
++dracut_install /lib/udev/vio_type 
++dracut_install /lib/udev/watershed 
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index 7ff6e4a..3616adc 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -55,7 +55,7 @@ getarg 'break=pre-udev' && emergency_shell
+ source_all pre-udev
+ 
+ # start up udev and trigger cold plugs
+-udevd --daemon --resolve-names=never
++udevd --daemon $( [ $(udevd --version) -ge 137 ] && echo --resolve-names=never )
+ udevadm trigger >/dev/null 2>&1
+ udevadm settle --timeout=30 >/dev/null 2>&1
+ 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
