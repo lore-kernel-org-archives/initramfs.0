@@ -1,42 +1,42 @@
-From: Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: Re: merged dracut git
-Date: Thu, 5 Mar 2009 16:22:44 -0700
-Message-ID: <e9c3a7c20903051522n3a0d24bx6700a422085cec78@mail.gmail.com>
-References: <49AEBDE6.2080902@redhat.com> <49AFD4B6.5010609@redhat.com>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/4] Steal rules we need from the latest udev package.
+Date: Fri, 6 Mar 2009 10:33:01 +0100
+Message-ID: <20090306093301.GB3301@nb.net.home>
+References: <d53985b1c536e2fb845e0e3c369edd06d5018011.1236124962.git.victor.lowther@gmail.com> <462be3c3cfdf24ba51bc4d1a1f66cc30b8d29d82.1236124962.git.victor.lowther@gmail.com> <20090304002535.GB96609@redhat.com> <1236129369.6500.18.camel@sentry-no.fnordovax.org> <ac3eb2510903040212m5d68d812kbce03d831e8c3d12@mail.gmail.com> <1236166408.6500.37.camel@sentry-no.fnordovax.org> <ac3eb2510903040408w299b349aj791a2f9e0d154b9a@mail.gmail.com> <82ecf08e0903040418v23e68261le6c2a05f032a9b31@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:sender:received:in-reply-to
-         :references:date:x-google-sender-auth:message-id:subject:from:to:cc
-         :content-type:content-transfer-encoding;
-        bh=RyZkJvtMDTga8dFqXhSvdcydDALMoErCIEYYFB5HvsQ=;
-        b=QSdc4sjDTBfVoBdGFDXUiQRAN87LokmujJf6oyO+h5FmU9z0L78DUS4zQJwTYrvTY2
-         tiI6sxl4I1QFoEbldZU/CxnajL91TF0SCu7S7ZBmLe6N9zx9tGi7iuFr3hFkaR5c9fS3
-         hZWXKyF4MmnUgqbKSWLng4lMrTNvSHOVolTRY=
-In-Reply-To: <49AFD4B6.5010609-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <82ecf08e0903040418v23e68261le6c2a05f032a9b31-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Thiago Galesi <thiagogalesi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Thu, Mar 5, 2009 at 6:33 AM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> ok, I was able to boot from a LVM root on a crypted striped raid array with
-> the latest version of the "merge" branch of
->
-> http://git.surfsite.org/git/gitweb.cgi?p=dracut.git;a=shortlog;h=refs/heads/merge
-> git://surfsite.org/pub/git/dracut.git
->
 
-This approach appears to ignore Jeremy's call for raid arrays and such
-to be auto assembled as devices are discovered [1].
+ [ CC to Peter Jones ]
 
---
-Dan
+On Wed, Mar 04, 2009 at 09:18:35AM -0300, Thiago Galesi wrote:
+> I remember seeing something in dracut mentioning pages: "The code for
+> the replacement of this currently lives at
+> http://pjones.fedorapeople.org/mkstart/usr/lib/mkstart/switchroot.c "
+> 
+> I'm not sure this could be used, but it would be good to have
+> something merged to hack already ;)
 
-[1] http://article.gmane.org/gmane.linux.kernel.initramfs/69
+From my INBOX (private discussion between DaveJ and PJones, CC to me):
+
+  On Mon, Feb 02, 2009 at 04:31:48PM -0500, Peter Jones wrote:
+  I think http://pjones.fedorapeople.org/switchroot.c is actually the latest version.
+  As a warning, I haven't actually tested past building it.
+
+Maybe we can start to use this version and improve it.
+
+    Karel
+
+-- 
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
