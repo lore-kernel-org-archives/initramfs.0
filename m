@@ -1,9 +1,11 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Thoughts on mounting the rootfs from a udev rule
-Date: Fri, 20 Mar 2009 04:29:25 -0500
-Message-ID: <1237541365.5070.64.camel@sentry-no.fnordovax.org>
+Date: Fri, 20 Mar 2009 04:51:42 -0500
+Message-ID: <1237542702.5070.84.camel@sentry-no.fnordovax.org>
 References: <1237496785.5070.28.camel@sentry-no.fnordovax.org>
-	 <49C35EC6.2050405@bfh.ch>
+	 <49C3546C.8050505@suse.de>
+	 <1237540487.5070.54.camel@sentry-no.fnordovax.org>
+	 <49C360B3.9020107@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -12,69 +14,91 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:received:received:subject:from:to:cc
          :in-reply-to:references:content-type:date:message-id:mime-version
          :x-mailer:content-transfer-encoding;
-        bh=dZp+reyaaomXrh7taIa4+ytZzrJmY5daywJ/COOXoSY=;
-        b=XatB3vqW78I9uEgmNTttnHFoVWgFwwX8LIZppgk626lKe4/7I7NXmHz3LsP7DgukHd
-         /OyXmH31JPW7wUqw67zoRm4mXB8qvdJn5VEzOWyn2NmBXZJxFlNQiUzGuULqMSYxAUXC
-         Pvmy7gm/1SeUEGbdkuH4mEk84DQDRoOhwtXPM=
-In-Reply-To: <49C35EC6.2050405-omB+W0Dpw2o@public.gmane.org>
+        bh=oA1NIKQ16kbcIixzSFgF+fA7sNop4tdnouQBb/83hAM=;
+        b=GBs+8WgY+UYYUGDEz8wfQPAHGojHUseAMSwJSumK3+KDKVIM4KHKS65//lMej7ZHGn
+         MjacfbnkAvdevUuqXPyMoGOYP/VlI2Ii03kVGSgbFUrIjVCl50asLVIk7T3BXm5IW1WI
+         0Ppj104VWxq4ujRBOs+Xs5tKulG9bjy74C4Pk=
+In-Reply-To: <49C360B3.9020107-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Fri, 2009-03-20 at 10:15 +0100, Seewer Philippe wrote:
+On Fri, 2009-03-20 at 10:24 +0100, Seewer Philippe wrote:
 > Victor Lowther wrote:
-> > It seems that there are two major use cases that make mounting the root
-> > file system directly from a udev rule an inadvisable design decision:
+> [snip]
+> >> Hmm. There is no strict _need_ for a backing device for udev to work
+> >> properly, we just need an event here.
+> >> So for the nfsroot case it would be totally sufficient to have an event
+> >> like 'network is up'. This could then trigger a nfsmount
 > > 
-> > The first is when your root filesystem does not reside on a block
-> > device, as in the nfsroot case.  In this case, there is no backing
-> > device for the filesystem for udev to detect, so we would still need a
-> > non-udev method of mounting the root filesystem in order to handle any
-> > case where there is no backing device for the root filesystem.
-> > 
-> > The second is when we are asked to resume from hibernate.  In this case,
-> > we must not attempt to mount the root filesystem (or any other
-> > filesystem, for that matter) until we have either attempted to resume
-> > (and failed) or we have determined that resuming is impossible.  Udev
-> > does not make any guarantees about the order in which devices are
-> > discovered, which leads to all sorts of interesting potential failure
-> > modes when you have either or both of resume handling and rootfs
-> > handling in a udev rule.
-> > 
-> > Thoughts?
+> > In simple cases, maybe.  In the sort of cases Seewer has to deal with,
+> > it gets a great deal more complicated.
 > 
->  From experience with other software projects, having an event driven
-> system which asks 'something happened, what should I do' is preferrable
-> to having to write all the glue code yourself. And one of dracut's goals
-> is to get rid of as much shell code as possible no?
+> Yes and no. The current implementation is sort of event-based. "Network 
+> is up, please test" means theres something in the fifo and we can go and 
+> try. The same could be done via udev, if we could tell it do so 
+> something. Only problem I see would be synchronizing asynchronous events.
 
-It is a tradeoff -- I have little doubt that we could force nearly
-everything to happen as a direct result of a udev rule firing, but would
-that result be more or less maintainable and understandable than a
-hybrid solution?
+As far as I know, you cannot inject an event into udev from userspace.
+It responds to messages from the kernel and that is it.
 
-> Question is: Are the described cases exlusive? I mean if udev does
-> something does it make thawing impossible? Of so, can we prevent it? Or
-> maybe just postpone starting udev or restart udev at a later point.
+> > Driving network configuration from udev is easy and usually the right
+> > thing to do, but doesn't really help when you don't know beforehand
+> > which interface will actually be able to talk to the nfs server.
+> 
+> Or even worse, if you receive mount-data through dhcp options. But even 
+> that could be handled somehow if we had to.
 
-If you mount an ext3 filesystem it replays the journal whether or not
-you mount it read-only.  If you do that when you were hibernated then
-the filesystem will be dirty.  If at any point after journal replay has
-started udev discovers the resume device an initiates a resume you have
-just silently corrupted your root filesystem.  If you are lucky you
-might be able to recover from it.
+Actually, that part should not be that hard -- just separate the "saving
+info from dhclient" and "configuring the interface" phases.
 
+> >>> The second is when we are asked to resume from hibernate.  In this case,
+> >>> we must not attempt to mount the root filesystem (or any other
+> >>> filesystem, for that matter) until we have either attempted to resume
+> >>> (and failed) or we have determined that resuming is impossible.  Udev
+> >>> does not make any guarantees about the order in which devices are
+> >>> discovered, which leads to all sorts of interesting potential failure
+> >>> modes when you have either or both of resume handling and rootfs
+> >>> handling in a udev rule.
+> >>>
+> >> Ah, that's ok. In these cases you'll have a 'resume=' argument in
+> >> the kernel commandline, so you just need to write a rule using an
+> >> event serializer/capture like 'collect':
+> >> - Use three arguments to collect, root device, resume device, and
+> >>   another one signifying 'resume_done'.
+> >> - Add another rule which triggers resume on the resume device, sets
+> >>   'resume_done' if resume returns, and triggers the collect rule again.
+> >> - Then collect will return 1 and start the mount process.
+> > 
+> > How does that handle the case where we asked to resume but the resume
+> > device is not found?
+> 
+> Question: If we know which device to resume from, why not have a 
+> pre-udev rule specifying _if_ that device shows up try to thaw?
+
+If it shows up after we have already started mounting the root
+filesystem we are hosed.
+
+If it never shows up at all, things get interesting depending on exactly
+how we want to handle that case.
+
+> > Will it be easier to maintain than just waiting for all the devices to
+> > be found and configured before trying to resume or mount anything?
+> 
+> I guess that depends on personal taste (and documentation)
+> 
+> >> No problem there. However, you're still facing the problem that you'd
+> >> might want to run 'fsck' on the root device. And you might want to
+> >> know when 'mount' has actually finished, as only then you can execute
+> >> 'init'. Sadly the 'mount' events are gone from the kernel, otherwise
+> >> it would've been quite handy here.
+> 
+> Again, is it possible to send events to udev from Userspace?
+> 
 > Regards,
 > Philippe
-> 
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 -- 
 Victor Lowther
 RHCE# 805008539634727
