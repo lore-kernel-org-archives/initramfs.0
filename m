@@ -1,37 +1,49 @@
-From: Adam Spragg <adam-2iSS7ArDF14@public.gmane.org>
-Subject: Re: Thoughts on mounting the rootfs from a udev rule
-Date: Sun, 22 Mar 2009 19:46:10 +0000
-Message-ID: <49C69582.3040004@spra.gg>
-References: <1237496785.5070.28.camel@sentry-no.fnordovax.org>	 <49C35EC6.2050405@bfh.ch> <1237541365.5070.64.camel@sentry-no.fnordovax.org>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: initramfs-tools stable release 0.93.1
+Date: Mon, 23 Mar 2009 08:21:25 +0100
+Message-ID: <20090323072125.GK7954@stro.at>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1237541365.5070.64.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
 
-Victor Lowther wrote:
-> If you mount an ext3 filesystem it replays the journal whether or not
-> you mount it read-only.
+random pile of fixes combined with some Ubuntu syncs.
+no new features.
 
-According to the documentation patch at:
+The naming of the initramfs-tools stable releases changed
+from adding a letter to the more accepted and widely used
+addition of a maintenance number.
 
-http://patchwork.kernel.org/patch/940/
 
-you can mount ext3 as ro,noload which will not replay the journal.
+Ben Collins (1):
+      init-top/framebuffer: ignore blacklist for forced vga= usage.
 
-Although those emails are dated Jan 2009, I'm not sure how old that actual
-feature is, or what kernels it might be in.
+Matt Kraai (1):
+      mkinitramfs-kpkg misspells "deprecation" as "depreciation"
 
-Adam
+Michael Vogt (1):
+      update-initramfs: set_linked_version() check if the links point to an existing initrd.img
 
--- 
-The fundamental cause of the trouble is that in the modern world the
-stupid are cocksure while the intelligent are full of doubt.
-    -- Bertrand Russell
+Scott James Remnant (1):
+      mkinitramfs: include the modules.order file.
+
+maximilian attems (10):
+      init: export ip root param for configure_networking()
+      initramfs-tools.8: Document exported IP kernel parameter.
+      initramfs-tools.preinst: Nuke initrd-tools related migration path.
+      MODULES=dep: ide-disk got renamed to ide-gd_mod since 2.6.28.
+      mkinitramfs: usage() fix conffile name.
+      update copyright year of my contributions
+      control: conform to latest policy without changes
+      hook-functions: reword MODULES=dep error message
+      hook-functions: MODULES=dep fix for mmc root
+      debian/compat: Set debhelper compatibility version 5
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
