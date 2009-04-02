@@ -1,110 +1,71 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Dracut now on Sourceforge
-Date: Tue, 24 Mar 2009 12:18:47 +0100
-Message-ID: <49C8C197.7060900@redhat.com>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: initramfs-tools stable release 0.93.2
+Date: Thu, 2 Apr 2009 13:18:17 +0200
+Message-ID: <20090402111817.GA4903@stro.at>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg=sha1; boundary="------------ms090007000109090908060605"
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
 
-This is a cryptographically signed message in MIME format.
+initramfs-tools is a generic initramfs generation tool.
 
---------------ms090007000109090908060605
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: 7bit
+latest stable adds fb fixes and a behaviour change for
+update-initramfs -u to work against newest initramfs
+instead of following maybe outdated /initrd.img symlink.
 
-Dave Jones asked me to take over the lead for dracut, so to enable more collaboration, I created a project on
-sourceforge.
+git clone git://git.debian.org/kernel/initramfs-tools.git              =
+        =20
+                                                                       =
+        =20
+online repo:                                                           =
+        =20
+http://git.debian.org/git/kernel/initramfs-tools.git                   =
+        =20
 
-https://sourceforge.net/projects/dracut/
 
-Drop me a mail, if you want to help with the documentation, git access, etc.
 
-Also, I merged the test suite of Victor and pushed everything to
-http://dracut.git.sourceforge.net/
+complete shortlog, aka git shortlog 0.93.1..
 
-git://dracut.git.sourceforge.net/gitroot/dracut
+=46ran=E7ois Delawarde (1):
+      hook-functions: MODULES=3Ddep fix for luks over cciss devices
 
-Trac Instance:
-http://apps.sourceforge.net/trac/dracut/
+Maik Zumstrull (1):
+      init-top/framebuffer: Load intel-agp for intelfb
 
---------------ms090007000109090908060605
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+maximilian attems (12):
+      hook-functions: stricter match on loaded module for firmware warn=
+ing.
+      hook-functions: Add firmware from versioned directories too.
+      hook-functions: MODULES=3Dmost add all fb modules per default
+      update-initramfs: Cleanup run_bootloader()
+      update-initramfs: mbr_check() use /boot/grub/grub.cfg for grub2 s=
+earch.
+      update-initramfs: Run update on highest version instead of /initr=
+d.img link
+      hook-functions: MODULES=3Dmost fb add all available agp modules
+      update-initramfs: Fix error message on wrong -k version argument
+      hooks/thermal: Prevent inclusion of windfarm modules on PS3.
+      init-top/framebuffer: syntax fix.
+      mkinitramfs: Allow dots in boot and script filenames.
+      release 0.93.2
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIKYjCC
-BS0wggMVoAMCAQICAwOoWjANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wNzA2
-MDYwNjQ5MDNaFw0wOTA2MDUwNjQ5MDNaMDkxFTATBgNVBAMTDEhhcmFsZCBIb3llcjEgMB4G
-CSqGSIb3DQEJARYRaGFyYWxkQHJlZGhhdC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
-ggEKAoIBAQDcYRNZNcpUzmHaTtZXCPoLNJW7g0iD9Oo8BgGQDmLQPEIw05SINqk5f+YvIvoo
-a85lze7+bfhDg3MJmcTu5C8OKnej+GfZV8qVnLLg0F1d2pSc1oKTarasUN+BSNTn8mc+BlKM
-jEF5I4faGGATEgM/1pkscRofiQoWDvMAHsD/UVErVTKzLT03vczQutUYfHJuGJohXdJubQdJ
-C2AyXqLJBkvns+0pNGB7qMHTVPWm9+v1I18iz0sXe5hOsTMIJFFCkia41ZVpGkwU/9ITVLtY
-E+UmW897Tpi4uUE5YsPVoA3u5YIFlQFkwW1Zp9bAlmFGNlUUe2UEvpTAWWVte+qBAgMBAAGj
-gf0wgfowDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcw
-QAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3CgMD
-BglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMBwGA1UdEQQVMBOBEWhhcmFsZEByZWRoYXQuY29tMA0GCSqGSIb3DQEBBQUA
-A4ICAQAyKBirdOIjYdzfQAhpme6t2gg/cAzxITk4Vq+DpoxSJ8JD8f6mlQoMblC9zCFAWk7X
-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
-FWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhv
-cml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMDqFowCQYFKw4DAhoF
-AKCCAegwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMDkwMzI0
-MTExODQ3WjAjBgkqhkiG9w0BCQQxFgQUy6a1te+aTtVdXePz5YqmMblVpXowXwYJKoZIhvcN
-AQkPMVIwUDALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqG
-SIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAw
-eTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIw
-IAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBw
-b3J0QGNhY2VydC5vcmcCAwOoWjCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMH
-Um9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBD
-ZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5v
-cmcCAwOoWjANBgkqhkiG9w0BAQEFAASCAQCTx+IWQ7bVmb5Jz93hjSCBlF1Pjelh2HssgfDa
-Nn7KcGsg+NtVPBZYosOtfDpwRNa1kzQfgN8VERbCzhYzxiJrqGUSAqBtHdTGeAEtrTmvaw3C
-OkFE9lMXZKlXGVSRYxbhl+ABM3IiAh5XuAAbgeKXt9g59FSZ7t9s8DzIkEgfHrPNREYLxs4g
-47PbgltmxYOqJRBQWqpKhVAcmjxoPgq4H5uzrTy+OSJRhujfCJArngU5I1bxBkmcpcg49M2/
-PxLjt4ItciYyZuMqLolHxlvOhYwJK2W5F8xN/2tx9RBZSASHPuEoXPn8NM+wlPRtZ1oFEZow
-BtjEca36PUf7J6XdAAAAAAAA
---------------ms090007000109090908060605--
+
+diffstat
+
+ debian/changelog             |   28 ++++++++++++++++++++++++
+ hook-functions               |   27 +++++++++++++++++++----
+ hooks/thermal                |    3 ++
+ mkinitramfs                  |    4 +-
+ scripts/functions            |    4 +-
+ scripts/init-top/framebuffer |    7 +++++-
+ update-initramfs             |   48 ++++++++++++++++++++++++----------=
+-------
+ 7 files changed, 91 insertions(+), 30 deletions(-)
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
