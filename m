@@ -1,71 +1,73 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 06/11] change file descriptor for flock locking
-Date: Fri, 15 May 2009 14:39:39 +0200
-Message-ID: <4A0D628B.5030801@redhat.com>
+Subject: [PATCH 07/11] dash echo does not support -e option
+Date: Fri, 15 May 2009 14:39:48 +0200
+Message-ID: <4A0D6294.1040509@redhat.com>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------050309040908090500000303"
+ boundary="------------070201080104030801020903"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 This is a multi-part message in MIME format.
---------------050309040908090500000303
+--------------070201080104030801020903
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
-dash does not like filedescriptors > 9
+use /bin/echo, instead of dash builtin echo
+do not use "sh -c"
 ---
-  modules.d/90crypt/cryptroot-ask.sh |    6 +++---
-  modules.d/99base/init              |    5 +----
-  2 files changed, 4 insertions(+), 7 deletions(-)
+  modules.d/95rootfs-block-udev/genrules.sh |    9 ++++-----
+  modules.d/95rootfs-block-udev/install     |    1 +
+  2 files changed, 5 insertions(+), 5 deletions(-)
 
 
 
---------------050309040908090500000303
+--------------070201080104030801020903
 Content-Type: text/x-patch;
- name="b6e0fea80c4aef66421af74dc1d29154cdae0264.diff"
+ name="e419faf652b7323963df00046b0fa6109ea6d12e.diff"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
- filename="b6e0fea80c4aef66421af74dc1d29154cdae0264.diff"
+ filename="e419faf652b7323963df00046b0fa6109ea6d12e.diff"
 
-diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
-index 499f586..48cc0f7 100755
---- a/modules.d/90crypt/cryptroot-ask.sh
-+++ b/modules.d/90crypt/cryptroot-ask.sh
-@@ -1,8 +1,8 @@
+diff --git a/modules.d/95rootfs-block-udev/genrules.sh b/modules.d/95rootfs-block-udev/genrules.sh
+index d4e226c..0b42483 100755
+--- a/modules.d/95rootfs-block-udev/genrules.sh
++++ b/modules.d/95rootfs-block-udev/genrules.sh
+@@ -1,15 +1,14 @@
+ 
+ resume=$(getarg resume=) && ! getarg noresume && [ -b "$resume" ] && {
+-    # parsing the output of ls is Bad, but until there is a better way...
+     (
+-    	echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/sh -c \047 echo %M:%m > /sys/power/resume \047 "'
+-    	echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/sh -c \047 echo %M:%m > /sys/power/resume \047 "'
++    	/bin/echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
++    	/bin/echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
+     ) >> /etc/udev/rules.d/99-resume.rules
+ }
+ 
+ (
+- echo -e 'KERNEL=="'${root#/dev/}'", RUN+="/bin/sh -c \047 mount '$fstype' -o '$rflags' '$root' '$NEWROOT' \047 " '
+- echo -e 'SYMLINK=="'${root#/dev/}'", RUN+="/bin/sh -c \047 mount '$fstype' -o '$rflags' '$root' '$NEWROOT' \047 " '
++ echo 'KERNEL=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
++ echo 'SYMLINK=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
+ ) >> /etc/udev/rules.d/99-mount.rules
+ 
+ 
+diff --git a/modules.d/95rootfs-block-udev/install b/modules.d/95rootfs-block-udev/install
+index 641e7df..3b02232 100755
+--- a/modules.d/95rootfs-block-udev/install
++++ b/modules.d/95rootfs-block-udev/install
+@@ -1,3 +1,4 @@
  #!/bin/sh
- 
- [ -b /dev/mapper/$2 ] && exit 0
--(
--	flock -s 200
-+{
-+	flock -s 9
- 	/sbin/cryptsetup luksOpen -T1 $1 $2 </dev/console >/dev/console 2>&1
--) 200>/.console.lock
-+} 9>/.console.lock
- 
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index fbfad05..ce26de6 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -79,10 +79,7 @@ while :; do
- 
-     sleep 0.5
-     i=$(($i+1))
--    (
--    	flock -s 200
--	[ $i -gt 20 ] && emergency_shell
--    ) 200>/.console_lock
-+    { flock -s 9 ; [ $i -gt 20 ] && emergency_shell; } 9>/.console_lock
- done
- 
- # pre pivot scripts are sourced just before we switch over to the new root.
++dracut_install echo
+ inst_hook pre-udev 10 "$moddir/parse-root-opts.sh"
+ inst_hook pre-udev 20 "$moddir/genrules.sh"
 
 
---------------050309040908090500000303--
+--------------070201080104030801020903--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
