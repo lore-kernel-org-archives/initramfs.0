@@ -1,64 +1,52 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: wiki, README and TODO update
-Date: Fri, 15 May 2009 14:16:12 +0200
-Message-ID: <4A0D5D0C.5060800@redhat.com>
-References: <4A098CB5.2070006@redhat.com>	 <1242351147.29452.2.camel@sentry-no.us.dell.com>	 <1242355988.5107.4.camel@obelisk.thedillows.org> <1242389030.29452.10.camel@sentry-no.us.dell.com>
+Subject: [PATCH 01/11] do not run dhclient, if no net device found
+Date: Fri, 15 May 2009 14:38:58 +0200
+Message-ID: <4A0D6262.5070008@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="------------000501040706020501090204"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1242389030.29452.10.camel-76q0VzFBGGqhmyxYjSZgiRL4W9x8LtSr@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "init >> \"initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org\"" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 05/15/2009 02:03 PM, Victor Lowther wrote:
-> On Thu, 2009-05-14 at 22:53 -0400, David Dillow wrote:
->> On Thu, 2009-05-14 at 20:32 -0500, Victor Lowther wrote:
->>> On Tue, 2009-05-12 at 16:50 +0200, Harald Hoyer wrote:
->>>> Today I updated http://apps.sourceforge.net/trac/dracut/ and the package README and TODO files.
->>>> The next days, I will add iSCSI support and test various network setups.
->>> Cool.  I ahve been working on some test suite improvements (lvm on
->>> cryptroot on software raid5), and am working on making dracut actually
->>> work in that configuration.  I will post patches to the mailing list
->>> once it works without manual hackery.
->>>
->>> Next stop, all that over iscsi.  Should be fun.
->> Glad to see this project isn't dead...
->
-> I had a sudden attack of Real Life -- my daughter learned to crawl, so
-> the tiny amounts of free time I once had vanished.
+This is a multi-part message in MIME format.
+--------------000501040706020501090204
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-cool :-) not so good for dracut :-/
+---
+  modules.d/40network/run-dhclient.sh |    3 ++-
+  1 files changed, 2 insertions(+), 1 deletions(-)
 
->
->> I've got a few boot-off-of-NFS patches together that use DHCP options to
->> find the root, and let it be overridden by the command line. I've also
->> got a piece that lets it boot over a bonded network. I'll try to circle
->> back to those and post them before Memorial Day (May 25h).
->
-> Cool.  Can you also hack up a makefile target that tests it using kvm
-> and/or qemu?
->
-> I suppose I should post my more generic test suite improvements (making
-> kvm/qemu work no matter what it is named on any given distro) to give
-> you something a little easier to build with.
 
-yes, just post them, no matter, if they apply to the actual tree.. I will merge 
-them and clean them up.
 
->
->> These all trigger off of udev events, though I recall there was some
->> discussion about whether that was the way to go or not. In many ways,
->> they are just polish on some of the network patches that have been
->> posted here before (by you two, IIRC).
->
-> I don't think we ever finally decided one way or the other, the
-> conversations kind of died off without reaching a conclusion.
->
+--------------000501040706020501090204
+Content-Type: text/x-patch;
+ name="e7b6ed13796581f4881c2a42c198d314375d4f9c.diff"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="e7b6ed13796581f4881c2a42c198d314375d4f9c.diff"
 
-I think "all trigger off of udev events" is the way to go. If it doesn't work, 
-try to fix the tools that do not work.
+diff --git a/modules.d/40network/run-dhclient.sh b/modules.d/40network/run-dhclient.sh
+index afab037..a98e01d 100755
+--- a/modules.d/40network/run-dhclient.sh
++++ b/modules.d/40network/run-dhclient.sh
+@@ -1,8 +1,9 @@
+ #!/bin/sh
+ for i in /net.*.dhcp; do
++    [ "$dev" = "/net.*.dhcp" ] && break
+     dev=${i#net.}; dev=${i%.dhcp}
+     [ -f "/net.$dev.up" ] && continue
+     dhclient -1 -q $dev &
+ done
+ wait
+-    
+\ No newline at end of file
++    
+
+
+--------------000501040706020501090204--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
