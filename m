@@ -1,55 +1,133 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 11/11] removed kernel variable from test/test-initramfs
-Date: Fri, 15 May 2009 14:40:24 +0200
-Message-ID: <4A0D62B8.3070401@redhat.com>
+From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+Subject: devtmpfs: kernel maintained /dev and initramfs
+Date: Fri, 15 May 2009 15:20:36 +0200
+Message-ID: <1242393636.3108.37.camel@poy>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------080703010404000100070609"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This is a multi-part message in MIME format.
---------------080703010404000100070609
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Just for your information, as it *might* make things a bit simpler in
+the future.
 
----
-  test/test-initramfs |    3 +--
-  1 files changed, 1 insertions(+), 2 deletions(-)
+I'm currently working on a kernel-maintained tmpfs-based /dev
+filesystem:
+  http://git.kernel.org/?p=linux/kernel/git/kay/patches.git;a=blob;f=driver-core-devtmpfs-driver-core-maintained-dev-tmpfs.patch;hb=HEAD
 
+It would de-couple the rather complex userspace logic from a minimal
+working /dev, and lets current udev work on top of the kernel provided
+nodes, instead of being a hard requirement to have anything useful
+in /dev. It is intended to make things more robust and lets init=/bin/sh
+work with a fully populated and working /dev.
 
+The kernel will provide us a device node for every kernel device
+currently registered, udev would apply the policy like mode, ownership,
+and possibly create a different node, or delete the kernel-created one
+if told to do.
 
---------------080703010404000100070609
-Content-Type: text/x-patch;
- name="c354b54e555a76fa78404b57740372694e18d37e.diff"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="c354b54e555a76fa78404b57740372694e18d37e.diff"
+It makes the initramfs logic much simpler and does not need a full
+coldplug run to bootstrap /dev. If kernel device names are used, udev
+does not even need to be started, and we can go straight ahead. A simple
+and minimal example initramfs "init", to show what's needed is below.
 
-diff --git a/test/test-initramfs b/test/test-initramfs
-index a050deb..dc0e837 100755
---- a/test/test-initramfs
-+++ b/test/test-initramfs
-@@ -1,5 +1,4 @@
- #!/bin/bash
--kernel=$(uname -r)
- [[ -f test/root.ext2 ]] || test/make-test-root
- 
- ./dracut $DRACUTOPTS -c test/dracut.conf.test -l -f test/initramfs.testing || exit
-@@ -7,7 +6,7 @@ kernel=$(uname -r)
- qemu-kvm -hda test/root.ext2 -m 512M -nographic  \
- 	-net nic,macaddr=52:54:00:12:34:56  \
- 	-net user  \
--	-kernel /boot/vmlinuz-$kernel \
-+	-kernel /boot/vmlinuz-$(uname -r) \
- 	-initrd test/initramfs.testing \
- 	-append "root=/dev/sda rw console=ttyS0,115200n81 $APPEND"   
- 
+Cheers,
+Kay
 
 
---------------080703010404000100070609--
+
+#!/bin/sh
+
+# minimal initramfs with persistent device name support
+# requires devtmpfs support provided by the kernel
+
+shell() {
+	echo "initramfs: dropping to shell"
+	exec >/dev/console 2>&1 </dev/console < /dev/console
+	sh -i
+}
+
+getarg() {
+	local o line
+	for o in $cmdline; do
+		test "$o" = "$1" && return 0
+		if test "${o%%=*}" = "${1%=}"; then
+			echo ${o#*=}
+			return 0
+		fi
+	done
+	return 1
+}
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export TERM=linux
+
+# console redirect to kernel log
+exec >/dev/kmsg 2>&1 </dev/console
+echo "initramfs: starting ..."
+
+# mount needed filesystems
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+
+# prepare /dev
+mount -t devtmpfs devtmpfs /dev
+mkdir -m 0755 /dev/pts
+mkdir /dev/pts
+mount -t devpts -o gid=5,mode=620 devpts /dev/pts
+
+# kernel commandline
+read cmdline </proc/cmdline;
+
+# root we are looking for
+root=$(getarg root=)
+echo "initramfs: looking for $root"
+
+# shortcut, in case root is already there 
+if test -e "$root"; then
+	echo "initramfs: mounting $root"
+	mount "$root" /root
+	mounted=yes
+fi
+
+# we need to start udev to create the symlink we are looking for
+if test -z "$mounted"; then
+	echo "initramfs: starting udev"
+	udevd --daemon --resolve-names=never
+	# create links for already existing block devices
+	echo "initramfs: trigger block and module events"
+	udevadm trigger --subsystem-match=block
+	udevadm trigger --attr-match=modalias
+
+	echo "initramfs: waiting for $root"
+	# loop until root shows up
+	while test -z "$mounted"; do
+		if test -e "$root"; then
+			echo "initramfs: mounting $root"
+			mount "$root" /root && mounted=yes
+		fi
+		sleep 0.05
+	done
+
+	# kill udev
+	kill $(pidof udevd) >/dev/null 2>&1
+fi
+
+# move filesystems over to the mounted root
+mount --move /dev /root/dev
+mount --move /proc /root/proc
+mount --move /sys /root/sys
+
+# move into root
+cd /root
+init=$(getarg init=)
+test -z "$init" && init=/sbin/init
+echo "initramfs: switching to root filesystem $root and start $init"
+exec run-init -c /dev/console /root $init
+
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
