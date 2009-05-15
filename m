@@ -1,54 +1,55 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 10/11] cleanup make-test-root
-Date: Fri, 15 May 2009 14:40:15 +0200
-Message-ID: <4A0D62AF.6020804@redhat.com>
+Subject: [PATCH 11/11] removed kernel variable from test/test-initramfs
+Date: Fri, 15 May 2009 14:40:24 +0200
+Message-ID: <4A0D62B8.3070401@redhat.com>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------010602070003010500060001"
+ boundary="------------080703010404000100070609"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 This is a multi-part message in MIME format.
---------------010602070003010500060001
+--------------080703010404000100070609
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
 ---
-  test/make-test-root |   10 ----------
-  1 files changed, 0 insertions(+), 10 deletions(-)
+  test/test-initramfs |    3 +--
+  1 files changed, 1 insertions(+), 2 deletions(-)
 
 
 
---------------010602070003010500060001
+--------------080703010404000100070609
 Content-Type: text/x-patch;
- name="9e551c90976caf75483065f8f4ba93d5b4258ec9.diff"
+ name="c354b54e555a76fa78404b57740372694e18d37e.diff"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
- filename="9e551c90976caf75483065f8f4ba93d5b4258ec9.diff"
+ filename="c354b54e555a76fa78404b57740372694e18d37e.diff"
 
-diff --git a/test/make-test-root b/test/make-test-root
-index 8c54f8d..7da36c5 100755
---- a/test/make-test-root
-+++ b/test/make-test-root
-@@ -19,13 +19,3 @@ unset initdir
+diff --git a/test/test-initramfs b/test/test-initramfs
+index a050deb..dc0e837 100755
+--- a/test/test-initramfs
++++ b/test/test-initramfs
+@@ -1,5 +1,4 @@
+ #!/bin/bash
+-kernel=$(uname -r)
+ [[ -f test/root.ext2 ]] || test/make-test-root
  
- umount test/mnt
- rm -fr test/mnt
--
--#./dracut -l -i "$targetfs" /source \
--#    -m "dash kernel-modules test crypt lvm udev-rules base rootfs-block" \
--#    -d "ata_piix ext2 sd_mod" \
--#    -f test/initramfs.makeroot
--#
--#qemu-kvm -hda test/root.ext2 -m 512M -nographic -net none \
--#    -kernel "/boot/vmlinuz-$kernel" \
--#    -append "root=/dev/dracut/root rw rootfstype=ext2 quiet console=ttyS0,115200n81" \
--#    -initrd test/initramfs.makeroot
+ ./dracut $DRACUTOPTS -c test/dracut.conf.test -l -f test/initramfs.testing || exit
+@@ -7,7 +6,7 @@ kernel=$(uname -r)
+ qemu-kvm -hda test/root.ext2 -m 512M -nographic  \
+ 	-net nic,macaddr=52:54:00:12:34:56  \
+ 	-net user  \
+-	-kernel /boot/vmlinuz-$kernel \
++	-kernel /boot/vmlinuz-$(uname -r) \
+ 	-initrd test/initramfs.testing \
+ 	-append "root=/dev/sda rw console=ttyS0,115200n81 $APPEND"   
+ 
 
 
---------------010602070003010500060001--
+--------------080703010404000100070609--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
