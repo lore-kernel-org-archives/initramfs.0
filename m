@@ -1,68 +1,54 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/11] fixed plymouth installation for plymouth-0.7.0-0.2009.05.08.1.fc11
-Date: Fri, 15 May 2009 14:39:08 +0200
-Message-ID: <4A0D626C.5000202@redhat.com>
+Subject: [PATCH 03/11] add target "check"
+Date: Fri, 15 May 2009 14:39:17 +0200
+Message-ID: <4A0D6275.9070509@redhat.com>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------050702020700010101080402"
+ boundary="------------020900000305040705030705"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 This is a multi-part message in MIME format.
---------------050702020700010101080402
+--------------020900000305040705030705
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
+
+add dash syntax checking
 ---
-  modules.d/50plymouth/plymouth-populate-initrd |   13 +++++++++----
-  1 files changed, 9 insertions(+), 4 deletions(-)
+  Makefile |    5 +++++
+  1 files changed, 5 insertions(+), 0 deletions(-)
 
 
 
---------------050702020700010101080402
+--------------020900000305040705030705
 Content-Type: text/x-patch;
- name="41fab50b5fe4a242324fd1cd4caa8079b18c17fc.diff"
+ name="5cb6c761c14147c54b63ccfc83b899f1c2964c65.diff"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
- filename="41fab50b5fe4a242324fd1cd4caa8079b18c17fc.diff"
+ filename="5cb6c761c14147c54b63ccfc83b899f1c2964c65.diff"
 
-diff --git a/modules.d/50plymouth/plymouth-populate-initrd b/modules.d/50plymouth/plymouth-populate-initrd
-index e195ddc..ed05e9b 100755
---- a/modules.d/50plymouth/plymouth-populate-initrd
-+++ b/modules.d/50plymouth/plymouth-populate-initrd
-@@ -5,18 +5,23 @@ else
-     LIBDIR="/usr/lib"
- fi
- PLYMOUTH_LOGO_FILE="/usr/share/pixmaps/system-logo-white.png"
--PLYMOUTH_PLUGIN_NAME=$(plymouth-set-default-plugin)
-+PLYMOUTH_PLUGIN_NAME=$(plymouth-set-default-theme)
+diff --git a/Makefile b/Makefile
+index 0474ede..ef264eb 100644
+--- a/Makefile
++++ b/Makefile
+@@ -38,6 +38,11 @@ test: test/root.ext2 all
+ test/root.ext2: test/test-init test/make-test-root
+ 	sudo test/make-test-root
  
- inst /sbin/plymouthd /bin/plymouthd
- dracut_install /bin/plymouth "${LIBDIR}/plymouth/text.so" \
-     "${LIBDIR}/plymouth/details.so" "${PLYMOUTH_LOGO_FILE}" \
--    /etc/system-release "${LIBDIR}/plymouth/${PLYMOUTH_PLUGIN_NAME:=text}.so"
-+    /etc/system-release 
++check:
++	@ret=0;for i in modules.d/99base/init modules.d/*/*.sh; do \
++		dash -n "$$i" ; ret=$$(($$ret+$$?)); \
++	done;exit $$ret
 +
-+if [[ -f "${LIBDIR}/plymouth/${PLYMOUTH_PLUGIN_NAME:=text}.so" ]]; then
-+    dracut_install "${LIBDIR}/plymouth/${PLYMOUTH_PLUGIN_NAME:=text}.so" 
-+fi
-+
- mkdir -p "${initdir}/usr/share/plymouth"
- 
- [[ -f ${LIBDIR}/plymouth/default.so ]] && inst ${LIBDIR}/plymouth/default.so
- 
--if [[ -d /usr/share/plymouth/${PLYMOUTH_PLUGIN_NAME} ]]; then
--    for x in "/usr/share/plymouth/${PLYMOUTH_PLUGIN_NAME}"/* ; do
-+if [[ -d /usr/share/plymouth/themes/${PLYMOUTH_PLUGIN_NAME} ]]; then
-+    for x in "/usr/share/plymouth/themes/${PLYMOUTH_PLUGIN_NAME}"/* ; do
-         [[ -f "$x" ]] || break
-         inst $x
-     done
+ testimage: all
+ 	./dracut -l -f test-$(shell uname -r).img $(shell uname -r)
+ 	@echo wrote  test-$(shell uname -r).img 
 
 
---------------050702020700010101080402--
+--------------020900000305040705030705--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
