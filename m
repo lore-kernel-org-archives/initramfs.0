@@ -1,124 +1,76 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 04/11] add derror(), dinfo() and dwarning()
-Date: Fri, 15 May 2009 14:39:24 +0200
-Message-ID: <4A0D627C.9000206@redhat.com>
+Subject: [PATCH 05/11] add debug and changed verbose parameter
+Date: Fri, 15 May 2009 14:39:31 +0200
+Message-ID: <4A0D6283.6090805@redhat.com>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------030905050905060000080007"
+ boundary="------------020903070200090403010709"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: "initram >> \"initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org\"" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 This is a multi-part message in MIME format.
---------------030905050905060000080007
+--------------020903070200090403010709
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
+
+previous -verbose is now -debug (set -x)
+-verbose adds some information about the resulting initrd size
 ---
-  dracut-functions |   32 +++++++++++++++++++++++---------
-  1 files changed, 23 insertions(+), 9 deletions(-)
+  Makefile |    2 +-
+  dracut   |    9 ++++++++-
+  2 files changed, 9 insertions(+), 2 deletions(-)
 
 
 
---------------030905050905060000080007
+--------------020903070200090403010709
 Content-Type: text/x-patch;
- name="6fac46910c79337e1e46d338197b02893d723510.diff"
+ name="c4ad7ffff4e9fc38ae68f1e7a6bf16f4bc879b7d.diff"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
- filename="6fac46910c79337e1e46d338197b02893d723510.diff"
+ filename="c4ad7ffff4e9fc38ae68f1e7a6bf16f4bc879b7d.diff"
 
-diff --git a/dracut-functions b/dracut-functions
-index 2c98785..6839ba9 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -28,6 +28,18 @@ IF_dynamic=""
- # Generic substring function.  If $2 is in $1, return 0.
- strstr() { [[ ! ${1#*$2*} = $1 ]]; }
+diff --git a/Makefile b/Makefile
+index ef264eb..7053cd9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -44,5 +44,5 @@ check:
+ 	done;exit $$ret
  
-+dwarning() {
-+    echo "W: $@" >&2
-+}
-+
-+dinfo() {
-+    echo "I: $@" >&2
-+}
-+
-+derror() {
-+    echo "E: $@" >&2
-+}
-+
- # $1 = file to copy to ramdisk
- # $2 (optional) Name for the file on the ramdisk
- # Location of the image dir is assumed to be $initdir
-@@ -38,7 +50,7 @@ inst_simple() {
-     src=$1 target="${initdir}${2:-$1}"
-     [[ -f $target ]] && return 0
-     mkdir -p "${target%/*}"
--    echo "Installing $src" >&2
-+    dinfo "Installing $src" 
-     cp -fL "$src" "$target"
+ testimage: all
+-	./dracut -l -f test-$(shell uname -r).img $(shell uname -r)
++	./dracut -v -l -f test-$(shell uname -r).img $(shell uname -r)
+ 	@echo wrote  test-$(shell uname -r).img 
+diff --git a/dracut b/dracut
+index 7a14765..4d42e82 100755
+--- a/dracut
++++ b/dracut
+@@ -15,7 +15,8 @@ while (($# > 0)); do
+ 	-d|--drivers) modules_l="$2"; shift;;
+ 	-h|--help) echo "Usage: $0 [-f] <initramfs> <kernel-version>"
+ 	    exit 1 ;;
+-	-v|--verbose) set -x;;
++	-d|--debug) set -x;;
++	-v|--verbose) beverbose="yes";;
+ 	-c|--conf) conffile="$2"; shift;;
+ 	-l|--local) allowlocal="yes" ;;
+ 	-h|--hostonly) hostonly="-h" ;;
+@@ -108,4 +109,10 @@ ldconfig -n -r "$initdir" /lib* /usr/lib*
+     cp -a -t "$initdir$include_target" "$include_src"/*
  }
  
-@@ -82,9 +94,9 @@ inst_binary() {
-     ldd $bin 2>/dev/null | while read line; do
- 	[[ $line = 'not a dynamic executable' ]] && return 1
- 	[[ $line =~ not\ found ]] &&{
--	    echo "Missing a shared library required by $bin." >&2
--	    echo "Run \"ldd $bin\" to find out what it is." >&2
--	    echo "dracut cannot create an initrd." >&2
-+	    derror "Missing a shared library required by $bin."
-+	    derror "Run \"ldd $bin\" to find out what it is."
-+	    derror "dracut cannot create an initrd."
- 	    exit 1
- 	} 
- 	[[ $line =~ ([^ ]*/lib[^/]*/[^ ]*\.so[^ ]*) ]] || continue
-@@ -152,7 +164,7 @@ inst_rules() {
- # Same args as above.
- inst() {
-     if (($# != 1 && $# != 2 )); then
--        echo "dracut error: inst only takes 1 or 2 arguments"
-+        derror "inst only takes 1 or 2 arguments"
- 	exit 1
-     fi
-     for x in inst_symlink inst_script inst_binary inst_simple; do
-@@ -166,12 +178,12 @@ inst() {
- # All hooks should be POSIX/SuS compliant, they will be sourced by init.
- inst_hook() {
-     [[ -f $3 ]] || {
--	echo "Cannot install a hook ($3) that does not exist." >&2
--	echo "Aborting initrd creation." >&2
-+	derror "Cannot install a hook ($3) that does not exist."
-+	derror "Aborting initrd creation."
- 	exit 1
-     }
-     strstr "$hookdirs" "$1" || {
--	echo "No such hook type $1. Aborting initrd creation." >&2
-+	derror "No such hook type $1. Aborting initrd creation." 
- 	exit 1
-     }
-     inst_simple "$3" "/${1}/${2}${3##*/}"
-@@ -183,7 +195,7 @@ dracut_install() {
-             shift 
-             continue
-         fi
--        echo "Failed to install $1" >&2 ; exit 1
-+        derror "Failed to install $1"; exit 1
-     done
- }
- 
-@@ -226,6 +238,8 @@ instmods() {
-     for fw in $(/sbin/modinfo -F firmware $mod 2>/dev/null); do
-         if [ -f /lib/firmware/$fw ]; then
-             inst_simple "/lib/firmware/$fw"
-+	else
-+	    dwarning "Possible missing firmware /lib/firmware/${fw} for module $(basename ${mod} .ko)"
-         fi
-     done
- } 
++[[ "$beverbose" = "yes" ]] && (du -c "$initdir" | sort -n)
++
+ ( cd "$initdir"; find . |cpio -H newc -o |gzip -9 > "$outfile"; )
++
++[[ "$beverbose" = "yes" ]] && ls -lh "$outfile"
++
++:
 
 
---------------030905050905060000080007--
+--------------020903070200090403010709--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
