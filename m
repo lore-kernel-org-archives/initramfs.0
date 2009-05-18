@@ -1,58 +1,80 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: wiki, README and TODO update
-Date: Fri, 15 May 2009 21:57:19 -0400
-Message-ID: <1242439039.9330.4.camel@obelisk.thedillows.org>
-References: <4A098CB5.2070006@redhat.com>
-	 <1242351147.29452.2.camel@sentry-no.us.dell.com>
-	 <1242355988.5107.4.camel@obelisk.thedillows.org>
-	 <1242389030.29452.10.camel@sentry-no.us.dell.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: dracut network
+Date: Mon, 18 May 2009 16:10:55 +0200
+Message-ID: <4A116C6F.1020509@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1242389030.29452.10.camel-76q0VzFBGGqhmyxYjSZgiRL4W9x8LtSr@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Fri, 2009-05-15 at 07:03 -0500, Victor Lowther wrote:
-> On Thu, 2009-05-14 at 22:53 -0400, David Dillow wrote:
-> > Glad to see this project isn't dead...
-> 
-> I had a sudden attack of Real Life -- my daughter learned to crawl, so
-> the tiny amounts of free time I once had vanished.
+fixed the dracut network module in
+git://dracut.git.sourceforge.net/gitroot/dracut
 
-I hope you enjoyed it while it lasted -- once they learn to walk your
-free time goes negative! :)
+if you boot with "ip=dhcp", /net.<iface>.dhcpopts will contain 
+new_root_path=<dhcp root path option> in the initrd root.
 
-> > I've got a few boot-off-of-NFS patches together that use DHCP options to
-> > find the root, and let it be overridden by the command line. I've also
-> > got a piece that lets it boot over a bonded network. I'll try to circle
-> > back to those and post them before Memorial Day (May 25h).
-> 
-> Cool.  Can you also hack up a makefile target that tests it using kvm
-> and/or qemu?
+Next steps:
+- add NFS root mount to the dracut initrd
+- add NFS to the server with the test/root.ext2 loop mounted and exported
+- add a proper testsuite structure
 
-Most likely. I've been using libvirtd for my testing, but it shouldn't
-be too hard to do.
+Tested with:
 
-> I suppose I should post my more generic test suite improvements (making
-> kvm/qemu work no matter what it is named on any given distro) to give
-> you something a little easier to build with.
+$ sudo ./test/make-server-root
 
-If you get there first, cool. If not, I'm sure we'll be able to merge
-our work.
+which creates test/server.ext2 with a dnsmasq dhcp/dns server
 
-> > These all trigger off of udev events, though I recall there was some
-> > discussion about whether that was the way to go or not. In many ways,
-> > they are just polish on some of the network patches that have been
-> > posted here before (by you two, IIRC).
-> 
-> I don't think we ever finally decided one way or the other, the
-> conversations kind of died off without reaching a conclusion.
+To start the server:
 
-Well, we'll have something concrete to tear apart then. :)
+$ sudo qemu-kvm -hda test/server.ext2 -m 256M \
+      -net nic,macaddr=52:54:00:12:34:56 \
+      -net socket,mcast=230.0.0.1:1234 \
+      -kernel /boot/vmlinuz-$(uname -r) \
+      -initrd test/initramfs.testing  \
+      -append "root=/dev/sda rw"
+
+Create the client image:
+
+$ sudo ./dracut -c test/dracut.conf.test -l -f test/initramfs.testing
+
+Then start the client
+
+$ sudo qemu-kvm  -m 256M -nographic \
+    -net nic,macaddr=52:54:00:12:34:57 \
+    -net socket,mcast=230.0.0.1:1234  \
+    -kernel /boot/vmlinuz-$(uname -r) \
+    -initrd test/initramfs.testing \
+    -append "ip=dhcp rw console=ttyS0,115200n81"
+
+eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
+Bug in initramfs /init detected. Dropping to a shell. Good luck!
+sh: cannot set terminal process group (-1): Inappropriate ioctl for device
+sh: no job control in this shell
+sh-4.0# cat /net.eth0.dhcpopts
+new_broadcast_address='192.168.1.255'
+new_dhcp_lease_time='604800'
+new_dhcp_message_type='5'
+new_dhcp_rebinding_time='529200'
+new_dhcp_renewal_time='302400'
+new_dhcp_server_identifier='192.168.1.1'
+new_domain_name='test.net'
+new_domain_name_servers='192.168.1.1'
+new_expiry='1243260313'
+new_ip_address='192.168.1.100'
+new_network_number='192.168.1.0'
+new_root_path='192.168.1.1:/mnt/root'
+new_routers='192.168.1.1'
+new_subnet_mask='255.255.255.0'
+
+
+To exit qemu, press <ctrl-a> <c> <return>
+
+sh-4.0#
+(qemu) quit
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
