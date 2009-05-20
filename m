@@ -1,43 +1,35 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: 90kernel-modules/install should not detect from current system
-Date: Wed, 20 May 2009 15:38:23 -0400
-Message-ID: <4A145C2F.4040202@redhat.com>
+From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
+Subject: Re: --include functionality?
+Date: Wed, 20 May 2009 21:38:41 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.0905202135570.7805@gate.bb.dicp.net>
+References: <Pine.LNX.4.58.0905201806160.7805@gate.bb.dicp.net>
+ <7969D0E7-3BC0-46AC-A75B-1EEFA85DAE67@gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <7969D0E7-3BC0-46AC-A75B-1EEFA85DAE67-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: TEXT/PLAIN; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-bash-4.0# ./dracut -l -f /boot/initrd-2.6.29.3-140.fc11.i586.img 
-2.6.29.3-140.fc11.i586
-ldd: /proc/8072/exe: No such file or directory
-./modules.d/90kernel-modules/install: line 8: /proc/mounts: No such file 
-or directory
-58848 blocks
+On Wed, 20 May 2009, Victor Lowther wrote:
 
-#!/bin/bash
-# FIXME: hard-coded module list of doom.
-instmods ${modules:-=ata =block sd_mod =fs}
+> The test framework uses it to inject the files needed for the root  
+> filesystem.
 
-# Grab modules for all filesystem types we currently have mounted
-while read d mp t rest; do
-     instmods "$t"
-done </proc/mounts
+You sure about that?
 
-We shouldn't be relying on the running system to decide what payload 
-goes into the initrd.  In this case we see an error message during 
-dracut because this is a chroot without /proc mounted.  Shouldn't we be 
-including all filesystem drivers if we want the standard dracut output 
-to boot anything?
+--include is not used at all.
+What the test scripts do is to source dracut-functions and call 
+dracut-install().
 
-We should rely on system detection only for --hostonly mode.
+That is perfectly okay and I wasn't suggesting changing this. I was 
+thinking about the --include command line switch.
 
-Thoughts?
-
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+regards,
+ andreas
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
