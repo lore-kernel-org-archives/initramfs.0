@@ -1,8 +1,7 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] module-init-tools only recognizes files ending in *.conf,
- so only copy files of that pattern.
-Date: Wed, 20 May 2009 15:37:06 -0400
-Message-ID: <4A145BE2.7090700@redhat.com>
+Subject: 90kernel-modules/install should not detect from current system
+Date: Wed, 20 May 2009 15:38:23 -0400
+Message-ID: <4A145C2F.4040202@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -11,28 +10,34 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
- From a21e155e3f701b60f4f0f63fb4a596613af4b843 Mon Sep 17 00:00:00 2001
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date: Wed, 20 May 2009 15:35:23 -0400
-Subject: [PATCH] module-init-tools only recognizes files ending in *.conf, so only copy files of that pattern.
+bash-4.0# ./dracut -l -f /boot/initrd-2.6.29.3-140.fc11.i586.img 
+2.6.29.3-140.fc11.i586
+ldd: /proc/8072/exe: No such file or directory
+./modules.d/90kernel-modules/install: line 8: /proc/mounts: No such file 
+or directory
+58848 blocks
 
----
-  modules.d/90kernel-modules/install |    2 +-
-  1 files changed, 1 insertions(+), 1 deletions(-)
+#!/bin/bash
+# FIXME: hard-coded module list of doom.
+instmods ${modules:-=ata =block sd_mod =fs}
 
-diff --git a/modules.d/90kernel-modules/install b/modules.d/90kernel-modules/install
-index 6e7c02d..a0f894b 100755
---- a/modules.d/90kernel-modules/install
-+++ b/modules.d/90kernel-modules/install
-@@ -8,4 +8,4 @@ while read d mp t rest; do
-  done </proc/mounts
-  
-  [ -f /etc/modprobe.conf ] && dracut_install /etc/modprobe.conf
--dracut_install $(find /etc/modprobe.d/ -type f )
-+dracut_install $(find /etc/modprobe.d/ -type f -name '*.conf')
--- 
-1.6.2.2
+# Grab modules for all filesystem types we currently have mounted
+while read d mp t rest; do
+     instmods "$t"
+done </proc/mounts
 
+We shouldn't be relying on the running system to decide what payload 
+goes into the initrd.  In this case we see an error message during 
+dracut because this is a chroot without /proc mounted.  Shouldn't we be 
+including all filesystem drivers if we want the standard dracut output 
+to boot anything?
+
+We should rely on system detection only for --hostonly mode.
+
+Thoughts?
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
