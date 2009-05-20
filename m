@@ -1,46 +1,42 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] LIBDIR detection without /proc
-Date: Wed, 20 May 2009 16:22:31 -0400
-Message-ID: <4A146687.3020508@redhat.com>
+From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
+Subject: Re: [PATCH] LIBDIR detection without /proc
+Date: Wed, 20 May 2009 22:52:15 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.0905202249560.7805@gate.bb.dicp.net>
+References: <4A146687.3020508@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4A146687.3020508-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: TEXT/PLAIN; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-bash-4.0# ./dracut -l -f /boot/initrd-2.6.29.3-140.fc11.i586.img 
-2.6.29.3-140.fc11.i586
-ldd: /proc/8072/exe: No such file or directory
+On Wed, 20 May 2009, Warren Togami wrote:
 
-modules.d/50plymouth/plymouth-populate-initrd
+> Could we please not rely on /proc to detect anything?  Something like 
+> the following would work fine.  It also has the benefit of being able to 
+> run without /proc mounted, which is great for building initrd's within a 
+> chroot.
 
-Could we please not rely on /proc to detect anything?  Something like 
-the following would work fine.  It also has the benefit of being able to 
-run without /proc mounted, which is great for building initrd's within a 
-chroot.
-
-diff --git a/modules.d/50plymouth/plymouth-populate-initrd 
-b/modules.d/50plymouth/plymouth-populate-initrd
-index df6e7c5..58b5b5a 100755
---- a/modules.d/50plymouth/plymouth-populate-initrd
-+++ b/modules.d/50plymouth/plymouth-populate-initrd
-@@ -1,5 +1,5 @@
-  #!/bin/bash
--if ldd /proc/$$/exe |grep -q lib64; then
-+if [ -f /usr/lib64/plymouth/text.so ]; then
-      LIBDIR="/usr/lib64"
-  else
-      LIBDIR="/usr/lib"
+I'm not sure if checking for an installed file is going to work flawless.
+*shrug*
 
 
-Another issue, it appears this plymouth module is uncondtional? 
-Shouldn't it skip plymouth install if it plymouth does not exist for the 
-sake of other distributions?
+> Another issue, it appears this plymouth module is uncondtional? 
+> Shouldn't it skip plymouth install if it plymouth does not exist for the 
+> sake of other distributions?
 
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+[root@bofh dracut]# cat modules.d/50plymouth/check
+#!/bin/bash
+[[ -x /sbin/plymouthd && -x /bin/plymouth && -x /usr/sbin/plymouth-set-default-theme ]]
+[root@bofh dracut]# 
+
+Does look rather conditional to me.
+
+regards, 
+ andreas
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
