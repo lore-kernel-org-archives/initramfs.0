@@ -1,7 +1,7 @@
 From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
-Subject: [PATCH] run-qemu Enhancements
-Date: Thu, 21 May 2009 12:24:58 +0200 (CEST)
-Message-ID: <Pine.LNX.4.58.0905211222460.7805@gate.bb.dicp.net>
+Subject: [PATCH] Make generation of testroot images succeed
+Date: Thu, 21 May 2009 15:44:58 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.0905211541160.7805@gate.bb.dicp.net>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
@@ -9,49 +9,36 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: TEXT/PLAIN; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+The patchset from Victor improves the make test functionality quite a bit.
+
+Currently though generating the root images fails as the 99mount-root.sh 
+is triggered concurrently due to the /init checking for the existance of a 
+/proc directory in the freshly mounted rootfs.
+
+This patch uses the tool e2mkdir from the e2tools package to create this 
+/proc dir after mke2fs ran.
 
 
-Support different virtualization technologies for run-qemu. This patch 
-should be applied on top of the patchset from Victor Lowther.
-
-If the host supports kvm, use is. If this is not the case but the kqemu
-module is loaded, run qemu with kqemu optimization. Otherwise fall-back to
-pure usermode qemu.
-
-diffstat dracut-run-qemu-enhancements.patch 
- run-qemu |   24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
-
-diff -up dracut/test/run-qemu.orig dracut/test/run-qemu
---- dracut/test/run-qemu.orig	2009-05-21 12:16:14.622759670 +0200
-+++ dracut/test/run-qemu	2009-05-21 12:16:22.858798678 +0200
-@@ -1,9 +1,17 @@
- #!/bin/bash
--for f in kvm qemu-kvm qemu; do
--    type $f >/dev/null 2>&1 || continue
--    $f "$@"
--    exit
--done
--echo "Could not find a working KVM or QEMU to test with!"
--echo "Please install kvm or qemu."
--exit 1
-\ No newline at end of file
-+
-+# Check which virtualization technology to use
-+# We prefer kvm, kqemu, userspace in that order.
-+[[ -x /usr/bin/qemu ]] && BIN=/usr/bin/qemu && ARGS=""
-+$(lsmod | grep -q '^kqemu ') && BIN=/usr/bin/qemu && ARGS="-kernel-kqemu "
-+[[ -b /dev/kvm && -x /usr/bin/kvm ]] && BIN=/usr/bin/kvm && ARGS=""
-+[[ -b /dev/kvm && -x /usr/bin/qemu-kvm ]] && BIN=/usr/bin/qemu-kvm && ARGS=""
-+
-+[[ $BIN ]] || {
-+   echo "Could not find a working KVM or QEMU to test with!" >&2
-+   echo "Please install kvm or qemu." >&2
-+   exit 1
-+}
-+
-+echo "Running $BIN $ARGS"
-+$BIN $ARGS "$@"
+diff -up dracut/modules.d/00test/create-root.sh.orig dracut/modules.d/00test/create-root.sh
+--- dracut/modules.d/00test/create-root.sh.orig	2009-05-21 15:38:14.354760584 +0200
++++ dracut/modules.d/00test/create-root.sh	2009-05-21 15:38:37.059757528 +0200
+@@ -16,4 +16,3 @@ lvm lvcreate -l 100%FREE -n root dracut
+ udevadm settle --timeout=4
+ [ -b /dev/dracut/root ] || emergency_shell
+ mke2fs /dev/dracut/root
+-e2mkdir /dev/dracut/root:/proc
+diff -up dracut/modules.d/00test/install.orig dracut/modules.d/00test/install
+--- dracut/modules.d/00test/install.orig	2009-05-21 15:38:22.915510612 +0200
++++ dracut/modules.d/00test/install	2009-05-21 15:38:45.495507075 +0200
+@@ -1,5 +1,5 @@
+ #!/bin/sh
+-dracut_install sfdisk mke2fs poweroff cp umount e2mkdir
++dracut_install sfdisk mke2fs poweroff cp umount
+ inst_hook pre-pivot 02 "$moddir/halt.sh"
+ inst_hook pre-pivot 01 "$moddir/copy-root.sh"
+ inst_hook pre-mount 01 "$moddir/create-root.sh"
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
