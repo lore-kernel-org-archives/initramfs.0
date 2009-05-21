@@ -1,55 +1,58 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Check /sbin/plymouthd for arch instead of /proc/$$/exe.
-Date: Wed, 20 May 2009 20:37:55 -0400
-Message-ID: <4A14A263.6000902@redhat.com>
-References: <4A146687.3020508@redhat.com> <Pine.LNX.4.58.0905202249560.7805@gate.bb.dicp.net> <4A146EBF.5060404@redhat.com> <Pine.LNX.4.58.0905202309060.7805@gate.bb.dicp.net> <4A147DF3.4070108@redhat.com>
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: --include functionality?
+Date: Wed, 20 May 2009 21:04:49 -0500
+Message-ID: <1242871489.29452.32.camel@sentry-no.us.dell.com>
+References: <Pine.LNX.4.58.0905201806160.7805@gate.bb.dicp.net>
+	 <7969D0E7-3BC0-46AC-A75B-1EEFA85DAE67@gmail.com>
+	 <Pine.LNX.4.58.0905202135570.7805@gate.bb.dicp.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A147DF3.4070108-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:subject:from:to:cc
+         :in-reply-to:references:content-type:date:message-id:mime-version
+         :x-mailer:content-transfer-encoding;
+        bh=3iQjxPI/fC0uaQJUKJGnrFgUXLx34TF8rf4Jf4WwaMc=;
+        b=dgPGFe5cvoRD6Hjf0qNC/wnvXrdZp0GoTZ6F+KMWkSTFaoC7i+y7PGpZpG/BZrx6nV
+         AU6nA0hqG02XMiRNkSZc7+6PJ+97WDXW3k5nEgxHTyLuX7qCEY9TUt3H+AB594oD0X4m
+         vEVX1kN+8dgR92IGmPrDnHAfDzAqBavnNviCg=
+In-Reply-To: <Pine.LNX.4.58.0905202135570.7805-bvJ793YqIODNUDpmljszgg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Here is an improved version of this patch.  /sbin/plymouthd is guaranteed to exist if it passed the check, and it would be of the correct architecture.
+On Wed, 2009-05-20 at 21:38 +0200, Andreas Thienemann wrote:
+> On Wed, 20 May 2009, Victor Lowther wrote:
+> 
+> > The test framework uses it to inject the files needed for the root  
+> > filesystem.
+> 
+> You sure about that?
 
- From 6d1b465555ac4511b9bda90b7d72c29060c66955 Mon Sep 17 00:00:00 2001
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date: Wed, 20 May 2009 20:35:08 -0400
-Subject: [PATCH] Check /sbin/plymouthd for arch instead of /proc/$$/exe.
-  /sbin/plymouthd is guaranteed to be there and be the correct arch.
+It doesn't in the git repo on sf.net, it does in the private branch I am
+hacking on testing on.
 
----
-  .../50plymouth-pre0.7/plymouth-populate-initrd     |    2 +-
-  modules.d/50plymouth/plymouth-populate-initrd      |    2 +-
-  2 files changed, 2 insertions(+), 2 deletions(-)
+> --include is not used at all.
+> What the test scripts do is to source dracut-functions and call 
+> dracut-install().
 
-diff --git a/modules.d/50plymouth-pre0.7/plymouth-populate-initrd b/modules.d/50plymouth-pre0.7/plymouth-populate-initrd
-index e195ddc..1802b25 100755
---- a/modules.d/50plymouth-pre0.7/plymouth-populate-initrd
-+++ b/modules.d/50plymouth-pre0.7/plymouth-populate-initrd
-@@ -1,5 +1,5 @@
-  #!/bin/bash
--if ldd /proc/$$/exe |grep -q lib64; then
-+if ldd /sbin/plymouthd |grep -q lib64; then
-      LIBDIR="/usr/lib64"
-  else
-      LIBDIR="/usr/lib"
-diff --git a/modules.d/50plymouth/plymouth-populate-initrd b/modules.d/50plymouth/plymouth-populate-initrd
-index df6e7c5..f3c67f1 100755
---- a/modules.d/50plymouth/plymouth-populate-initrd
-+++ b/modules.d/50plymouth/plymouth-populate-initrd
-@@ -1,5 +1,5 @@
-  #!/bin/bash
--if ldd /proc/$$/exe |grep -q lib64; then
-+if ldd /sbin/plymouthd |grep -q lib64; then
-      LIBDIR="/usr/lib64"
-  else
-      LIBDIR="/usr/lib"
+Yeah, the first round of the test framework did that.  However,
+generating cryptroot images using that method did not work for testing.
+
+> That is perfectly okay and I wasn't suggesting changing this. I was 
+> thinking about the --include command line switch.
+
+All I can say is what I was thinking when I added it. :)
+
+> regards,
+>  andreas
 -- 
-1.6.2.2
-
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
