@@ -1,58 +1,105 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: --include functionality?
-Date: Wed, 20 May 2009 21:04:49 -0500
-Message-ID: <1242871489.29452.32.camel@sentry-no.us.dell.com>
-References: <Pine.LNX.4.58.0905201806160.7805@gate.bb.dicp.net>
-	 <7969D0E7-3BC0-46AC-A75B-1EEFA85DAE67@gmail.com>
-	 <Pine.LNX.4.58.0905202135570.7805@gate.bb.dicp.net>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Subject: [PATCH 1/5] Make running qemu a little more generic
+Date: Wed, 20 May 2009 19:55:04 -0700 (PDT)
+Message-ID: <6c901543151c5a664724b70dda6648e239567377.1242874219.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:date:message-id:mime-version
-         :x-mailer:content-transfer-encoding;
-        bh=3iQjxPI/fC0uaQJUKJGnrFgUXLx34TF8rf4Jf4WwaMc=;
-        b=dgPGFe5cvoRD6Hjf0qNC/wnvXrdZp0GoTZ6F+KMWkSTFaoC7i+y7PGpZpG/BZrx6nV
-         AU6nA0hqG02XMiRNkSZc7+6PJ+97WDXW3k5nEgxHTyLuX7qCEY9TUt3H+AB594oD0X4m
-         vEVX1kN+8dgR92IGmPrDnHAfDzAqBavnNviCg=
-In-Reply-To: <Pine.LNX.4.58.0905202135570.7805-bvJ793YqIODNUDpmljszgg@public.gmane.org>
+        h=domainkey-signature:received:received:date:message-id:from:subject
+         :to:x-mailer;
+        bh=phEyhY8G3WUqroFmRPE0ev5WnRCC3AAuUAbtnoY/6sU=;
+        b=oioK1wV2zF8Brf+wYOOEwtRvlpbxbMqOSdvN2cZLq67x1qtQ077PyO3Rnwskp77FZD
+         JYsPsPtkqnTF8Od0qnPG7FohzMkoufwxmmJb776KoBjCYX05TkfnbRunW5TU5iywIzm2
+         coYNY2P+4NBIAKxWb7mZQlS9hMuCw84AlLlfE=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
-Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, 2009-05-20 at 21:38 +0200, Andreas Thienemann wrote:
-> On Wed, 20 May 2009, Victor Lowther wrote:
-> 
-> > The test framework uses it to inject the files needed for the root  
-> > filesystem.
-> 
-> You sure about that?
+Also create the root filesystem from within the virtual env, this way there
+will be no nasty suprises w.r.t interactions with the host machine.  This
+is important when we test booting to LVM, LUKS, and mdraid.
 
-It doesn't in the git repo on sf.net, it does in the private branch I am
-hacking on testing on.
+---
+ test/make-test-root |   13 ++++++++-----
+ test/run-qemu       |    9 +++++++++
+ test/test-initramfs |   19 ++++++++-----------
+ 3 files changed, 25 insertions(+), 16 deletions(-)
 
-> --include is not used at all.
-> What the test scripts do is to source dracut-functions and call 
-> dracut-install().
-
-Yeah, the first round of the test framework did that.  However,
-generating cryptroot images using that method did not work for testing.
-
-> That is perfectly okay and I wasn't suggesting changing this. I was 
-> thinking about the --include command line switch.
-
-All I can say is what I was thinking when I added it. :)
-
-> regards,
->  andreas
+diff --git a/test/make-test-root b/test/make-test-root
+index de03762..d79153d 100755
+--- a/test/make-test-root
++++ b/test/make-test-root
+@@ -1,9 +1,6 @@
+ #!/bin/bash
+ 
+ dd if=/dev/zero of=test/root.ext2 bs=1M count=20
+-mke2fs -F test/root.ext2
+-mkdir test/mnt
+-mount -o loop test/root.ext2 test/mnt
+ 
+ initdir=test/mnt
+ kernel=$(uname -r)
+@@ -21,6 +18,12 @@ kernel=$(uname -r)
+ targetfs="$initdir"
+ unset initdir
+ 
++./dracut -l -i "$targetfs" /source \
++    -m "dash kernel-modules test crypt lvm udev-rules base rootfs-block" \
++    -d "ata_piix ext2 sd_mod" \
++    -f test/initramfs.makeroot
+ 
+-umount test/mnt
+-rm -fr test/mnt
++test/run-qemu -hda test/root.ext2 -m 512M -nographic -net none \
++    -kernel "/boot/vmlinuz-$kernel" \
++    -append "root=/dev/dracut/root rw rootfstype=ext2 quiet console=ttyS0,115200n81" \
++    -initrd test/initramfs.makeroot
+diff --git a/test/run-qemu b/test/run-qemu
+new file mode 100755
+index 0000000..c1068e5
+--- /dev/null
++++ b/test/run-qemu
+@@ -0,0 +1,9 @@
++#!/bin/bash
++for f in kvm qemu-kvm qemu; do
++    type $f >/dev/null 2>&1 || continue
++    $f "$@"
++    exit
++done
++echo "Could not find a working KVM or QEMU to test with!"
++echo "Please install kvm or qemu."
++exit 1
+\ No newline at end of file
+diff --git a/test/test-initramfs b/test/test-initramfs
+dissimilarity index 84%
+index f828307..3c75553 100755
+--- a/test/test-initramfs
++++ b/test/test-initramfs
+@@ -1,11 +1,8 @@
+-#!/bin/bash
+-[[ -f test/root.ext2 ]] || test/make-test-root
+-
+-./dracut $DRACUTOPTS -c test/dracut.conf.test -l -f test/initramfs.testing || exit
+-
+-qemu-kvm -hda test/root.ext2 -m 512M -nographic  \
+-	-net nic,macaddr=52:54:00:12:34:57 -net socket,mcast=230.0.0.1:1234 \
+-	-kernel /boot/vmlinuz-$(uname -r) \
+-	-initrd test/initramfs.testing \
+-	-append "root=/dev/sda rw console=ttyS0,115200n81 $APPEND"   
+-
++#!/bin/bash
++[[ -f test/root.ext2 ]] || test/make-test-root
++
++test/run-qemu -hda test/root.ext2 -m 512M -nographic \
++    -net nic,macaddr=52:54:00:12:34:57 -net socket,mcast=230.0.0.1:1234 \
++    -kernel /boot/vmlinuz-$(uname -r) \
++    -append "root=/dev/sda rw console=ttyS0,115200n81 $APPEND" \
++    -initrd test/initramfs.testing
 -- 
-Victor Lowther
-RHCE# 805008539634727
-LPIC-2# LPI000140019
+1.6.0.4
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
