@@ -1,8 +1,11 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: No stdout when using dash
-Date: Sat, 23 May 2009 07:29:07 -0500
-Message-ID: <1243081747.29452.38.camel@sentry-no.us.dell.com>
-References: <Pine.LNX.4.58.0905231331400.2058@gate.bb.dicp.net>
+Subject: Re: [PATCH 2/4] Changed multiline conditional lists to if
+ statements in dracut-functions
+Date: Sat, 23 May 2009 07:33:59 -0500
+Message-ID: <1243082039.29452.43.camel@sentry-no.us.dell.com>
+References: <97274286f3d147cdb21897569d71a1cf5ff4eb07.1243045308.git.victor.lowther@gmail.com>
+	 <c8c67f682505552375405328bfd7483283507798.1243045308.git.victor.lowther@gmail.com>
+	 <1243046464.4217.1.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -11,36 +14,39 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:received:received:subject:from:to:cc
          :in-reply-to:references:content-type:date:message-id:mime-version
          :x-mailer:content-transfer-encoding;
-        bh=3Nv8js+0zryiSUTCPjSWZJBAZxnwMuzhTa5SxhZA818=;
-        b=Qgg7ZFiDBwQJZnmsQccKCtHUuPNuF8By1gkum75jYikj0U8waSe654Jq18Mwjy429u
-         4bC676d44BkSk79dV00RQySLhBzk0cUSHfkckm9P2vTOdCF6cFvMyZ6h7EfWMHKGjgRt
-         CXN/bcBp6+MRsLIcv38DdK8FZvkV4rYZeRTDY=
-In-Reply-To: <Pine.LNX.4.58.0905231331400.2058-bvJ793YqIODNUDpmljszgg@public.gmane.org>
+        bh=kFQ7MceQmaJRjsPQdcWTscp8dlhUUheQMjswreCttuE=;
+        b=TwYXQiggQqxobbf3qiuOPKPNU9D5YWYECUqHXGwwIsiccsc6UgryhllVUASD0Fljb5
+         kI62DIQ0PMqhvWWsV3fsJxNM75qocEg6WjpqZM0sp9rpCPa8iR1nPfUsGRIbh/pC7IDe
+         khnh8WSF0QG/m57Wu6hmuaoyM6mXoYSG8YN1o=
+In-Reply-To: <1243046464.4217.1.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Sat, 2009-05-23 at 13:34 +0200, Andreas Thienemann wrote:
-> When using the 00dash module in dracut, the emergency_shell currently has 
-> no stderr.
+On Fri, 2009-05-22 at 22:41 -0400, David Dillow wrote:
+> On Fri, 2009-05-22 at 19:24 -0700, Victor Lowther wrote:
+> > It seems that some people object to multiline conditional lists.
+> > Oh, well, no accounting for taste.
 > 
-> Problem is related to dash closing stderr if opening /dev/tty fails.
-> 
-> I just triggered an update to dash in fedora F11 and rawhide fixing this 
-> behaviour.
-> This should make the emergency shell much easier to work with.
+> I didn't see the complaints... I prefer the conditional list construct,
+> which I've used heavily in my nfsroot patches (cleaning them up as I
+> type this).
 
-Can you also post the fix upstream?  That way those of us who are not
-developing on Fedora can also benefit. :)
+It was part of a conversation on IRC (#dracut on freenode).
 
-> regards,
->  andreas
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+While I prefer conditional lists, I can read and understand the code
+just as easily both ways.  
+
+OTOH, if someone proposes using [ instead of [[ for conditionals where
+we don't have to be POSIX, there will be a huge argument. :)
+
+> Oh well, I'll post what I have in the current form, and we can talk
+> about changing it going forward if needed.
+
+Works for me.
+
 -- 
 Victor Lowther
 RHCE# 805008539634727
