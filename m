@@ -1,12 +1,12 @@
 From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
 Subject: Re: No stdout when using dash
-Date: Sat, 23 May 2009 14:51:22 +0200 (CEST)
-Message-ID: <Pine.LNX.4.58.0905231450240.2058@gate.bb.dicp.net>
+Date: Sat, 23 May 2009 15:06:37 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.0905231458100.2058@gate.bb.dicp.net>
 References: <Pine.LNX.4.58.0905231331400.2058@gate.bb.dicp.net>
- <1243081747.29452.38.camel@sentry-no.us.dell.com>
+ <1243082881.29452.45.camel@sentry-no.us.dell.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1243081747.29452.38.camel-76q0VzFBGGqhmyxYjSZgiRL4W9x8LtSr@public.gmane.org>
+In-Reply-To: <1243082881.29452.45.camel-76q0VzFBGGqhmyxYjSZgiRL4W9x8LtSr@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: TEXT/PLAIN; charset="us-ascii"
@@ -16,19 +16,17 @@ Cc: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>, initra
 
 On Sat, 23 May 2009, Victor Lowther wrote:
 
-> > I just triggered an update to dash in fedora F11 and rawhide fixing this 
-> > behaviour.
-> > This should make the emergency shell much easier to work with.
-> Can you also post the fix upstream?  That way those of us who are not
-> developing on Fedora can also benefit. :)
+> In the meantime, though...
 
-No need. The patch has been pulled from upstream git.There just hasn't 
-been a new upstream release:
+That patch is unneeded for the current functionality.
+/dev/tty cannot be opened, even though you're creating it.
 
-commit fcc4134a7b76d82d39dea635c41ec593a41d6d19
-Author: Herbert Xu <herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org>
-Date:   Sun Feb 22 19:29:48 2009 +0800
+strace gives:
+open("/dev/tty", O_RDWR) = -1 ENXIO (No such device or address)
 
+Thus reshuffling the set -x call later doesn't do any good.
+
+Furthermore: tty is not needed for basic shell functionality at all.
 
 regards,
  andreas
