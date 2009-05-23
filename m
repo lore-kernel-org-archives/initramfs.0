@@ -1,16 +1,18 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/4] Style cleanups in main dracut script.
-Date: Fri, 22 May 2009 19:24:29 -0700 (PDT)
-Message-ID: <97274286f3d147cdb21897569d71a1cf5ff4eb07.1243045308.git.victor.lowther@gmail.com>
+Subject: [PATCH 2/4] Changed multiline conditional lists to if statements in dracut-functions
+Date: Fri, 22 May 2009 19:24:31 -0700 (PDT)
+Message-ID: <c8c67f682505552375405328bfd7483283507798.1243045308.git.victor.lowther@gmail.com>
+References: <97274286f3d147cdb21897569d71a1cf5ff4eb07.1243045308.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:from:subject
-         :to:x-mailer;
-        bh=Eeldn5cp0wTWa2u3MSLQQB70YuIp7CFpP6FXy2H6HuU=;
-        b=gf83XP/5gG/GgV9B4+OQ2mt3KNO4e17ihPbunIag9owdzt4hN3Rl2VpS7n4FGQtrxR
-         ergOGmOsTKzn64klZIfAKKehtNtrVtuKgaDVvV7/aQhDAORUN0ySo+SJjqYf4QOwccoF
-         4jQVBtvNmRig8QiioLR8jhe0dCU4q+yaFpPkI=
+        h=domainkey-signature:received:received:date:message-id:in-reply-to
+         :references:from:subject:to:x-mailer;
+        bh=5HWWTMl7NswLPPXBl6KWgAGmF9hnJtZ2g1ny+2HUVmI=;
+        b=IXtl/LhtCdlAxHrfMfzqKgAPmIQSfI7tWosgOADlTNwKLsFmqVcvmqmmk0PCbk3PG/
+         unLKpliiXMkaetTaVxmUusedQmadILXbtizlN4Jr6Qx+99NGIh92jXi5DOFyw197+sUx
+         IOT8K9R083bURaISrsOC70VgOrUT64Rx1Mx/Y=
+In-Reply-To: <97274286f3d147cdb21897569d71a1cf5ff4eb07.1243045308.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -18,95 +20,79 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This patch series applies on top of my previous patch series, and
-is mainly concerned with coding style updates and better documentation.
+It seems that some people object to multiline conditional lists.
+Oh, well, no accounting for taste.
 
-Apparently [[ ]] && { ; } type flow control is scary, so translate
-most instances of them into standard if-then and case constructs.
 ---
- dracut |   39 ++++++++++++++++++++++++---------------
- 1 files changed, 24 insertions(+), 15 deletions(-)
+ dracut-functions |   19 +++++++++----------
+ 1 files changed, 9 insertions(+), 10 deletions(-)
 
-diff --git a/dracut b/dracut
-index 0170fbb..e024fa4 100755
---- a/dracut
-+++ b/dracut
-@@ -57,8 +57,13 @@ while (($# > 0)); do
-     shift
- done
+diff --git a/dracut-functions b/dracut-functions
+index 2beaef2..16ec7d0 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -93,17 +93,17 @@ inst_binary() {
+     # I love bash!
+     ldd $bin 2>/dev/null | while read line; do
+ 	[[ $line = 'not a dynamic executable' ]] && return 1
+-	[[ $line =~ not\ found ]] &&{
++	if [[ $line =~ not\ found ]]; then
+ 	    derror "Missing a shared library required by $bin."
+ 	    derror "Run \"ldd $bin\" to find out what it is."
+ 	    derror "dracut cannot create an initrd."
+ 	    exit 1
+-	} 
++	fi
+ 	[[ $line =~ ([^ ]*/lib[^/]*/[^ ]*\.so[^ ]*) ]] || continue
+ 	FILE=${BASH_REMATCH[1]}
+ 	[[ -f ${initdir}$FILE ]] && continue
+ 	# see if we are loading an optimized version of a shared lib.
+-	[[ $FILE =~ ^(/lib[^/]*).* ]] && {
++	if [[ $FILE =~ ^(/lib[^/]*).* ]]; then
+             TLIBDIR=${BASH_REMATCH[1]}
+             BASE="${FILE##*/}"
+ 	    # prefer nosegneg libs, then unoptimized ones.
+@@ -115,7 +115,7 @@ inst_binary() {
+ 	    inst_library "$FILE" "$TLIBDIR/$BASE"
+             IF_dynamic="yes"
+ 	    continue
+-	}
++	fi
+         inst_library "$FILE" 
+     done
+     inst_simple "$bin" "$target"
+@@ -179,15 +179,14 @@ inst() {
+ # $1 = type of hook, $2 = hook priority (lower runs first), $3 = hook
+ # All hooks should be POSIX/SuS compliant, they will be sourced by init.
+ inst_hook() {
+-    [[ -f $3 ]] || {
++    if ! [[ -f $3 ]]; then
+ 	derror "Cannot install a hook ($3) that does not exist."
+ 	derror "Aborting initrd creation."
+ 	exit 1
+-    }
+-    strstr "$hookdirs" "$1" || {
++    elif ! strstr "$hookdirs" "$1"; then
+ 	derror "No such hook type $1. Aborting initrd creation." 
+ 	exit 1
+-    }
++    fi
+     inst_simple "$3" "/${1}/${2}${3##*/}"
+ }
  
--[[ -f $conffile ]] || ( [[ -f /etc/dracut.conf ]] && conffile="/etc/dracut.conf" )
-+# if we were not passed a config file, try the default one
-+[[ ! -f $conffile ]] && conffile="/etc/dracut.conf"
-+
-+# source our config file
- [[ -f $conffile ]] && . "$conffile"
-+
-+# these options override the stuff in the config file
- [[ $dracutmodules_l ]] && dracutmodules=$dracutmodules_l
- [[ $omit_dracutmodules_l ]] && omit_dracutmodules=$omit_dracutmodules_l
- [[ $modules_l ]] && modules=$modules_l
-@@ -74,16 +79,18 @@ fi
- dracutfunctions=$dsrc/dracut-functions
- export dracutfunctions
- 
--[[ $dracutmodules ]] || dracutmodules="auto"
--[[ $dracutmodules = "auto" ]] && {
--    dracutmodules="all"
--    skipmissing="yes"
--}
--[[ $dracutmodules = "hostonly" ]] && {
--    dracutmodules="all"
--    skipmissing="yes"
--    hostonly="-h"
--}
-+# this logic is weird and convoluted.  We should simplify it.
-+case $dracutmodules in
-+	""|auto)
-+		dracutmodules="all"
-+    		skipmissing="yes"
-+		;;
-+	hostonly)
-+    		dracutmodules="all"
-+    		skipmissing="yes"
-+    		hostonly="-h"
-+		;;
-+esac
- 
- 
- [[ $2 ]] && kernel=$2 || kernel=$(uname -r)
-@@ -106,6 +113,8 @@ for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot dev/pts; do
-     mkdir -p "$initdir/$d"; 
- done
- 
-+# these bits are fugly, and need some cleanup.
-+# Actually documenting how dracut modules work these days would be good.
- skip_missing() {
-     # $1 = location of module
-     [[ $skipmissing ]] || return 0
-@@ -134,18 +143,18 @@ unset moddir
- ## final stuff that has to happen
- 
- # generate module dependencies for the initrd
--/sbin/depmod -a -b "$initdir" $kernel || {
-+if ! /sbin/depmod -a -b "$initdir" $kernel; then
-     echo "\"/sbin/depmod -a $kernel\" failed."
-     exit 1
--}
-+fi
- 
- # make sure that library links are correct and up to date
- ldconfig -n -r "$initdir" /lib* /usr/lib*
- 
--[[ $include_src && $include_target ]] && {
-+if [[ $include_src && $include_target ]]; then
-     mkdir -p "$initdir$include_target"
-     cp -a -t "$initdir$include_target" "$include_src"/*
--}
-+fi
- 
- [[ "$beverbose" = "yes" ]] && (du -c "$initdir" | sort -n)
- 
+@@ -227,10 +226,10 @@ instmods() {
+ 		    [[ $cmd = insmod ]] || continue
+ 		    modname=${modpath##*/}
+ 		    modname=${modname%.ko}
+-		    [[ ${mod/-/_} != ${modname/-/_} ]] && {
++		    if [[ ${mod/-/_} != ${modname/-/_} ]]; then
+ 			instmods $mpargs $modname
+ 			continue
+-		    }
++		    fi
+ 		    inst_simple "$modpath"
+ 		done
+ 		;;
 -- 
 1.6.0.4
 
