@@ -1,215 +1,128 @@
-From: Julien Cristau <jcristau-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
-Subject: Re: How do we want to handle configuring network boot devices?
-Date: Sun, 24 May 2009 10:29:17 +0200
-Message-ID: <20090524082917.GB21016@radis.liafa.jussieu.fr>
-References: <1243126816.4217.248.camel@obelisk.thedillows.org>
+From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
+Subject: [PATCH] Add nbd root support to dracut
+Date: Sun, 24 May 2009 11:40:06 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.0905241139240.2539@gate.bb.dicp.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="GID0FwUMdk1T2AWN"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1243126816.4217.248.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: TEXT/PLAIN; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
---GID0FwUMdk1T2AWN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This patch adds preliminary nbdroot support to dracut.
 
-On Sat, May 23, 2009 at 21:00:16 -0400, David Dillow wrote:
+It does this without using udev, as module insertion creates 16 devices, each
+triggering udev. For now I wanted to have nbd working, we can always implement
+it in udev at a later time.
 
-> Warren, Andreas, and I were discussing possible mechanisms for
-> configuring NFS, NBD, iSCSI, etc going forward, and it was suggested
-> that we try to document the current ways it is done, and how we may want
-> to go forward.
-> 
-For what it's worth, the attached initramfs scripts are included in the
-nbd-client and open-iscsi Debian packages.
+The core in question supports different root definitions:
 
-Cheers,
-Julien
+URI Style syntax. Path is ignored, as nbd targets are defined by server and
+port:
 
---GID0FwUMdk1T2AWN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename="nbd-client.initrd"
+	root=nbd://server.ip.add.ress:port[/path]
 
-#!/bin/sh
+mkinitrd Style syntax. This is used by the mkinitrd from RH which only accepts
+this syntax as a dhcp delivered root path. Dracut does understand it as a normal
+root definition as well:
 
-# We don't have any prerequisites
-case $1 in
-prereqs)
-	exit 0
-	;;
-esac
+	root=nbd:server.ip.add.ress:port:filesystemtype:mountoptions
 
-. /scripts/functions
+Debian style syntax. With the base device being an optional number to indicate
+the nbd device to use.
 
-log_begin_msg "Setting up nbd-client"
-for x in $(cat /proc/cmdline); do
-	# We don't need to redo what all of what /init already did...
-	case $x in
-		nbdroot=*,*,*)
-			nbdroot="${x#nbdroot=}"
-			nbdsrv=$(echo "$nbdroot" | sed -e "s/,.*$//")
-			nbdport=$(echo "$nbdroot" | sed -e "s/,([^,]*),.*$/\1/")
-			nbdbasedev=$(echo "$nbdroot" | sed -e "s/^.*,//")
-			nbdrootdev=/dev/$nbdbasedev
-			;;
-		nbdroot=*,*)
-			nbdroot="${x#nbdroot=}"
-			nbdsrv=$(echo "$nbdroot" | sed -e "s/,[^,]*$//")
-			nbdport=$(echo "$nbdroot" | sed -e "s/^[^,]*,//")
-			;;
-		ip=*)
-			IPOPTS="${x#ip=}"
-			;;
-		root=/dev/nbd*)
-			nbdrootdev="${x#root=}"
-			nbdbasedev="${x#root=/dev/}"
-			;;
-	esac
-done
+	root=/dev/nbd[0-9]* nbdroot=server.ip.add.ress,port[,nbd basedevice]
 
-nbdrootdev=${nbdrootdev%p*}
-nbdbasedev=${nbdbasedev%p*}
+diffstat dracut-nbd-root.patch 
+ install        |    4 +++
+ nbd-prepare.sh |   71 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 75 insertions(+)
 
-if [ -z "$nbdport" -o -z "$nbdrootdev" ]
-then
-	log_failure_msg "Insufficient information to set up nbd, quitting (nbdsrv=$nbdsrv nbdport=$nbdport nbdroot=$nbdroot root=$nbdrootdev)"
-	exit 0
-fi
-
-DEVICE=eth0
-
-configure_networking
-
-if [ -z "$nbdsrv" ]
-then
-	nbdsrv=${ROOTSERVER}
-fi
-
-if [ -z "$nbdsrv" ]
-then
-	log_failure_msg "Insufficient information to set up nbd, quitting (nbdsrv=$nbdsrv nbdport=$nbdport nbdroot=$nbdroot root=$nbdrootdev)"
-	exit 0
-fi
-
-/sbin/nbd-client $nbdsrv $nbdport $nbdrootdev -persist
-# This should be removed once the cfq scheduler no longer deadlocks nbd
-# devices
-if grep '\[cfq\]' /sys/block/$nbdbasedev/queue/scheduler >/dev/null
-then
-	echo deadline > /sys/block/$nbdbasedev/queue/scheduler
-fi
-
---GID0FwUMdk1T2AWN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename="initramfs.local-top"
-
-#!/bin/sh
-
-PREREQ=""
-
-prereqs()
-{
-	echo "$PREREQ"
-}
-
-case $1 in
-# get pre-requisites
-prereqs)
-	prereqs
-	exit 0
-	;;
-esac
-
-do_iscsi_login ()
-{
-	# Bring in the main config
-	. /conf/initramfs.conf
-	for conf in conf/conf.d/*; do
-		[ -f ${conf} ] && . ${conf}
-	done
-	. /scripts/functions
-
-	configure_networking
-
-	modprobe iscsi_tcp
-	modprobe crc32c
-
-	if [ -z $ISCSI_INITIATOR ]; then
-		. /etc/initiatorname.iscsi
-		ISCSI_INITIATOR=$InitiatorName
-	fi
-
-	if [ -z $ISCSI_TARGET_PORT ]; then
-		ISCSI_TARGET_PORT=3260
-	fi
-
-	if [ -z $ISCSI_TARGET_GROUP ]; then
-		ISCSI_TARGET_GROUP=1
-	fi
-
-	iscsistart -i $ISCSI_INITIATOR -t $ISCSI_TARGET_NAME	\
-		   -g $ISCSI_TARGET_GROUP -a $ISCSI_TARGET_IP	\
-		   -p $ISCSI_TARGET_PORT $ISCSI_USERNAME	\
-		   $ISCSI_PASSWORD $ISCSI_IN_USERNAME $ISCSI_IN_PASSWORD
-}
-
-parse_iscsi_ops ()
-{
-	. /etc/iscsi.initramfs
-
-	for x in $(cat /proc/cmdline); do
-		case ${x} in
-        	iscsi_initiator=*)
-                	ISCSI_INITIATOR="${x#iscsi_initiator=}"
-                	;;
-        	iscsi_target_name=*)
-                	ISCSI_TARGET_NAME="${x#iscsi_target_name=}"
-                	;;
-        	iscsi_target_ip=*)
-                	ISCSI_TARGET_IP="${x#iscsi_target_ip=}"
-                	;;
-        	iscsi_target_port=*)
-                	ISCSI_TARGET_PORT="${x#iscsi_target_port=}"
-                	;;
-		iscsi_target_group=*)
-			ISCSI_TARGET_GROUP="${x#iscsi_target_group=}"
-			;;
-		iscsi_username=*)
-			ISCSI_USERNAME="-u ${x#iscsi_username=}"
-			;;
-		iscsi_password=*)
-			ISCSI_PASSWORD="-w ${x#iscsi_password=}"
-			;;
-		iscsi_in_username=*)
-			ISCSI_IN_USERNAME="-U ${x#iscsi_in_username=}"
-			;;
-		iscsi_in_password=*)
-			ISCSI_IN_PASSWORD="-W ${x#iscsi_in_password=}"
-			;;
-		esac
-	done
-}
-
-if [ ! -x /sbin/iscsistart ]; then
-	exit 0
-fi
-
-parse_iscsi_ops
-
-if [ -z $ISCSI_TARGET_NAME ] || [ -z $ISCSI_TARGET_IP ]; then
-	exit 0
-fi
-
-do_iscsi_login
-
-exit 0
-
---GID0FwUMdk1T2AWN--
+diff -uNr dracut/modules.d/95nbd/install dracut/modules.d/95nbd/install
+--- dracut/modules.d/95nbd/install	1970-01-01 01:00:00.000000000 +0100
++++ dracut/modules.d/95nbd/install	2009-05-23 20:11:00.438418944 +0200
+@@ -0,0 +1,4 @@
++#!/bin/sh
++inst nbd-client
++inst_hook pre-mount 99 "$moddir/nbd-prepare.sh"
++instmods nbd
+diff -uNr dracut/modules.d/95nbd/nbd-prepare.sh dracut/modules.d/95nbd/nbd-prepare.sh
+--- dracut/modules.d/95nbd/nbd-prepare.sh	1970-01-01 01:00:00.000000000 +0100
++++ dracut/modules.d/95nbd/nbd-prepare.sh	2009-05-24 11:26:13.674261991 +0200
+@@ -0,0 +1,71 @@
++#!/bin/sh
++
++# If root=dhcp and a nbd-root has been passed, transform this into the
++# root=nbd::::: syntax
++if [ "$root" = "dhcp" ]; then
++    for dev in /net.*.dhcpopts; do 
++	if [ -f "$dev" ]; then 
++	    . "$dev"
++	    [ -n "$new_root_path" ] && root="nbd:${new_root_path}"
++	fi
++    done
++fi
++
++# Transform the debian way of using root=/dev/nbd and nbdroot=,,,
++if [ -z "${root%%/dev/nbd*}"]; then
++#    nbdroot=$(getarg nbdroot=)
++    if [ -n "$nbdroot" ]; then
++	nbdserver="${nbdroot%%,*}"
++	nbdport="${nbdroot#*,}"
++	nbdport="${nbdport%%,*}"
++	root="nbd://{$nbdserver}:${nbdport}/"
++	if [ "${nbdroot#*,*,}" != "$nbdroot" ]; then
++	    nbdbasedev="${nbdroot#*,*,}"
++	    [ -n "$nbdbasedev" ] && nbdrootdev="/dev/nbd${nbdbasedev}"
++	fi
++    fi
++fi
++
++# Only do anything if root is nbd:
++if [ "${root#nbd:}" != "$root" ]; then
++    # Parse server and port from a nbd://10.0.0.1:1234/ style URI and discard
++    # everything after the port
++    if [ "${root#nbd://}" != "$root" ]; then
++	nbdserver="${root#nbd://}"
++	nbdserver="${nbdserver%:*}"
++	nbdport="${root#nbd://$nbdserver:}"
++	nbdport="${nbdport%%/*}"
++	nbdfs=""
++	nbdopts="rw"
++
++    # Parse server, port, filesystem and options from old-style mkinitrd
++    # IPADDRESS:PORT:FILESYSTEM:OPTIONS style root definitions
++    elif [ "${root%%:*:*:*:*}" = "nbd" ]; then
++	nbdserver="${root#nbd:}"
++	nbdserver="${nbdserver%%:*}"
++	nbdport="${root#nbd:$nbdserver:}"
++	nbdport="${nbdport%%:*}"
++	nbdfs="${root#nbd:$nbdserver:$nbdport:}"
++	nbdfs="${nbdfs%%:*}"
++	nbdopts="${root#nbd:$nbdserver:$nbdport:$nbdfs:}"
++	nbdopts="${nbdopts%%:*}"
++    fi
++
++
++    if [ -n "$nbdserver" ] && [ "$nbdport" -gt 0 -a "$nbdport" -lt 65536 ]; then
++	root="${nbdrootdev:-/dev/nbd0}"
++	fstype="${nbdfs:--t auto}"
++	rflags="${nbdopts:-ro}"
++
++	modprobe nbd
++	i=0
++	# Wait till the device node really exists
++	while [ ! -b "$root" ]; do
++	    [ $i -ge 20 ] && exit 1
++	    sleep 0.1
++	    i=$(($i+1))
++	done
++
++	nbd-client "$nbdserver" "$nbdport" "$root"
++    fi
++fi
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
