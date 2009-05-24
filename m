@@ -1,46 +1,117 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: No stdout when using dash
-Date: Sat, 23 May 2009 11:57:23 -0500
-Message-ID: <3CC7A938-990C-40BB-9BBD-77BFD56EA4D0@gmail.com>
-References: <Pine.LNX.4.58.0905231331400.2058@gate.bb.dicp.net> <1243082881.29452.45.camel@sentry-no.us.dell.com> <ac3eb2510905230626k5a8b3d25l5c4de0c9017b9c80@mail.gmail.com>
-Mime-Version: 1.0 (iPhone Mail 5F136)
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: How do we want to handle configuring network boot devices?
+Date: Sat, 23 May 2009 21:00:16 -0400
+Message-ID: <1243126816.4217.248.camel@obelisk.thedillows.org>
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:references:message-id:from:to
-         :in-reply-to:content-type:content-transfer-encoding:x-mailer
-         :mime-version:subject:date:cc;
-        bh=eNOBZzMqZLdgherJLJy7K951lptts4hz2vU8FGMxW0U=;
-        b=LRMatIeGcQG5Gc/96PTF8jFzdcjjYygCHQnYDCMWMz7GE/SiVEO/mh0nSZtlnNoj6W
-         R6SUJpyGMlR97NSx5txFoo379EXkkzUn5lBQtUQLsAXKiRBMRoXgxfNCa7k4/8xDwDc3
-         7LReOkGAxiF0zDeQVGlbSn54BTgiW9dBlCm2U=
-In-Reply-To: <ac3eb2510905230626k5a8b3d25l5c4de0c9017b9c80-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"; delsp="yes"
-To: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
-Cc: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On May 23, 2009, at 8:26 AM, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org> wrote:
+Warren, Andreas, and I were discussing possible mechanisms for
+configuring NFS, NBD, iSCSI, etc going forward, and it was suggested
+that we try to document the current ways it is done, and how we may want
+to go forward.
 
-> On Sat, May 23, 2009 at 14:48, Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org 
-> > wrote:
->
->> +getarg ramfsdebug && set -x
->
-> Btw, "ramfs" is a well known kernel filesystem type, I don't think we
-> should use that name here.
->
-> The kernel parameter which binary to start in initramfs is "rdinit",
-> unlike "init" which is the binary to start in the real rootfs. Maybe
-> we just keep the rd-prefix for such variables?
+Assumptions:
+* I've missed some ways of doing this; feel free to point us in the
+	right direction.
+* IP autoconfig follows the kernel command line described in the same
+	document as Kernel nfsroot, with possible compatible extensions.
+	This "ip=dhcp" and friends.
 
-Sounds reasonable.
+Existing standards/implementations:
+iSCSI
+* root selection via DHCP is documented by RFC4173
+	format is iscsi:[SERVER]:[PROTO]:[PORT]:[LUN]:TARGET
+	minimum config is "iscsi:::::TARGET"
+* RH mkinitrd pulls iSCSI info from host system config
+* There appears to be some support for "iSCSI Boot Firmware Attributes"
+which may be useful, or not.
+	http://en.wikipedia.org/wiki/ISCSI_Boot_Firmware_Table
+	ftp://ftp.software.ibm.com/systems/support/system_x_pdf/ibm_iscsi_boot_firmware_table_v1.02.pdf
 
->
-> Thanks,
-> Kay
+NBD
+* RH mkinitrd uses the DHCP root-path option
+	format is nbd:SERVER:PORT:FSTYPE[:MOUNTOPTS]
+	you can specify the filsystem type to mount and
+	the options to use in the DHCP option
+* There does not appear to be a way to configure NBD in RH's mkinitrd
+	without using DHCP
+* I haven't found other initramfs's using NBD, but I've not searched
+	very hard.
+
+NFS
+* Kernel command line, as documented in Documentation/filesystems/nfsroot.txt
+	root=/dev/nfs
+	nfsroot=[ip:]path[,options]
+		Replaces %s in path with text IP address
+		If option missing, path defaults to "/tftpboot/%s"
+		If IP is missing, uses server address from ip= line
+* DHCP root-path option, with varying forms
+	Using next-server or server-id opt and root-path as pure path:
+		${next_server-${server_id}}:${root_path}
+	Using root-path as full info:
+		server:path
+	Current dracut uses DHCP root-path option:
+		nfs://server/path
+	My udev nfsroot patchset uses DHCP root-path option with command line override:
+		[ip:]path[:options]
+
+URI scheme proposed at http://apps.sourceforge.net/trac/dracut/wiki/commandline
+	root=nfs://server:port/path 
+	root=nbd://server:port/path 
+	root=iscsi://server:port/target 
+
+
+Open issues:
+* How to handle authentication data for iSCSI and NFS, if at all.
+* How to handle unionfs/aufs mounts?
+* How to handle dm-snapshot, eg for LiveCD overlays.
+* FCoE/AoE/DBRD/SRP -- I didn't search for examples on these.
+* Lustre/network filesystem du jour support -- I think these are
+possible, just need to be careful parsing things out. Not
+terribly important right now.
+* Using the dracut URI scheme above as a strawman, shouldn't
+"root=nfs://...." imply "ip=dhcp" if none is given?
+* What about multiple devices?
+* How many legacy ways of doing this should we support?
+* How do we separate options to the network block transport vs the
+filesystem mount?
+* How do we allow use of these features both via the cmdline and via
+DHCP?
+
+
+My commentary:
+* I'd like to support the legacy way of specifying this info as much as
+is reasonably possible. People are set in their ways, and it'd be nice
+if dracut could just work for them.
+* If we don't succeed in DHCPing/mounting the root on the first attempt,
+we should loop trying, with a chance for the user to break out each time
+-- think overloaded server bringing up a cluster.
+* A modified URI scheme like the dracut suggestion may work; use opaque
+URI's like the RFC4173 iSCSI root-path, or RH mkinitrd's nbd root-path.
+We could source a specific handler for the URI type listed, making it
+simpler to add new types in the future.
+* While adding vendor-specific DHCP options is not a really good idea in
+general, I see cases we may want to support that simply will not fit in
+the 255 chars available to us in root-path, or which would make parsing
+that be unnecessarily complex.
+* When testing things, it is really nice to be able to override the DHCP
+config via the kernel command line when possible. It's much cleaner to
+edit a single PXE boot file (or add it via the serial console) when
+working alongside a production environment -- less to remember to revert
+(and restart!)
+
+
+Ok, put on your asbestos underwear and wade on in. A consensus would be
+really helpful as we have quite a few people working in the network boot
+area and it would be great if we had a defined way forward for config.
+
+Dave 
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
