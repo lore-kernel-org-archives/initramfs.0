@@ -1,116 +1,215 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/2] Move content of 00test module into the test subdir
-Date: Sat, 23 May 2009 22:29:46 -0700 (PDT)
-Message-ID: <167cc2025588aad52f4bf1874445fb88f98a5446.1243142925.git.victor.lowther@gmail.com>
-References: <91424b14939cf148aa51b49c93f0476f59d5b186.1243142925.git.victor.lowther@gmail.com>
+From: Julien Cristau <jcristau-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
+Subject: Re: How do we want to handle configuring network boot devices?
+Date: Sun, 24 May 2009 10:29:17 +0200
+Message-ID: <20090524082917.GB21016@radis.liafa.jussieu.fr>
+References: <1243126816.4217.248.camel@obelisk.thedillows.org>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="GID0FwUMdk1T2AWN"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:date:message-id:in-reply-to
-         :references:from:subject:to:x-mailer;
-        bh=t0lTmP9DbcqD9DVuxWcYav2NHMkirvA79Ou8hP3NM+c=;
-        b=mql/oKkgwqsFzgl9KGHqvtnQM0mA0oEDeUEaRYhMySlcMKvtp8PbjLM/RQaHu8aGl3
-         e+m9eYMOngvWKkVN+LfMGjV1lXVOF46FyMiQ6CuDKC6rYP5b5eBU2HA07t2qpgpEbehn
-         XpNa0Sr6Snx5xJ7fb9JB/OLUDMyprZ3zgnc6A=
-In-Reply-To: <91424b14939cf148aa51b49c93f0476f59d5b186.1243142925.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1243126816.4217.248.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-The last changes made the 00test module really awkward anyways, so just
-hack the test module into the initramfs in a slight more brutal fashion.
----
- modules.d/00test/check                    |    2 --
- modules.d/00test/install                  |    5 -----
- {modules.d/00test => test}/copy-root.sh   |    0
- {modules.d/00test => test}/create-root.sh |    0
- {modules.d/00test => test}/halt.sh        |    0
- test/make-test-root                       |   20 ++++++++++++++------
- 6 files changed, 14 insertions(+), 13 deletions(-)
 
-diff --git a/modules.d/00test/check b/modules.d/00test/check
-deleted file mode 100755
-index afe8ade..0000000
---- a/modules.d/00test/check
-+++ /dev/null
-@@ -1,2 +0,0 @@
--#!/bin/bash
--exit 1
-diff --git a/modules.d/00test/install b/modules.d/00test/install
-deleted file mode 100755
-index 46a83af..0000000
---- a/modules.d/00test/install
-+++ /dev/null
-@@ -1,5 +0,0 @@
--#!/bin/sh
--dracut_install sfdisk mke2fs poweroff cp umount
--inst_hook pre-pivot 02 "$moddir/halt.sh"
--inst_hook pre-pivot 01 "$moddir/copy-root.sh"
--inst_hook pre-mount 01 "$moddir/create-root.sh"
-\ No newline at end of file
-diff --git a/modules.d/00test/copy-root.sh b/test/copy-root.sh
-similarity index 100%
-rename from modules.d/00test/copy-root.sh
-rename to test/copy-root.sh
-diff --git a/modules.d/00test/create-root.sh b/test/create-root.sh
-similarity index 100%
-rename from modules.d/00test/create-root.sh
-rename to test/create-root.sh
-diff --git a/modules.d/00test/halt.sh b/test/halt.sh
-similarity index 100%
-rename from modules.d/00test/halt.sh
-rename to test/halt.sh
-diff --git a/test/make-test-root b/test/make-test-root
-index e7f5276..6bc2b5a 100755
---- a/test/make-test-root
-+++ b/test/make-test-root
-@@ -4,9 +4,10 @@
- 
- dd if=/dev/zero of=test/root.ext2 bs=1M count=20
- 
--initdir=test/mnt
- kernel=$(uname -r)
-+# first, make the root filesystem
- (
-+    initdir=test/overlay/source
-     . ./dracut-functions
-     dracut_install sh df free ls shutdown poweroff stty cat ps ln ip route \
- 	/lib/terminfo/l/linux mount dmesg ifconfig dhclient mkdir cp ping dhclient 
-@@ -18,16 +19,23 @@ kernel=$(uname -r)
-     find_binary plymouth >/dev/null && dracut_install plymouth
-     (cd "$initdir"; mkdir -p dev sys proc etc var/run tmp )
- )
--targetfs="$initdir"
--unset initdir
-+
-+# second, install the files needed to make the root filesystem
-+(
-+    initdir=test/overlay
-+    . ./dracut-functions
-+    dracut_install sfdisk mke2fs poweroff cp umount
-+    inst_simple test/halt.sh /pre-pivot/02halt.sh
-+    inst_simple test/copy-root.sh /pre-pivot/01copy-root.sh
-+    inst_simple test/create-root.sh /pre-mount/01create-root.sh
-+)
- 
- # create an initramfs that will create the target root filesystem.
- # We do it this way because creating it directly in the host OS
- # results in cryptsetup not being able to unlock the LVM PV.
- # Probably a bug in cryptsetup, but...
--./dracut -l -i "$targetfs" /source \
--    -i test/overlay / \
--    -m "dash kernel-modules test crypt lvm mdraid udev-rules base rootfs-block" \
-+./dracut -l -i test/overlay / \
-+    -m "dash kernel-modules crypt lvm mdraid udev-rules base rootfs-block" \
-     -d "ata_piix ext2 sd_mod" \
-     -f test/initramfs.makeroot
- 
--- 
-1.6.0.4
+--GID0FwUMdk1T2AWN
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Sat, May 23, 2009 at 21:00:16 -0400, David Dillow wrote:
+
+> Warren, Andreas, and I were discussing possible mechanisms for
+> configuring NFS, NBD, iSCSI, etc going forward, and it was suggested
+> that we try to document the current ways it is done, and how we may want
+> to go forward.
+> 
+For what it's worth, the attached initramfs scripts are included in the
+nbd-client and open-iscsi Debian packages.
+
+Cheers,
+Julien
+
+--GID0FwUMdk1T2AWN
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="nbd-client.initrd"
+
+#!/bin/sh
+
+# We don't have any prerequisites
+case $1 in
+prereqs)
+	exit 0
+	;;
+esac
+
+. /scripts/functions
+
+log_begin_msg "Setting up nbd-client"
+for x in $(cat /proc/cmdline); do
+	# We don't need to redo what all of what /init already did...
+	case $x in
+		nbdroot=*,*,*)
+			nbdroot="${x#nbdroot=}"
+			nbdsrv=$(echo "$nbdroot" | sed -e "s/,.*$//")
+			nbdport=$(echo "$nbdroot" | sed -e "s/,([^,]*),.*$/\1/")
+			nbdbasedev=$(echo "$nbdroot" | sed -e "s/^.*,//")
+			nbdrootdev=/dev/$nbdbasedev
+			;;
+		nbdroot=*,*)
+			nbdroot="${x#nbdroot=}"
+			nbdsrv=$(echo "$nbdroot" | sed -e "s/,[^,]*$//")
+			nbdport=$(echo "$nbdroot" | sed -e "s/^[^,]*,//")
+			;;
+		ip=*)
+			IPOPTS="${x#ip=}"
+			;;
+		root=/dev/nbd*)
+			nbdrootdev="${x#root=}"
+			nbdbasedev="${x#root=/dev/}"
+			;;
+	esac
+done
+
+nbdrootdev=${nbdrootdev%p*}
+nbdbasedev=${nbdbasedev%p*}
+
+if [ -z "$nbdport" -o -z "$nbdrootdev" ]
+then
+	log_failure_msg "Insufficient information to set up nbd, quitting (nbdsrv=$nbdsrv nbdport=$nbdport nbdroot=$nbdroot root=$nbdrootdev)"
+	exit 0
+fi
+
+DEVICE=eth0
+
+configure_networking
+
+if [ -z "$nbdsrv" ]
+then
+	nbdsrv=${ROOTSERVER}
+fi
+
+if [ -z "$nbdsrv" ]
+then
+	log_failure_msg "Insufficient information to set up nbd, quitting (nbdsrv=$nbdsrv nbdport=$nbdport nbdroot=$nbdroot root=$nbdrootdev)"
+	exit 0
+fi
+
+/sbin/nbd-client $nbdsrv $nbdport $nbdrootdev -persist
+# This should be removed once the cfq scheduler no longer deadlocks nbd
+# devices
+if grep '\[cfq\]' /sys/block/$nbdbasedev/queue/scheduler >/dev/null
+then
+	echo deadline > /sys/block/$nbdbasedev/queue/scheduler
+fi
+
+--GID0FwUMdk1T2AWN
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="initramfs.local-top"
+
+#!/bin/sh
+
+PREREQ=""
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case $1 in
+# get pre-requisites
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+do_iscsi_login ()
+{
+	# Bring in the main config
+	. /conf/initramfs.conf
+	for conf in conf/conf.d/*; do
+		[ -f ${conf} ] && . ${conf}
+	done
+	. /scripts/functions
+
+	configure_networking
+
+	modprobe iscsi_tcp
+	modprobe crc32c
+
+	if [ -z $ISCSI_INITIATOR ]; then
+		. /etc/initiatorname.iscsi
+		ISCSI_INITIATOR=$InitiatorName
+	fi
+
+	if [ -z $ISCSI_TARGET_PORT ]; then
+		ISCSI_TARGET_PORT=3260
+	fi
+
+	if [ -z $ISCSI_TARGET_GROUP ]; then
+		ISCSI_TARGET_GROUP=1
+	fi
+
+	iscsistart -i $ISCSI_INITIATOR -t $ISCSI_TARGET_NAME	\
+		   -g $ISCSI_TARGET_GROUP -a $ISCSI_TARGET_IP	\
+		   -p $ISCSI_TARGET_PORT $ISCSI_USERNAME	\
+		   $ISCSI_PASSWORD $ISCSI_IN_USERNAME $ISCSI_IN_PASSWORD
+}
+
+parse_iscsi_ops ()
+{
+	. /etc/iscsi.initramfs
+
+	for x in $(cat /proc/cmdline); do
+		case ${x} in
+        	iscsi_initiator=*)
+                	ISCSI_INITIATOR="${x#iscsi_initiator=}"
+                	;;
+        	iscsi_target_name=*)
+                	ISCSI_TARGET_NAME="${x#iscsi_target_name=}"
+                	;;
+        	iscsi_target_ip=*)
+                	ISCSI_TARGET_IP="${x#iscsi_target_ip=}"
+                	;;
+        	iscsi_target_port=*)
+                	ISCSI_TARGET_PORT="${x#iscsi_target_port=}"
+                	;;
+		iscsi_target_group=*)
+			ISCSI_TARGET_GROUP="${x#iscsi_target_group=}"
+			;;
+		iscsi_username=*)
+			ISCSI_USERNAME="-u ${x#iscsi_username=}"
+			;;
+		iscsi_password=*)
+			ISCSI_PASSWORD="-w ${x#iscsi_password=}"
+			;;
+		iscsi_in_username=*)
+			ISCSI_IN_USERNAME="-U ${x#iscsi_in_username=}"
+			;;
+		iscsi_in_password=*)
+			ISCSI_IN_PASSWORD="-W ${x#iscsi_in_password=}"
+			;;
+		esac
+	done
+}
+
+if [ ! -x /sbin/iscsistart ]; then
+	exit 0
+fi
+
+parse_iscsi_ops
+
+if [ -z $ISCSI_TARGET_NAME ] || [ -z $ISCSI_TARGET_IP ]; then
+	exit 0
+fi
+
+do_iscsi_login
+
+exit 0
+
+--GID0FwUMdk1T2AWN--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
