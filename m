@@ -1,40 +1,43 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
 Subject: Re: [PATCH] dracut: make initial devices outside of initramfs
-Date: Tue, 26 May 2009 16:39:07 -0400
-Message-ID: <1243370347.19603.14.camel@lap75545.ornl.gov>
+Date: Tue, 26 May 2009 22:39:06 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.0905262237480.2270@gate.bb.dicp.net>
 References: <Pine.LNX.4.58.0905231331400.2058@gate.bb.dicp.net>
- <1243305738.3584.40.camel@obelisk.thedillows.org>
- <20090526024454.GA10049@redhat.com>
+ <1243305738.3584.40.camel@obelisk.thedillows.org> <20090526024454.GA10049@redhat.com>
  <1243306682.3584.42.camel@obelisk.thedillows.org>
- <Pine.LNX.4.58.0905261634470.2270@gate.bb.dicp.net>
- <1243349941.19603.5.camel@lap75545.ornl.gov>
+ <Pine.LNX.4.58.0905261634470.2270@gate.bb.dicp.net> <1243349941.19603.5.camel@lap75545.ornl.gov>
  <Pine.LNX.4.58.0905261818090.2270@gate.bb.dicp.net>
  <1243367721.19603.10.camel@lap75545.ornl.gov>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <1243367721.19603.10.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
+In-Reply-To: <1243367721.19603.10.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: TEXT/PLAIN; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Cc: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, 2009-05-26 at 15:55 -0400, David Dillow wrote:
-> On Tue, 2009-05-26 at 18:20 +0200, Andreas Thienemann wrote:
-> > On Tue, 26 May 2009, David Dillow wrote:
-> > 
-> > > Some of us want to use dracut on F10, or better yet CentOS 5.3. And we
-> > > test on released distros, not an unreleased one (albeit coming very
-> > > soon).
-> > 
+On Tue, 26 May 2009, David Dillow wrote:
+
 > > I can push an upgrade for F10. But Centos? I'm not sure they  even have 
 > > dash.
-> 
 > They do.
 
-Bah! I cannot read -- I saw dasher instead of dash, so they do not
-include it.
+Not in main AFAICS and EPEL doesn't have it either. So no way of me fixing 
+the issue there. 
+
+But F10 just got an updated dash built.
+
+ 
+> Ok, I'm fine with carrying this locally until F10 gets fixed. I agree
+> with not wanting to have to accumulate workarounds until we start
+> listing supported distros.
+
+Right, which could be an interesting excercise in itself... :/
+
+regards,
+ andreas
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
