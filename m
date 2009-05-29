@@ -1,8 +1,8 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: plymouth working for anybody with F-11?
-Date: Fri, 29 May 2009 06:49:05 -0500
-Message-ID: <1243597745.31156.2.camel@sentry-no.fnordovax.org>
-References: <4A1F6351.8070908@redhat.com>  <4A1F6550.4070400@redhat.com>
+Subject: Re: TODO: instmods() firmware is broken
+Date: Fri, 29 May 2009 06:54:55 -0500
+Message-ID: <1243598095.31156.6.camel@sentry-no.fnordovax.org>
+References: <4A1EE0B7.4030907@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -11,41 +11,33 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:received:received:subject:from:to:cc
          :in-reply-to:references:content-type:date:message-id:mime-version
          :x-mailer:content-transfer-encoding;
-        bh=SLpybBOlbAIaDawupYvKyDyb3GpQvvAObmU8oiVCn7Q=;
-        b=XURALCpJ0pknJ2dA39+tFVZjORuhsLQvdi3ZMxuEwAPl1+vDnmCqfsPZyHudoyUY4x
-         qg8jS4TKga5n2T2UfSy8J8PDh20aSN42iiziMKwd6X6r+a7nqmGlBJLPerccfibWfEtP
-         ry5Ve5OQmRIer0oCw8iCMYhf6AISO6XdU0hnA=
-In-Reply-To: <4A1F6550.4070400-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+        bh=v0ATkdI5yhd+YO8uhwjY180pvKpHQEKGX4BD3ydfOYo=;
+        b=tP1JZUDtXRLNi4+HxgtH1yUKX4W5zIzWwrSP+7EZrsvFEfakS4RYsmSAMlb8BAG84a
+         P0KzyvdcaMUn/FkFM+i43QBQPT7zGotuUsE6+lEdGvszJTfzMyaDrgY1BgMwf1PW28LG
+         zgEVzuk+nkPeRIQFJ/ObtosJ4+pNkXr9qMs5o=
+In-Reply-To: <4A1EE0B7.4030907-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Fri, 2009-05-29 at 00:32 -0400, Warren Togami wrote:
-> On 05/29/2009 12:23 AM, Warren Togami wrote:
-> > Is plymouth working for anyone with F-11 right now?
-> >
-> > In my case it seems to fail to load the KMS kernel module (intel.ko in
-> > my case) prior to plymouth splash is executed.
-> >
+On Thu, 2009-05-28 at 15:06 -0400, Warren Togami wrote:
+> Note this as a TODO if you want some drivers to be usable during the initrd.
 > 
-> Another problem is it seems to still use default.so.
+> dracut-functions instmods() seems to be broken in that it only looks for 
+> firmware in cases where instmods() was called with a single module as a 
+> parameter.  Most drivers are copied by dracut as the result of 
+> =groupname groups, thus firmware is not being copied for storage and 
+> network drivers.
 > 
-> [[ -f ${LIBDIR}/plymouth/default.so ]] && inst ${LIBDIR}/plymouth/default.so
-> 
-> The plymouth in F-11 seems to no longer use the default.so symlink.  It 
-> seems to be copying the default "charge" theme into the image, but 
-> without the required two-step.so plugin.
-> 
-> BTW, why are we using our own plymouth-populate-initrd instead of using 
-> plymouth's own /usr/libexec/plymouth/plymouth-populate-initrd, which 
-> presumably would do the right thing for its own version of plymouth? 
-> (Didn't try it yet.)
+> A better fix might be to wait until all installs are done, then run a 
+> modinfo loop across all copied .ko's to install all firmware?
 
-Because the original plymouth-populate-initrd script was full of useless
-(to dracut) code that our internal inst functions handled better and in
-a more generic fashion, so I trimmed it down to its essentials.
+Or to call modinfo only when instmods is actually installing a module,
+and not when it is expanding module shorthand.
+
+Which is what one of the patches I just pushed to the repo does.
 
 > Warren Togami
 > wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
