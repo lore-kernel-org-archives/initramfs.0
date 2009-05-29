@@ -1,76 +1,62 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Irrelevant kernel modules
-Date: Fri, 29 May 2009 16:24:37 +0200
-Message-ID: <4A1FF025.90903@bfh.ch>
-References: <4A1EF025.4040102@redhat.com>
+Subject: Re: Dracut generation modes
+Date: Fri, 29 May 2009 16:30:32 +0200
+Message-ID: <4A1FF188.5070703@bfh.ch>
+References: <4A1EDEBF.4080009@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A1EF025.4040102-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A1EDEBF.4080009-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-
-
 Warren Togami wrote:
-> drivers/net/irda/
-> drivers/net/appletalk
-We could get rid of these (and others) if we'd filter the network-modules
-for the call 'eth_type_trans' (nm -uPA ... | grep eth_type_trans)
+> So this might not have been clear earlier, but stating it on the list to 
+> be sure everyone is on the same page.
+> 
+> * Default Dracut
+> Dracut without any parameters should generate an initrd image capable of 
+> booting a generic machine.  This means it must not detect anything of 
+> the current running system to determine what to install in the image. 
+> This includes stuff in /proc, /sys, lsmod, /proc/mounts and possibly more.
 
-/> net/ipv4/netfilter
-> net/sched/
-> net/irda/
-> net/bridge/netfilter/
-> net/netfilter/
-> net/phonet
-> net/dccp/
-> net/ipv6/netfilter/
-> net/bluetooth/
-> net/atm/
-> net/802/
-
-Hmmm... Would it make sense if the network installer would just specify
-which modules below /kernel/net are needed and only /kernel/drivers/net
-is process automatically?
+Yes
 
 > 
-> It seems these (and possibly more) kernel modules are being copied into 
-> the initrd but are never needed during initrd.  Any ideas of a better 
-> and more specific way of specifying only network interface drivers?
-> 
-> rm -rf ${initdir}/lib/modules/$kernel/kernel/net/wireless
-> rm -rf ${initdir}/lib/modules/$kernel/kernel/drivers/net/wireless
+> By necessity, stuff in the filesystem are usable to dracut in 
+> determining what to install in the image.
 
-Add 
-
-nm -uPA $srcmods/$(modprobe -l $mod) | egrep -qv 'ieee802011|wireless' || return
-
-To to just before the modprobe inside instmods and wireless drivers should be gone
+...Dracut has to get it's tools from somewhere...
 
 > 
-> In related news, Harald suggested adding this as an ugly hack to get rid 
-> of wireless drivers.  This immediately after instmods =net didn't work 
-> for some reason I haven't yet figured out.  It is successfully deleting 
-> the modules, but something else is copying them back later.  I am hoping 
-> the $drivers cleanups I just pushed help this situation.
+> * --hostonly mode
+> Host only mode is permitted to use runtime detection to generate an 
+> image capable of booting the current system.  What exactly does this 
+> mean?  Is this primarily for smaller sizes by avoiding irrelevant modules?
+
+Yes. And possibly more optimization. I'm thinking "apt-get update 
+linux-image" which automatically rebuilds the initrd...
+
+> * (Some other generation mode)
+> Perhaps we need more generation modes for other purposes.  One likely 
+> case is where you need to generate a machine specific image for a 
+> non-local system.  A combination of command line options and/or .conf 
+> file would define the dracut image for a non-local system.  This might 
+> be necessary for cases like:
 > 
-> So the other bug involving instmods() firmware handling being broken is 
-> the reason for wireless .ko modules to be loaded during initrd but 
-> failing due to missing firmware.  We already agreed on this list earlier 
-> to exclude wireless in the standard initrd though, so this doesn't 
-> matter yet.  I guess some SCSI or FC controllers might be more effected 
-> by the missing firmware.
-> 
-> Warren Togami
-> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> - netboot initrd needs to be as small as possible for resource 
+> constraint reasons
+> - embedded systems with resource constraints
+
+That's what dracutmodules in the configfile is for.
+
+> - certificates or passwords for iscsi or kerberized nfs
+
+I'd say either via injection or a site-specific add-on module.
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
