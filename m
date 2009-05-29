@@ -1,36 +1,49 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: plymouth working for anybody with F-11?
-Date: Fri, 29 May 2009 00:32:16 -0400
-Message-ID: <4A1F6550.4070400@redhat.com>
-References: <4A1F6351.8070908@redhat.com>
+Subject: Re: 90kernel-modules-loaded must be --hostonly
+Date: Fri, 29 May 2009 00:56:50 -0400
+Message-ID: <4A1F6B12.5050001@redhat.com>
+References: <4A1ED743.3010107@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A1F6351.8070908-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A1ED743.3010107-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 05/29/2009 12:23 AM, Warren Togami wrote:
-> Is plymouth working for anyone with F-11 right now?
+On 05/28/2009 02:26 PM, Warren Togami wrote:
+>> /sbin/lsmod | while read mod rest; do
+>> instmods "$mod"
+>> done
 >
-> In my case it seems to fail to load the KMS kernel module (intel.ko in
-> my case) prior to plymouth splash is executed.
+> This part relies on looking at the running system, and thus must not be
+> part of the default dracut run. This seems OK for --hostonly mode.
 >
+> Changing this will likely break some users depending on modules not
+> otherwise pulled in elsewhere? Should I just go ahead and see what breaks?
 
-Another problem is it seems to still use default.so.
+Oh, I now notice that the check script skips this entirely unless you 
+are in hostonly mode.  This is the reason why I'm not getting the KMS 
+drivers loaded prior to plymouth (although plymouth itself is still 
+busted for other reasons.)
 
-[[ -f ${LIBDIR}/plymouth/default.so ]] && inst ${LIBDIR}/plymouth/default.so
+[ "$1" != "-h" ] && exit 1
 
-The plymouth in F-11 seems to no longer use the default.so symlink.  It 
-seems to be copying the default "charge" theme into the image, but 
-without the required two-step.so plugin.
+But is this correct?  It seems we should be checking the hostonly 
+variable and not if "-h" happens to be the first parameter.
 
-BTW, why are we using our own plymouth-populate-initrd instead of using 
-plymouth's own /usr/libexec/plymouth/plymouth-populate-initrd, which 
-presumably would do the right thing for its own version of plymouth? 
-(Didn't try it yet.)
+-h isn't -H.
+-h isn't --hostonly
+
+>
+>>
+>> [ -f /etc/modprobe.conf ] && dracut_install /etc/modprobe.conf
+>> dracut_install $(find /etc/modprobe.d/ -type f )
+>
+> This part is fine.
+
+Anyone disagree that this should be copied in all cases, not just hostonly?
 
 Warren Togami
 wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
