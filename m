@@ -1,48 +1,37 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: 90kernel-modules-loaded must be --hostonly
-Date: Fri, 29 May 2009 09:44:30 +0200
-Message-ID: <4A1F925E.7020105@redhat.com>
-References: <4A1ED743.3010107@redhat.com> <4A1F6B12.5050001@redhat.com> <4A1F8E18.2030400@redhat.com>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [PATCH 1/1] Final fixups to make the full testsuite work.
+Date: Fri, 29 May 2009 13:02:02 +0200
+Message-ID: <4A1FC0AA.3050902@bfh.ch>
+References: <151d32e89583815962af8d721b17d0b320f80a2f.1243306326.git.victor.lowther@gmail.com>	 <4A1BB5DE.3090206@redhat.com> <1243340142.4005.8.camel@sentry-no.us.dell.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A1F8E18.2030400-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1243340142.4005.8.camel-76q0VzFBGGqhmyxYjSZgiRL4W9x8LtSr@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/29/2009 09:26 AM, Harald Hoyer wrote:
-> On 05/29/2009 06:56 AM, Warren Togami wrote:
->> On 05/28/2009 02:26 PM, Warren Togami wrote:
->>>> /sbin/lsmod | while read mod rest; do
->>>> instmods "$mod"
->>>> done
->>>
->>> This part relies on looking at the running system, and thus must not be
->>> part of the default dracut run. This seems OK for --hostonly mode.
->>>
->>> Changing this will likely break some users depending on modules not
->>> otherwise pulled in elsewhere? Should I just go ahead and see what
->>> breaks?
->>
->> Oh, I now notice that the check script skips this entirely unless you
->> are in hostonly mode. This is the reason why I'm not getting the KMS
->> drivers loaded prior to plymouth (although plymouth itself is still
->> busted for other reasons.)
->>
->> [ "$1" != "-h" ] && exit 1
->>
->> But is this correct? It seems we should be checking the hostonly
->> variable and not if "-h" happens to be the first parameter.
->>
->> -h isn't -H.
->> -h isn't --hostonly
->
-> This obviously broke by introducing the --help option.. just fix it.
+Victor Lowther wrote:
+> On Tue, 2009-05-26 at 11:26 +0200, Harald Hoyer wrote:
+>> On 05/26/2009 04:57 AM, Victor Lowther wrote:
+>>> test-10 now completes sucessfully.  What has changed:
+>> hmm, it completed sucessfully on Fedora 11 without any problems..
+> 
+> Ah, distro issues.  I have been doing all my recent work using Ubuntu
+> 9.04 x86_64.
+> 
+> I suppose that brings up another rather fundamental question -- what
+> degree of cross-distro compatibility should we be building into dracut
+> from the beginning?  I try to write things so that dracut will work on
+> anything whose udev rules are reasonably in line with upstream -
+> everything but Debian, these days
+> 
+> Is anyone besides me testing dracut on something that isn't Fedora?
 
-oops, no "check" is called with -h in dracut if $hostonly is set by "-H --hostonly"
+Yes me! Currently that's Ubuntu 9.04 && Debian 5.0
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
