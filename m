@@ -1,62 +1,134 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Dracut generation modes
-Date: Fri, 29 May 2009 16:30:32 +0200
-Message-ID: <4A1FF188.5070703@bfh.ch>
-References: <4A1EDEBF.4080009@redhat.com>
+Subject: Re: How do we want to handle configuring network boot devices?
+Date: Fri, 29 May 2009 17:26:05 +0200
+Message-ID: <4A1FFE8D.8050507@bfh.ch>
+References: <1243126816.4217.248.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A1EDEBF.4080009-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1243126816.4217.248.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Warren Togami wrote:
-> So this might not have been clear earlier, but stating it on the list to 
-> be sure everyone is on the same page.
-> 
-> * Default Dracut
-> Dracut without any parameters should generate an initrd image capable of 
-> booting a generic machine.  This means it must not detect anything of 
-> the current running system to determine what to install in the image. 
-> This includes stuff in /proc, /sys, lsmod, /proc/mounts and possibly more.
 
-Yes
+David Dillow wrote:
+[snip]
+> Open issues:
+> * How to handle authentication data for iSCSI and NFS, if at all.
 
-> 
-> By necessity, stuff in the filesystem are usable to dracut in 
-> determining what to install in the image.
+NFS4 only needs authentication data if kerberized. I suggest to postpone 
+this for (a lot) later. The same applies for Wireless or stuff like 802.1x.
 
-...Dracut has to get it's tools from somewhere...
+> * How to handle unionfs/aufs mounts?
+> * How to handle dm-snapshot, eg for LiveCD overlays.
 
-> 
-> * --hostonly mode
-> Host only mode is permitted to use runtime detection to generate an 
-> image capable of booting the current system.  What exactly does this 
-> mean?  Is this primarily for smaller sizes by avoiding irrelevant modules?
+Do we really have to support these two? I suggest this is something 
+distributors can add with their own mount/pre-pivot modules
 
-Yes. And possibly more optimization. I'm thinking "apt-get update 
-linux-image" which automatically rebuilds the initrd...
+> * FCoE/AoE/DBRD/SRP -- I didn't search for examples on these.
+> * Lustre/network filesystem du jour support -- I think these are
+> possible, just need to be careful parsing things out. Not
+> terribly important right now.
 
-> * (Some other generation mode)
-> Perhaps we need more generation modes for other purposes.  One likely 
-> case is where you need to generate a machine specific image for a 
-> non-local system.  A combination of command line options and/or .conf 
-> file would define the dracut image for a non-local system.  This might 
-> be necessary for cases like:
-> 
-> - netboot initrd needs to be as small as possible for resource 
-> constraint reasons
-> - embedded systems with resource constraints
+If we can generalize the parsing these shouldn't be a problem at all. 
+Same goes with other weird cases like booting from CIFS.
 
-That's what dracutmodules in the configfile is for.
+> * Using the dracut URI scheme above as a strawman, shouldn't
+> "root=nfs://...." imply "ip=dhcp" if none is given?
 
-> - certificates or passwords for iscsi or kerberized nfs
+It would be user friendly, agreed. But for the sake of forceing people 
+to think at least a bit I suggest to imply ip=dhcp only if root=dhcp.
 
-I'd say either via injection or a site-specific add-on module.
+> * What about multiple devices?
 
+Must be supported.
+
+I've previously outlined problematic cases here:
+http://article.gmane.org/gmane.linux.kernel.initramfs/393
+
+A first set of patches supporting different boot-cases is here:
+http://article.gmane.org/gmane.linux.kernel.initramfs/411
+http://article.gmane.org/gmane.linux.kernel.initramfs/409
+http://article.gmane.org/gmane.linux.kernel.initramfs/410
+
+The gist of it is that netif configuration needs to be synchronized so 
+only one netif can be up at any one time. I'll rebase these patches on 
+your work next friday.
+
+> * How many legacy ways of doing this should we support?
+
+As many as possible. Will make transision easier. The current 
+commandline document is pretty complete I think.
+
+Again I think this is just a matter of parsing options.
+
+> * How do we separate options to the network block transport vs the
+> filesystem mount?
+
+To be honest, I don't quite get what you mean here.
+
+> * How do we allow use of these features both via the cmdline and via
+> DHCP?
+
+I'd say either the cmdline is specific or it says dhcp.
+
+> My commentary:
+> * I'd like to support the legacy way of specifying this info as much as
+> is reasonably possible. People are set in their ways, and it'd be nice
+> if dracut could just work for them.
+> * If we don't succeed in DHCPing/mounting the root on the first attempt,
+> we should loop trying, with a chance for the user to break out each time
+> -- think overloaded server bringing up a cluster.
+
+I agree. Problem is if we want to loop and support multiple devices we 
+can't do everything with udev since udev doesn't block operations on 
+non-related devices.
+
+Question: Anyone have a problem if network boot mount is not handled 
+from udev? As much as I'd like I can't think of a sensible way to to this.
+
+> * A modified URI scheme like the dracut suggestion may work; use opaque
+> URI's like the RFC4173 iSCSI root-path, or RH mkinitrd's nbd root-path.
+> We could source a specific handler for the URI type listed, making it
+> simpler to add new types in the future.
+
+That's a good idea. With keeping in line with mounting outside udev we 
+could do:
+
+loop until mounted {
+   wait for network
+   source all registered option handlers, setting mount-variables
+   source mount-script
+}
+fs-specific stuff like moving rpcbind data etc can go in pre-pivot.
+
+This is already feasible with the current mount-loop, since the mount 
+script has number 99. And that way each fs-type just has to provide a 
+parser-module. I guess we can provide some helper functions to wrap 
+getarg and parse dhcp-options.
+
+
+> * While adding vendor-specific DHCP options is not a really good idea in
+> general, I see cases we may want to support that simply will not fit in
+> the 255 chars available to us in root-path, or which would make parsing
+> that be unnecessarily complex.
+
+Again, simply a matter of parsing options.
+
+> * When testing things, it is really nice to be able to override the DHCP
+> config via the kernel command line when possible. It's much cleaner to
+> edit a single PXE boot file (or add it via the serial console) when
+> working alongside a production environment -- less to remember to revert
+> (and restart!)
+
+As suggested: use dhcp root options only if explicitely requested by the 
+commandline.
+
+Regards,
+Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
