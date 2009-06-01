@@ -1,7 +1,7 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: [RFC PATCH 2/9] block root: split out resume parsing and udev rules
-Date: Sun, 31 May 2009 23:19:31 -0400
-Message-ID: <5c123162ededa03b56b21117644740b69fdf3fbf.1243833882.git.dave@thedillows.org>
+Subject: [RFC PATCH 9/9] Add NBD support
+Date: Mon, 1 Jun 2009 00:59:52 -0400
+Message-ID: <2b117123ecd2d93cec8598593e966029dfb4777e.1243833882.git.dave@thedillows.org>
 References: <cover.1243833882.git.dave@thedillows.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <cover.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
@@ -12,106 +12,227 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-We have a resume module, and these rules should live in it. Modify
-the sort order a bit to ensure the resume rules continue to execute
-first.
+This adds basic support for root on a network block device to
+the netroot framework.
 
 Signed-off-by: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 ---
- modules.d/95resume/install                  |    3 ++-
- modules.d/95resume/resume-genrules.sh       |    6 ++++++
- modules.d/95rootfs-block/block-genrules.sh  |    6 ++++++
- modules.d/95rootfs-block/genrules.sh        |   14 --------------
- modules.d/95rootfs-block/install            |    4 ++--
- modules.d/95rootfs-block/parse-root-opts.sh |    6 ------
- 6 files changed, 16 insertions(+), 23 deletions(-)
- create mode 100755 modules.d/95resume/resume-genrules.sh
- create mode 100755 modules.d/95rootfs-block/block-genrules.sh
- delete mode 100755 modules.d/95rootfs-block/genrules.sh
+ modules.d/95nbd/check            |   11 ++++
+ modules.d/95nbd/install          |    7 +++
+ modules.d/95nbd/nbd-netroot.sh   |   11 ++++
+ modules.d/95nbd/nbdroot          |   96 ++++++++++++++++++++++++++++++++++++++
+ modules.d/95nbd/parse-nbdroot.sh |   49 +++++++++++++++++++
+ 5 files changed, 174 insertions(+), 0 deletions(-)
+ create mode 100755 modules.d/95nbd/check
+ create mode 100755 modules.d/95nbd/install
+ create mode 100755 modules.d/95nbd/nbd-netroot.sh
+ create mode 100755 modules.d/95nbd/nbdroot
+ create mode 100755 modules.d/95nbd/parse-nbdroot.sh
 
-diff --git a/modules.d/95resume/install b/modules.d/95resume/install
-index 532fcc3..e656d53 100755
---- a/modules.d/95resume/install
-+++ b/modules.d/95resume/install
-@@ -1,4 +1,5 @@
- #!/bin/bash
-+dracut_install echo
- inst_hook pre-udev 10 "$moddir/parse-resume.sh"
-+inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
- inst_hook mount 90 "$moddir/resume.sh"
--
-diff --git a/modules.d/95resume/resume-genrules.sh b/modules.d/95resume/resume-genrules.sh
+diff --git a/modules.d/95nbd/check b/modules.d/95nbd/check
 new file mode 100755
-index 0000000..108c3f7
+index 0000000..f94d63b
 --- /dev/null
-+++ b/modules.d/95resume/resume-genrules.sh
-@@ -0,0 +1,6 @@
-+resume=$(getarg resume=) && ! getarg noresume  && {
-+(
-+	/bin/echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
-+	/bin/echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
-+) >> /etc/udev/rules.d/99-resume.rules
-+}
-diff --git a/modules.d/95rootfs-block/block-genrules.sh b/modules.d/95rootfs-block/block-genrules.sh
++++ b/modules.d/95nbd/check
+@@ -0,0 +1,11 @@
++#!/bin/sh
++# We depend on network modules being loaded
++[ "$1" = "-d" ] && echo network
++
++# If hostonly was requested, fail the check if we are not actually
++# booting from root.
++[ "$1" = "-h" ] && ! egrep -q '/ /dev/nbd[0-9]*' /proc/mounts && exit 1
++
++# If our prerequisites are not met, fail anyways.
++which nbd-client >/dev/null 2>&1 || exit 1
++exit 0
+diff --git a/modules.d/95nbd/install b/modules.d/95nbd/install
 new file mode 100755
-index 0000000..47083df
+index 0000000..3a80da1
 --- /dev/null
-+++ b/modules.d/95rootfs-block/block-genrules.sh
-@@ -0,0 +1,6 @@
-+if [ "${root#/dev/}" != "$root" ]; then
-+    (
-+	echo 'KERNEL=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
-+	echo 'SYMLINK=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
-+    ) >> /etc/udev/rules.d/99-mount.rules
++++ b/modules.d/95nbd/install
+@@ -0,0 +1,7 @@
++#!/bin/bash
++
++inst nbd-client
++inst_hook cmdline 90 "$moddir/parse-nbdroot.sh"
++inst_hook netroot 90 "$moddir/nbd-netroot.sh"
++inst "$moddir/nbdroot" "/sbin/nbdroot"
++instmods nbd
+diff --git a/modules.d/95nbd/nbd-netroot.sh b/modules.d/95nbd/nbd-netroot.sh
+new file mode 100755
+index 0000000..74b3da8
+--- /dev/null
++++ b/modules.d/95nbd/nbd-netroot.sh
+@@ -0,0 +1,11 @@
++#!/bin/sh # for highlighting
++
++if [ "$root" = "dhcp" ]; then
++    if [ -n "$new_root_path" -a -z "${new_root_path%%nbd:*}" ]; then
++	root="$new_root_path"
++    fi
 +fi
-diff --git a/modules.d/95rootfs-block/genrules.sh b/modules.d/95rootfs-block/genrules.sh
-deleted file mode 100755
-index 4662a32..0000000
---- a/modules.d/95rootfs-block/genrules.sh
-+++ /dev/null
-@@ -1,14 +0,0 @@
--if [ "${root#/dev/}" != "$root" ]; then
--
--    resume=$(getarg resume=) && ! getarg noresume  && {
--	(
--    	    /bin/echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
--    	    /bin/echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
--	) >> /etc/udev/rules.d/99-resume.rules
--    }
--
--    (
--	echo 'KERNEL=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
--	echo 'SYMLINK=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
--    ) >> /etc/udev/rules.d/99-mount.rules
--fi
-\ No newline at end of file
-diff --git a/modules.d/95rootfs-block/install b/modules.d/95rootfs-block/install
-index bf36cae..9d53855 100755
---- a/modules.d/95rootfs-block/install
-+++ b/modules.d/95rootfs-block/install
-@@ -1,5 +1,5 @@
- #!/bin/sh
- dracut_install echo
--inst_hook pre-udev 10 "$moddir/parse-root-opts.sh"
--inst_hook pre-udev 20 "$moddir/genrules.sh"
-+inst_hook pre-udev 20 "$moddir/parse-root-opts.sh"
-+inst_hook pre-udev 30 "$moddir/block-genrules.sh"
- inst_hook mount 99 "$moddir/mount-root.sh"
-diff --git a/modules.d/95rootfs-block/parse-root-opts.sh b/modules.d/95rootfs-block/parse-root-opts.sh
-index 9c49aa9..3a8b1a6 100755
---- a/modules.d/95rootfs-block/parse-root-opts.sh
-+++ b/modules.d/95rootfs-block/parse-root-opts.sh
-@@ -1,10 +1,4 @@
- #!/bin/sh
--if resume=$(getarg resume=) && ! getarg noresume; then 
--    export resume
--    echo "$resume" >/.resume
--else
--    unset resume
--fi
- 
- root=$(getarg root=)
- case $root in
++
++if [ -z "${root%nbd:*}" ]; then
++    handler=/sbin/nbdroot
++fi
+diff --git a/modules.d/95nbd/nbdroot b/modules.d/95nbd/nbdroot
+new file mode 100755
+index 0000000..51120c2
+--- /dev/null
++++ b/modules.d/95nbd/nbdroot
+@@ -0,0 +1,96 @@
++#!/bin/sh
++
++. /lib/dracut-lib
++
++PATH=$PATH:/sbin:/usr/sbin
++
++# XXX needs error handling like ifup/dhclient-script
++
++if getarg rdnetdebug; then
++    exec > /tmp/nbdroot.$1.$$.out
++    exec 2>> /tmp/nbdroot.$1.$$.out
++    set -x
++fi
++
++# root is in the form root=nbd:server:port:fstype:fsopts:nbdopts
++netif="$1"
++root="$2"
++
++root=${root#nbd:}
++nbdserver=${root%%:*}; root=${root#*:}
++nbdport=${root%%:*}; root=${root#*:}
++nbdfstype=${root%%:*}; root=${root#*:}
++nbdflags=${root%%:*}
++nbdopts=${root#*:}
++
++if [ "$nbdopts" = "$nbdflags" ]; then
++    unset nbdopts
++fi
++if [ "$nbdflags" = "$nbdfstype" ]; then
++    unset nbdflags
++fi
++if [ "$nbdfstype" = "$nbdport" ]; then
++    unset nbdfstype
++fi
++if [ -z "$nbdfstype" ]; then
++    nbdfstype=auto
++fi
++
++# look through the NBD options and pull out the ones that need to
++# go before the host etc. Append a ',' so we know we terminate the loop
++nbdopts=${nbdopts},
++while [ -n "$nbdopts" ]; do
++    f=${nbdopts%%,*}
++    nbdopts=${nbdopts#*,}
++    if [ -z "$f" ]; then
++        break
++    fi
++    if [ -z "${f%bs=*}" -o -z "${f%timeout=*}" ]; then
++        preopts="$preopts $f"
++        continue
++    fi
++    opts="$opts $f"
++done
++
++# look through the flags and see if any are overridden by the command line
++nbdflags=${nbdflags},
++while [ -n "$nbdflags" ]; do
++    f=${nbdflags%%,*}
++    nbdflags=${nbdflags#*,}
++    if [ -z "$f" ]; then
++        break
++    fi
++    if [ "$f" = "ro" -o "$f" = "rw" ]; then
++        nbdrw=$f
++        continue
++    fi
++    fsopts=${fsopts+$fsopts,}$f
++done
++
++getarg ro && nbdrw=ro
++getarg rw && nbdrw=rw
++fsopts=${fsopts+$fsopts,}${nbdrw}
++
++modprobe nbd || exit 1
++
++# XXX better way to wait for the device to be made?
++i=0
++while [ ! -b /dev/nbd0 ]; do
++    [ $i -ge 20 ] && exit 1
++    sleep 0.1
++    i=$(( $i + 1))
++done
++
++# XXX netroot expects to have the handler mount things, but we should
++# XXX allow LVM, LUKS, etc over nbd
++
++nbd-client $preopts "$nbdserver" "$nbdport" /dev/nbd0 $opts || exit 1
++
++if ! mount -t $nbdfstype -o$fsopts /dev/nbd0 $NEWROOT; then
++    # Mount failed, clean up after ourselves so if we try a different
++    # interface it can succeed
++    nbd-client -d /dev/nbd0
++    exit 1
++fi
++
++exit 0
+diff --git a/modules.d/95nbd/parse-nbdroot.sh b/modules.d/95nbd/parse-nbdroot.sh
+new file mode 100755
+index 0000000..4bedaab
+--- /dev/null
++++ b/modules.d/95nbd/parse-nbdroot.sh
+@@ -0,0 +1,49 @@
++#!/bin/dash
++
++# It'd be nice if this could share rules with 99-block.sh, but since
++# the kernel side adds nbd{1..16} when the module is loaded -- before
++# they are associated with a server -- we cannot use the udev add rule
++# to find it
++#
++# XXX actually we could, if we move to root=XXX and netroot=XXX, then
++# you could do root=LABEL=/ nbdroot=XXX, or netroot=nbd:XXX
++#
++# However, we need to be 90-nbd.sh to catch root=/dev/nbd*
++#
++# Preferred format:
++#	root=nbd:srv:port[:fstype[:rootflags[:nbdopts]]]
++#
++# nbdopts is a comma seperated list of options to give to nbd-client
++#
++#
++# Legacy formats:
++#	nbdroot=srv,port
++#	nbdroot=srv:port[:fstype[:rootflags[:nbdopts]]]
++#	root=dhcp nbdroot=srv:port[:fstype[:rootflags[:nbdopts]]]
++#	root=nbd nbdroot=srv:port[:fstype[:rootflags[:nbdopts]]]
++#
++
++case "$root" in
++    nbd|dhcp|'')
++	if getarg nbdroot= > /dev/null; then
++	    root=nbd:$(getarg nbdroot=)
++	fi
++	;;
++esac
++
++# Convert the Debian style to our syntax, but avoid matches on fs arguments
++case "$root" in
++    nbd:*,*)
++	if check_occurances "$root" ',' 1 && check_occurances "$root" ':' 1;
++	then
++	    root=${root%*,}:${root#*,}
++	fi
++	;;
++esac
++
++if [ "${root%%:*}" = "nbd" ]; then
++    # XXX validate options here?
++    # XXX generate udev rules?
++    rootok=1
++    netroot=nbd
++fi
 -- 
 1.6.0.6
 
