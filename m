@@ -1,197 +1,65 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [RFC PATCH 1/9] nfsroot: move to same sort order as block methods
-Date: Mon, 1 Jun 2009 11:20:11 +0200
-Message-ID: <4A239D4B.2050009@bfh.ch>
-References: <cover.1243833882.git.dave@thedillows.org> <145ca9e5b331c454ebe13005fdfaed3749ef50f5.1243833882.git.dave@thedillows.org>
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH 4/9] cmdline: cleanup handling and block: handler
+Date: Mon, 01 Jun 2009 04:26:31 -0500
+Message-ID: <1243848391.647.13.camel@sentry-no.fnordovax.org>
+References: <cover.1243833882.git.dave@thedillows.org>
+	 <d15c7a1ab71af9ab4fccd51fa02915e949f39c86.1243833882.git.dave@thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <145ca9e5b331c454ebe13005fdfaed3749ef50f5.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:subject:from:to:cc
+         :in-reply-to:references:content-type:date:message-id:mime-version
+         :x-mailer:content-transfer-encoding;
+        bh=ueT90GkCJwS3EPrNcpsqt31cAAb/ycQO1qNk+qiSOZo=;
+        b=fIU3LEmDm0lrn7OM0IU6EVL5TriJpB9Xtb6oiLKphxLjn3kzPEll3ithTgIZKC22kP
+         vlp4ytDh1elG5n6yEz2p9UNs+O9dE3lL6AUNIAs9GtkIU0aXNuyFaQK2sFd5jgMSZLhD
+         9P8MnS4hiAQoECY/rqEek3RTJ35GCJ8qPQYkw=
+In-Reply-To: <d15c7a1ab71af9ab4fccd51fa02915e949f39c86.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-David Dillow wrote:
-[snip]
-> diff --git a/modules.d/95nfs/nfsroot b/modules.d/95nfs/nfsroot
-> new file mode 100755
-> index 0000000..b8858bc
-> --- /dev/null
-> +++ b/modules.d/95nfs/nfsroot
-> @@ -0,0 +1,125 @@
-> +#!/bin/sh
-> +
-> +. /lib/dracut-lib
-> +
-> +PATH=$PATH:/sbin:/usr/sbin
-> +
-> +# XXX needs error handling like ifup/dhclient-script
-> +
-> +# XXX need to lock our attempts if we're doing the mount here
-> +
-> +getarg rdnetdebug && {
-> +    exec > /tmp/nfsroot.$1.$$.out
-> +    exec 2>> /tmp/nfsroot.$1.$$.out
-> +    set -x
-> +}
-> +
-> +[ "$NFS_LOCKED" ] || {
-> +	NFS_LOCKED=true
-> +	export NFS_LOCKED
-> +	exec flock -xo /tmp/nfs.lock -c "$0 $*"
-> +	exit 1
-> +}
-> +
-> +[ -e /tmp/nfsdone ] && exit 0
-> +
-> +nfs_done() {
-> +    >/tmp/nfsdone
-> +    exit 0
-> +}
-> +
-> +root=$(getarg root)
-> +case $root in
-> +    nfs|/dev/nfs)	type=nfs  ;;
-> +    nfs4|/dev/nfs4)	type=nfs4 ;;
-> +    auto|'')		type=auto  ;;
-> +esac
-> +
-> +rootfstype=$(getarg rootfstype)
-> +case $rootfstype in
-> +    nfs|nfs4|auto)	type=$rootfstype  ;;
-> +esac
-> +
-> +# If we're not doing NFS at all, don't keep banging our head
-> +[ -n "$type" ] || nfs_done
-> +
-> +[ -e /tmp/net.$1.dhcpopts ] && . /tmp/net.$1.dhcpopts
-> +
-> +nfsroot=$(getarg nfsroot)
-> +[ -n "$nfsroot" ] || nfsroot="$new_root_path"
-> +[ -n "$nfsroot" ] || nfs_done
-> +
-> +# check for IP address at front, if there is none, use
-> +# new_dhcp_server_identifier
-> +#
-> +# XXX kernel nfsroot uses , to separate NFS options at end
-> +#
-> +nfsserver=${nfsroot%%:*}; nfsroot=${nfsroot#*:}
-> +nfspath=${nfsroot%%:*}
-> +flags=${nfsroot#*:}
-> +[ "$nfsserver" = "$nfspath" ] && nfsserver=$new_dhcp_server_identifier
-> +[ "$nfspath" = "$flags" ] && unset flags
-> +
-> +[ -n "$nfsserver" ] || no_nfs
-> +
-> +# look through the flags and see if any are overridden by the command line
-> +while [ -n "$flags" ]; do
-> +    f=${flags%%,*}; flags=${flags#*,}
-> +    [ "$f" = "nfs" -o "$f" = "nfs4" ] && {
-> +	[ "$type" = "auto" ] && type=$f
-> +	continue
-> +    }
-> +    [ "$f" = "ro" -o "$f" = "rw" ] && {
-> +	nfsrw=$f
-> +	continue
-> +    }
-> +    [ "$f" = "lock" -o "$f" = "nolock" ] && {
-> +	nfslock=$f
-> +	continue
-> +    }
-> +    nfsflags=${nfsflags+$nfsflags,}$f
-> +done
-> +
-> +getarg ro && nfsrw=ro
-> +getarg rw && nfsrw=rw
-> +nfsflags=${nfsflags+$nfsflags,}${nfsrw}
-> +
-> +# load our modules explicitly, so we can fail fast in the future
-> +modprobe nfs || nfs_done
+On Mon, 2009-06-01 at 00:21 -0400, David Dillow wrote:
+> Now init checks that we understood the root= option, and can
+> act upon it, presenting and error if not. Also, clean up the
+> generation of udev rules such that we don't require /bin/echo.
+> diff --git a/modules.d/95rootfs-block/block-genrules.sh b/modules.d/95rootfs-block/block-genrules.sh
+> index 47083df..5c3f957 100755
+> --- a/modules.d/95rootfs-block/block-genrules.sh
+> +++ b/modules.d/95rootfs-block/block-genrules.sh
+> @@ -1,6 +1,10 @@
+> -if [ "${root#/dev/}" != "$root" ]; then
+> +#!/bin/bash # for highlighting
 
-Hmmm... isn't that a bit dangerous? I mean what if nfs support is 
-compiled into the kernel?
+Please don't do this.  
 
-> +
-> +# XXX don't forget to move /var/lib/nfs/rpc_pipefs to new /
-> +# XXX need host name set before now?
-> +
-> +# Start rpcbind and rpc.statd as mount won't let us use locks on a NFSv4
-> +# filesystem without talking to them, even though they are unneeded
-> +# XXX occasionally saw 'rpcbind: fork failed: No such device' -- why?
-> +[ -n "$(pidof rpcbind)" ] || rpcbind
+> +++ b/modules.d/95rootfs-block/parse-block.sh
+> @@ -0,0 +1,16 @@
+> +#!/bin/bash # for highlighting
 
-I see a potential conflict here: Debian based distros use portmap not 
-rpcbind.
+Or this
 
-> +[ -n "$(pidof rpc.statd)" ] || rpc.statd
+> diff --git a/modules.d/95rootfs-block/parse-root-opts.sh b/modules.d/95rootfs-block/parse-root-opts.sh
+> index 3a8b1a6..dc0ae6d 100755
+> --- a/modules.d/95rootfs-block/parse-root-opts.sh
+> +++ b/modules.d/95rootfs-block/parse-root-opts.sh
+> @@ -1,14 +1,6 @@
+> -#!/bin/sh
+> +#!/bin/bash # for highlighting
 
-Question: Do we really need statd?
-> +
-> +# XXX should I do rpc.idmapd here, or wait and start in the new root
-> +# XXX waiting assumes root can read everything it needs right up until
-> +# XXX we start it...
+And so on...
 
-Dracut should only care about getting the root-fs. idmapd is really a 
-system configuration, don't start that.
+Which editor are you using that highlights bash but not sh correctly?
 
-> +
-> +# XXX really, want to retry in a loop I think, but not here...
-> +
-> +[ "$type" = "nfs4" -o "$type" = "auto" ] && {
-> +    # XXX really needed? Do we need non-root users before we start it in
-> +    # XXX the real root image?
-> +    [ -n "$(pidof rpc.idmapd)" ] || rpc.idmapd
-> +
-> +    # NFSv4 does locks internally
-> +    mount -t nfs4 -o${nfsflags}${nfslock+,$nfslock} \
-> +			$nfsserver:$nfspath /sysroot && nfs_done
-> +
-> +    # If we're specified to be NFSv4, then stop when we fail
-> +    # Don't mark us done, as this may be transient
-> +    [ "$type" = "nfs4" ] && exit 0
-> +}
-> +
-> +# we're NFSv{2,3} or auto and NFSv4 failed. We don't support using locks
-> +# on NFSv{2,3} because that requires a helper to transfer the rpcbind state
-> +# rpcbind to the new root
-> +[ -z "$nfslock" -o "$nfslock" = "lock" ] &&
-> +    echo "Locks unsupported on NFSv{2,3}, using nolock" 1>&2
-> +mount -t nfs -onolock,$nfsflags $nfsserver:$nfspath /sysroot && nfs_done
-> +exit 0
-> diff --git a/modules.d/95nfs/nfsroot-cleanup.sh b/modules.d/95nfs/nfsroot-cleanup.sh
-> new file mode 100644
-> index 0000000..b8f3a2f
-> --- /dev/null
-> +++ b/modules.d/95nfs/nfsroot-cleanup.sh
-> @@ -0,0 +1,19 @@
-> +#!/bin/sh
-> +
-> +pid=$(pidof rpc.statd)
-> +[ -n "$pid" ] && kill $pid
-> +
-> +pid=$(pidof rpcbind)
-> +[ -n "$pid" ] && kill $pid
-> +
-> +if grep -q rpc_pipefs /proc/mounts; then 
-> +    # try to create the destination directory
-> +    [ -d $NEWROOT/var/lib/nfs/rpc_pipefs ] || mkdir -p $NEWROOT/var/lib/nfs/rpc_pipefs 2>/dev/null
-> +
-> +    if [ -d $NEWROOT/var/lib/nfs/rpc_pipefs ]; then
-> +	mount --move /var/lib/nfs/rpc_pipefs $NEWROOT/var/lib/nfs/rpc_pipefs
-> +    else
-> +	umount /var/lib/nfs/rpc_pipefs
-> +    fi
-> +fi
+-- 
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 
-Question: Do we really have to do that? I mean nfsroot worked until now 
-without considering rpc_pipefs.
-
-Regards,
-Philippe
-
-> +
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
