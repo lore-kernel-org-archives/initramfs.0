@@ -1,85 +1,47 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [RFC PATCH 1/9] nfsroot: move to same sort order as block
- methods
-Date: Mon, 01 Jun 2009 06:56:05 -0400
-Message-ID: <1243853765.3844.126.camel@obelisk.thedillows.org>
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH 4/9] cmdline: cleanup handling and block: handler
+Date: Mon, 01 Jun 2009 06:02:37 -0500
+Message-ID: <1243854157.647.22.camel@sentry-no.fnordovax.org>
 References: <cover.1243833882.git.dave@thedillows.org>
-	 <145ca9e5b331c454ebe13005fdfaed3749ef50f5.1243833882.git.dave@thedillows.org>
-	 <4A239D4B.2050009@bfh.ch>
+	 <d15c7a1ab71af9ab4fccd51fa02915e949f39c86.1243833882.git.dave@thedillows.org>
+	 <1243848391.647.13.camel@sentry-no.fnordovax.org>
+	 <1243853668.3844.117.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A239D4B.2050009-omB+W0Dpw2o@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:subject:from:to:cc
+         :in-reply-to:references:content-type:date:message-id:mime-version
+         :x-mailer:content-transfer-encoding;
+        bh=czdZdEEsc1NeOYHt55e9wCWUuGCE3aHiEOVuvCzOzhg=;
+        b=A+BSXRCSNnaK2Xf1zp2KUgW3UAUsOXwraIkYV7ZkYtEQTsD8IeKKsqd1It33Ag1h02
+         Mouly7G+73Ena4XnZmYClsQrCV4ExdARW+AaS9pdXfe5tn4QzRiby3OsgrKa8Cc4TsEK
+         N04gsaGTMd/ZP22AGA7Pws6JuizVnqOrYrqUg=
+In-Reply-To: <1243853668.3844.117.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Mon, 2009-06-01 at 11:20 +0200, Seewer Philippe wrote:
-> David Dillow wrote:
-> > +# load our modules explicitly, so we can fail fast in the future
-> > +modprobe nfs || nfs_done
+On Mon, 2009-06-01 at 06:54 -0400, David Dillow wrote:
+> On Mon, 2009-06-01 at 04:26 -0500, Victor Lowther wrote:
+> > Which editor are you using that highlights bash but not sh correctly?
 > 
-> Hmmm... isn't that a bit dangerous? I mean what if nfs support is 
-> compiled into the kernel?
+> vim on F10 has different rules for sh and bash -- things like $() and
+> ${t%%:*} are lit in red for sh, but they are valid; they don't highlight
+> that way if vim sees #!/bin/bash
 
-Probably; we can either drop it or add a check for nfs
-in /proc/filesystems before calling it.
+Ah, that explains it. I am a fan of the OS with an editor tacked onto
+the side.
 
-> > +[ -n "$(pidof rpcbind)" ] || rpcbind
-> 
-> I see a potential conflict here: Debian based distros use portmap not 
-> rpcbind.
+<insert rambling pointless flamewar over editors here>
 
-Go to know; I'll think about how to handle that.
-
-> > +[ -n "$(pidof rpc.statd)" ] || rpc.statd
-> 
-> Question: Do we really need statd?
-
-Yes, if you want to use locks you need statd. We can avoid it on NFSv3
-by using nolock, and it is not needed for NFSv4 to use locks, but mount
-will not even try to mount the filesystem without it or -onolock
-present.
-
-> > +# XXX should I do rpc.idmapd here, or wait and start in the new root
-> > +# XXX waiting assumes root can read everything it needs right up until
-> > +# XXX we start it...
-> 
-> Dracut should only care about getting the root-fs. idmapd is really a 
-> system configuration, don't start that.
-
-Somewhat vestigial from my purpose of getting RedHat to boot with a read
-only NFS root -- I wasn't sure if it needed to read files as a non-root
-user.
-
-It could probably go.
-
-> > diff --git a/modules.d/95nfs/nfsroot-cleanup.sh b/modules.d/95nfs/nfsroot-cleanup.sh
-
-> > +if grep -q rpc_pipefs /proc/mounts; then 
-> > +    # try to create the destination directory
-> > +    [ -d $NEWROOT/var/lib/nfs/rpc_pipefs ] || mkdir -p $NEWROOT/var/lib/nfs/rpc_pipefs 2>/dev/null
-> > +
-> > +    if [ -d $NEWROOT/var/lib/nfs/rpc_pipefs ]; then
-> > +	mount --move /var/lib/nfs/rpc_pipefs $NEWROOT/var/lib/nfs/rpc_pipefs
-> > +    else
-> > +	umount /var/lib/nfs/rpc_pipefs
-> > +    fi
-> > +fi
-> 
-> Question: Do we really have to do that? I mean nfsroot worked until now 
-> without considering rpc_pipefs.
-
-If idmapd goes, I think this could go as well. The problem is that you
-never get it mounted again, as it is usually handled on modprobe of
-sunrpc, which happens inside the initramfs.
-
-nfsroot worked without it, because as far as I've seen, it's always been
-NFSv2/3 with nolock.
-
-This can of course be fixed in the distros.
+-- 
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
