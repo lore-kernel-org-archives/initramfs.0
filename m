@@ -1,7 +1,7 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: [RFC PATCH 3/9] dracut: add cmdline hook
-Date: Sun, 31 May 2009 23:33:56 -0400
-Message-ID: <e450281431d31fb9d542c6f89692c861e07469bc.1243833882.git.dave@thedillows.org>
+Subject: [RFC PATCH 2/9] block root: split out resume parsing and udev rules
+Date: Sun, 31 May 2009 23:19:31 -0400
+Message-ID: <5c123162ededa03b56b21117644740b69fdf3fbf.1243833882.git.dave@thedillows.org>
 References: <cover.1243833882.git.dave@thedillows.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <cover.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
@@ -12,67 +12,106 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This hook is where each module should parse kernel command line
-options and perform any legacy translation.
+We have a resume module, and these rules should live in it. Modify
+the sort order a bit to ensure the resume rules continue to execute
+first.
 
 Signed-off-by: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 ---
- dracut                           |    2 +-
- modules.d/95resume/install       |    2 +-
- modules.d/95rootfs-block/install |    2 +-
- modules.d/99base/init            |    4 ++++
- 4 files changed, 7 insertions(+), 3 deletions(-)
+ modules.d/95resume/install                  |    3 ++-
+ modules.d/95resume/resume-genrules.sh       |    6 ++++++
+ modules.d/95rootfs-block/block-genrules.sh  |    6 ++++++
+ modules.d/95rootfs-block/genrules.sh        |   14 --------------
+ modules.d/95rootfs-block/install            |    4 ++--
+ modules.d/95rootfs-block/parse-root-opts.sh |    6 ------
+ 6 files changed, 16 insertions(+), 23 deletions(-)
+ create mode 100755 modules.d/95resume/resume-genrules.sh
+ create mode 100755 modules.d/95rootfs-block/block-genrules.sh
+ delete mode 100755 modules.d/95rootfs-block/genrules.sh
 
-diff --git a/dracut b/dracut
-index f25cf85..84c194e 100755
---- a/dracut
-+++ b/dracut
-@@ -96,7 +96,7 @@ if [[ -f $outfile && ! $force ]]; then
-     exit 1
- fi
- 
--hookdirs="pre-udev pre-mount pre-pivot mount emergency"
-+hookdirs="cmdline pre-udev pre-mount pre-pivot mount emergency"
- 
- readonly initdir=$(mktemp -d -t initramfs.XXXXXX)
- trap 'rm -rf "$initdir"' 0 # clean up after ourselves no matter how we die.
 diff --git a/modules.d/95resume/install b/modules.d/95resume/install
-index e656d53..945611e 100755
+index 532fcc3..e656d53 100755
 --- a/modules.d/95resume/install
 +++ b/modules.d/95resume/install
-@@ -1,5 +1,5 @@
+@@ -1,4 +1,5 @@
  #!/bin/bash
- dracut_install echo
--inst_hook pre-udev 10 "$moddir/parse-resume.sh"
-+inst_hook cmdline 10 "$moddir/parse-resume.sh"
- inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
++dracut_install echo
+ inst_hook pre-udev 10 "$moddir/parse-resume.sh"
++inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
  inst_hook mount 90 "$moddir/resume.sh"
+-
+diff --git a/modules.d/95resume/resume-genrules.sh b/modules.d/95resume/resume-genrules.sh
+new file mode 100755
+index 0000000..108c3f7
+--- /dev/null
++++ b/modules.d/95resume/resume-genrules.sh
+@@ -0,0 +1,6 @@
++resume=$(getarg resume=) && ! getarg noresume  && {
++(
++	/bin/echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
++	/bin/echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
++) >> /etc/udev/rules.d/99-resume.rules
++}
+diff --git a/modules.d/95rootfs-block/block-genrules.sh b/modules.d/95rootfs-block/block-genrules.sh
+new file mode 100755
+index 0000000..47083df
+--- /dev/null
++++ b/modules.d/95rootfs-block/block-genrules.sh
+@@ -0,0 +1,6 @@
++if [ "${root#/dev/}" != "$root" ]; then
++    (
++	echo 'KERNEL=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
++	echo 'SYMLINK=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
++    ) >> /etc/udev/rules.d/99-mount.rules
++fi
+diff --git a/modules.d/95rootfs-block/genrules.sh b/modules.d/95rootfs-block/genrules.sh
+deleted file mode 100755
+index 4662a32..0000000
+--- a/modules.d/95rootfs-block/genrules.sh
++++ /dev/null
+@@ -1,14 +0,0 @@
+-if [ "${root#/dev/}" != "$root" ]; then
+-
+-    resume=$(getarg resume=) && ! getarg noresume  && {
+-	(
+-    	    /bin/echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
+-    	    /bin/echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
+-	) >> /etc/udev/rules.d/99-resume.rules
+-    }
+-
+-    (
+-	echo 'KERNEL=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
+-	echo 'SYMLINK=="'${root#/dev/}'", RUN+="/bin/mount '$fstype' -o '$rflags' '$root' '$NEWROOT'" '
+-    ) >> /etc/udev/rules.d/99-mount.rules
+-fi
+\ No newline at end of file
 diff --git a/modules.d/95rootfs-block/install b/modules.d/95rootfs-block/install
-index 9d53855..722e47b 100755
+index bf36cae..9d53855 100755
 --- a/modules.d/95rootfs-block/install
 +++ b/modules.d/95rootfs-block/install
 @@ -1,5 +1,5 @@
  #!/bin/sh
  dracut_install echo
--inst_hook pre-udev 20 "$moddir/parse-root-opts.sh"
-+inst_hook cmdline 20 "$moddir/parse-root-opts.sh"
- inst_hook pre-udev 30 "$moddir/block-genrules.sh"
+-inst_hook pre-udev 10 "$moddir/parse-root-opts.sh"
+-inst_hook pre-udev 20 "$moddir/genrules.sh"
++inst_hook pre-udev 20 "$moddir/parse-root-opts.sh"
++inst_hook pre-udev 30 "$moddir/block-genrules.sh"
  inst_hook mount 99 "$moddir/mount-root.sh"
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index 9ff2ff4..9ea4747 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -43,6 +43,10 @@ mknod /dev/console c 5 1
- mkdir /dev/pts
- mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts >/dev/null 2>&1
+diff --git a/modules.d/95rootfs-block/parse-root-opts.sh b/modules.d/95rootfs-block/parse-root-opts.sh
+index 9c49aa9..3a8b1a6 100755
+--- a/modules.d/95rootfs-block/parse-root-opts.sh
++++ b/modules.d/95rootfs-block/parse-root-opts.sh
+@@ -1,10 +1,4 @@
+ #!/bin/sh
+-if resume=$(getarg resume=) && ! getarg noresume; then 
+-    export resume
+-    echo "$resume" >/.resume
+-else
+-    unset resume
+-fi
  
-+# run scriptlets to parse the command line
-+getarg 'rdbreak=cmdline' && emergency_shell
-+source_all cmdline
-+
- # pre-udev scripts run before udev starts, and are run only once.
- getarg 'rdbreak=pre-udev' && emergency_shell
- source_all pre-udev
+ root=$(getarg root=)
+ case $root in
 -- 
 1.6.0.6
 
