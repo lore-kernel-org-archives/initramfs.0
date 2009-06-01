@@ -1,59 +1,38 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: [RFC PATCH 6/9] dracut-lib: add source_all to library
-Date: Mon, 1 Jun 2009 00:39:56 -0400
-Message-ID: <ae5bc1fd8ab2aab28b335adf456bc41c0175c4e7.1243833882.git.dave@thedillows.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [RFC PATCH 0/9] netroot: modular support for network root devices
+Date: Mon, 1 Jun 2009 10:58:52 +0200
+Message-ID: <4A23984C.5000006@bfh.ch>
 References: <cover.1243833882.git.dave@thedillows.org>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <cover.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-The network root handler will need this.
+Looks good!
 
-Signed-off-by: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
----
- modules.d/99base/dracut-lib |    6 ++++++
- modules.d/99base/init       |    6 ------
- 2 files changed, 6 insertions(+), 6 deletions(-)
+David Dillow wrote:
+> This builds on the NFS root work to allow other network methods to hook
+> into the parsing and network infrastructure. One network interface is
+> configured at a time, but if we don't find a root there, it may not be
+> unconfigured -- this should probably be added.
 
-diff --git a/modules.d/99base/dracut-lib b/modules.d/99base/dracut-lib
-index 1f31933..7078827 100644
---- a/modules.d/99base/dracut-lib
-+++ b/modules.d/99base/dracut-lib
-@@ -14,3 +14,9 @@ getarg() {
-     done
-     return 1
- }
-+
-+source_all() {
-+    local f
-+    [ "$1" ] && [  -d "/$1" ] || return
-+    for f in "/$1"/*.sh; do [ -f "$f" ] && . "$f"; done
-+}
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index ebbc6ad..73e96fd 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -14,12 +14,6 @@ emergency_shell()
-     sh -i
- }
- 
--source_all() {
--    local f
--    [ "$1" ] && [  -d "/$1" ] || return
--    for f in "/$1"/*.sh; do [ -f "$f" ] && . "$f"; done
--}
--
- export PATH=/sbin:/bin:/usr/sbin:/usr/bin
- export TERM=linux
- NEWROOT="/sysroot"
--- 
-1.6.0.6
+This is a definite must. Actually, to support multiple interfaces we 
+should even go so far and ensure that there is only one interface 
+configured at any one time.
 
+--> Consider the following case: Two interfaces and both receive a valid 
+default route via dhcp. If we allow both interfaces to be configured 
+after receiving the dhcp-reply, the second default-route will go byebye. 
+I suggest to move the actual interface (de-)configuration into the 
+netroot script.
+
+Regards,
+Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
