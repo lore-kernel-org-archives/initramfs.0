@@ -1,78 +1,35 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 9/9] Add NBD support
-Date: Mon, 01 Jun 2009 06:14:53 -0500
-Message-ID: <1243854893.647.32.camel@sentry-no.fnordovax.org>
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: Re: [RFC PATCH 4/9] cmdline: cleanup handling and block: handler
+Date: Mon, 01 Jun 2009 07:15:52 -0400
+Message-ID: <1243854952.3844.134.camel@obelisk.thedillows.org>
 References: <cover.1243833882.git.dave@thedillows.org>
-	 <2b117123ecd2d93cec8598593e966029dfb4777e.1243833882.git.dave@thedillows.org>
-	 <1243849301.647.20.camel@sentry-no.fnordovax.org>
-	 <1243853722.3844.122.camel@obelisk.thedillows.org>
+	 <d15c7a1ab71af9ab4fccd51fa02915e949f39c86.1243833882.git.dave@thedillows.org>
+	 <1243848391.647.13.camel@sentry-no.fnordovax.org>
+	 <1243853668.3844.117.camel@obelisk.thedillows.org>
+	 <1243854157.647.22.camel@sentry-no.fnordovax.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:date:message-id:mime-version
-         :x-mailer:content-transfer-encoding;
-        bh=bs/jZI/aSGQ43ERhB+xZ7Y8jlvn9/PEP88pyenz9ZDw=;
-        b=Jjx1RbUGOzBlUZfskWppyVJAv6GF941Z5M3FK9lUMe9sWlUQ6/8MjjWquA/eLvrYmg
-         s5R0saB03J79VtAa7oMqpziZmumW9xVZeDcGUOAlexZvSH9AMnDeq56pvvBCWiqfQlMJ
-         dZKBYo1T/o9cyWWfgzefzu7j0Z7xDY9Su5bi0=
-In-Reply-To: <1243853722.3844.122.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
+In-Reply-To: <1243854157.647.22.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Mon, 2009-06-01 at 06:55 -0400, David Dillow wrote:
-> On Mon, 2009-06-01 at 04:41 -0500, Victor Lowther wrote:
-> > On Mon, 2009-06-01 at 00:59 -0400, David Dillow wrote:
-> 
-> > > +# XXX netroot expects to have the handler mount things, but we should
-> > > +# XXX allow LVM, LUKS, etc over nbd
-> > > +
-> > > +nbd-client $preopts "$nbdserver" "$nbdport" /dev/nbd0 $opts || exit 1
+On Mon, 2009-06-01 at 06:02 -0500, Victor Lowther wrote:
+> On Mon, 2009-06-01 at 06:54 -0400, David Dillow wrote:
+> > On Mon, 2009-06-01 at 04:26 -0500, Victor Lowther wrote:
+> > > Which editor are you using that highlights bash but not sh correctly?
 > > 
-> > Ah, but we are not really a netroot in the sense that NFS is -- all we
-> > are doing is attaching a block device.  Once it is attached the usual
-> > root-on-block-device rules should kick in as soon as udev sees the block
-> > devices.
+> > vim on F10 has different rules for sh and bash -- things like $() and
+> > ${t%%:*} are lit in red for sh, but they are valid; they don't highlight
+> > that way if vim sees #!/bin/bash
 > 
-> Exactly, hence the comment -- and one elsewhere about wanting to move
-> the mount to the network block devices via udev. Unfortunately, NBD does
-> all of its device adds at module load time, so we cannot trigger a mount
-> on those as there's nothing behind the device.
+> Ah, that explains it. I am a fan of the OS with an editor tacked onto
+> the side.
 
-ew, narsty.  Sounds just as annoying as the loopback device.
-
-> I was thinking about 'echo add /path/to/nbd0/uevent' here so we could
-> force another loop through udev.
-> 
-> > > +if ! mount -t $nbdfstype -o$fsopts /dev/nbd0 $NEWROOT; then
-> > > +    # Mount failed, clean up after ourselves so if we try a different
-> > > +    # interface it can succeed
-> > > +    nbd-client -d /dev/nbd0
-> > > +    exit 1
-> > > +fi
-> > 
-> > why not just poke udev with udevadm trigger if there is any doubt?
-> 
-> Not sure what you mean by that in this context -- do you mean the root
-> mount via udev as discussed above, or the cleanup right here? 
-
-The root mount.  
-
-> I'm not sure how to do the cleanup when mounting via udev; I'd need to
-> think.
-
-Perhaps a mount-failed hook?
-
-> 
--- 
-Victor Lowther
-RHCE# 805008539634727
-LPIC-2# LPI000140019
+So, ditch the whole shebang at the top? No #!/bin/sh or #!/bin/bash?
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
