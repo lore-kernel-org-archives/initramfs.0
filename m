@@ -1,233 +1,61 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [RFC PATCH 7/9] netroot: add common handler for network root
- devices
-Date: Mon, 1 Jun 2009 10:59:08 +0200
-Message-ID: <4A23985C.9040509@bfh.ch>
-References: <cover.1243833882.git.dave@thedillows.org> <7d7efa4a3d959a5f834cd1d5e73c1e15112aa77c.1243833882.git.dave@thedillows.org>
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: dracut broken on Fedora 10 (udevd)
+Date: Mon, 01 Jun 2009 04:15:49 -0500
+Message-ID: <1243847749.647.8.camel@sentry-no.fnordovax.org>
+References: <1243833431.3844.4.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <7d7efa4a3d959a5f834cd1d5e73c1e15112aa77c.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:subject:from:to:cc
+         :in-reply-to:references:content-type:date:message-id:mime-version
+         :x-mailer:content-transfer-encoding;
+        bh=IQSzkHeIa4LvnoBEnW/isGJ/MV822BL3yNEdM/iP2bo=;
+        b=sZn5x1y9Dnwi4Yg/8JOftvu7iT6KlUbcIKyLJhheg00S0hD1JnXfGMqt2NA5Q/+Kan
+         N3LoTEDln0csowFjJEZEWaZ/X61lV24/A0EmCyMNNP0NUHrraluBTAe80iDWVE+BdE9o
+         iGOfLBPyCZrKJ6sbs3Z3cONaF/CbwH3AbNJKw=
+In-Reply-To: <1243833431.3844.4.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-David Dillow wrote:
-> /sbin/netroot is a jumping off point to allow various network
-> root devices to share infrastructure. It will loop over scriptlets
-> in the netroot handler, looking for a handler to run for this type
-> of netroot. Handlers can do choose to act based on command line
-> options to the kernel, or via DHCP options received on this interface.
-> They should massage root= into a form suitable for their handler.
+On Mon, 2009-06-01 at 01:17 -0400, David Dillow wrote:
+> Victor, commit 5033486389038516acc04403e9e2c3ba9653a98e broke dracut on
+> F10, as the udev there does not understand the --resolve-names option.
+
+Sorry about that, fixed. Testing with F11 ATM, so it slipped by.
+
+> Perhaps we can find a way to let dracut populate /etc/passwd
+> and /etc/group with some default user/group names to satisfy older
+> udevs? I realize this is a workaround for older utilities, so I don't
+> expect anyone to go for it, but I'll ask anyways.
+
+It shouldn't really be a problem -- I wouldn't exactly call Fedora 10
+legacy unsupported code yet. :)
+
+If you need to pull in /etc/group and /etc/passwd, make sure you also
+pull in whatever version of libnss_files you need -- glibc loads them on
+the fly, so the usual library depsolving magic does not work. 
+
+> I need an 'rpc' user for rpcbind anyways, so we could just put dummies
+> in for that, since I don't care who really owns that data -- it'll be
+> thrown away anyways.
+
+It might be useful to make grabbing subsets of /etc/group,/etc/passwd,
+and libnss into a function for dracut modules to call.  How to do that
+in a sufficiently elegant fashion is a bit beyond me ATM.
+
+> Thanks,
+> Dave
 > 
-> Signed-off-by: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-> ---
->  dracut                               |    2 +-
->  modules.d/40network/60-net.rules     |    1 +
->  modules.d/40network/dhcp-fallback.sh |   14 +++++++++
->  modules.d/40network/ifup             |    8 ++--
->  modules.d/40network/install          |    2 +
->  modules.d/40network/netroot          |   52 ++++++++++++++++++++++++++++++++++
->  modules.d/99base/init                |   11 ++++++-
->  7 files changed, 84 insertions(+), 6 deletions(-)
->  create mode 100755 modules.d/40network/dhcp-fallback.sh
->  create mode 100755 modules.d/40network/netroot
-> 
-> diff --git a/dracut b/dracut
-> index 84c194e..e5e7ecd 100755
-> --- a/dracut
-> +++ b/dracut
-> @@ -96,7 +96,7 @@ if [[ -f $outfile && ! $force ]]; then
->      exit 1
->  fi
->  
-> -hookdirs="cmdline pre-udev pre-mount pre-pivot mount emergency"
-> +hookdirs="cmdline pre-udev netroot pre-mount pre-pivot mount emergency"
->  
->  readonly initdir=$(mktemp -d -t initramfs.XXXXXX)
->  trap 'rm -rf "$initdir"' 0 # clean up after ourselves no matter how we die.
-> diff --git a/modules.d/40network/60-net.rules b/modules.d/40network/60-net.rules
-> index 4b030c3..6c79508 100644
-> --- a/modules.d/40network/60-net.rules
-> +++ b/modules.d/40network/60-net.rules
-> @@ -1 +1,2 @@
->  ACTION=="add", SUBSYSTEM=="net", RUN+="/sbin/ifup $env{INTERFACE}"
-> +ACTION=="online", SUBSYSTEM=="net", RUN+="/sbin/netroot $env{INTERFACE}"
-> diff --git a/modules.d/40network/dhcp-fallback.sh b/modules.d/40network/dhcp-fallback.sh
-> new file mode 100755
-> index 0000000..1f4ec0c
-> --- /dev/null
-> +++ b/modules.d/40network/dhcp-fallback.sh
-> @@ -0,0 +1,14 @@
-> +# We should go last, and default the root if needed
-> +
-> +if [ -z "$root" ]; then
-> +    root=dhcp
-> +fi
+-- 
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 
-Is this really necessary? I mean if no root option is supplied, we don't 
-really know if dhcp is really desired or the default /dev/sda1 fallback 
-should be used.
-
-I'd suggest to only ever do netroot if the user explicitely requests it. 
-This would include disabling all network related udev scripts if we 
-don't want netroot.
-
-> +
-> +if [ "$root" = "dhcp" -a -z "$netroot" ]; then
-> +    rootok=1
-> +    netroot=dhcp
-> +fi
-> +
-> +if [ "${netroot+set}" = "set" ]; then
-> +    eval "echo netroot='$netroot'" > /tmp/netroot.info
-> +fi
-> diff --git a/modules.d/40network/ifup b/modules.d/40network/ifup
-> index ee4bc4a..981a207 100755
-> --- a/modules.d/40network/ifup
-> +++ b/modules.d/40network/ifup
-> @@ -12,8 +12,10 @@ getarg rdnetdebug && {
->  
->  netif=$1
->  
-> -# bail immediatly if the interface is already up
-> +# bail immediately if the interface is already up
-> +# or we don't need the network
->  [ -f "/tmp/net.$netif.up" ] && exit 0
-> +[ ! -f /tmp/netroot.info ] && exit 0
->  
->  # loopback is always handled the same way
->  [ "$netif" = "lo" ] && {
-> @@ -93,10 +95,8 @@ ip_to_var() {
->      [ -n "$autoconf" ] || autoconf=off
->  }
->  
-> -root=$(getarg root)
->  ip=$(getarg ip)
-> -
-> -if [ "$root" = "dhcp" -a -z "$ip" ]; then
-
-Hmmm... Weird configuration: What do we do if root=dhcp and the ip 
-options contain's non-dhcp related stuff? (Never thought of that before)
-
-> +if [ -z "$ip" ]; then
->      do_dhcp;
->  else
->      # spin through the kernel command line, looking for ip= lines
-> diff --git a/modules.d/40network/install b/modules.d/40network/install
-> index d9ec7f0..3112494 100755
-> --- a/modules.d/40network/install
-> +++ b/modules.d/40network/install
-> @@ -2,8 +2,10 @@
->  dracut_install ip dhclient hostname
->  instmods =net
->  inst "$moddir/ifup" "/sbin/ifup"
-> +inst "$moddir/netroot" "/sbin/netroot"
->  inst "$moddir/dhclient-script" "/sbin/dhclient-script"
->  instmods =networking ecb arc4
->  inst_rules "$moddir/60-net.rules"
-> +inst_hook cmdline 99 "$moddir/dhcp-fallback.sh"
->  inst_hook pre-pivot 10 "$moddir/kill-dhclient.sh"
->  mkdir -p "${initdir}/var/run"
-> diff --git a/modules.d/40network/netroot b/modules.d/40network/netroot
-> new file mode 100755
-> index 0000000..3d03e72
-> --- /dev/null
-> +++ b/modules.d/40network/netroot
-> @@ -0,0 +1,52 @@
-> +#!/bin/sh
-> +
-> +. /lib/dracut-lib
-> +
-> +getarg rdnetdebug && {
-> +    exec >/tmp/netroot.$1.$$.out
-> +    exec 2>>/tmp/netroot.$1.$$.out
-> +    set -x
-> +}
-> +
-> +# Only try to configure from one network interface at a time
-> +#
-> +[ "$NETROOT_LOCKED" ] || {
-> +    NETROOT_LOCKED=true
-> +    export NETROOT_LOCKED
-> +    exec flock -xo /tmp/netroot.lock -c "$0 $*"
-> +    exit 1
-> +}
-> +
-> +netif=$1
-> +
-> +# If we've already found a root, or we don't have the info we need,
-> +# then no point in looking further
-> +#
-> +[ -e /tmp/netroot.done ] && exit 0
-> +[ -s /tmp/netroot.info -a -s /tmp/root.info ] || exit 0
-> +
-> +# Pick up our config from the command line; we may already know the
-> +# handler to run
-> +#
-> +. /tmp/root.info
-> +. /tmp/netroot.info
-> +[ -e /tmp/net.$netif.dhcpopts ] && . /tmp/net.$netif.dhcpopts
-> +
-> +# Now, let the installed network root handlers figure this out
-> +#
-> +source_all netroot
-> +
-> +# If we didn't get a handler set, then we're done
-> +#
-> +if [ -z "$handler" ]; then
-> +    # XXX informative error message?
-> +    exit 0
-> +fi
-> +
-> +# Run the handler; don't store the root, it may change from device to device
-> +# XXX other variables to export?
-> +export NEWROOT
-> +if $handler $netif $root; then
-> +    >/tmp/netroot.done
-> +fi
-> +exit 0
-
-Question 1: Is it really necessary to have each handler implements it's 
-own mount-call? I don't know about iSCSI but isn't it usually just a 
-matter of setting fstype, options and source? I think this could be 
-generalized.
-
-Question 2: How do plan to loop over mount-scripts? As you described if 
-might be desirable to retry mounting if the server is overloaded. I see 
-a few problems there if we loop inside netboot/handler-scripts: We could 
-be trying to mount on the wrong interface.
-
-
-> diff --git a/modules.d/99base/init b/modules.d/99base/init
-> index 73e96fd..b4fce6a 100755
-> --- a/modules.d/99base/init
-> +++ b/modules.d/99base/init
-> @@ -47,12 +47,21 @@ fi
->  
->  if [ -z "${root%%error:*}" ]; then
->      case "${root%%:*}" in
-> -       '') echo "FATAL: no root= option specified" ;;
-> +       '') echo "FATAL: no root= option specified, and no network support" ;;
->         error) echo "FATAL: ${root#error:}" ;;
->      esac
->      emergency_shell
->  fi
->  
-> +# Network root scripts may need updated root= options,
-> +# so deposit them where they can see them (udev purges the env)
-> +{
-> +    echo "root='$root'"
-> +    echo "rflags='$rflags'"
-> +    echo "fstype='$fstype'"
-> +    echo "NEWROOT='$NEWROOT'"
-> +} > /tmp/root.info
-> +
->  # pre-udev scripts run before udev starts, and are run only once.
->  getarg 'rdbreak=pre-udev' && emergency_shell
->  source_all pre-udev
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
