@@ -1,61 +1,197 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: dracut broken on Fedora 10 (udevd)
-Date: Mon, 01 Jun 2009 04:15:49 -0500
-Message-ID: <1243847749.647.8.camel@sentry-no.fnordovax.org>
-References: <1243833431.3844.4.camel@obelisk.thedillows.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [RFC PATCH 1/9] nfsroot: move to same sort order as block methods
+Date: Mon, 1 Jun 2009 11:20:11 +0200
+Message-ID: <4A239D4B.2050009@bfh.ch>
+References: <cover.1243833882.git.dave@thedillows.org> <145ca9e5b331c454ebe13005fdfaed3749ef50f5.1243833882.git.dave@thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:date:message-id:mime-version
-         :x-mailer:content-transfer-encoding;
-        bh=IQSzkHeIa4LvnoBEnW/isGJ/MV822BL3yNEdM/iP2bo=;
-        b=sZn5x1y9Dnwi4Yg/8JOftvu7iT6KlUbcIKyLJhheg00S0hD1JnXfGMqt2NA5Q/+Kan
-         N3LoTEDln0csowFjJEZEWaZ/X61lV24/A0EmCyMNNP0NUHrraluBTAe80iDWVE+BdE9o
-         iGOfLBPyCZrKJ6sbs3Z3cONaF/CbwH3AbNJKw=
-In-Reply-To: <1243833431.3844.4.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
+In-Reply-To: <145ca9e5b331c454ebe13005fdfaed3749ef50f5.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Mon, 2009-06-01 at 01:17 -0400, David Dillow wrote:
-> Victor, commit 5033486389038516acc04403e9e2c3ba9653a98e broke dracut on
-> F10, as the udev there does not understand the --resolve-names option.
+David Dillow wrote:
+[snip]
+> diff --git a/modules.d/95nfs/nfsroot b/modules.d/95nfs/nfsroot
+> new file mode 100755
+> index 0000000..b8858bc
+> --- /dev/null
+> +++ b/modules.d/95nfs/nfsroot
+> @@ -0,0 +1,125 @@
+> +#!/bin/sh
+> +
+> +. /lib/dracut-lib
+> +
+> +PATH=$PATH:/sbin:/usr/sbin
+> +
+> +# XXX needs error handling like ifup/dhclient-script
+> +
+> +# XXX need to lock our attempts if we're doing the mount here
+> +
+> +getarg rdnetdebug && {
+> +    exec > /tmp/nfsroot.$1.$$.out
+> +    exec 2>> /tmp/nfsroot.$1.$$.out
+> +    set -x
+> +}
+> +
+> +[ "$NFS_LOCKED" ] || {
+> +	NFS_LOCKED=true
+> +	export NFS_LOCKED
+> +	exec flock -xo /tmp/nfs.lock -c "$0 $*"
+> +	exit 1
+> +}
+> +
+> +[ -e /tmp/nfsdone ] && exit 0
+> +
+> +nfs_done() {
+> +    >/tmp/nfsdone
+> +    exit 0
+> +}
+> +
+> +root=$(getarg root)
+> +case $root in
+> +    nfs|/dev/nfs)	type=nfs  ;;
+> +    nfs4|/dev/nfs4)	type=nfs4 ;;
+> +    auto|'')		type=auto  ;;
+> +esac
+> +
+> +rootfstype=$(getarg rootfstype)
+> +case $rootfstype in
+> +    nfs|nfs4|auto)	type=$rootfstype  ;;
+> +esac
+> +
+> +# If we're not doing NFS at all, don't keep banging our head
+> +[ -n "$type" ] || nfs_done
+> +
+> +[ -e /tmp/net.$1.dhcpopts ] && . /tmp/net.$1.dhcpopts
+> +
+> +nfsroot=$(getarg nfsroot)
+> +[ -n "$nfsroot" ] || nfsroot="$new_root_path"
+> +[ -n "$nfsroot" ] || nfs_done
+> +
+> +# check for IP address at front, if there is none, use
+> +# new_dhcp_server_identifier
+> +#
+> +# XXX kernel nfsroot uses , to separate NFS options at end
+> +#
+> +nfsserver=${nfsroot%%:*}; nfsroot=${nfsroot#*:}
+> +nfspath=${nfsroot%%:*}
+> +flags=${nfsroot#*:}
+> +[ "$nfsserver" = "$nfspath" ] && nfsserver=$new_dhcp_server_identifier
+> +[ "$nfspath" = "$flags" ] && unset flags
+> +
+> +[ -n "$nfsserver" ] || no_nfs
+> +
+> +# look through the flags and see if any are overridden by the command line
+> +while [ -n "$flags" ]; do
+> +    f=${flags%%,*}; flags=${flags#*,}
+> +    [ "$f" = "nfs" -o "$f" = "nfs4" ] && {
+> +	[ "$type" = "auto" ] && type=$f
+> +	continue
+> +    }
+> +    [ "$f" = "ro" -o "$f" = "rw" ] && {
+> +	nfsrw=$f
+> +	continue
+> +    }
+> +    [ "$f" = "lock" -o "$f" = "nolock" ] && {
+> +	nfslock=$f
+> +	continue
+> +    }
+> +    nfsflags=${nfsflags+$nfsflags,}$f
+> +done
+> +
+> +getarg ro && nfsrw=ro
+> +getarg rw && nfsrw=rw
+> +nfsflags=${nfsflags+$nfsflags,}${nfsrw}
+> +
+> +# load our modules explicitly, so we can fail fast in the future
+> +modprobe nfs || nfs_done
 
-Sorry about that, fixed. Testing with F11 ATM, so it slipped by.
+Hmmm... isn't that a bit dangerous? I mean what if nfs support is 
+compiled into the kernel?
 
-> Perhaps we can find a way to let dracut populate /etc/passwd
-> and /etc/group with some default user/group names to satisfy older
-> udevs? I realize this is a workaround for older utilities, so I don't
-> expect anyone to go for it, but I'll ask anyways.
+> +
+> +# XXX don't forget to move /var/lib/nfs/rpc_pipefs to new /
+> +# XXX need host name set before now?
+> +
+> +# Start rpcbind and rpc.statd as mount won't let us use locks on a NFSv4
+> +# filesystem without talking to them, even though they are unneeded
+> +# XXX occasionally saw 'rpcbind: fork failed: No such device' -- why?
+> +[ -n "$(pidof rpcbind)" ] || rpcbind
 
-It shouldn't really be a problem -- I wouldn't exactly call Fedora 10
-legacy unsupported code yet. :)
+I see a potential conflict here: Debian based distros use portmap not 
+rpcbind.
 
-If you need to pull in /etc/group and /etc/passwd, make sure you also
-pull in whatever version of libnss_files you need -- glibc loads them on
-the fly, so the usual library depsolving magic does not work. 
+> +[ -n "$(pidof rpc.statd)" ] || rpc.statd
 
-> I need an 'rpc' user for rpcbind anyways, so we could just put dummies
-> in for that, since I don't care who really owns that data -- it'll be
-> thrown away anyways.
+Question: Do we really need statd?
+> +
+> +# XXX should I do rpc.idmapd here, or wait and start in the new root
+> +# XXX waiting assumes root can read everything it needs right up until
+> +# XXX we start it...
 
-It might be useful to make grabbing subsets of /etc/group,/etc/passwd,
-and libnss into a function for dracut modules to call.  How to do that
-in a sufficiently elegant fashion is a bit beyond me ATM.
+Dracut should only care about getting the root-fs. idmapd is really a 
+system configuration, don't start that.
 
-> Thanks,
-> Dave
-> 
--- 
-Victor Lowther
-RHCE# 805008539634727
-LPIC-2# LPI000140019
+> +
+> +# XXX really, want to retry in a loop I think, but not here...
+> +
+> +[ "$type" = "nfs4" -o "$type" = "auto" ] && {
+> +    # XXX really needed? Do we need non-root users before we start it in
+> +    # XXX the real root image?
+> +    [ -n "$(pidof rpc.idmapd)" ] || rpc.idmapd
+> +
+> +    # NFSv4 does locks internally
+> +    mount -t nfs4 -o${nfsflags}${nfslock+,$nfslock} \
+> +			$nfsserver:$nfspath /sysroot && nfs_done
+> +
+> +    # If we're specified to be NFSv4, then stop when we fail
+> +    # Don't mark us done, as this may be transient
+> +    [ "$type" = "nfs4" ] && exit 0
+> +}
+> +
+> +# we're NFSv{2,3} or auto and NFSv4 failed. We don't support using locks
+> +# on NFSv{2,3} because that requires a helper to transfer the rpcbind state
+> +# rpcbind to the new root
+> +[ -z "$nfslock" -o "$nfslock" = "lock" ] &&
+> +    echo "Locks unsupported on NFSv{2,3}, using nolock" 1>&2
+> +mount -t nfs -onolock,$nfsflags $nfsserver:$nfspath /sysroot && nfs_done
+> +exit 0
+> diff --git a/modules.d/95nfs/nfsroot-cleanup.sh b/modules.d/95nfs/nfsroot-cleanup.sh
+> new file mode 100644
+> index 0000000..b8f3a2f
+> --- /dev/null
+> +++ b/modules.d/95nfs/nfsroot-cleanup.sh
+> @@ -0,0 +1,19 @@
+> +#!/bin/sh
+> +
+> +pid=$(pidof rpc.statd)
+> +[ -n "$pid" ] && kill $pid
+> +
+> +pid=$(pidof rpcbind)
+> +[ -n "$pid" ] && kill $pid
+> +
+> +if grep -q rpc_pipefs /proc/mounts; then 
+> +    # try to create the destination directory
+> +    [ -d $NEWROOT/var/lib/nfs/rpc_pipefs ] || mkdir -p $NEWROOT/var/lib/nfs/rpc_pipefs 2>/dev/null
+> +
+> +    if [ -d $NEWROOT/var/lib/nfs/rpc_pipefs ]; then
+> +	mount --move /var/lib/nfs/rpc_pipefs $NEWROOT/var/lib/nfs/rpc_pipefs
+> +    else
+> +	umount /var/lib/nfs/rpc_pipefs
+> +    fi
+> +fi
 
+Question: Do we really have to do that? I mean nfsroot worked until now 
+without considering rpc_pipefs.
+
+Regards,
+Philippe
+
+> +
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
