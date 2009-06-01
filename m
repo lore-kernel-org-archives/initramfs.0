@@ -1,34 +1,56 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [RFC PATCH 4/9] cmdline: cleanup handling and block: handler
-Date: Mon, 01 Jun 2009 06:54:28 -0400
-Message-ID: <1243853668.3844.117.camel@obelisk.thedillows.org>
+Subject: Re: [RFC PATCH 9/9] Add NBD support
+Date: Mon, 01 Jun 2009 06:55:22 -0400
+Message-ID: <1243853722.3844.122.camel@obelisk.thedillows.org>
 References: <cover.1243833882.git.dave@thedillows.org>
-	 <d15c7a1ab71af9ab4fccd51fa02915e949f39c86.1243833882.git.dave@thedillows.org>
-	 <1243848391.647.13.camel@sentry-no.fnordovax.org>
+	 <2b117123ecd2d93cec8598593e966029dfb4777e.1243833882.git.dave@thedillows.org>
+	 <1243849301.647.20.camel@sentry-no.fnordovax.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1243848391.647.13.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
+In-Reply-To: <1243849301.647.20.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Mon, 2009-06-01 at 04:26 -0500, Victor Lowther wrote:
-> > +#!/bin/bash # for highlighting
+On Mon, 2009-06-01 at 04:41 -0500, Victor Lowther wrote:
+> On Mon, 2009-06-01 at 00:59 -0400, David Dillow wrote:
+
+> > +# XXX netroot expects to have the handler mount things, but we should
+> > +# XXX allow LVM, LUKS, etc over nbd
+> > +
+> > +nbd-client $preopts "$nbdserver" "$nbdport" /dev/nbd0 $opts || exit 1
 > 
-> Please don't do this.  
+> Ah, but we are not really a netroot in the sense that NFS is -- all we
+> are doing is attaching a block device.  Once it is attached the usual
+> root-on-block-device rules should kick in as soon as udev sees the block
+> devices.
 
-The # for highlighting part? Sure, I thought I killed those. #!/bin/bash
-as well? I can go along with that -- it is a work around for broken
-highlighting:
+Exactly, hence the comment -- and one elsewhere about wanting to move
+the mount to the network block devices via udev. Unfortunately, NBD does
+all of its device adds at module load time, so we cannot trigger a mount
+on those as there's nothing behind the device.
 
-> Which editor are you using that highlights bash but not sh correctly?
+I was thinking about 'echo add /path/to/nbd0/uevent' here so we could
+force another loop through udev.
 
-vim on F10 has different rules for sh and bash -- things like $() and
-${t%%:*} are lit in red for sh, but they are valid; they don't highlight
-that way if vim sees #!/bin/bash
+> > +if ! mount -t $nbdfstype -o$fsopts /dev/nbd0 $NEWROOT; then
+> > +    # Mount failed, clean up after ourselves so if we try a different
+> > +    # interface it can succeed
+> > +    nbd-client -d /dev/nbd0
+> > +    exit 1
+> > +fi
+> 
+> why not just poke udev with udevadm trigger if there is any doubt?
+
+Not sure what you mean by that in this context -- do you mean the root
+mount via udev as discussed above, or the cleanup right here? 
+
+I'm not sure how to do the cleanup when mounting via udev; I'd need to
+think. I'm not sure doing udevadm trigger or udevadm settle inside a
+udev handler is a good thing...
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
