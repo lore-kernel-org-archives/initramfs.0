@@ -1,82 +1,78 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [RFC PATCH 7/9] netroot: add common handler for network root
- devices
-Date: Mon, 01 Jun 2009 07:02:54 -0400
-Message-ID: <1243854174.3844.133.camel@obelisk.thedillows.org>
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH 9/9] Add NBD support
+Date: Mon, 01 Jun 2009 06:14:53 -0500
+Message-ID: <1243854893.647.32.camel@sentry-no.fnordovax.org>
 References: <cover.1243833882.git.dave@thedillows.org>
-	 <7d7efa4a3d959a5f834cd1d5e73c1e15112aa77c.1243833882.git.dave@thedillows.org>
-	 <4A23985C.9040509@bfh.ch>
+	 <2b117123ecd2d93cec8598593e966029dfb4777e.1243833882.git.dave@thedillows.org>
+	 <1243849301.647.20.camel@sentry-no.fnordovax.org>
+	 <1243853722.3844.122.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A23985C.9040509-omB+W0Dpw2o@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:subject:from:to:cc
+         :in-reply-to:references:content-type:date:message-id:mime-version
+         :x-mailer:content-transfer-encoding;
+        bh=bs/jZI/aSGQ43ERhB+xZ7Y8jlvn9/PEP88pyenz9ZDw=;
+        b=Jjx1RbUGOzBlUZfskWppyVJAv6GF941Z5M3FK9lUMe9sWlUQ6/8MjjWquA/eLvrYmg
+         s5R0saB03J79VtAa7oMqpziZmumW9xVZeDcGUOAlexZvSH9AMnDeq56pvvBCWiqfQlMJ
+         dZKBYo1T/o9cyWWfgzefzu7j0Z7xDY9Su5bi0=
+In-Reply-To: <1243853722.3844.122.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Mon, 2009-06-01 at 10:59 +0200, Seewer Philippe wrote:
-> David Dillow wrote:
-> > +if [ -z "$root" ]; then
-> > +    root=dhcp
-> > +fi
+On Mon, 2009-06-01 at 06:55 -0400, David Dillow wrote:
+> On Mon, 2009-06-01 at 04:41 -0500, Victor Lowther wrote:
+> > On Mon, 2009-06-01 at 00:59 -0400, David Dillow wrote:
 > 
-> Is this really necessary? I mean if no root option is supplied, we don't 
-> really know if dhcp is really desired or the default /dev/sda1 fallback 
-> should be used.
-
-I tend to think that any default root= needs to go -- a quick glance
-through nash's source code doesn't seem show a default root device
-there. In this case, we'd only default to dhcp if the network module is
-included.
-
-> I'd suggest to only ever do netroot if the user explicitely requests it. 
-> This would include disabling all network related udev scripts if we 
-> don't want netroot.
-
-This happens if you don't include the network module, or specify a root=
-line that doesn't require the network. In that case we just exit early
-from ifup and never do any configuration.
-
-> > -if [ "$root" = "dhcp" -a -z "$ip" ]; then
+> > > +# XXX netroot expects to have the handler mount things, but we should
+> > > +# XXX allow LVM, LUKS, etc over nbd
+> > > +
+> > > +nbd-client $preopts "$nbdserver" "$nbdport" /dev/nbd0 $opts || exit 1
+> > 
+> > Ah, but we are not really a netroot in the sense that NFS is -- all we
+> > are doing is attaching a block device.  Once it is attached the usual
+> > root-on-block-device rules should kick in as soon as udev sees the block
+> > devices.
 > 
-> Hmmm... Weird configuration: What do we do if root=dhcp and the ip 
-> options contain's non-dhcp related stuff? (Never thought of that before)
+> Exactly, hence the comment -- and one elsewhere about wanting to move
+> the mount to the network block devices via udev. Unfortunately, NBD does
+> all of its device adds at module load time, so we cannot trigger a mount
+> on those as there's nothing behind the device.
 
-Currently, I use the ip= lines as an override on what we get back from
-DHCP. If you specify enough info, no DHCP is used.
+ew, narsty.  Sounds just as annoying as the loopback device.
 
-> > +# Run the handler; don't store the root, it may change from device to device
-> > +# XXX other variables to export?
-> > +export NEWROOT
-> > +if $handler $netif $root; then
-> > +    >/tmp/netroot.done
-> > +fi
-> > +exit 0
+> I was thinking about 'echo add /path/to/nbd0/uevent' here so we could
+> force another loop through udev.
 > 
-> Question 1: Is it really necessary to have each handler implements it's 
-> own mount-call? I don't know about iSCSI but isn't it usually just a 
-> matter of setting fstype, options and source? I think this could be 
-> generalized.
+> > > +if ! mount -t $nbdfstype -o$fsopts /dev/nbd0 $NEWROOT; then
+> > > +    # Mount failed, clean up after ourselves so if we try a different
+> > > +    # interface it can succeed
+> > > +    nbd-client -d /dev/nbd0
+> > > +    exit 1
+> > > +fi
+> > 
+> > why not just poke udev with udevadm trigger if there is any doubt?
+> 
+> Not sure what you mean by that in this context -- do you mean the root
+> mount via udev as discussed above, or the cleanup right here? 
 
-In the case of network-block-device, I'd like to be able to use the
-existing block udev handlers. NFS root can mount itself.
+The root mount.  
 
-> Question 2: How do plan to loop over mount-scripts? As you described if 
-> might be desirable to retry mounting if the server is overloaded. I see 
-> a few problems there if we loop inside netboot/handler-scripts: We could 
-> be trying to mount on the wrong interface.
+> I'm not sure how to do the cleanup when mounting via udev; I'd need to
+> think.
 
-The loop over the mount-scripts seems to be vestigial -- we mount block
-root via udev now. I haven't thought too hard about how to handle the
-fail loop for netboot, but I figure it would either just walk the list
-of network interfaces and send uevents, or just do another udevadm
-trigger and settle pair.
+Perhaps a mount-failed hook?
 
-Speaking of which, at some point the network root stuff is going to want
-to be able to change the settle timeout. 
-
+> 
+-- 
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
