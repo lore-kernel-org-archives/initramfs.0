@@ -1,7 +1,7 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: [RFC PATCH 5/9] resume: add support for labeled resume devices
-Date: Mon, 1 Jun 2009 00:25:09 -0400
-Message-ID: <9810ce7e38ec1ba52a9c2f5f5047ea779d1006a3.1243833882.git.dave@thedillows.org>
+Subject: [RFC PATCH 6/9] dracut-lib: add source_all to library
+Date: Mon, 1 Jun 2009 00:39:56 -0400
+Message-ID: <ae5bc1fd8ab2aab28b335adf456bc41c0175c4e7.1243833882.git.dave@thedillows.org>
 References: <cover.1243833882.git.dave@thedillows.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <cover.1243833882.git.dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
@@ -12,62 +12,45 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-I noticed when doing the block root= parser that resume
-didn't support labeled resume devices. Fix that up and
-get rid of a dependency on /bin/echo in the process.
+The network root handler will need this.
 
 Signed-off-by: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 ---
- modules.d/95resume/install            |    1 -
- modules.d/95resume/parse-resume.sh    |    8 ++++++++
- modules.d/95resume/resume-genrules.sh |   14 ++++++++------
- 3 files changed, 16 insertions(+), 7 deletions(-)
+ modules.d/99base/dracut-lib |    6 ++++++
+ modules.d/99base/init       |    6 ------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/modules.d/95resume/install b/modules.d/95resume/install
-index 945611e..cecd2fc 100755
---- a/modules.d/95resume/install
-+++ b/modules.d/95resume/install
-@@ -1,5 +1,4 @@
- #!/bin/bash
--dracut_install echo
- inst_hook cmdline 10 "$moddir/parse-resume.sh"
- inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
- inst_hook mount 90 "$moddir/resume.sh"
-diff --git a/modules.d/95resume/parse-resume.sh b/modules.d/95resume/parse-resume.sh
-index 447e151..94d7112 100755
---- a/modules.d/95resume/parse-resume.sh
-+++ b/modules.d/95resume/parse-resume.sh
-@@ -5,3 +5,11 @@ if resume=$(getarg resume=) && ! getarg noresume; then
- else
-     unset resume
- fi
+diff --git a/modules.d/99base/dracut-lib b/modules.d/99base/dracut-lib
+index 1f31933..7078827 100644
+--- a/modules.d/99base/dracut-lib
++++ b/modules.d/99base/dracut-lib
+@@ -14,3 +14,9 @@ getarg() {
+     done
+     return 1
+ }
 +
-+case "$resume" in
-+    LABEL=*)
-+	resume="$(echo $resume | sed 's,/,\\x2f,g')"
-+	resume="/dev/disk/by-label/${resume#LABEL=}" ;;
-+    UUID=*)
-+	resume="/dev/disk/by-uuid/${resume#UUID=}" ;;
-+esac
-diff --git a/modules.d/95resume/resume-genrules.sh b/modules.d/95resume/resume-genrules.sh
-index 108c3f7..7c95715 100755
---- a/modules.d/95resume/resume-genrules.sh
-+++ b/modules.d/95resume/resume-genrules.sh
-@@ -1,6 +1,8 @@
--resume=$(getarg resume=) && ! getarg noresume  && {
--(
--	/bin/echo -e 'KERNEL=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
--	/bin/echo -e 'SYMLINK=="'${resume#/dev/}'", RUN+="/bin/echo %M:%m > /sys/power/resume"'
--) >> /etc/udev/rules.d/99-resume.rules
++source_all() {
++    local f
++    [ "$1" ] && [  -d "/$1" ] || return
++    for f in "/$1"/*.sh; do [ -f "$f" ] && . "$f"; done
++}
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index ebbc6ad..73e96fd 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -14,12 +14,6 @@ emergency_shell()
+     sh -i
+ }
+ 
+-source_all() {
+-    local f
+-    [ "$1" ] && [  -d "/$1" ] || return
+-    for f in "/$1"/*.sh; do [ -f "$f" ] && . "$f"; done
 -}
-+if [ -n "$resume" ]; then
-+    (
-+    printf 'KERNEL=="%s", RUN+="/bin/echo %%M:%%m > /sys/power/resume"\n' \
-+		${resume#/dev/}
-+    printf 'SYMLINK=="%s", RUN+="/bin/echo %%M:%%m > /sys/power/resume"\n' \
-+		${resume#/dev/}
-+    ) >> /etc/udev/rules.d/99-resume.rules
-+fi
+-
+ export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+ export TERM=linux
+ NEWROOT="/sysroot"
 -- 
 1.6.0.6
 
