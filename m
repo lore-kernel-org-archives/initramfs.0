@@ -1,50 +1,42 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Passing dhclient leases through switch_root
-Date: Mon, 01 Jun 2009 17:46:50 -0500
-Message-ID: <1243896410.647.35.camel@sentry-no.fnordovax.org>
-References: <4A244FF4.9040905@redhat.com>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: crypt lvm broke?
+Date: Tue, 02 Jun 2009 00:31:13 -0400
+Message-ID: <4A24AB11.2020702@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:date:message-id:mime-version
-         :x-mailer:content-transfer-encoding;
-        bh=OUaTtxNMgMYpBd/U9OrdYg1PacRbRC2YocKUsjNvCYM=;
-        b=Crx1C89XCGyy/UeSkZXSsBAyweIo8o+U8k/TgcRBBkYA4HVQURK0oTPZQwoBERG+mA
-         Yd7ACFraUoLAh+2Neb8SfF9qjkeklY9KN1w6IgjOWGwtv+iEPBCVshjC8GgYC0nRyBZZ
-         SsaHURDHBZC1jvGgSG0+ZYk/cvmPX1mAil+fs=
-In-Reply-To: <4A244FF4.9040905-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Mon, 2009-06-01 at 18:02 -0400, Warren Togami wrote:
-> cp /var/lib/dhclient/dhclient.leases /sysroot/dev/.dhclient-$dev.leases
-> 
-> mkinitrd for a while has copied the leases file to /dev, because it is 
-> the only directory that survives switch_root.  The system then can have 
-> the entire leases file for whatever needed purposes.
-> 
-> Any objections to doing this in dracut?
+Somewhere between 4eba843ddeda59d01a074329e28d423d119b8336 and 
+e26cb36fcaa9c0e8278d06e806b725ae00e428ad it seems something broke.
 
-None here.  We should do something along those lines for /tmp if we were
-asked to debug the initrd.
+/dev/sda1 ext3 /boot
+/dev/sda2 encrypted LVM pv which contains:
+	/dev/mapper/vg0-rootfs
+	/dev/mapper/vg0-swap
 
-> Warren Togami
-> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
--- 
-Victor Lowther
-RHCE# 805008539634727
-LPIC-2# LPI000140019
+At 4eba843ddeda59d01a074329e28d423d119b8336 it seems to successfully 
+unlock the encrypted device, then mount my rootfs lv.
 
+e26cb36fcaa9c0e8278d06e806b725ae00e428ad through 
+d0c7d42b3e63c0f62b517b1a5e6c2e58b6b93d2d seem to exhibit the following 
+behavior:
+
+* Most of the time: Unlock encryption, mount fails with apparent syntax 
+errors rapidly in a loop many times, eventually falling to emergency 
+shell.  At this point manually mounting /dev/mapper/vg0-rootfs to 
+/sysroot then "exit" will boot.
+* Sometimes: Fails to ask crypt password, mount fails with apparent 
+syntax errors rapid in a loop, eventually falling to emergency shell. 
+dm-crypt module is never loaded.
+
+Any idea what could be going on?
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
