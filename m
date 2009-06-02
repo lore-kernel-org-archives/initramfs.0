@@ -1,57 +1,26 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] add iSCSI module
-Date: Tue, 02 Jun 2009 14:25:12 +0200
-Message-ID: <4A251A28.7090405@redhat.com>
-References: <1243942901-5474-1-git-send-email-harald@redhat.com>	 <1243942901-5474-2-git-send-email-harald@redhat.com>	 <1243944299.647.39.camel@sentry-no.fnordovax.org>	 <4A251608.4050801@redhat.com> <1243945436.647.40.camel@sentry-no.fnordovax.org>
+Subject: iSCSI and root
+Date: Tue, 02 Jun 2009 18:10:21 +0200
+Message-ID: <4A254EED.3080902@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1243945436.647.40.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/02/2009 02:23 PM, Victor Lowther wrote:
-> On Tue, 2009-06-02 at 14:07 +0200, Harald Hoyer wrote:
->> On 06/02/2009 02:04 PM, Victor Lowther wrote:
->>> On Tue, 2009-06-02 at 13:41 +0200, Harald Hoyer wrote:
->>>> ---
->>>>    modules.d/95iscsi/check              |   11 +++
->>>>    modules.d/95iscsi/install            |    8 ++
->>>>    modules.d/95iscsi/iscsi-netroot.sh   |   13 ++++
->>>>    modules.d/95iscsi/iscsiroot          |  121 ++++++++++++++++++++++++++++++++++
->>>>    modules.d/95iscsi/parse-iscsiroot.sh |   37 ++++++++++
->>>>    test/TEST-30-ISCSI/Makefile          |   10 +++
->>>>    test/TEST-30-ISCSI/create-root.sh    |   34 ++++++++++
->>>>    test/TEST-30-ISCSI/cryptroot-ask     |    6 ++
->>>>    test/TEST-30-ISCSI/hard-off.sh       |    2 +
->>>>    test/TEST-30-ISCSI/test.sh           |   68 +++++++++++++++++++
->>>>    10 files changed, 310 insertions(+), 0 deletions(-)
->>>>    create mode 100755 modules.d/95iscsi/check
->>>>    create mode 100755 modules.d/95iscsi/install
->>>>    create mode 100755 modules.d/95iscsi/iscsi-netroot.sh
->>>>    create mode 100755 modules.d/95iscsi/iscsiroot
->>>>    create mode 100755 modules.d/95iscsi/parse-iscsiroot.sh
->>>>    create mode 100644 test/TEST-30-ISCSI/Makefile
->>>>    create mode 100755 test/TEST-30-ISCSI/create-root.sh
->>>>    create mode 100755 test/TEST-30-ISCSI/cryptroot-ask
->>>>    create mode 100755 test/TEST-30-ISCSI/hard-off.sh
->>>>    create mode 100755 test/TEST-30-ISCSI/test.sh
->>> Perhaps I missed it, but where do you create the VM that hosts the isci
->>> target?  That would make fully automating this test much easier for
->>> those of us who do not have a spare iscsi target lying around.
->>>
->> Well, for now, I hosted the iSCSI disk on a local NAS.
->> But, we could setup a small virtual machine that serves the iSCSI disk. I was
->> just too lazy to do that step now :-)
->
-> Understood -- I just found it odd to commit a test suite that only
-> worked for you.
+Because root=dhcp with root_path=iscsi:.. or root=iscsi:... would just add a 
+harddisk to the system, we still might want a root=/dev/... to specify the path 
+to the root partition.
 
-work in progress :) and yes, I should deactive it for now, until I have created 
-the iSCSI target VM
+Or should we just mount the whole disk? If so, how do we detect the newly added 
+disk after iscsistart? Do we add a udev rule to mount it?
+
+We might want to use the code from /lib/udev/path_id, which parses 
+$full_sysfs_device_path and scans for  */session[0-9]*/*
+
+Any suggestions?
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
