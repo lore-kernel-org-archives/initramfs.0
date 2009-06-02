@@ -1,32 +1,34 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: iSCSI
-Date: Tue, 02 Jun 2009 13:29:09 +0200
-Message-ID: <4A250D05.3020704@redhat.com>
-References: <4A250C26.3050001@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Subject: [PATCH 1/2] install cat for network module
+Date: Tue,  2 Jun 2009 13:41:40 +0200
+Message-ID: <1243942901-5474-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A250C26.3050001-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 06/02/2009 01:25 PM, Harald Hoyer wrote:
-> with the new iSCSI module I was able to do the block testcase over iSCSI
-> that means:
->
-> root filesystem on an encrypted LVM PV over ISCSI
->
-> I used:
-> "root=/dev/dracut/root rw
-> iscsiroot=192.168.2.2::::iqn.2004-04.com.qnap:TS-439:iSCSI.test.8CCAFA
-> ip=dhcp"
->
-> to create the encrypted LVM PV on a iscsi disk and boot from it.
->
+---
+ modules.d/40network/install |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Oh, actually that was a LVM on an encrypted RAID-5 on a iSCSI disk..
+diff --git a/modules.d/40network/install b/modules.d/40network/install
+index 3a06f79..d480391 100755
+--- a/modules.d/40network/install
++++ b/modules.d/40network/install
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-dracut_install ip dhclient hostname
++dracut_install ip dhclient hostname cat
+ # Include wired net drivers, excluding wireless
+ for modname in `find "/lib/modules/$kernel/kernel/drivers" -name '*.ko'`; do
+   if nm -uPA $modname | grep -q eth_type_trans; then
+-- 
+1.6.2.2
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
