@@ -1,22 +1,38 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: plymouth fixed and new pre-trigger hook
-Date: Wed, 03 Jun 2009 17:38:36 +0200
-Message-ID: <4A2698FC.2000403@redhat.com>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Passing dhclient leases through switch_root
+Date: Wed, 03 Jun 2009 17:31:57 -0400
+Message-ID: <4A26EBCD.4010800@redhat.com>
+References: <4A244FF4.9040905@redhat.com> <1243896410.647.35.camel@sentry-no.fnordovax.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1243896410.647.35.camel-76q0VzFBGGr21HsLBtNmTckMGDeJXHgy@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-ok, fixed plymouth by adding a a pre-trigger hook.
+On 06/01/2009 06:46 PM, Victor Lowther wrote:
+>
+> None here.  We should do something along those lines for /tmp if we were
+> asked to debug the initrd.
+>
 
-In the pre-trigger hook, udevd is started and the big trigger is not yet fired.
+If netboot, copy /tmp/net.* for the boot interface to
+/dev/.boot/
 
-Plymouth installs a hook to "pretrigger" the tty and graphics subsystems, which 
-are needed for interactive password requests later on.
+This is for the use of anything in the booted system that needs to be 
+aware of what network was brought up during initrd.
+
+If cmdline rdcopystate, then copy all of /tmp/* into
+/dev/.boot/
+
+This is primarily for debugging purposes.
+
+Thoughts?
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
