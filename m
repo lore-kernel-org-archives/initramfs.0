@@ -1,33 +1,29 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [PATCH] Get rid of cat and grep
-Date: Fri, 05 Jun 2009 14:57:15 -0400
-Message-ID: <1244228235.6963.39.camel@lap75545.ornl.gov>
-References: <4A2907E7.1080008@bfh.ch>
- <20090605155832.GH5107@nostromo.devel.redhat.com>
- <4A2941CD.1070709@redhat.com> <4A295FB4.6020306@bfh.ch>
- <20090605182106.GA26921@redhat.com>
- <1244227068.6963.37.camel@lap75545.ornl.gov>
- <759A4D42-1B71-438B-A361-4CFCB6E289E7@gmail.com>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Use dhclient.conf instead of -R
+Date: Fri, 05 Jun 2009 15:02:45 -0400
+Message-ID: <4A296BD5.902@redhat.com>
+References: <4A293933.80601@bfh.ch> <20090605160253.GJ5107@nostromo.devel.redhat.com> <4A29603D.1090202@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <759A4D42-1B71-438B-A361-4CFCB6E289E7-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <4A29603D.1090202-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Fri, 2009-06-05 at 13:45 -0500, Victor Lowther wrote:
-> On Jun 5, 2009, at 1:37 PM, David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org> wrote:
-> > What do you think of making a module, say 99useful-tools, what  
-> > installs
-> > various tools that would be helpful, and have it installed by default.
-> > That way, it is easy to have the best of both worlds.
+On 06/05/2009 02:13 PM, Seewer Philippe wrote:
+>> We have a /etc on the initramfs ... conf files should go there.
 >
-> That is what the much neglected 95debug module is for.
+> right, I tend to forget that it seems. Thanks for pointing it out. Fixed
+> patch below
 
-Now if people would just use it. :)
+OK, this seems to be working with dhclient-4.1.0-20 in Fedora 11.
+
+I suppose go ahead and push.
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
