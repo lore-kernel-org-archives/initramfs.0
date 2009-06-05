@@ -1,45 +1,50 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [PATCH] Don't use absolute path for ip, does not always work
-Date: Fri, 5 Jun 2009 20:19:22 +0200
-Message-ID: <4A2961AA.7070100@bfh.ch>
-References: <4A292D53.9080603@bfh.ch> <20090605155900.GI5107@nostromo.devel.redhat.com> <3EFC8CBF-4F49-4713-9F04-D17977415107@gmail.com> <20090605172727.GB7539@nostromo.devel.redhat.com> <F96FDD9C-4009-4E3E-AD7D-C8640ECF003C@gmail.com>
+From: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Get rid of cat and grep
+Date: Fri, 5 Jun 2009 14:21:06 -0400
+Message-ID: <20090605182106.GA26921@redhat.com>
+References: <4A2907E7.1080008@bfh.ch> <20090605155832.GH5107@nostromo.devel.redhat.com> <4A2941CD.1070709@redhat.com> <4A295FB4.6020306@bfh.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <F96FDD9C-4009-4E3E-AD7D-C8640ECF003C-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4A295FB4.6020306-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+On Fri, Jun 05, 2009 at 08:11:00PM +0200, Seewer Philippe wrote:
+ > 
+ > 
+ > Warren Togami wrote:
+ > > On 06/05/2009 11:58 AM, Bill Nottingham wrote:
+ > >> Seewer Philippe (philippe.seewer-omB+W0Dpw2o@public.gmane.org) said:
+ > >>> cat and grep just bloat the initrd, this patch removes dependencies 
+ > >>> on them.
+ > >>
+ > >> Are we really at a place where we're that worried about 100k? I'd
+ > >> rather not have to implement all of coreutils in shell where needed.
+ > >>
+ > > 
+ > > I'm not too happy about this, additionally because it made the code less 
+ > > readable.  But he already pushed it to git.
+ > 
+ > Ah well... I guess I'll label it an rfc patch next time I post something 
+ > like that.
+ > 
+ > When I was going through the code this morning I just noticed that cat 
+ > was used only 4 times and grep just once. Personally I prefer to keep 
+ > the number of pulled in utilities as small as possible. Hence the 
+ > replacement. If you don't like the way I did it, please suggest 
+ > something else.
 
+Just because the scripts don't use it, doesn't mean it doesn't have
+value in the initramfs.  Being dropped to a rescue shell and not
+being able to cat files for diagnostics is sort of annoying.
 
-Victor Lowther wrote:
-> On Jun 5, 2009, at 12:27 PM, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> 
->> Victor Lowther (victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org) said:
->>>> Why does it not always work, unless you're breaking your initramfs?
->>>
->>> What if your distro does not put ip in /sbin?
->>
->> I was under the impression that the generation already put it in
->> a known place, in which case there's no reason to worry about it
->> being elsewhere. I checked again, and that's not the case.
-> 
-> I should hope so, otherwise writing the install code to be as distro 
-> agnostic as feasible was all for naught. :)
+	Dave
 
-I guess I should have formulated my post better.
-
-ip get's copied in, no worries. dracut_install ip works perfectly. Since 
-it looks everywhere sensible for the utility if no path is provided.
-
-Problem is that debian puts ip in /bin not /sbin. So the code almost 
-always works, except for debian.
-
-Regards,
-Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
