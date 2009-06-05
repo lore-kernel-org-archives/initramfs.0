@@ -1,31 +1,30 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [2/3] test suite: automate NFS testing
-Date: Fri, 05 Jun 2009 08:51:05 +0200
-Message-ID: <4A28C059.6030508@redhat.com>
-References: <1244176354.29842.1.camel@obelisk.thedillows.org>	 <1244176478.29842.4.camel@obelisk.thedillows.org> <1244176744.29842.7.camel@obelisk.thedillows.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: [PATCH] Make kill-dhclient.sh more readable
+Date: Fri, 5 Jun 2009 11:45:01 +0200
+Message-ID: <4A28E91D.1000006@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1244176744.29842.7.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/05/2009 06:39 AM, David Dillow wrote:
-> On Fri, 2009-06-05 at 00:34 -0400, David Dillow wrote:
->> First cut at automating the NFS test suite.
->
-> The second part I'm planning is to remove dnsmasq and require the full
-> dhcpd server, so that we can test various combinations of command lines
-> and DHCP options by multiple invocations of the client initramfs and
-> varying the MAC address. This may also involve expanding the test
-> harness to support multiple tests in a single invocation.
->
-> Any thoughts or objections?
->
+Checking for existing file is more readable than string comparison
 
-no objections :)
+---
+diff --git a/modules.d/40network/kill-dhclient.sh b/modules.d/40network/kill-dhclient.sh
+index 19f258a..fcebd32 100755
+--- a/modules.d/40network/kill-dhclient.sh
++++ b/modules.d/40network/kill-dhclient.sh
+@@ -1,5 +1,5 @@
+ #!/bin/sh
+ 
+ for f in /tmp/dhclient.*.pid; do
+-    [ "$f" != "/tmp/dhclient.*.pid" ] && kill $(cat $f)
++    [ -e $f ] && kill $(cat $f)
+ done
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
