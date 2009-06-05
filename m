@@ -1,26 +1,25 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: ChangeLog 2009-06-04
-Date: Thu, 04 Jun 2009 17:57:02 +0200
-Message-ID: <4A27EECE.50405@redhat.com>
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: test suite work
+Date: Fri, 05 Jun 2009 00:32:34 -0400
+Message-ID: <1244176354.29842.1.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-$ make rpm
-should work now
+I've fixed up the NFS tests to work with the framework, and also set
+things up so you can easily test with a different kernel than you are
+running. Also, getting the NFS test working revealed that we need grep
+for the NFS module, so I fixed that as well.
 
-- made the installation paths configurable in the Makefile
-- dracutbasedir=/usr/lib/dracut can be modified in dracut.conf
-- dracutlogfile is now /var/log/dracut.log instead of /var/log/dracut/log
-- dwarning/dinfo/derror check before they write to $dracutlogfile
-- add sample dracut.conf with comments
-- add /tmp/udevtriggeropts which used by plymouth to omit already triggered 
-events in the big udev trigger
-- switch_root will be installed from the system, if not present in the module dir
+I'll reply with the patches, or you can get them at
+http://thedillows.org/dracut.git
+
+Dave
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
