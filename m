@@ -1,49 +1,40 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [PATCH] Install debian renamed udev rules as well
-Date: Mon, 8 Jun 2009 22:57:27 +0200
-Message-ID: <4A2D7B37.8080502@bfh.ch>
-References: <4A2D2BD4.1000504@bfh.ch> <20090608191550.GA11215@redhat.com>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: /dev/.initramfs copy state before switch_root
+Date: Mon, 08 Jun 2009 17:27:30 -0400
+Message-ID: <4A2D8242.40205@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20090608191550.GA11215-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+I have pushed the following changes.
 
+* If netboot, copy /tmp/net.* to /dev/.initramfs/.  Initscripts of your 
+distribution or NetworkManager can read the files in this location to be 
+aware of prior configured interfaces.  A distribution may choose to do 
+something with this information.
 
-Jeremy Katz wrote:
-> On Monday, June 08 2009, Seewer Philippe said:
->> Debian has reworked/renamed quite a few default udev rules.
-> 
-> The last time this came up, the conclusion was that the dracut upstream
-> shouldn't be hacked to workaround the fact that Debian deviates from
-> upstream udev.  Kay even felt pretty strongly about it, iirc.
+* If you specify kernel cmdline "rdcopystate", then all of /tmp/* is 
+copied into /dev/.initramfs/.  This could sometimes be useful for 
+post-boot examination or debugging.
 
-I know, I know. I think I heard the rambling a few times on IRC.
+* net.<interface name>.lease is written containing the DHCP lease, 
+because dcbw asked for this for NetworkManager.  Your own tools could 
+choose to do something with it or not.
 
-But: It's not a hack and not even a workaraound. It's just two files 
-that may be copied if they are there. So I thought maybe its OK...
+TODO:
 
-> Debian is currently the only major distro that isn't just shipping the
-> upstream defaults...
+* We need something to write out a file like 
+/dev/.initramfs/net.eth0.static in the case of a static IP during 
+initrd.  I have never used static IP with initrd before.  Are there 
+multiple syntaxes to configure static IP?  Others have touched this part 
+of the code.
 
-Well, I really need (want?) Debian support in dracut. If you're not 
-happy with that, what about a debian specific module? Would result in 
-more or less the same but wouldn't clutter up a "normal" dracut module.
-
-Regards,
-Philippe
-
-> 
-> Jeremy
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
