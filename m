@@ -1,43 +1,40 @@
-From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Subject: initramfs-tools stable release 0.93.3
-Date: Wed, 10 Jun 2009 17:30:17 +0200
-Message-ID: <20090610153017.GA19401@stro.at>
+From: Alan Jenkins <alan-jenkins-cCz0Lq7MMjm9FHfhHBbuYA@public.gmane.org>
+Subject: module deps / location
+Date: Wed, 10 Jun 2009 21:00:22 +0100
+Message-ID: <4A3010D6.6060300@tuffmail.co.uk>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlemail.com; s=gamma;
+        h=domainkey-signature:received:received:sender:message-id:date:from
+         :user-agent:mime-version:to:subject:content-type
+         :content-transfer-encoding;
+        bh=oXAOgFGfcARCJFBNYDZqP5PzXTcOG//I3BJs4ByQ/Ds=;
+        b=mDmP0+88xxw392VgeqmiV3ZvV9G9JUGPZ5cfBpffFN25hm365iToiF65ioKU9DB9Xu
+         GTxVWPasRwVhp0yDymt88abFXa1F9vJoxTSpfzwEbfHSW5ugd53SqM/0PWFcuUhJatoV
+         i0PUu3ibabarqgf5ZDlWvHYSrbZIX8PZa2TSA=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-small random fixes all over the place, see belows shortlog or
-git clone git://git.debian.org/kernel/initramfs-tools.git
+Hi,
 
-or online repo:
-http://git.debian.org/git/kernel/initramfs-tools.git
+I have some comments on locatemodule() and resdeps() in dracut-functions.
 
--- 
-maks
+resdeps() shouldn't need to loop to find all the module dependencies. 
+"modprobe --show-depends" will show all the dependencies of a module,
+both direct and indirect.
 
+And in locatemodule(), I can't understand why it tries to continue if
+the full path from "modprobe --showdepends" does not exist.  I would
+expect it to just give up (and perhaps suggest re-running depmod),
+rather than searching for the module in other locations.  Can anyone
+give me a hint?
 
-Loic Minier (1):
-      copy_exec: also avoid picking sse2, neon, and vfp hwcaps libs.
-
-maximilian attems (11):
-      cleanup LABEL handling code
-      update-initramfs: Text exit code of command -v too.
-      hook-functions: Add i915 module for kms.
-      update-initramfs: Pass version to flash-kernel
-      update-initramfs: Don't hardcode path for lilo or elilo.
-      hook-functions: MODULES=dep error out if sysfs not mounted on /sys.
-      debian/control: No longer mention EVMS in long description.
-      hook-functions: MODULES=most fix old typo s/smc911x/smc91x/
-      mkinitramfs: Invoke dpkg --print-architecture
-      nuke useless old file
-      release 0.93.3
-
+Thanks
+Alan
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
