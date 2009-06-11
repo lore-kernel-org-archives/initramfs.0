@@ -1,77 +1,59 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Netroot cmdline arguments
-Date: Thu, 11 Jun 2009 09:20:51 +0200
-Message-ID: <4A30B053.9030308@bfh.ch>
-References: <4A2E8130.2050305@bfh.ch>	 <1244607992.16191.33.camel@obelisk.thedillows.org>	 <4A2F63C6.2020504@bfh.ch> <1244638667.16191.57.camel@obelisk.thedillows.org>
+From: Scott James Remnant <scott-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: initramfs-tools stable release 0.93.3
+Date: Thu, 11 Jun 2009 11:42:07 +0100
+Message-ID: <1244716927.4532.34.camel@quest>
+References: <20090610153017.GA19401@stro.at>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-+JWQRV6WUflwoJFsPzYp"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1244638667.16191.57.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
+In-Reply-To: <20090610153017.GA19401-U9r9yeDMy7A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
 
-With input from the current discussion and ignorance of upcoming
-netroot patches the current documentation would/should look like
-the following:
 
-DHCP
-----
+--=-+JWQRV6WUflwoJFsPzYp
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-Format:
-	root=dhcp
+On Wed, 2009-06-10 at 17:30 +0200, maximilian attems wrote:
 
-Get IP from dhcp, use dhcp root-path option to specify root location.
-Contents according to formats below.
+> hook-functions: Add i915 module for kms.
+>=20
+This is exactly the kind of bloat I want to avoid for the initramfs.
+The initramfs should do one thing only, that's mount the root filesystem
+and chain load into it.
 
-Please note: Specifying root=dhcp will ignore further netroot options
+Anything else is an extravagance.
 
-NFS
----
+Why load the KMS driver in the initramfs?  Because it takes too long to
+get to the point in the real system where we can load it!  Why does it
+take too long to get there?  Because we spend so long in the initramfs!
 
-Preferred format:
-	root=nfs[4]:[server:]path[:options]
+Slimming the initramfs right down to the essentials reduces the boot
+time by over a second!  Paradoxically, this means that the driver can be
+loaded in the real system at roughly the same time point as it would be
+loaded in a bloated initramfs.
 
-Legacy formats:
-	root=[[/dev/]nfs[4]] nfsroot=[server:]path[,options]
-	root=[[/dev/]nfs[4]] nfsroot=[server:]path[:options]
+Scott
+--=20
+Scott James Remnant
+scott-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
 
-If the 'nfsroot' parameter is not given on the command line or is empty,
-the dhcp root-path is used as [server:]path[:options] or the default
-"/tftpboot/%s" will be used.
+--=-+JWQRV6WUflwoJFsPzYp
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 
-If server is unspecified it will be pulled from one of the following
-sources, in order:
-	static ip= option on kernel command line
-	DHCP next-server option
-	DHCP server-id option
-	DHCP root-path option
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
 
-NFSv4 is only used if explicitly requested; default is NFSv2 or NFSv3
-depending on kernel configuration
+iEYEABECAAYFAkow338ACgkQSnQiFMl4yK6LSQCfQMUECbGsGtMJwL8coT1IYw+s
+n1UAoJwitjl4wyTxaGnnSZzmwEZiUGzr
+=OeL7
+-----END PGP SIGNATURE-----
 
-iSCSI
------
-
-Preferred format:
-	root=iscsi:[<servername>]:[<protocol>]:[<port>]:[<LUN>]:<targetname>
-
-Legacy formats:
-	root=[iscsi] iscsiroot=[<servername>]:[<protocol>]:[<port>]:[<LUN>]:<targetname>
- 	root=[iscsi] iscsi_firmware
-
-NBD
----
-Preferred format:
-	root=nbd:srv:port[:fstype[:rootflags[:nbdopts]]]
-
-Legacy formats:
-	root=[nbd] nbdroot=srv,port
-	root=[nbd] nbdroot=srv:port[:fstype[:rootflags[:nbdopts]]]
-
-nbdopts is a comma seperated list of options to give to nbd-client
+--=-+JWQRV6WUflwoJFsPzYp--
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
