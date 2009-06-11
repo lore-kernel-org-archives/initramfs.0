@@ -1,7 +1,7 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: [PATCH 3/3] NBD root: add support for LVM/LUKS
-Date: Thu, 11 Jun 2009 11:09:45 -0400
-Message-ID: <1244732985-14927-4-git-send-email-dave@thedillows.org>
+Subject: [PATCH 2/3] network: add support for netroot=...
+Date: Thu, 11 Jun 2009 11:09:44 -0400
+Message-ID: <1244732985-14927-3-git-send-email-dave@thedillows.org>
 References: <1244732985-14927-1-git-send-email-dave@thedillows.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1244732985-14927-1-git-send-email-dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
@@ -13,241 +13,350 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 
-With this change, we can now use LUKS and LVM over NBD. There are
-some decisions to be made regarding where we should get the fstype
-and fsoptions from (DHCP root vs rootfstype= etc), but the basic
-functionality is there.
----
- modules.d/95nbd/nbdroot         |   18 +++++-----
- test/TEST-40-NBD/client-init    |    3 +-
- test/TEST-40-NBD/create-root.sh |   23 ++++++++++++++
- test/TEST-40-NBD/cryptroot-ask  |    6 ++++
- test/TEST-40-NBD/dhcpd.conf     |   10 ++++++
- test/TEST-40-NBD/server-init    |    1 +
- test/TEST-40-NBD/test.sh        |   64 +++++++++++++++++++++++++++++++++++++-
- 7 files changed, 113 insertions(+), 12 deletions(-)
- create mode 100755 test/TEST-40-NBD/create-root.sh
- create mode 100755 test/TEST-40-NBD/cryptroot-ask
+This adds support for a command line option netroot=, which is currently
+equivalent to root=. This will allow us to break out handling in NBD and
+iSCSI to support constructs such as "root=LABEL=/ netroot=dhcp" to make
+use of our block device handling with network attached devices.
 
-diff --git a/modules.d/95nbd/nbdroot b/modules.d/95nbd/nbdroot
-index 3475239..b7f4cc4 100755
---- a/modules.d/95nbd/nbdroot
-+++ b/modules.d/95nbd/nbdroot
-@@ -81,16 +81,16 @@ while [ ! -b /dev/nbd0 ]; do
-     i=$(( $i + 1))
- done
+iSCSI has not been changed in this patch as I don't currently have a way
+to test it.
+---
+ modules.d/40network/dhcp-fallback.sh |   10 +++++++-
+ modules.d/40network/netroot          |    2 +-
+ modules.d/95nbd/nbd-netroot.sh       |    6 ++--
+ modules.d/95nbd/parse-nbdroot.sh     |    8 +++++-
+ modules.d/95nfs/nfs-netroot.sh       |   38 +++++++++++++++++-----------------
+ modules.d/95nfs/parse-nfsroot.sh     |   13 +++++++++-
+ modules.d/99base/init                |    2 +-
+ test/TEST-20-NFS/test.sh             |   37 +++++++++++++++++++++++++++++++-
+ test/TEST-40-NBD/test.sh             |    8 +++++++
+ 9 files changed, 92 insertions(+), 32 deletions(-)
+
+diff --git a/modules.d/40network/dhcp-fallback.sh b/modules.d/40network/dhcp-fallback.sh
+index 1f4ec0c..484a121 100755
+--- a/modules.d/40network/dhcp-fallback.sh
++++ b/modules.d/40network/dhcp-fallback.sh
+@@ -1,12 +1,18 @@
+ # We should go last, and default the root if needed
  
--# XXX netroot expects to have the handler mount things, but we should
--# XXX allow LVM, LUKS, etc over nbd
-+# If we didn't get a root= on the command line, then we need to
-+# add the udev rules for mounting the nbd0 device
-+if [ ! -e /etc/udev/rules.d/99-mount.rules ]; then
-+    printf 'KERNEL=="%s", RUN+="/bin/mount -t %s -o %s %s %s"\n' \
-+	nbd0 "$nbdfstype" "$fsopts" /dev/nbd0 "$NEWROOT" \
-+		> /etc/udev/rules.d/99-mount.rules
+-if [ -z "$root" ]; then
+-    root=dhcp
++if [ -z "$root" -a -z "$netroot" ]; then
++    netroot=dhcp
+ fi
+ 
+ if [ "$root" = "dhcp" -a -z "$netroot" ]; then
+     rootok=1
+     netroot=dhcp
++    unset root
 +fi
++
++# Cleanup any coversions from root->netroot if they are the same
++if [ "$netroot" = "$root" ]; then
++    unset root
+ fi
  
- nbd-client $preopts "$nbdserver" "$nbdport" /dev/nbd0 $opts || exit 1
+ if [ "${netroot+set}" = "set" ]; then
+diff --git a/modules.d/40network/netroot b/modules.d/40network/netroot
+index b61e2fc..d874799 100755
+--- a/modules.d/40network/netroot
++++ b/modules.d/40network/netroot
+@@ -46,7 +46,7 @@ fi
+ # Run the handler; don't store the root, it may change from device to device
+ # XXX other variables to export?
+ export NEWROOT
+-if $handler $netif $root; then
++if $handler $netif $netroot; then
+     # Network rootfs mount successful
+     [ -f /tmp/dhclient.$netif.lease ] &&    cp /tmp/dhclient.$netif.lease    /tmp/net.$netif.lease
+     [ -f /tmp/dhclient.$netif.dhcpopts ] && cp /tmp/dhclient.$netif.dhcpopts /tmp/net.$netif.dhcpopts
+diff --git a/modules.d/95nbd/nbd-netroot.sh b/modules.d/95nbd/nbd-netroot.sh
+index 20f4f09..9513982 100755
+--- a/modules.d/95nbd/nbd-netroot.sh
++++ b/modules.d/95nbd/nbd-netroot.sh
+@@ -1,9 +1,9 @@
+-if [ "$root" = "dhcp" ]; then
++if [ "$netroot" = "dhcp" ]; then
+     if [ -n "$new_root_path" -a -z "${new_root_path%%nbd:*}" ]; then
+-	root="$new_root_path"
++	netroot="$new_root_path"
+     fi
+ fi
  
--if ! mount -t $nbdfstype -o$fsopts /dev/nbd0 $NEWROOT; then
--    # Mount failed, clean up after ourselves so if we try a different
--    # interface it can succeed
--    nbd-client -d /dev/nbd0
--    exit 1
--fi
--
-+# NBD doesn't emit uevents when it gets connected, so kick it
-+echo change > /sys/block/nbd0/uevent
- exit 0
-diff --git a/test/TEST-40-NBD/client-init b/test/TEST-40-NBD/client-init
-index 88b3d65..b0af521 100755
---- a/test/TEST-40-NBD/client-init
-+++ b/test/TEST-40-NBD/client-init
-@@ -1,7 +1,8 @@
- #!/bin/sh
- exec >/dev/console 2>&1
- while read dev fs fstype opts rest; do
--    [ "$dev" != "/dev/nbd0" ] && continue
-+    [ "$dev" == "rootfs" ] && continue
-+    [ "$fs" != "/" ] && continue
-     echo "nbd-OK $fstype $opts" >/dev/sda
-     break
- done < /proc/mounts
-diff --git a/test/TEST-40-NBD/create-root.sh b/test/TEST-40-NBD/create-root.sh
-new file mode 100755
-index 0000000..b5e45e2
---- /dev/null
-+++ b/test/TEST-40-NBD/create-root.sh
-@@ -0,0 +1,23 @@
-+#!/bin/sh
-+# don't let udev and this script step on eachother's toes
-+for x in 63-luks.rules 64-lvm.rules 70-mdadm.rules 99-mount-rules; do
-+    > "/etc/udev/rules.d/$x"
-+done
-+udevadm control --reload-rules
-+echo -n test >keyfile
-+cryptsetup -q luksFormat /dev/sdb /keyfile
-+echo "The passphrase is test"
-+cryptsetup luksOpen /dev/sdb dracut_crypt_test </keyfile && \
-+lvm pvcreate -ff  -y /dev/mapper/dracut_crypt_test && \
-+lvm vgcreate dracut /dev/mapper/dracut_crypt_test && \
-+lvm lvcreate -l 100%FREE -n root dracut && \
-+lvm vgchange -ay && \
-+mke2fs -j /dev/dracut/root && \
-+mkdir -p /sysroot && \
-+mount /dev/dracut/root /sysroot && \
-+cp -a -t /sysroot /source/* && \
-+umount /sysroot && \
-+lvm lvchange -a n /dev/dracut/root && \
-+cryptsetup luksClose /dev/mapper/dracut_crypt_test && \
-+echo "dracut-root-block-created" >/dev/sda
-+poweroff -f
-diff --git a/test/TEST-40-NBD/cryptroot-ask b/test/TEST-40-NBD/cryptroot-ask
-new file mode 100755
-index 0000000..db27c5b
---- /dev/null
-+++ b/test/TEST-40-NBD/cryptroot-ask
-@@ -0,0 +1,6 @@
-+#!/bin/sh
+-if [ -z "${root%nbd:*}" ]; then
++if [ -z "${netroot%nbd:*}" ]; then
+     handler=/sbin/nbdroot
+ fi
+diff --git a/modules.d/95nbd/parse-nbdroot.sh b/modules.d/95nbd/parse-nbdroot.sh
+index ba40207..426d281 100755
+--- a/modules.d/95nbd/parse-nbdroot.sh
++++ b/modules.d/95nbd/parse-nbdroot.sh
+@@ -39,9 +39,13 @@ case "$root" in
+ 	;;
+ esac
+ 
+-if [ "${root%%:*}" = "nbd" ]; then
++if [ -z "$netroot" -a -n "$root" -a -z "${root%%nbd:*}" ]; then
++    netroot="$root"
++    unset root
++fi
 +
-+[ -b /dev/mapper/$2 ] && exit 0
-+echo -n test >/keyfile
-+/sbin/cryptsetup luksOpen $1 $2 </keyfile
++if [ "${netroot%%:*}" = "nbd" ]; then
+     # XXX validate options here?
+     # XXX generate udev rules?
+     rootok=1
+-    netroot=nbd
+ fi
+diff --git a/modules.d/95nfs/nfs-netroot.sh b/modules.d/95nfs/nfs-netroot.sh
+index 365d394..71ab00d 100755
+--- a/modules.d/95nfs/nfs-netroot.sh
++++ b/modules.d/95nfs/nfs-netroot.sh
+@@ -3,47 +3,47 @@
+ # that the number of colons match what we expect, and our glob didn't
+ # inadvertently match a different handler's.
+ #
+-if [ "$root" = "dhcp" -o "$root" = "nfs" -o "$root" = "nfs4" ]; then
++if [ "$netroot" = "dhcp" -o "$netroot" = "nfs" -o "$netroot" = "nfs4" ]; then
+     nfsver=nfs
+-    if [ "$root" = "nfs4" ]; then
++    if [ "$netroot" = "nfs4" ]; then
+ 	nfsver=nfs4
+     fi
+     case "$new_root_path" in
+-    nfs:*|nfs4:*) root="$new_root_path" ;;
++    nfs:*|nfs4:*) netroot="$new_root_path" ;;
+     *:/*:*)
+ 	if check_occurances "$new_root_path" ':' 2; then
+-	    root="$nfsver:$new_root_path"
++	    netroot="$nfsver:$new_root_path"
+ 	fi ;;
+     *:/*,*)
+ 	if check_occurances "$new_root_path" ':' 1; then
+-	    root="$nfsver:$new_root_path"
++	    netroot="$nfsver:$new_root_path"
+ 	fi ;;
+     *:/*)
+ 	if check_occurances "$new_root_path" ':' 1; then
+-	    root="$nfsver:$new_root_path:"
++	    netroot="$nfsver:$new_root_path:"
+ 	fi ;;
+     /*:*)
+ 	if check_occurances "$new_root_path" ':' 1; then
+-	    root="$nfsver::$new_root_path"
++	    netroot="$nfsver::$new_root_path"
+ 	fi ;;
+     /*,*)
+ 	if check_occurances "$new_root_path" ':' 0; then
+-	    root="$nfsver::$new_root_path"
++	    netroot="$nfsver::$new_root_path"
+ 	fi ;;
+     /*)
+ 	if check_occurances "$new_root_path" ':' 0; then
+-	    root="$nfsver::$new_root_path:"
++	    netroot="$nfsver::$new_root_path:"
+ 	fi ;;
+-    '') root="$nfsver:::" ;;
++    '') netroot="$nfsver:::" ;;
+     esac
+ fi
+ 
+-if [ -z "${root%%nfs:*}" -o -z "${root%%nfs4:*}" ]; then
++if [ -z "${netroot%%nfs:*}" -o -z "${netroot%%nfs4:*}" ]; then
+     # Fill in missing information from DHCP
+-    nfsver=${root%%:*}; root=${root#*:}
+-    nfsserver=${root%%:*}; root=${root#*:}
+-    nfspath=${root%%:*}
+-    nfsflags=${root#*:}
++    nfsver=${netroot%%:*}; netroot=${netroot#*:}
++    nfsserver=${netroot%%:*}; netroot=${netroot#*:}
++    nfspath=${netroot%%:*}
++    nfsflags=${netroot#*:}
+ 
+     # XXX where does dhclient stash the next-server option? Do we care?
+     if [ -z "$nfsserver" -o "$nfsserver" = "$nfspath" ]; then
+@@ -51,9 +51,9 @@ if [ -z "${root%%nfs:*}" -o -z "${root%%nfs4:*}" ]; then
+     fi
+ 
+     # Handle alternate syntax of path,options
+-    if [ "$nfsflags" = "$nfspath" -a "${root#*,}" != "$root" ]; then
+-	nfspath=${root%%,*}
+-	nfsflags=${root#*,}
++    if [ "$nfsflags" = "$nfspath" -a "${netroot#*,}" != "$netroot" ]; then
++	nfspath=${netroot%%,*}
++	nfsflags=${netroot#*,}
+     fi
+ 
+     # Catch the case when no additional flags are set
+@@ -62,6 +62,6 @@ if [ -z "${root%%nfs:*}" -o -z "${root%%nfs4:*}" ]; then
+     fi
+ 
+     # XXX validate we have all the required info?
+-    root="$nfsver:$nfsserver:$nfspath:$nfsflags"
++    netroot="$nfsver:$nfsserver:$nfspath:$nfsflags"
+     handler=/sbin/nfsroot
+ fi
+diff --git a/modules.d/95nfs/parse-nfsroot.sh b/modules.d/95nfs/parse-nfsroot.sh
+index c2ecf4e..294ca28 100755
+--- a/modules.d/95nfs/parse-nfsroot.sh
++++ b/modules.d/95nfs/parse-nfsroot.sh
+@@ -2,6 +2,7 @@
+ #
+ # Preferred format:
+ #	root=nfs[4]:[server:]path[:options]
++#	netroot=nfs[4]:[server:]path[:options]
+ #
+ # If server is unspecified it will be pulled from one of the following
+ # sources, in order:
+@@ -38,9 +39,17 @@ case "$root" in
+ 	;;
+ esac
+ 
+-case "$root" in
++if [ -z "$netroot" -a -n "$root" -a -z "${root%%nfs*}" ]; then
++    netroot="$root"
++    unset root
++fi
 +
-diff --git a/test/TEST-40-NBD/dhcpd.conf b/test/TEST-40-NBD/dhcpd.conf
-index f9eeead..942bc6a 100644
---- a/test/TEST-40-NBD/dhcpd.conf
-+++ b/test/TEST-40-NBD/dhcpd.conf
-@@ -53,4 +53,14 @@ subnet 192.168.50.0 netmask 255.255.255.0 {
- 			fixed-address 192.168.50.101;
- 		}
- 	}
++case "$netroot" in
+     nfs|nfs4|nfs:*|nfs4:*)
+     	rootok=1
+-    	netroot=nfs
++	if [ -n "$root" -a "$netroot" != "$root" ]; then
++	    echo "WARNING: root= and netroot= do not match, ignoring root="
++	fi
++	unset root
+     ;;
+ esac
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index fb1a604..998f5e6 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -45,7 +45,7 @@ if [ -z "$rootok" -a -n "${root%%error:*}" ]; then
+     root="error: No handler for root=${root}"
+ fi
+ 
+-if [ -z "${root%%error:*}" ]; then
++if [ -n "$root" -a -z "${root%%error:*}" ]; then
+     case "${root%%:*}" in
+        '') echo "FATAL: no root= option specified, and no network support" ;;
+        error) echo "FATAL: ${root#error:}" ;;
+diff --git a/test/TEST-20-NFS/test.sh b/test/TEST-20-NFS/test.sh
+index e87a14d..9b1c1cc 100755
+--- a/test/TEST-20-NFS/test.sh
++++ b/test/TEST-20-NFS/test.sh
+@@ -100,7 +100,10 @@ test_nfsv3() {
+     # MAC numbering scheme:
+     # NFSv3: last octect starts at 0x00 and works up
+     # NFSv4: last octect starts at 0x80 and works up
+-    
 +
-+	group {
-+		host nbd-6 {
-+			# Use the encrypted image
-+			option root-path "nbd:192.168.50.1:2001:ext2:errors=panic";
++    client_test "NFSv3 netroot=dhcp DHCP path only" 52:54:00:12:34:00 \
++	"netroot=dhcp" 192.168.50.1 -wsize=4096 || return 1
 +
-+			hardware ethernet 52:54:00:12:34:05;
-+			fixed-address 192.168.50.101;
-+		}
-+	}
- }
-diff --git a/test/TEST-40-NBD/server-init b/test/TEST-40-NBD/server-init
-index aa6a17b..6c2db08 100755
---- a/test/TEST-40-NBD/server-init
-+++ b/test/TEST-40-NBD/server-init
-@@ -9,6 +9,7 @@ ip link set lo up
- ip addr add 192.168.50.1/24 dev eth0
- ip link set eth0 up
- nbd-server 2000 /dev/sdb -C /dev/null
-+nbd-server 2001 /dev/sdc -C /dev/null
- >/var/lib/dhcpd/dhcpd.leases
- dhcpd -cf /etc/dhcpd.conf
- sh -i
+     client_test "NFSv3 root=dhcp DHCP path only" 52:54:00:12:34:00 \
+ 	"root=dhcp" 192.168.50.1 -wsize=4096 || return 1
+ 
+@@ -110,6 +113,9 @@ test_nfsv3() {
+     client_test "NFSv3 root=/dev/nfs DHCP path only" 52:54:00:12:34:00 \
+ 	"root=/dev/nfs" 192.168.50.1 -wsize=4096 || return 1
+ 
++    client_test "NFSv3 netroot=dhcp DHCP IP:path" 52:54:00:12:34:01 \
++	"netroot=dhcp" 192.168.50.2 -wsize=4096 || return 1
++
+     client_test "NFSv3 root=dhcp DHCP IP:path" 52:54:00:12:34:01 \
+ 	"root=dhcp" 192.168.50.2 -wsize=4096 || return 1
+ 
+@@ -122,9 +128,16 @@ test_nfsv3() {
+     client_test "NFSv3 root=dhcp DHCP proto:IP:path" 52:54:00:12:34:02 \
+ 	"root=dhcp" 192.168.50.3 -wsize=4096 || return 1
+ 
++    client_test "NFSv3 netroot=dhcp DHCP proto:IP:path:options" \
++	52:54:00:12:34:03 "netroot=dhcp" 192.168.50.3 wsize=4096 || return 1
++
+     client_test "NFSv3 root=dhcp DHCP proto:IP:path:options" 52:54:00:12:34:03 \
+ 	"root=dhcp" 192.168.50.3 wsize=4096 || return 1
+ 
++    client_test "NFSv3 netroot=nfs:..." 52:54:00:12:34:04 \
++	"netroot=nfs:192.168.50.1:/nfs/client" 192.168.50.1 \
++	-wsize=4096 || return 1
++
+     client_test "NFSv3 root=nfs:..." 52:54:00:12:34:04 \
+ 	"root=nfs:192.168.50.1:/nfs/client" 192.168.50.1 -wsize=4096 || return 1
+ 
+@@ -168,24 +181,40 @@ test_nfsv4() {
+     # server, so put these later in the list to avoid a pause when doing
+     # switch_root
+ 
++    client_test "NFSv4 netroot=nfs4 DHCP path only" 52:54:00:12:34:80 \
++	"netroot=nfs4" 192.168.50.1 -wsize=4096 || return 1
++
+     client_test "NFSv4 root=nfs4 DHCP path only" 52:54:00:12:34:80 \
+ 	"root=nfs4" 192.168.50.1 -wsize=4096 || return 1
+ 
+     client_test "NFSv4 root=/dev/nfs4 DHCP path only" 52:54:00:12:34:80 \
+ 	"root=/dev/nfs4" 192.168.50.1 -wsize=4096 || return 1
+ 
++    client_test "NFSv4 netroot=nfs4 DHCP IP:path" 52:54:00:12:34:81 \
++	"netroot=nfs4" 192.168.50.2 -wsize=4096 || return 1
++
+     client_test "NFSv4 root=nfs4 DHCP IP:path" 52:54:00:12:34:81 \
+ 	"root=nfs4" 192.168.50.2 -wsize=4096 || return 1
+ 
+     client_test "NFSv4 root=/dev/nfs4 DHCP IP:path" 52:54:00:12:34:81 \
+ 	"root=/dev/nfs4" 192.168.50.2 -wsize=4096 || return 1
+ 
++    client_test "NFSv4 netroot=dhcp DHCP proto:IP:path" 52:54:00:12:34:82 \
++	"netroot=dhcp" 192.168.50.3 -wsize=4096 || return 1
++
+     client_test "NFSv4 root=dhcp DHCP proto:IP:path" 52:54:00:12:34:82 \
+ 	"root=dhcp" 192.168.50.3 -wsize=4096 || return 1
+ 
++    client_test "NFSv4 netroot=dhcp DHCP proto:IP:path:options" \
++	52:54:00:12:34:83 "netroot=dhcp" 192.168.50.3 wsize=4096 || return 1
++
+     client_test "NFSv4 root=dhcp DHCP proto:IP:path:options" 52:54:00:12:34:83 \
+ 	"root=dhcp" 192.168.50.3 wsize=4096 || return 1
+ 
++    client_test "NFSv4 netroot=nfs4:..." 52:54:00:12:34:84 \
++	"netroot=nfs4:192.168.50.1:/client" 192.168.50.1 \
++	-wsize=4096 || return 1
++
+     client_test "NFSv4 root=nfs4:..." 52:54:00:12:34:84 \
+ 	"root=nfs4:192.168.50.1:/client" 192.168.50.1 \
+ 	-wsize=4096 || return 1
+@@ -201,8 +230,12 @@ test_nfsv4() {
+ 	52:54:00:12:34:84 "root=nfs4 nfsroot=/client,wsize=4096" \
+ 	192.168.50.1 wsize=4096 || return 1
+ 
+-    # This one only works with NFSv4 in the test suite -- NFSv3 needs
++    # These two only work with NFSv4 in the test suite -- NFSv3 needs
+     # a /nfs prefix due to our server configuration
++
++    client_test "NFSv4 netroot=nfs4" 52:54:00:12:34:84 \
++	"netroot=nfs4" 192.168.50.1 -wsize=4096 || return 1
++
+     client_test "NFSv4 root=nfs4" 52:54:00:12:34:84 \
+ 	"root=nfs4" 192.168.50.1 -wsize=4096 || return 1
+ 
 diff --git a/test/TEST-40-NBD/test.sh b/test/TEST-40-NBD/test.sh
-index 39ec746..a70092d 100755
+index 0f449cf..39ec746 100755
 --- a/test/TEST-40-NBD/test.sh
 +++ b/test/TEST-40-NBD/test.sh
-@@ -10,7 +10,8 @@ run_server() {
-     # Start server first
-     echo "NBD TEST SETUP: Starting DHCP/NBD server"
+@@ -146,6 +146,14 @@ test_run() {
  
--    $testdir/run-qemu -hda server.ext2 -hdb nbd.ext2 -m 512M -nographic \
-+    $testdir/run-qemu -hda server.ext2 -hdb nbd.ext2 -hdc encrypted.ext2 \
-+	-m 512M -nographic \
- 	-net nic,macaddr=52:54:00:12:34:56,model=e1000 \
- 	-net socket,mcast=230.0.0.1:1234 \
- 	-serial udp:127.0.0.1:9999 \
-@@ -154,6 +155,62 @@ test_run() {
- 
-     client_test "NBD netroot=dhcp DHCP root-path nbd:srv:port:fstype:fsopts" \
- 	52:54:00:12:34:04 "netroot=dhcp" ext2 errors=panic || return 1
+     client_test "NBD root=dhcp DHCP root-path nbd:srv:port:fstype:fsopts" \
+ 	52:54:00:12:34:04 "root=dhcp" ext2 errors=panic || return 1
 +
-+    # Encrypted root handling via LVM/LUKS over NBD
++    # netroot handling
 +
-+    client_test "NBD root=/dev/dracut/root netroot=nbd:IP:port" \
-+	52:54:00:12:34:00 \
-+	"root=/dev/dracut/root netroot=nbd:192.168.50.1:2001" || return 1
++    client_test "NBD netroot=nbd:IP:port" 52:54:00:12:34:00 \
++	"netroot=nbd:192.168.50.1:2000" || return 1
 +
-+    # XXX This should be ext2,errors=panic but that doesn't currently
-+    # XXX work when you have a real root= line in addition to netroot=
-+    # XXX How we should work here needs clarification
-+    client_test "NBD root=/dev/dracut/root netroot=dhcp (w/ fstype and opts)" \
-+	52:54:00:12:34:05 \
-+	"root=/dev/dracut/root netroot=dhcp" || return 1
-+}
-+
-+make_encrypted_root() {
-+    # Create the blank file to use as a root filesystem
-+    dd if=/dev/zero of=encrypted.ext2 bs=1M count=20
-+    dd if=/dev/zero of=flag.img bs=1M count=1
-+
-+    kernel=$KVERSION
-+    # Create what will eventually be our root filesystem onto an overlay
-+    (
-+	initdir=overlay/source
-+	. $basedir/dracut-functions
-+	dracut_install sh df free ls shutdown poweroff stty cat ps ln ip \
-+	    /lib/terminfo/l/linux mount dmesg mkdir cp ping
-+	inst ./client-init /sbin/init
-+	find_binary plymouth >/dev/null && dracut_install plymouth
-+	(cd "$initdir"; mkdir -p dev sys proc etc var/run tmp )
-+    )
-+
-+    # second, install the files needed to make the root filesystem
-+    (
-+	initdir=overlay
-+	. $basedir/dracut-functions
-+	dracut_install mke2fs poweroff cp umount
-+	inst_simple ./create-root.sh /pre-mount/01create-root.sh
-+    )
-+
-+    # create an initramfs that will create the target root filesystem.
-+    # We do it this way so that we do not risk trashing the host mdraid
-+    # devices, volume groups, encrypted partitions, etc.
-+    $basedir/dracut -l -i overlay / \
-+	-m "dash crypt lvm mdraid udev-rules base rootfs-block" \
-+	-d "ata_piix ext2 sd_mod" \
-+	-f initramfs.makeroot $KVERSION || return 1
-+    rm -rf overlay
-+
-+    # Invoke KVM and/or QEMU to actually create the target filesystem.
-+    $testdir/run-qemu -hda flag.img -hdb encrypted.ext2 -m 512M \
-+	-nographic -net none \
-+	-kernel "/boot/vmlinuz-$kernel" \
-+	-append "root=/dev/dracut/root rw quiet console=ttyS0,115200n81" \
-+	-initrd initramfs.makeroot  || return 1
-+    grep -m 1 -q dracut-root-block-created flag.img || return 1
++    client_test "NBD netroot=dhcp DHCP root-path nbd:srv:port:fstype:fsopts" \
++	52:54:00:12:34:04 "netroot=dhcp" ext2 errors=panic || return 1
  }
  
  make_client_root() {
-@@ -222,6 +279,7 @@ make_server_root() {
- }
- 
- test_setup() {
-+    make_encrypted_root || return 1
-     make_client_root || return 1
-     make_server_root || return 1
- 
-@@ -231,6 +289,7 @@ test_setup() {
- 	. $basedir/dracut-functions
- 	dracut_install poweroff shutdown
- 	inst_simple ./hard-off.sh /emergency/01hard-off.sh
-+	inst ./cryptroot-ask /sbin/cryptroot-ask
-     )
- 
-     sudo $basedir/dracut -l -i overlay / \
-@@ -250,7 +309,8 @@ test_cleanup() {
- 	rm -f server.pid
-     fi
-     rm -fr overlay mnt
--    rm -f flag.img server.ext2 nbd.ext2 initramfs.server initramfs.testing
-+    rm -f flag.img server.ext2 nbd.ext2 encrypted.ext2
-+    rm -f initramfs.server initramfs.testing initramfs.makeroot
- }
- 
- . $testdir/test-functions
 -- 
 1.6.0.6
 
