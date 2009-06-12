@@ -1,37 +1,30 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 1/5] Add "die" and some minor changes in base
-Date: Fri, 12 Jun 2009 15:27:01 -0400
-Message-ID: <4A32AC05.8040000@redhat.com>
-References: <4A327035.6060100@bfh.ch> <1244821283.15165.2.camel@lap75545.ornl.gov> <4A32A106.1050806@redhat.com>
+Subject: Re: [RFC PATCH 2/5] network/netroot
+Date: Fri, 12 Jun 2009 16:15:22 -0400
+Message-ID: <4A32B75A.4090405@redhat.com>
+References: <4A32703A.8080603@bfh.ch> <4A3271CC.9090608@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A32A106.1050806-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A3271CC.9090608-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/12/2009 02:40 PM, Warren Togami wrote:
-> On 06/12/2009 11:41 AM, David Dillow wrote:
->>
->>> +die() {
->>> + printf "FATAL: $1\n"
->>> + printf "Refusing to continue\n"
->>> + exit 1
->>> +}
->>> +
->
-> Furthermore, is printf available in the image currently?
->
-> It seems other parts of the code already use printf in the image, but
-> the printf binary isn't copied in.
->
+On 06/12/2009 11:18 AM, Seewer Philippe wrote:
+> +    # Default: We don't know the interface to use, handle all
+> +    else +    printf 'ACTION=="add", SUBSYSTEM=="net", RUN+="/sbin/ifup
+> $env{INTERFACE}"\n'
+> +    fi
 
-I see that printf is both a built-in of bash/dash, and also an 
-independent binary...
+"else +"?
 
-Warren
+BTW, could you please remove the die() and push all of this to a git 
+repo so it can be pulled cleanly?
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
