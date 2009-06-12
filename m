@@ -1,44 +1,32 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC PATCH 1/5] Add "die" and some minor changes in base
-Date: Fri, 12 Jun 2009 11:41:23 -0400
-Message-ID: <1244821283.15165.2.camel@lap75545.ornl.gov>
-References: <4A327035.6060100@bfh.ch>
+Date: Fri, 12 Jun 2009 14:40:06 -0400
+Message-ID: <4A32A106.1050806@redhat.com>
+References: <4A327035.6060100@bfh.ch> <1244821283.15165.2.camel@lap75545.ornl.gov>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <4A327035.6060100-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <1244821283.15165.2.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Don't have time for a full review at the moment, but this jumped out at
-me:
+On 06/12/2009 11:41 AM, David Dillow wrote:
+>
+>> +die() {
+>> +    printf "FATAL: $1\n"
+>> +    printf "Refusing to continue\n"
+>> +    exit 1
+>> +}
+>> +
 
-On Fri, 2009-06-12 at 17:11 +0200, Seewer Philippe wrote:
-> ---
->  modules.d/99base/dracut-lib         |    6 ++++++
->  modules.d/99base/init               |   14 +++-----------
->  modules.d/99base/parse-root-opts.sh |    1 -
->  3 files changed, 9 insertions(+), 12 deletions(-)
-> 
-> diff --git a/modules.d/99base/dracut-lib b/modules.d/99base/dracut-lib
+Furthermore, is printf available in the image currently?
 
-> +die() {
-> +    printf "FATAL: $1\n"
-> +    printf "Refusing to continue\n"
-> +    exit 1
-> +}
-> +
+It seems other parts of the code already use printf in the image, but 
+the printf binary isn't copied in.
 
-> --- a/modules.d/99base/init
-> +++ b/modules.d/99base/init
-
-> +[ -z "$root" ] && die "No or empty root= argument"
-> +[ -z "$rootok" ] && die "Don't know how to handle 'root=$root'"
-
-If you call die, you don't get an emergency shell. Not very friendly...
+Warren
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
