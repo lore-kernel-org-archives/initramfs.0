@@ -1,27 +1,27 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 2/5] network/netroot
-Date: Fri, 12 Jun 2009 16:15:22 -0400
-Message-ID: <4A32B75A.4090405@redhat.com>
-References: <4A32703A.8080603@bfh.ch> <4A3271CC.9090608@bfh.ch>
+Subject: /etc/passwd thoughts
+Date: Fri, 12 Jun 2009 16:19:26 -0400
+Message-ID: <4A32B84E.8090603@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A3271CC.9090608-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/12/2009 11:18 AM, Seewer Philippe wrote:
-> +    # Default: We don't know the interface to use, handle all
-> +    else +    printf 'ACTION=="add", SUBSYSTEM=="net", RUN+="/sbin/ifup
-> $env{INTERFACE}"\n'
-> +    fi
+[warren@newcaprica dracut]$ grep -r \/etc\/passwd *
+modules.d/95nfs/install:dracut_install /etc/netconfig /etc/passwd 
+/etc/services
+modules.d/95nfs/install:#echo 
+"rpc:x:32:32:Rpcbind:/var/lib/rpcbind:/bin/false" >> "$initdir/etc/passwd"
+modules.d/90mdraid/install:inst /etc/passwd
 
-"else +"?
+It seems that we want an /etc/passwd for certain things in the initrd 
+image, but is it really necessary for it to copy whatever users are on 
+the generating system into the image?
 
-BTW, could you please remove the die() and push all of this to a git 
-repo so it can be pulled cleanly?
+Could we do anything else?
 
 Warren Togami
 wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
