@@ -1,78 +1,54 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Redundant nfsroot cmdline options
-Date: Mon, 15 Jun 2009 15:46:24 -0400
-Message-ID: <4A36A510.5010709@redhat.com>
+Subject: Some netboot doc cleanups
+Date: Mon, 15 Jun 2009 16:43:49 -0400
+Message-ID: <4A36B285.2080905@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-http://sourceforge.net/apps/trac/dracut/wiki/commandline
+https://sourceforge.net/apps/trac/dracut/wiki/commandline
+> Configuration in initrd =B6
+>
+> /conf/conf.d/*
+>     command line options can override values set here
 
-I am concerned about the proliferation of too many redundant ways of 
-configuring netboot.  We should clearly document each supported method 
-on this Wiki page and figure out which methods should be cut.  The most 
-obvious methods to cut are NEW inventions of dracut that are redundant 
-to other methods.
+What is the intent here?  This is only used from=20
+modules.d/95iscsi/iscsiroot and nowhere else.
 
-modules.d/95nfs/parse-nfsroot.sh
-> case "$root" in
->     nfs|dhcp|'')
->         if getarg nfsroot= > /dev/null; then
->             root=nfs:$(getarg nfsroot=)
->         fi
->         ;;
->     nfs4)
->         if getarg nfsroot= > /dev/null; then
->             root=nfs4:$(getarg nfsroot=)
->         fi
->         ;;
->     /dev/nfs|/dev/nfs4)
->         if getarg nfsroot= > /dev/null; then
->             root=${root#/dev/}:$(getarg nfsroot=)
->         else
->             root=${root#/dev/}
->         fi
->         ;;
-> esac
+> Network =B6
+>
+>     * ip=3D[dhcp|on|any]
+>           o get ip from dhcp server from all interfaces
+>           o If root=3Ddhcp, loop sequentially through all interfaces =
+(eth0, eth1, ...) and use the first with a valid DHCP root-path.
 
-root=/dev/nfs nfsroot=...
+dhcp and any seem to do the same thing.  Get rid of any?
 
-* Documentation/filesystems/nfsroot.txt documents this method.  This 
-method as documented requires kernel options that no distribution uses, 
-to have a netboot kernel that bypasses initrd to find its filesystem 
-from cmdline options.
-* This is the only native method supported by Debian's initramfs-tools, 
-where it is emulated.
-* Red Hat/Fedora kernels nor mkinitrd has never supported this method.
+>     * ip=3D<interface>:[dhcp|on|any]
+>           o get ip from dhcp server on a specific interface
+>     * ip=3D[none|off]
+>           o no TCP/IP network
+
+What is the point of this?  When is this ever useful?
+
+>     * ip=3D<client-IP-number>:<gateway-IP-number>:<netmask>:<client-h=
+ostname>:<interface>:[dhcp|on|any|none|off|]
+>           o explicit network configuration
 
 
-This old syntax should be tolerated as legacy and supported by dracut. 
-We should NOT however invent multiple redundant syntaxes derived from 
-this legacy.
+> rdbreak=3D[pre-udev|pre-mount|mount|pre-pivot|]
+>     drop the shell on defined breakpoint
 
-root=nfs       nfsroot=...
-root=nfs4      nfsroot=...
-root=/dev/nfs4 nfsroot=...
-
-These are all new inventions in dracut, redundant to the following 
-native methods already supported.
-
-NFSv3
-root=[<server-ip>:]<root-dir>[:<nfs-options>]
-root=dhcp DHCP root-path=[<server-ip>:]<root-dir>[:<nfs-options>]
-
-NFSv4
-root=nfs4:[<server-ip>:]<root-dir>[:<nfs-options>]
-root=dhcp DHCP root-path=nfs4:[<server-ip>:]<root-dir>[:<nfs-options>]
-
-Are there any cases not possible by these syntaxes?
+It isn't clear from this syntax how to make it break in two particular=20
+places.  Please clarify.
 
 Warren Togami
 wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
