@@ -1,50 +1,41 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Some netboot doc cleanups
-Date: Tue, 16 Jun 2009 13:32:44 -0400
-Message-ID: <4A37D73C.80100@redhat.com>
-References: <4A36B285.2080905@redhat.com> <4A3759D2.2040101@bfh.ch>
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Subject: including python in the initramfs
+Date: Tue, 16 Jun 2009 18:40:31 +0100
+Message-ID: <1245174031.2150.67.camel@polyethylene>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A3759D2.2040101-omB+W0Dpw2o@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:sender:subject:from:to
+         :content-type:date:message-id:mime-version:x-mailer
+         :content-transfer-encoding;
+        bh=F/hSxlKNcG0vUfgYNNZfGyzC0Rm5z24RHK0brbIbPXI=;
+        b=UZnvbPOz57wIXSNCY1sLdPPSxkzjS6jTCYkOGmqLozQKVK5iCDLXwfyALJbFMRnD5i
+         nuYSzgZLEa6YADpFr9dlqhximTB1h7AJ1WYOKAwsX4QuEbzpD0tFXjLgtf3gr+3M7A6o
+         I+LAsEh8MoGn1NYvpVJvgam1Qhouwe517MgmQ=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/16/2009 04:37 AM, Seewer Philippe wrote:
->>> Network =B6
->>>
->>> * ip=3D[dhcp|on|any]
->>> o get ip from dhcp server from all interfaces
->>> o If root=3Ddhcp, loop sequentially through all interfaces (eth0, e=
-th1,
->>> ...) and use the first with a valid DHCP root-path.
->>
->> dhcp and any seem to do the same thing. Get rid of any?
->
-> This is "legacy" from kernel nfsroot. We should keep this for
-> compatibility.
->
->>
->>> * ip=3D<interface>:[dhcp|on|any]
->>> o get ip from dhcp server on a specific interface
->>> * ip=3D[none|off]
->>> o no TCP/IP network
->>
->> What is the point of this? When is this ever useful?
->
-> ip=3D[none|off] doesn't make any sense at all. Can be removed IMHO.
->
+Hi,
 
-http://git.kernel.org/?p=3Dlinux/kernel/git/torvalds/linux-2.6.git;a=3D=
-blob;f=3DDocumentation/filesystems/nfsroot.txt
+OLPC have a security client that runs pre-root-mount in the initramfs
+which is quite complex. It is written in Python. As such, we need python
+in the initramfs.
 
-ip none and off are mentioned here as well, although it seems ambiguous=
-=20
-as to the purpose.
+What's the best way to include python in a dracut initramfs?
 
-Warren
+One idea: we could create a separate module which installs all the files
+identified by "rpm -q --filesbypkg python". But that's obviously not
+distro-portable. It could work for us but I'd prefer that we're able to
+share the work we're doing with others. Any other ideas?
+
+Thanks,
+Daniel
+
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
