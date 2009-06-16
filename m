@@ -1,33 +1,32 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Some netboot doc cleanups
-Date: Tue, 16 Jun 2009 09:39:51 +0200
-Message-ID: <4A374C47.2040502@redhat.com>
-References: <4A36B285.2080905@redhat.com>
+Subject: Re: [RFC PATCH 2/5] network/netroot
+Date: Tue, 16 Jun 2009 09:53:21 +0200
+Message-ID: <4A374F71.6030300@redhat.com>
+References: <4A32703A.8080603@bfh.ch> <4A3271CC.9090608@bfh.ch> <4A32B75A.4090405@redhat.com> <4A32C676.6000308@bfh.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A36B285.2080905-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A32C676.6000308-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/15/2009 10:43 PM, Warren Togami wrote:
-> https://sourceforge.net/apps/trac/dracut/wiki/commandline
->> Configuration in initrd =B6
->>
->> /conf/conf.d/*
->> command line options can override values set here
+On 06/12/2009 11:19 PM, Seewer Philippe wrote:
 >
-> What is the intent here? This is only used from
-> modules.d/95iscsi/iscsiroot and nowhere else.
+>
+> Warren Togami wrote:
+>> On 06/12/2009 11:18 AM, Seewer Philippe wrote:
+>>> + # Default: We don't know the interface to use, handle all
+>>> + else + printf 'ACTION=="add", SUBSYSTEM=="net", RUN+="/sbin/ifup
+>>> $env{INTERFACE}"\n'
+>>> + fi
+>>
+>> "else +"?
+> *sigh* Why does this ever only happen with bigger patches?
 
-This is intended to be a mechanism to inject (sensible) configuration f=
-iles in=20
-the pregenerated image.
-
-We could use this globally, if more modules need this.
+If I save the message to a file, it seems to be correct
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
