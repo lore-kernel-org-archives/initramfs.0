@@ -1,92 +1,117 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Redundant nfsroot cmdline options
-Date: Wed, 17 Jun 2009 15:26:10 -0400
-Message-ID: <4A394352.1010007@redhat.com>
-References: <4A36A510.5010709@redhat.com> <20090617034849.GA22705@thedillows.org> <4A386B20.9010205@redhat.com> <4A3898E0.8090700@bfh.ch>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: rdblacklist intent?
+Date: Wed, 17 Jun 2009 21:31:01 +0200
+Message-ID: <4A394475.5040608@redhat.com>
+References: <4A3933F9.5080706@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030101080700000209010504"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A3898E0.8090700-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <4A3933F9.5080706-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-> #!/bin/sh
-> #
-> # Preferred format:
-> #       root=nfs[4]:[server:]path[:options]
-> #       [root=*] netroot=nfs[4]:[server:]path[:options]
+This is a cryptographically signed message in MIME format.
 
-Harald and I agree that there is no reason for this second variation to 
-exist in the case of NFS.  It seems the separate root= and netroot= only 
-makes sense for remote block device protocols like iscsi or nbd.
+--------------ms030101080700000209010504
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-> #
-> # Legacy formats:
-> #
-> #       root=/dev/nfs nfsroot=[server:]path[,options]
-> #
-> #       XXX: All of the following have no reason to exist.
-> #       [net]root=[[/dev/]nfs[4]] nfsroot=[server:]path[,options]
-> #       [net]root=[[/dev/]nfs[4]] nfsroot=[server:]path[:options]
-> #
+Am 17.06.2009 20:20, schrieb Warren Togami:
+> http://sourceforge.net/apps/trac/dracut/wiki/commandline
+>> Misc =B6
+>>
+>> * rdblacklist=3D<modulename>
+>> o TBD: do not load modulename
+>
+>
+> I'm not sure how this is supposed to work. This page is full of kernel
+> cmdline parameters, but <modulename> no longer exists as an independent=
 
-I'm removing the three variations of the Legacy nfsroot.txt as discussed.
-
-> # If the 'nfsroot' parameter is not given on the command line or is empty,
-> # the dhcp root-path is used as [server:]path[:options] or the default
-
-This comment doesn't seem to be true.
-
-> # "/tftpboot/%s" will be used.
-
-This part about /tftpboot/ and the accompanying implementation in 
-95nfs/nfsroot seems baffling.
-
-* In what cases does hostname lookup actually work here?
-* Where does this precedent come from?  This seems to be a really narrow 
-implementation from some specific past software with hard-coded assumptions.
-* For example /tftpboot isn't used by default configurations of tftp 
-servers on modern Debian, Ubuntu or Fedora anymore.  They've moved to 
-FHS-compliant /var/lib/tftpboot.  But then again nothing demands that 
-the sysadmin sticks with any particular path for the tftp server.
-* What does tftpboot have to do with initrd?  The initrd doesn't have 
-anything to do with tftp at this stage.
-
-> #
-> # If server is unspecified it will be pulled from one of the following
-> # sources, in order:
-> #       static ip= option on kernel command line
-
-Huh?  How would you do that?
-
-> #       DHCP next-server option
-> #       DHCP server-id option
-> #       DHCP root-path option
-
-Do we really want this order?  It seems we want this order:
-
-* root=
-* DHCP root-path
-* Everything else
-
-> #
-> # NFSv4 is only used if explicitly requested; default is NFSv2 or NFSv3
-> # depending on kernel configuration
-> #
-> # root= takes precedence over netroot= if root=nfs[...]
-> #
+> named entity during initrd runtime.
 >
 
-This precedence order shouldn't be necessary as netroot= shouldn't be 
-necessary for NFS.
 
-For now removing only the nfsroot.txt Legacy variations as the netroot= 
-variations are too ingrained in the code.
+this is for kernel module to blacklist, which are not to be autoloaded be=
+ udev
 
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+
+
+--------------ms030101080700000209010504
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIKYjCC
+BS0wggMVoAMCAQICAwbD1jANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wOTA0
+MjIxMzEzNDFaFw0xMTA0MjIxMzEzNDFaMDkxFTATBgNVBAMTDEhhcmFsZCBIb3llcjEgMB4G
+CSqGSIb3DQEJARYRaGFyYWxkQHJlZGhhdC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+ggEKAoIBAQDcYRNZNcpUzmHaTtZXCPoLNJW7g0iD9Oo8BgGQDmLQPEIw05SINqk5f+YvIvoo
+a85lze7+bfhDg3MJmcTu5C8OKnej+GfZV8qVnLLg0F1d2pSc1oKTarasUN+BSNTn8mc+BlKM
+jEF5I4faGGATEgM/1pkscRofiQoWDvMAHsD/UVErVTKzLT03vczQutUYfHJuGJohXdJubQdJ
+C2AyXqLJBkvns+0pNGB7qMHTVPWm9+v1I18iz0sXe5hOsTMIJFFCkia41ZVpGkwU/9ITVLtY
+E+UmW897Tpi4uUE5YsPVoA3u5YIFlQFkwW1Zp9bAlmFGNlUUe2UEvpTAWWVte+qBAgMBAAGj
+gf0wgfowDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcw
+QAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3CgMD
+BglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMBwGA1UdEQQVMBOBEWhhcmFsZEByZWRoYXQuY29tMA0GCSqGSIb3DQEBBQUA
+A4ICAQCh+mhGXDvGVDStE8cUUqnDjLL6JOcsJIrfQV/aqEQMSwD3CijxO1Q1GAp0520W71Bk
+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
+FWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhv
+cml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMGw9YwCQYFKw4DAhoF
+AKCCAegwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMDkwNjE3
+MTkzMTAxWjAjBgkqhkiG9w0BCQQxFgQUVuOMtuJh98/540aEZLpCi4qs53IwXwYJKoZIhvcN
+AQkPMVIwUDALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqG
+SIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAw
+eTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIw
+IAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBw
+b3J0QGNhY2VydC5vcmcCAwbD1jCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMH
+Um9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBD
+ZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5v
+cmcCAwbD1jANBgkqhkiG9w0BAQEFAASCAQBXSzJByeAPUay/X84GzHAYy2GoKP6uGxNvr6AL
+FTidXf6NIEebxDYfW1Ue2gobX3GbnIQtvdK5o56T/myUbzLHHeOQJMEeUQRT55k6bl/Wvi86
+4UvpGMcdaDzvs+bXvm73XLmNcrYRs5m6R4mTxi0vJMWv/R49sp5FcQyYcMlXOyJsPPdMWE2W
+jdOhen6vM/YGSh+xRBxK2SDDTkthqLtSVm4Iz0Yd0bWFqQGUghzDqd3WxPTmoOIqslk1vKMQ
+zFXHbFdx9Q6Qol4TWHdKTMkx+e6On/Roy0ckL5gsyTqH6phg7V6skIy2Tu1bfIfqDCUHjLUo
+eWBiKyNE2bvtDXN4AAAAAAAA
+--------------ms030101080700000209010504--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
