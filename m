@@ -1,63 +1,35 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Redundant nfsroot cmdline options
-Date: Wed, 17 Jun 2009 00:03:44 -0400
-Message-ID: <4A386B20.9010205@redhat.com>
-References: <4A36A510.5010709@redhat.com> <20090617034849.GA22705@thedillows.org>
+Subject: Hibernate broke?
+Date: Wed, 17 Jun 2009 00:19:25 -0400
+Message-ID: <4A386ECD.1070906@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20090617034849.GA22705-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/16/2009 11:48 PM, Dave Dillow wrote:
-> On Mon, Jun 15, 2009 at 03:46:24PM -0400, Warren Togami wrote:
->> I am concerned about the proliferation of too many redundant ways of
->> configuring netboot.  We should clearly document each supported method
->> on this Wiki page and figure out which methods should be cut.  The most
->> obvious methods to cut are NEW inventions of dracut that are redundant
->> to other methods.
->
->> root=nfs       nfsroot=...
->> root=nfs4      nfsroot=...
->> root=/dev/nfs4 nfsroot=...
->>
->> These are all new inventions in dracut, redundant to the following
->> native methods already supported.
->
-> These short cuts are simple, and fall naturally out of the current command
-> line parsing. I don't expect validating them to be any harder than the
-> translation I already do into the canoncical nfs[4]:IP:/path:options
-> format -- you validate the canonical. Documenting them is not very
-> difficult, either. Maybe there is a potential of user confusion, but you
-> hide them away in the "Legacy support" or "Non-recommended" appendix.
->
-> I simply don't see the problem.
->
-> But, I'm tired of having this same coversation every few days and I
-> don't care enough to continue it now. I'm not going to lose sleep if these
-> options are gone, so rip them out if that's your fancy.
+I noticed today that hibernation is broken for dracut generated images. 
+  Fedora 11 mkinitrd generated initrd works just fine for me, but the 
+dracut generated image of the same kernel is failing to resume.
 
-I have great respect for the work and effort you've put into this, but 
-it just doesn't make sense to add multiple redundant syntaxes of doing 
-exactly the same thing.  I accepted it earlier because I was under the 
-impression that all of the above were Legacy syntax from kernel's 
-nfsroot.txt.  But now I realize it is invented for dracut.
+My system has root and swap both within an encrypted LVM vg.
 
-Furthermore it makes less sense to add redundant syntaxes immediately 
-for them to be classified as Legacy.
+My understanding is that if you hibernate, it somehow writes something 
+recongnized by grub upon the next boot so it knows to boot the same 
+kernel & initrd with additional cmdline parameters to resume.
 
-Also,
+When I hibernate from the mkinitrd initrd, the system shuts down.  When 
+I boot again, grub immediately jumps into that kernel bypassing the grub 
+menu, asks for my passphrase to decrypt, then reads the frozen system 
+from swap and resumes.
 
-root=/dev/nfs4 nfsroot=...
+When I hiberate from a dracut initrd, the system shuts down.  When I 
+boot up again, it goes to the full grub menu and seems unaware that it 
+had hibernated.
 
-How is this a shortcut for
-
-root=nfs4:...
-
-?
+Any idea what is going on here?  Did this ever work with dracut before?
 
 Warren Togami
 wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
