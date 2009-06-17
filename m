@@ -1,60 +1,29 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 0/5] Multiple interfaces support and lots of cmdline
- parsing
-Date: Wed, 17 Jun 2009 16:24:00 +0200
-Message-ID: <4A38FC80.40003@redhat.com>
-References: <4A327030.1000803@bfh.ch>	 <1244865916.18551.20.camel@obelisk.thedillows.org>	 <4A3360AA.9060600@bfh.ch> <1244895898.18551.30.camel@obelisk.thedillows.org> <4A33A062.7030208@bfh.ch> <4A36748E.7060408@redhat.com> <4A3891F7.8060501@bfh.ch>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Hibernate broke?
+Date: Wed, 17 Jun 2009 11:11:57 -0400
+Message-ID: <4A3907BD.8010800@redhat.com>
+References: <4A386ECD.1070906@redhat.com> <4A38D168.6080909@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A3891F7.8060501-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <4A38D168.6080909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/17/2009 08:49 AM, Seewer Philippe wrote:
-> Warren Togami wrote:
->> On 06/13/2009 08:49 AM, Seewer Philippe wrote:
->>>
->>> Working on getting the test-suite running right now, will try to split
->>> my patches later the way you suggested. I guess apologies are in order
->>> for the "mess".
+On 06/17/2009 07:20 AM, Harald Hoyer wrote:
 >>
->> Hi,
->>
->> We are still waiting for a git repo to pull from so we can review this
->> patch set. Please split unrelated changes into their own commits and
->> write detailed changelog entries on each.
->
-> There you go
->
-> http://github.com/seewer/dracut-seewer/commits/master
->
-> Patches are split as atomically as made sense (to me). Except for the
-> ISCSI test-suite which I've ignored, all tests now pass. Accordingly the
-> tree contains some fixes that weren't in the patches last week, this is
-> mainly to fix the test-suites to run with Debian based distros and some
-> enhancments that were discovered while running the test cases.
->
-> As for further examples how the multinic stuff should work, I've tried
-> document an example in the two last multinic patches:
->
-> http://github.com/seewer/dracut-seewer/commit/db8158439dac10e7462203d3de44fd794bd35e2b
->
-> http://github.com/seewer/dracut-seewer/commit/8ecd9d010a46999263b629b16954156e34083244
+>> Any idea what is going on here? Did this ever work with dracut before?
 >
 >
-> Apologies it took longer than expected, the only thing I can say there
-> is that Murphy is always right.
->
-> Regards,
-> Philippe
-> --
+> you could try to just overwrite the mkinitrd generated image and see, if
+> that gets booted
 
+Tried that.  It grub failed to jump directly into it during next boot. 
+I'm not sure what is missing here.
 
-Pushed with some additional changes.
+Warren
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
