@@ -1,38 +1,53 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Hibernate broke?
-Date: Wed, 17 Jun 2009 00:19:25 -0400
-Message-ID: <4A386ECD.1070906@redhat.com>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [RFC PATCH 0/5] Multiple interfaces support and lots of cmdline
+ parsing
+Date: Wed, 17 Jun 2009 08:49:27 +0200
+Message-ID: <4A3891F7.8060501@bfh.ch>
+References: <4A327030.1000803@bfh.ch>	 <1244865916.18551.20.camel@obelisk.thedillows.org>	 <4A3360AA.9060600@bfh.ch> <1244895898.18551.30.camel@obelisk.thedillows.org> <4A33A062.7030208@bfh.ch> <4A36748E.7060408@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4A36748E.7060408-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-I noticed today that hibernation is broken for dracut generated images. 
-  Fedora 11 mkinitrd generated initrd works just fine for me, but the 
-dracut generated image of the same kernel is failing to resume.
+Warren Togami wrote:
+> On 06/13/2009 08:49 AM, Seewer Philippe wrote:
+>>
+>> Working on getting the test-suite running right now, will try to split
+>> my patches later the way you suggested. I guess apologies are in order
+>> for the "mess".
+> 
+> Hi,
+> 
+> We are still waiting for a git repo to pull from so we can review this 
+> patch set.  Please split unrelated changes into their own commits and 
+> write detailed changelog entries on each.
 
-My system has root and swap both within an encrypted LVM vg.
+There you go
 
-My understanding is that if you hibernate, it somehow writes something 
-recongnized by grub upon the next boot so it knows to boot the same 
-kernel & initrd with additional cmdline parameters to resume.
+http://github.com/seewer/dracut-seewer/commits/master
 
-When I hibernate from the mkinitrd initrd, the system shuts down.  When 
-I boot again, grub immediately jumps into that kernel bypassing the grub 
-menu, asks for my passphrase to decrypt, then reads the frozen system 
-from swap and resumes.
+Patches are split as atomically as made sense (to me). Except for the 
+ISCSI test-suite which I've ignored, all tests now pass. Accordingly the 
+tree contains some fixes that weren't in the patches last week, this is 
+mainly to fix the test-suites to run with Debian based distros and some 
+enhancments that were discovered while running the test cases.
 
-When I hiberate from a dracut initrd, the system shuts down.  When I 
-boot up again, it goes to the full grub menu and seems unaware that it 
-had hibernated.
+As for further examples how the multinic stuff should work, I've tried 
+document an example in the two last multinic patches:
 
-Any idea what is going on here?  Did this ever work with dracut before?
+http://github.com/seewer/dracut-seewer/commit/db8158439dac10e7462203d3de44fd794bd35e2b
+http://github.com/seewer/dracut-seewer/commit/8ecd9d010a46999263b629b16954156e34083244
 
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Apologies it took longer than expected, the only thing I can say there 
+is that Murphy is always right.
+
+Regards,
+Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
