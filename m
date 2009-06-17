@@ -1,36 +1,27 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: root=dhcp broke
-Date: Wed, 17 Jun 2009 13:15:37 -0400
-Message-ID: <4A3924B9.2090303@redhat.com>
-References: <4A391744.4040607@redhat.com> <4A3923F7.6000900@bfh.ch>
+Subject: Reminder: /tmp/net.$netif.* files
+Date: Wed, 17 Jun 2009 13:57:10 -0400
+Message-ID: <4A392E76.5020909@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A3923F7.6000900-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/17/2009 01:12 PM, Seewer Philippe wrote:
-> Warren Togami wrote:
->> After that latest patch set, simply "root=dhcp" no longer boots.
->>
->> "root=dhcp ip=dhcp" fails as well.
->
-> What's the contents of your dhcp root path? root=dhcp tests in the suite
-> all pass.
+If you write a file to /tmp/net.$netif.* please be sure it only exists 
+if that interface ends up as part of the netboot.  The net.* files are 
+to be considered post-switch_root by initscripts or NetworkManager.  We 
+don't want those tools to be confused by net.* files from aborted 
+interfaces that were not part of the netboot.
 
-Harald saw the problem.  The precedent for DHCP root= or root-path= 
-syntax for NFSv3 is as documented here:
+A tricky part might be ensuring net.* files for constituent interfaces 
+part of layered interfaces like bridges or bonds, in addition to net.* 
+files for the bridge or bond.
 
-http://sourceforge.net/apps/trac/dracut/wiki/commandline
-
-Begins with IP address, not "nfs:".  "nfs4:" prefix is true of NFSv4, 
-but "nfs:" would be a new invention.  Harald is now fixing this.
-
-Warren
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
