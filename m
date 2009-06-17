@@ -1,53 +1,43 @@
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: Re: including python in the initramfs
-Date: Wed, 17 Jun 2009 09:28:39 +0100
-Message-ID: <1245227319.2158.4.camel@polyethylene>
-References: <1245174031.2150.67.camel@polyethylene>
-	 <A4EC33E8-3A45-4A6B-AE97-5B48EA425F75@gmail.com>
-	 <1245178189.2150.76.camel@polyethylene> <4A37EA8E.7090508@redhat.com>
-	 <4A38960B.20305@bfh.ch>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Hibernate broke?
+Date: Wed, 17 Jun 2009 13:20:08 +0200
+Message-ID: <4A38D168.6080909@redhat.com>
+References: <4A386ECD.1070906@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:sender:subject:from:to:cc
-         :in-reply-to:references:content-type:date:message-id:mime-version
-         :x-mailer:content-transfer-encoding;
-        bh=snCCcU7xSq6pfPY8bHf55AAKAtrPQVidxIeEQ82IQrU=;
-        b=LzChaJxCwA6cvtfLRf2tLMECtdck0+ifNM7MpAI0INLyKQlf411KLHyN0qSwICWY1r
-         pvkpJXNHPUvf4Vh84qJZq60nF3vVEyNnWMztCjbNMi8qEuQz9OcF4xa3+2WsaLSUoc31
-         1UgVTX1yPbc6KHzY6fBoU3w0fc7yQkINH3Z0U=
-In-Reply-To: <4A38960B.20305-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <4A386ECD.1070906-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Wed, 2009-06-17 at 09:06 +0200, Seewer Philippe wrote:
-> Warren Togami wrote:
-> [snip]
-> > This is a good case for the modules.d design of dracut.  Write your own 
-> > module that does whatever you want, and install that module only in 
-> > cases where you generate the initrd for your XO.  Your special module 
-> > does not belong in dracut upstream.
-> 
-> I agree. That's what the module system is designed for among other 
-> things. Have a look at README.modules and the currently available 
-> modules, that should give you an idea on how to proceed.
+On 06/17/2009 06:19 AM, Warren Togami wrote:
+> I noticed today that hibernation is broken for dracut generated images.
+> Fedora 11 mkinitrd generated initrd works just fine for me, but the
+> dracut generated image of the same kernel is failing to resume.
+>
+> My system has root and swap both within an encrypted LVM vg.
+>
+> My understanding is that if you hibernate, it somehow writes something
+> recongnized by grub upon the next boot so it knows to boot the same
+> kernel & initrd with additional cmdline parameters to resume.
+>
+> When I hibernate from the mkinitrd initrd, the system shuts down. When I
+> boot again, grub immediately jumps into that kernel bypassing the grub
+> menu, asks for my passphrase to decrypt, then reads the frozen system
+> from swap and resumes.
+>
+> When I hiberate from a dracut initrd, the system shuts down. When I boot
+> up again, it goes to the full grub menu and seems unaware that it had
+> hibernated.
+>
+> Any idea what is going on here? Did this ever work with dracut before?
 
-Yes, thanks. The module system is excellent and I've already been
-crafting my work as a module. Dracut is perfect in this respect.
 
-I was just interested in the opportunity of getting some or all of our
-work upstream, hence "doing it right" from the start. But I guess we're
-still a bit too nutty for that. (whatever you do, don't ask about our
-previous initramfs setup!)
-
-Daniel
-
-
+you could try to just overwrite the mkinitrd generated image and see, if that 
+gets booted
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
