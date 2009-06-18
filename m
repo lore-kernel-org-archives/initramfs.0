@@ -1,12 +1,12 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Reminder: /tmp/net.$netif.* files
-Date: Thu, 18 Jun 2009 09:40:06 +0200
-Message-ID: <4A39EF56.9030408@bfh.ch>
-References: <4A392E76.5020909@redhat.com>
+Subject: Re: Redundant nfsroot cmdline options
+Date: Thu, 18 Jun 2009 09:07:56 +0200
+Message-ID: <4A39E7CC.8040506@bfh.ch>
+References: <4A36A510.5010709@redhat.com> <20090617034849.GA22705@thedillows.org> <4A386B20.9010205@redhat.com> <4A3898E0.8090700@bfh.ch> <4A394352.1010007@redhat.com> <4A39543D.9040206@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A392E76.5020909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A39543D.9040206-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
@@ -16,27 +16,48 @@ Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 
 Warren Togami wrote:
-> If you write a file to /tmp/net.$netif.* please be sure it only exists 
-> if that interface ends up as part of the netboot.  The net.* files are 
-> to be considered post-switch_root by initscripts or NetworkManager.  We 
-> don't want those tools to be confused by net.* files from aborted 
-> interfaces that were not part of the netboot.
-
-Question: What net.* files would you consider to be necessary for 
-initscripts and NetworkManager? I'd assume that would have to be 
-dhclient-options and -lease file, an override file containing ip= 
-contents and the written ifcfg-files. Anything else?
-
-> A tricky part might be ensuring net.* files for constituent interfaces 
-> part of layered interfaces like bridges or bonds, in addition to net.* 
-> files for the bridge or bond.
+> On 06/17/2009 03:26 PM, Warren Togami wrote:
+>>> # "/tftpboot/%s" will be used.
+>>
+>> This part about /tftpboot/ and the accompanying implementation in
+>> 95nfs/nfsroot seems baffling.
+>>
+>> * In what cases does hostname lookup actually work here?
+>> * Where does this precedent come from? This seems to be a really narrow
+>> implementation from some specific past software with hard-coded
+>> assumptions.
+>> * For example /tftpboot isn't used by default configurations of tftp
+>> servers on modern Debian, Ubuntu or Fedora anymore. They've moved to
+>> FHS-compliant /var/lib/tftpboot. But then again nothing demands that the
+>> sysadmin sticks with any particular path for the tftp server.
+>> * What does tftpboot have to do with initrd? The initrd doesn't have
+>> anything to do with tftp at this stage.
 > 
-> Warren Togami
-> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=Documentation/filesystems/nfsroot.txt 
+> 
+> 
+> OK, I see in the Legacy documentation...
+> 
+> /tftpboot is only a default set if no path is provided.  You can 
+> apparently have any path with an optional %s which is replaced by the 
+> kernel.  In our case however we need to replace the %s ourselves.
+> 
+>> 62   <root-dir>    Name of the directory on the server to mount as root.
+>> 63                 If there is a "%s" token in the string, it will be
+>> 64                 replaced by the ASCII-representation of the client's
+>> 65                 IP address.
+> 
+> The documentation only mentions "ASCII-representation of the client's IP 
+> address", not hostname that 95nfs/nfsroot seems to indicate.
+> 
+> Where did the idea that %s is hostname come from?
+
+The commit that introduced it is here:
+
+http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut;a=commitdiff;h=abe9ccc89a96bc61bc2e9d3169341821393da6da
+
+Regards,
+Philippe
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
