@@ -1,96 +1,58 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Redundant nfsroot cmdline options
-Date: Thu, 18 Jun 2009 09:23:21 +0200
-Message-ID: <4A39EB69.6030007@bfh.ch>
-References: <4A36A510.5010709@redhat.com> <20090617034849.GA22705@thedillows.org> <4A386B20.9010205@redhat.com> <4A3898E0.8090700@bfh.ch> <4A394352.1010007@redhat.com>
+Subject: Re: root=dhcp dhclient segfaulting on F-11
+Date: Thu, 18 Jun 2009 09:32:39 +0200
+Message-ID: <4A39ED97.8040503@bfh.ch>
+References: <4A391744.4040607@redhat.com> <4A3923F7.6000900@bfh.ch> <4A3924B9.2090303@redhat.com> <4A398A7C.40003@redhat.com> <4A39A3D1.4070404@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A394352.1010007-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A39A3D1.4070404-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+
+
 Warren Togami wrote:
->> #!/bin/sh
->> #
->> # Preferred format:
->> #       root=nfs[4]:[server:]path[:options]
->> #       [root=*] netroot=nfs[4]:[server:]path[:options]
+> https://bugzilla.redhat.com/show_bug.cgi?id=506626
 > 
-> Harald and I agree that there is no reason for this second variation to 
-> exist in the case of NFS.  It seems the separate root= and netroot= only 
-> makes sense for remote block device protocols like iscsi or nbd.
+> Filed the dhclient segfault here.  I've been trying to debug this for 
+> the past 5 hours straight.  I'm perplexed.
 > 
->> #
->> # Legacy formats:
->> #
->> #       root=/dev/nfs nfsroot=[server:]path[,options]
->> #
->> #       XXX: All of the following have no reason to exist.
->> #       [net]root=[[/dev/]nfs[4]] nfsroot=[server:]path[,options]
->> #       [net]root=[[/dev/]nfs[4]] nfsroot=[server:]path[:options]
->> #
+> Backing out to 1a945a576c0016c47f983d27727443ac33c5b6a8 prior to 
+> Phillippe's patch series dhclient does not crash.
+
+That is weird. I have no problems at all with isc-dhclient-V3.1.1
+
+Question: Does it segfault in the test-suites as well?
+
 > 
-> I'm removing the three variations of the Legacy nfsroot.txt as discussed.
-
-Fine by me.
-
-[snip]
->> #
->> # If server is unspecified it will be pulled from one of the following
->> # sources, in order:
->> #       static ip= option on kernel command line
+> dhcpd.conf contains:
+> option root-path "172.31.100.254:/opt/ltsp/i386";
 > 
-> Huh?  How would you do that?
-
-If $srv is in net.used-if.override it is used
->> #       DHCP next-server option
->> #       DHCP server-id option
->> #       DHCP root-path option
+> Here's something curious...
 > 
-> Do we really want this order?  It seems we want this order:
+> sh-4.0# dhclient -v eth0
+> Internet Systems Consortium DHCP Client 4.1.0
+> Copyright 2004-2008 Internet Systems Consortium.
+> All rights reserved.
+> For info, please visit http://www.isc.org/sw/dhcp/
 > 
-> * root=
-root= is superfluous. as it already takes precedence and these rules 
-only apply if if server is unspeficied.
-
-> * DHCP root-path
-> * Everything else
-
-I'm not sure about that. nfsroot.txt is a bit unclear here:
-
-[quote]
-<server-ip>   IP address of the NFS server. If RARP is used to determine
-               the client address and this parameter is NOT empty only
-               replies from the specified server are accepted.
-
-               Only required for for NFS root. That is autoconfiguration
-               will not be triggered if it is missing and NFS root is not
-               in operation.
-
-               Default: Determined using autoconfiguration.
-               The address of the autoconfiguration server is used.
-[/quote]
-
-"address of the autoconfiguration server" translates for me as try 
-next-server or server-id and if that fails use root-path.
-
->> #
->> # NFSv4 is only used if explicitly requested; default is NFSv2 or NFSv3
->> # depending on kernel configuration
->> #
->> # root= takes precedence over netroot= if root=nfs[...]
->> #
->>
+> Listening on LPF/eth0/52:54:00:12:34:56
+> Sending on   LPF/eth0/52:54:00:12:34:56
+> DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5
+> DHCPOFFER from 172.31.100.254
+> DHCPREQUEST on eth0 to 255.255.255.255 port 67
+> DHCPACK from 172.31.100.254
+> DHCPDECLINE on eth0 to 255.255.255.255 port 67
+> dhclient[616]: segfault at 4a39a266 ip 0806fd4d sp bfa4eed0 error 4 in 
+> dhclient[8048000+84000]
 > 
-> This precedence order shouldn't be necessary as netroot= shouldn't be 
-> necessary for NFS.
+> DHCPDECLINE?  Haven't seen that before.
 
-Yes that is true. I'd like to keep it there as it keeps the nfs cmdline 
-arguments consistent with nbd and iscsi.
+See here: http://www.freesoft.org/CIE/RFC/2131/25.htm
 
 Regards,
 Philippe
