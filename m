@@ -1,42 +1,35 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: udevadm settle timeout semantics
-Date: Thu, 18 Jun 2009 13:14:20 +0200
-Message-ID: <4A3A218C.7020405@bfh.ch>
+Subject: Re: root=dhcp dhclient segfaulting on F-11
+Date: Thu, 18 Jun 2009 13:30:23 +0200
+Message-ID: <4A3A254F.9080003@bfh.ch>
+References: <4A391744.4040607@redhat.com> <4A3923F7.6000900@bfh.ch> <4A3924B9.2090303@redhat.com> <4A398A7C.40003@redhat.com> <4A39A3D1.4070404@redhat.com> <4A39ED97.8040503@bfh.ch> <4A39F862.7060200@redhat.com> <4A39FC0C.8020305@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4A39FC0C.8020305-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-The manpage for udevadm (version 141) says about the timeout for settle 
-and --timeout:
+The Bug causing dhclient to recall BIND has been identified:
+dhclient-script runs with #!/bin/sh -e, causing setup_interface
+to fail if no hostname is provided by dhcp as it is the last 
+statement in that function.
 
-[quote]
-udevadm settle [options]
-        Watches the udev event queue, and exits if all
-        current events are handled.
+Please apply the patch below which removes -e
 
---timeout=seconds
-            Maximum number of seconds to wait for the event
-            queue to become empty. The default value is 180
-            seconds. A value of 0 will check if the queue
-            is empty and always return immediately.
-[/quote]
-
-
-Am I reading this correctly if I assume that udevadm has to wait for an 
-event to be "handled" regardless of the timeout value?
-
-Example: dhclient has a default of 60 seconds to try to get an ip 
-address until it fails. udevadm settle waits for the whole 60 seconds to 
-pass regardless of the timeout parameter.
-
-Is this behaviour as intended?
-
-Thanks for the help,
-Philippe
+diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
+index 4153eb8..f86c258 100755
+--- a/modules.d/40network/dhclient-script
++++ b/modules.d/40network/dhclient-script
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/bin/sh
+ 
+ setup_interface() {
+     ip=$new_ip_address
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
