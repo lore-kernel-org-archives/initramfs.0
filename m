@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/7] install "basename" for path_id
-Date: Thu, 18 Jun 2009 15:26:16 +0200
-Message-ID: <1245331581-2453-3-git-send-email-harald@redhat.com>
+Subject: [PATCH 3/7] kill the server after the test_run
+Date: Thu, 18 Jun 2009 15:26:17 +0200
+Message-ID: <1245331581-2453-4-git-send-email-harald@redhat.com>
 References: <1245331581-2453-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1245331581-2453-1-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -14,31 +14,42 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 ---
- modules.d/95udev-rules/install |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ test/TEST-20-NFS/test.sh |    4 ++++
+ test/TEST-40-NBD/test.sh |    6 ++++++
+ 2 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/modules.d/95udev-rules/install b/modules.d/95udev-rules/install
-index 4cf488d..c5d73a6 100755
---- a/modules.d/95udev-rules/install
-+++ b/modules.d/95udev-rules/install
-@@ -3,9 +3,9 @@
- # ultimately, /lib/initramfs/rules.d or somesuch which includes links/copies
- # of the rules we want so that we just copy those in would be best
- dracut_install udevd udevadm /lib*/udev/*_id /etc/udev/udev.conf /etc/group
-+dracut_install basename
- inst_rules 50-udev-default.rules 60-persistent-storage.rules \
-     61-persistent-storage-edd.rules 80-drivers.rules 95-udev-late.rules 
--
- #Some debian udev rules are named differently
- inst_rules 50-udev.rules 95-late.rules
-  
-@@ -13,4 +13,4 @@ if ldd $(find_binary udevd) |grep -q /lib64/libc; then
-     dracut_install /lib64/libnss_files*
- else
-     dracut_install /lib/libnss_files*
--fi
-\ No newline at end of file
-+fi
+diff --git a/test/TEST-20-NFS/test.sh b/test/TEST-20-NFS/test.sh
+index 345ba4b..d3787ec 100755
+--- a/test/TEST-20-NFS/test.sh
++++ b/test/TEST-20-NFS/test.sh
+@@ -258,6 +258,10 @@ test_run() {
+ 
+     test_nfsv3 || return 1
+     test_nfsv4
++    if [[ -s server.pid ]]; then
++	sudo kill -TERM $(cat server.pid)
++	rm -f server.pid
++    fi
+ }
+ 
+ test_setup() {
+diff --git a/test/TEST-40-NBD/test.sh b/test/TEST-40-NBD/test.sh
+index 8d98c08..f3a3d20 100755
+--- a/test/TEST-40-NBD/test.sh
++++ b/test/TEST-40-NBD/test.sh
+@@ -170,6 +170,12 @@ test_run() {
+     client_test "NBD root=/dev/dracut/root netroot=dhcp (w/ fstype and opts)" \
+ 	52:54:00:12:34:05 \
+ 	"root=/dev/dracut/root netroot=dhcp" || return 1
++
++    if [[ -s server.pid ]]; then
++	sudo kill -TERM $(cat server.pid)
++	rm -f server.pid
++    fi
++
+ }
+ 
+ make_encrypted_root() {
 -- 
 1.6.2.2
 
