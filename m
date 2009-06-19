@@ -1,8 +1,10 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 00/13] Changes 2009-06-19
-Date: Fri, 19 Jun 2009 13:05:38 +0200
-Message-ID: <1245409551-30493-1-git-send-email-harald@redhat.com>
+Subject: [PATCH 01/13] moved test-init to TEST-10-RAID
+Date: Fri, 19 Jun 2009 13:05:39 +0200
+Message-ID: <1245409551-30493-2-git-send-email-harald@redhat.com>
+References: <1245409551-30493-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1245409551-30493-1-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -11,75 +13,61 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Harald Hoyer (13):
-  moved test-init to TEST-10-RAID
-  uncomment hard-off for TEST-30-ISCSI
-  do not poweroff in TEST-30-ISCSI, if rdinitdebug is set
-  do not poweroff in TEST-10-RAID if rdinitdebug is set
-  prepare udev rules for udev >= 143
-  install rules to ignore some devices
-  make iSCSI boot with root=dhcp and mount partitions labeled with
-    "ROOT" or "/"
-  manpage iSCSI update
-  add rdblacklist command line parameter
-  updated switch_root.c
-  dracut.spec without switch_root
-  renamed dracut-lib to dracut-lib.sh
-  removed shebang from .sh and changed mode to 0644
-
- Makefile                                   |    2 +-
- dracut.8                                   |   10 +-
- dracut.spec                                |   10 ++
- modules.d/40network/dhclient-script        |    2 +-
- modules.d/40network/ifup                   |    2 +-
- modules.d/40network/netroot                |    2 +-
- modules.d/50plymouth/plymouth-emergency.sh |    1 -
- modules.d/90crypt/63-luks.rules            |   12 --
- modules.d/90crypt/70-luks.rules            |   12 ++
- modules.d/90crypt/install                  |    2 +-
- modules.d/90dmraid/dmraid.sh               |    1 -
- modules.d/90lvm/64-lvm-vol_id.rules        |   20 +++
- modules.d/90lvm/64-lvm.rules               |    9 +-
- modules.d/90lvm/install                    |    6 +-
- modules.d/90mdraid/65-md-incremental.rules |    8 +
- modules.d/90mdraid/install                 |    9 +-
- modules.d/95iscsi/iscsiroot                |   10 +-
- modules.d/95nbd/61-nbd-vol_id.rules        |    7 +
- modules.d/95nbd/61-nbd.rules               |    4 +-
- modules.d/95nbd/install                    |    8 +-
- modules.d/95nbd/nbdroot                    |    2 +-
- modules.d/95nfs/nfsroot                    |    2 +-
- modules.d/95udev-rules/01-ignore.rules     |    1 +
- modules.d/95udev-rules/install             |   10 +-
- modules.d/99base/dracut-lib                |   62 --------
- modules.d/99base/dracut-lib.sh             |   55 +++++++
- modules.d/99base/init                      |    2 +-
- modules.d/99base/install                   |    8 +-
- modules.d/99base/parse-blacklist.sh        |   10 ++
- switch_root.c                              |  232 ++++++++++++++--------------
- test/TEST-10-RAID/hard-off.sh              |    2 +-
- test/TEST-10-RAID/test-init                |   10 ++
- test/TEST-10-RAID/test.sh                  |    2 +-
- test/TEST-30-ISCSI/dhcpd.conf              |    2 +-
- test/TEST-30-ISCSI/hard-off.sh             |    2 +-
- test/TEST-30-ISCSI/test.sh                 |    6 +-
- test/test-init                             |   10 --
- 37 files changed, 323 insertions(+), 232 deletions(-)
- delete mode 100644 modules.d/90crypt/63-luks.rules
- create mode 100644 modules.d/90crypt/70-luks.rules
- create mode 100644 modules.d/90lvm/64-lvm-vol_id.rules
- create mode 100644 modules.d/90mdraid/65-md-incremental.rules
- create mode 100644 modules.d/95nbd/61-nbd-vol_id.rules
- mode change 100755 => 100644 modules.d/95resume/resume-genrules.sh
- mode change 100755 => 100644 modules.d/95rootfs-block/block-genrules.sh
- mode change 100755 => 100644 modules.d/95rootfs-block/parse-block.sh
- create mode 100644 modules.d/95udev-rules/01-ignore.rules
- delete mode 100644 modules.d/99base/dracut-lib
- create mode 100644 modules.d/99base/dracut-lib.sh
- create mode 100755 modules.d/99base/parse-blacklist.sh
- mode change 100755 => 100644 modules.d/99base/parse-root-opts.sh
+---
+ test/TEST-10-RAID/test-init |   10 ++++++++++
+ test/TEST-10-RAID/test.sh   |    2 +-
+ test/test-init              |   10 ----------
+ 3 files changed, 11 insertions(+), 11 deletions(-)
  create mode 100755 test/TEST-10-RAID/test-init
  delete mode 100755 test/test-init
+
+diff --git a/test/TEST-10-RAID/test-init b/test/TEST-10-RAID/test-init
+new file mode 100755
+index 0000000..ccdc9a4
+--- /dev/null
++++ b/test/TEST-10-RAID/test-init
+@@ -0,0 +1,10 @@
++#!/bin/sh
++exec >/dev/console 2>&1
++echo "dracut-root-block-success" >/dev/sda1
++export TERM=linux
++export PS1='initramfs-test:\w\$ '
++[ -f /etc/fstab ] || ln -s /proc/mounts /etc/fstab
++stty sane
++echo "made it to the rootfs! Powering down."
++mount -n -o remount,ro /
++poweroff -f
+diff --git a/test/TEST-10-RAID/test.sh b/test/TEST-10-RAID/test.sh
+index 59ae01e..501b03e 100755
+--- a/test/TEST-10-RAID/test.sh
++++ b/test/TEST-10-RAID/test.sh
+@@ -28,7 +28,7 @@ test_setup() {
+ 	inst "$basedir/modules.d/40network/dhclient-script" "/sbin/dhclient-script"
+ 	inst "$basedir/modules.d/40network/ifup" "/sbin/ifup"
+ 	dracut_install grep
+-	inst $testdir/test-init /sbin/init
++	inst ./test-init /sbin/init
+ 	find_binary plymouth >/dev/null && dracut_install plymouth
+ 	(cd "$initdir"; mkdir -p dev sys proc etc var/run tmp )
+     )
+diff --git a/test/test-init b/test/test-init
+deleted file mode 100755
+index ccdc9a4..0000000
+--- a/test/test-init
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#!/bin/sh
+-exec >/dev/console 2>&1
+-echo "dracut-root-block-success" >/dev/sda1
+-export TERM=linux
+-export PS1='initramfs-test:\w\$ '
+-[ -f /etc/fstab ] || ln -s /proc/mounts /etc/fstab
+-stty sane
+-echo "made it to the rootfs! Powering down."
+-mount -n -o remount,ro /
+-poweroff -f
+-- 
+1.6.2.2
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
