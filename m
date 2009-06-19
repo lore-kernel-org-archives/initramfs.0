@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/13] uncomment hard-off for TEST-30-ISCSI
-Date: Fri, 19 Jun 2009 13:05:40 +0200
-Message-ID: <1245409551-30493-3-git-send-email-harald@redhat.com>
+Subject: [PATCH 06/13] install rules to ignore some devices
+Date: Fri, 19 Jun 2009 13:05:44 +0200
+Message-ID: <1245409551-30493-7-git-send-email-harald@redhat.com>
 References: <1245409551-30493-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1245409551-30493-1-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -14,31 +14,37 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 ---
- test/TEST-30-ISCSI/test.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ modules.d/95udev-rules/01-ignore.rules |    1 +
+ modules.d/95udev-rules/install         |    4 ++++
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/95udev-rules/01-ignore.rules
 
-diff --git a/test/TEST-30-ISCSI/test.sh b/test/TEST-30-ISCSI/test.sh
-index 3fd6bd3..134ee73 100755
---- a/test/TEST-30-ISCSI/test.sh
-+++ b/test/TEST-30-ISCSI/test.sh
-@@ -3,7 +3,7 @@ TEST_DESCRIPTION="root filesystem over iSCSI"
+diff --git a/modules.d/95udev-rules/01-ignore.rules b/modules.d/95udev-rules/01-ignore.rules
+new file mode 100644
+index 0000000..b32f22e
+--- /dev/null
++++ b/modules.d/95udev-rules/01-ignore.rules
+@@ -0,0 +1 @@
++KERNEL=="ram[0-9]*", OPTIONS+="ignore_device", OPTIONS+="last_rule"
+diff --git a/modules.d/95udev-rules/install b/modules.d/95udev-rules/install
+index d55c61a..8a3d8e9 100755
+--- a/modules.d/95udev-rules/install
++++ b/modules.d/95udev-rules/install
+@@ -9,10 +9,14 @@ inst_rules 50-udev-default.rules 60-persistent-storage.rules \
+ #Some debian udev rules are named differently
+ inst_rules 50-udev.rules 95-late.rules
  
- KVERSION=${KVERSION-$(uname -r)}
++# ignore some devices in the initrd
++inst_rules "$moddir/01-ignore.rules"
++
+ if [ ! -x /lib/udev/vol_id ]; then
+     dracut_install blkid
+ fi
  
--#DEBUGFAIL="rdinitdebug rdnetdebug udevinfo"
-+#DEBUGFAIL="rdinitdebug rdnetdebug rdudevinfo"
- 
- run_server() {
-     # Start server first
-@@ -110,7 +110,7 @@ test_setup() {
- 	initdir=overlay
- 	. $basedir/dracut-functions
- 	dracut_install poweroff shutdown
--#	inst_simple ./hard-off.sh /emergency/01hard-off.sh
-+	inst_simple ./hard-off.sh /emergency/01hard-off.sh
- #	inst ./cryptroot-ask /sbin/cryptroot-ask
-     )
- #	-m "debug dash crypt lvm mdraid udev-rules base rootfs-block iscsi" \
++
+ if ldd $(find_binary udevd) |grep -q /lib64/libc; then
+     dracut_install /lib64/libnss_files*
+ else
 -- 
 1.6.2.2
 
