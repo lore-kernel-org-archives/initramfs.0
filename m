@@ -1,34 +1,23 @@
-From: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFT PATCH] Delay netroot mounting by 1 second
-Date: Fri, 19 Jun 2009 11:06:32 -0400
-Message-ID: <20090619150632.GA7645@nostromo.devel.redhat.com>
-References: <4A3B968C.5070600@bfh.ch> <20090619144705.GD2514@nostromo.devel.redhat.com> <4A3BA5EA.3020202@bfh.ch>
+From: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 05/13] prepare udev rules for udev >= 143
+Date: Fri, 19 Jun 2009 11:51:50 -0400
+Message-ID: <20090619155149.GA89011@redhat.com>
+References: <1245409551-30493-1-git-send-email-harald@redhat.com> <1245409551-30493-6-git-send-email-harald@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4A3BA5EA.3020202-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <1245409551-30493-6-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Seewer Philippe (philippe.seewer-omB+W0Dpw2o@public.gmane.org) said: 
->> Depending on your switch configuration, the time for the switch to start
->> passing traffic again on link bounce couuld be anywhere from 0.1 seconds
->> to 20 seconds...
->
-> Quite correct. Up until now I've fared well with adding 1-5 second  
-> sleeps to my stuff. But yes it could even take longer. Any ideas how to  
-> solve this better?
+Note that this isn't "prepare" as much as "require udev >= 143 and
+util-linux-ng >= 2.15".  Which means only working with the devel trees of
+every distro afaict.
 
-Post-boot, we (in Fedora) we check every half second until a configurable
-delay period (defualt: five seconds) has elapsed; if we don't have a link
-by then, we punt. Of course, you probably don't want configuration
-parameters in the initramfs.
-
-Bill
+Jeremy
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
