@@ -1,75 +1,80 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: 13 NFS syntax variations
-Date: Mon, 22 Jun 2009 16:56:07 -0400
-Message-ID: <4A3FEFE7.7080907@redhat.com>
-References: <4A39A9AF.6070009@redhat.com> <4A3A13A8.6050100@bfh.ch>
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: Re: [RFT PATCH] Delay netroot mounting by 1 second
+Date: Mon, 22 Jun 2009 17:02:01 -0400
+Message-ID: <1245704521.3875.31.camel@lap75545.ornl.gov>
+References: <4A3B968C.5070600@bfh.ch>
+ <20090619144705.GD2514@nostromo.devel.redhat.com> <4A3BA5EA.3020202@bfh.ch>
+ <84DF1DC6-5F06-4D6D-91A4-56D996D229B1@gmail.com>
+ <1245428342.32104.3.camel@lap75545.ornl.gov> <4A3F37B8.7050902@suse.de>
+ <1245683450.3544.6.camel@obelisk.thedillows.org> <4A3FAE9E.5000201@bfh.ch>
+ <1245691069.3875.11.camel@lap75545.ornl.gov> <4A3FD1C5.30006@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A3A13A8.6050100-omB+W0Dpw2o@public.gmane.org>
+In-reply-to: <4A3FD1C5.30006-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/18/2009 06:15 AM, Seewer Philippe wrote:
->> What should we cut?
->>
->> 1) The most obvious to cut are the Legacy Variations. Why should
->> dracut invent three new syntaxes and immediately declare them Legacy?
->> Removing these would be the simplest.
->
-> If I understand David Dillow correctly they were meant as shortcuts.
-> Removing them doesn't break anything, so I agree.
+On Mon, 2009-06-22 at 20:47 +0200, Seewer Philippe wrote:
+> David Dillow wrote:
+> > Ok, then we just need to set the udev settle time to 60 seconds in the
+> > event of a netroot and avoid downing the link wherever possible. Given
+> > that timeout, the only problem cases are static configs and MTU changes
+> > on devices that cannot do that while UP'd.
+> 
+> I'd prefer not use an absolute settle time but instead "test/wait" the
+> queue. But that's a minor detail.
 
-Soon pushing this.  This removes 3 variations of the nfsroot.txt syntax 
-that are new inventions of dracut.
+True, I'm just thinking that older udevs probably don't give us much
+options here.
 
->>
->> 2) Harald and I think we should cut Group B. The netroot= syntax is
->> necessary only for remote block device protocols like iscsci and nbd
->> when you want to use LVM or crypto on those block devices. For NFS it
->> is only redundant.
->
-> Reduntant: Yes. But it keeps the argument scheme consistent. And dracut
-> is allowed to introduce new syntaxes if they make sense.
+As an aside, we should keep in mind that we shouldn't wait for all of
+the disks to become available if we don't have to -- I've got a few
+systems with quite a few LUNs to scan, but we only need one for the
+root. If it can find it and continue, then the rest can be done in
+parallel later.
 
-root= and netroot= redundant syntaxes with redundant tests make sense how?
+> Hmmm... I'm not sure that a failing 'ip set eth0 mtu xy' is an indicator
+> that we have to down/set mtu/up the interface. But to be honest, the 
+> hardware/driver combinations I'm able to test on seem to be working 
+> without down/up.
+> 
+> Are there any other methods to decide if we can set the mtu on the fly?
 
-* netroot= NFS variation adds to confusion understanding the 
-documentation and examples.
-* Complaints about the tests taking too long?  Remove all the redundant 
-tests that do identical root= and netroot=.
-* Separate netroot= only exists for remote block devices, useless for NFS.
+Only by doing it. If it fails, it may be an indication that the MTU is
+invalid for the device, or that it cannot be changed while the device is
+up. If it is invalid, it fails then as well.
 
-This would remove 3 redundant new syntaxes.
+This method is a compromise; those with good hardware/drivers can use
+large MTUs without taking a penalty, and it still works for those less
+fortunate. Only the guys trying to set an invalid MTU pay a potentially
+needless time penalty, but I'm OK with that. :)
 
->> 3) I personally think we should cut the "nfs:" prefixed syntaxes from
->> Group A, B and C because they have no precedent and we're better off
->> with fewer variations. Others have disagreed though.
+> Actually, if I'm not mistaken STP can have a maximum timeout of 90
+> seconds. Add some paranoia and you're at 100. :-)
+> 
+> But yes, sleep 60 is a really bad idea for impatient people like you or me.
+> 
+> On the other hand, I'd really prefer other solutions to "ping" (if there
+> are any). Having used it myself doesn't mean I like it. First of all,
+> needing another utility enlarges the initrd even more, there's a possible
+> risk of having paranoid firewalls and we'd have to check the effective
+> service-port which isn't possible with standard iputils-ping.
 
-Alternatively, how do people feel about removing the NFS syntax that is 
-missing the nfs: prefix?  It was poorly supported (did not support 
-nfs-options) in mkinitrd, lacked DHCP support, and non-existent in 
-Debian's initramfs-tools.
+To check any of these, you'll need a separate utility. bash
+has /dev/tcp/IP/port redirection, but I doubt dash supports that. And
+even then you'll have some klunky trickery in the shell script to add a
+timeout to it. Nor will you be able to work with anything over UDP.
 
-root=[<server-ip>:]<root-dir>[:<nfs-options>]
-root=dhcp
-	root-path=[<server-ip>:]<root-dir>[:<nfs-options>]
-
-RHEL5 supported the former without nfs-options, but without the ability 
-to load network drivers it was almost useless.
-Fedora 10+ supported the latter with root=dhcp but without nfs-options.
-
-Options:
-1) Leave it as-is.
-2) Remove it.
-3) Support it but print deprecation warnings like Legacy nfsroot.txt.
-
-Opinions?
-
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+I think that checking an IP is reachable is sufficient to verify that
+traffic is flowing -- and we have choices there. We can use the server
+IP if it is local, and the gateway IP if not. If we're concerned about
+firewalls blocking ICMP, we could use 'arping' to send ARP requests. If
+there's a way to kick off an arp request with 'ip' or something in /proc
+or /sys, that'd avoid additional bloat, but I'm not aware of one.
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
