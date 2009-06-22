@@ -1,113 +1,54 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: OOM panics in the test suite
-Date: Sat, 20 Jun 2009 09:00:49 +0200
-Message-ID: <4A3C8921.4060406@redhat.com>
-References: <1245444788.19114.2.camel@lap75545.ornl.gov>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [RFT PATCH] Delay netroot mounting by 1 second
+Date: Mon, 22 Jun 2009 09:50:16 +0200
+Message-ID: <4A3F37B8.7050902@suse.de>
+References: <4A3B968C.5070600@bfh.ch> <20090619144705.GD2514@nostromo.devel.redhat.com> <4A3BA5EA.3020202@bfh.ch> <84DF1DC6-5F06-4D6D-91A4-56D996D229B1@gmail.com> <1245428342.32104.3.camel@lap75545.ornl.gov>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030306000700020404040303"
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1245444788.19114.2.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
+In-Reply-To: <1245428342.32104.3.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Cc: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This is a cryptographically signed message in MIME format.
+David Dillow wrote:
+> On Fri, 2009-06-19 at 11:08 -0500, Victor Lowther wrote:
+>> Or you can include ethtool and check every half second until a timeo=
+ut =20
+>> to see if the link is back.
+>=20
+> With most switches, you'll get a link back almost immediately, but it
+> will be in blocking mode and won't transmit your packets for 20-30
+> seconds.
 
---------------ms030306000700020404040303
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Content-Transfer-Encoding: quoted-printable
+<And a huge grin spreads over my face>
+=46inally. I'm not alone anymore:-)
+(I have been fighting the STP issue for years now.)
 
-Am 19.06.2009 22:53, schrieb David Dillow:
-> Commit 3af5866 "use 128M for the test virtual machines instead of 512M"=
+No, no, no. You don't want to add 'just' a sleep here because things
+don't work as expected. Certainly not in this case.
 
-> now causes all of the test suites to panic with the OOM killer when run=
+The problem here is that most programs don't / can't distinguish
+between an EHOSTUNREACH during startup (where we should retry as
+the link / connection might not be up yet) and an EHOSTUNREACH
+during normal operation (where we should return the error as this
+is a genuine error condition).
 
-> under F10 -- 256M seems to work better.
->
-> Does it work for anyone under F11 or Debian?
->
-> Is there an objection to moving it to 256M instead?
+The only safe way here is to send a ping to the host port we're
+trying to connect to, and limit this with a timeout.
+And start up the command once the ping succeeds.
+Otherwise timeout and start error recovery.
 
-No, do it! I was just thinking that we should not need 512M. And on F11 i=
-t runs fine with 128M.
+Cheers,
 
-
-
---------------ms030306000700020404040303
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIKYjCC
-BS0wggMVoAMCAQICAwbD1jANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wOTA0
-MjIxMzEzNDFaFw0xMTA0MjIxMzEzNDFaMDkxFTATBgNVBAMTDEhhcmFsZCBIb3llcjEgMB4G
-CSqGSIb3DQEJARYRaGFyYWxkQHJlZGhhdC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
-ggEKAoIBAQDcYRNZNcpUzmHaTtZXCPoLNJW7g0iD9Oo8BgGQDmLQPEIw05SINqk5f+YvIvoo
-a85lze7+bfhDg3MJmcTu5C8OKnej+GfZV8qVnLLg0F1d2pSc1oKTarasUN+BSNTn8mc+BlKM
-jEF5I4faGGATEgM/1pkscRofiQoWDvMAHsD/UVErVTKzLT03vczQutUYfHJuGJohXdJubQdJ
-C2AyXqLJBkvns+0pNGB7qMHTVPWm9+v1I18iz0sXe5hOsTMIJFFCkia41ZVpGkwU/9ITVLtY
-E+UmW897Tpi4uUE5YsPVoA3u5YIFlQFkwW1Zp9bAlmFGNlUUe2UEvpTAWWVte+qBAgMBAAGj
-gf0wgfowDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcw
-QAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3CgMD
-BglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMBwGA1UdEQQVMBOBEWhhcmFsZEByZWRoYXQuY29tMA0GCSqGSIb3DQEBBQUA
-A4ICAQCh+mhGXDvGVDStE8cUUqnDjLL6JOcsJIrfQV/aqEQMSwD3CijxO1Q1GAp0520W71Bk
-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
-FWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhv
-cml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMGw9YwCQYFKw4DAhoF
-AKCCAegwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMDkwNjIw
-MDcwMDQ5WjAjBgkqhkiG9w0BCQQxFgQUr1VNmuM0k9yPgtNRiakf5iTnPegwXwYJKoZIhvcN
-AQkPMVIwUDALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqG
-SIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAw
-eTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIw
-IAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBw
-b3J0QGNhY2VydC5vcmcCAwbD1jCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMH
-Um9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBD
-ZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5v
-cmcCAwbD1jANBgkqhkiG9w0BAQEFAASCAQAPibXE8WR9FJgguYVyA53x0dEL1HZQZ+mZGhK/
-mR8Ln23bR9YUS7KN26d4KhTLditi8Tm6/SG6j4mUqq8BRxllF0xVNFDKP73ZS1nq57caMal5
-fk9OGGX0s2NU0Ac6XjzpzBOrvPxVH3O1Clxk1MC3fQrcgDSvggH2kKKXCBWmTU3dtI6uG5l+
-i9+Iex4lSKlvb8iA0BxVnjUYrilPXE0kC77Epu2iWdRj9zlfY2E/K+5Z6WNyRBAOikzLRVEn
-n65pkD0mBsKZ1/1tu/V0oOAzcwT9LQLk5uEaAcklaaZyN+xujsYl92ujSEH1t04sNWD26HJe
-dQjCNv4laoykfTE8AAAAAAAA
---------------ms030306000700020404040303--
+Hannes
+--=20
+Dr. Hannes Reinecke		      zSeries & Storage
+hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
+SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
+GF: Markus Rex, HRB 16746 (AG N=FCrnberg)
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
