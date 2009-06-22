@@ -1,7 +1,7 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
 Subject: Re: [RFT PATCH] Delay netroot mounting by 1 second
-Date: Mon, 22 Jun 2009 13:17:49 -0400
-Message-ID: <1245691069.3875.11.camel@lap75545.ornl.gov>
+Date: Mon, 22 Jun 2009 13:22:55 -0400
+Message-ID: <1245691375.3875.15.camel@lap75545.ornl.gov>
 References: <4A3B968C.5070600@bfh.ch>
  <20090619144705.GD2514@nostromo.devel.redhat.com> <4A3BA5EA.3020202@bfh.ch>
  <84DF1DC6-5F06-4D6D-91A4-56D996D229B1@gmail.com>
@@ -25,54 +25,13 @@ On Mon, 2009-06-22 at 18:17 +0200, Seewer Philippe wrote:
 > 
 > What if he hasn't?
 
-That's where this part comes in:
+Just to be sure I'm coming across clearly -- I want us to work properly
+if the admin hasn't configured the network nicely for us, but I do not
+want us to slow down at all when he has.
 
-> > It may just be a matter of letting DHCP retry a sufficiency long time
-> > before we look at the results and try to boot. As long as we don't down
-> > the link after getting our information, the mount/login to the root
-> > device should proceed fairly quickly. If we do down the link, the
-> > blocking mode timer starts again and our very quick boot takes at least
-> > 40-60 seconds.
-> 
-> DHCP timeout already is 60 seconds. That's dhclient's default if you
-> don't provide other options.
-
-Ok, then we just need to set the udev settle time to 60 seconds in the
-event of a netroot and avoid downing the link wherever possible. Given
-that timeout, the only problem cases are static configs and MTU changes
-on devices that cannot do that while UP'd.
-
-> The problem only manifests itself it we have to correct the mtu after dhcp,
-> which currently set's the interface down and up (paranoia I guess), or if
-> we do static configuration.
->
-> For dhcp the solution could be easy: Either we ignore the mtu or don't 
-> down/up the interface to set it.
-
-We shouldn't ignore the MTU, and we generally have to down/up the
-interface to set it. Certainly, we should try to set it without downing
-the interface, and fall back to the down/set/up sequence if that fails.
-That would avoid further delay when good hardware/drivers allows it.
-
-In the event of static config, or needing to down/up, I think it makes
-sense to try to ping the server for a period of time and see if we are
-able to communicate, before we try to get our root. You had even
-suggested something similar some time back with your original network
-scripts.
-
-But that's not a 'sleep 60' just because we may happen be on a network
-with a long blocking state. Perhaps I misread what we're talking about
-and we're on the same page.
-
-> > So, should we give dhclient 45-60 seconds to do its thing, and the admin
-> > can use ip= lines to disable interfaces we know aren't going to get a
-> > response?
-> 
-> Disabling interfaces is not needed I think. If you know which interfaces
-> are used/not used, you just tell dracut which interface(s) to use. All
-> other interfaces will be ignored.
-
-That's what I meant by disabling.
+My networks will be configured correctly, and I'm an impatient bastard.
+I don't want to wait if I don't have to. But not everyone will have the
+luxury of control of their network.
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
