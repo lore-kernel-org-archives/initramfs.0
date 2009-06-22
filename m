@@ -1,52 +1,60 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: NFS why root=nfs and root=nfs4?
-Date: Mon, 22 Jun 2009 17:31:34 -0400
-Message-ID: <4A3FF836.6080208@redhat.com>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: Re: Bug#533903: initramfs-tools: support different compression
+ tools in mkinitramfs
+Date: Mon, 22 Jun 2009 23:40:41 +0200
+Message-ID: <20090622214041.GE6173@stro.at>
+References: <20090621133116.32436.69638.reportbug@grmlvrs>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20090621133116.32436.69638.reportbug@grmlvrs>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>, 533903-61a8vm9lEZVf4u+23C9RwQ@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-I just realized that the following are yet another NFS syntax variation.
+On Sun, 21 Jun 2009, Michael Prokop wrote:
 
-     client_test "NFSv3 root=nfs DHCP path only" 52:54:00:12:34:00 \
-         "root=nfs" 192.168.50.1 -wsize=4096 || return 1
+> Package: initramfs-tools
+> Version: 0.93.3
+> Severity: wishlist
+> 
+> 
+> Current kernel versions support different decompression options for
+> kernel and initrd:
+> 
+>   CONFIG_DECOMPRESS_GZIP
+>   CONFIG_DECOMPRESS_BZIP2
+>   CONFIG_DECOMPRESS_LZMA
 
-     client_test "NFSv3 root=nfs DHCP IP:path" 52:54:00:12:34:01 \
-         "root=nfs" 192.168.50.2 -wsize=4096 || return 1
+i haven't played with those, but yes why not.
 
-     client_test "NFSv4 root=nfs4 DHCP path only" 52:54:00:12:34:80 \
-         "root=nfs4" 192.168.50.1 -wsize=4096 || return 1
 
-     client_test "NFSv4 netroot=nfs4 DHCP IP:path" 52:54:00:12:34:81 \
-         "netroot=nfs4" 192.168.50.2 -wsize=4096 || return 1
+do you know what happens if initramfs is in lzma but kernel not?
+ 
+> initramfs-tools currently supports gzip only. I'd like to see
+> support for bzip2 and lzma as well, as both of them provide better
+> compression (which is especially interesting for live systems).
+> 
+> IMHO the user should get gzip by default (if unset) but be able to
+> choose between gzip, bzip2 and lzma. Something like
+> COMPRESSION=[gzip|bzip2|lzma] in /etc/initramfs-tools/initramfs.conf
+> should provide that.
+> 
+> I plan to provide the according code for integration (though I'm
+> running out of time right now, so it might need a few days/weeks).
+> Please ACK my idea if that's in your interest. If have any special
+> configuration variable / implementation wishes please let me know.
 
-     client_test "NFSv4 root=nfs4 DHCP IP:path" 52:54:00:12:34:81 \
-         "root=nfs4" 192.168.50.2 -wsize=4096 || return 1
+adding the dracut guys on cc, afais they haven't implement it
+yet too, so maybe we can easily agree:
+~/src/dracut$ egrep gzip dracut
+( cd "$initdir"; find . |cpio -H newc -o |gzip -9 > "$outfile"; )
 
-     client_test "NFSv4 root=nfs4" 52:54:00:12:34:84 \
-         "root=nfs4" 192.168.50.1 -wsize=4096 || return 1
 
-     client_test "NFSv4 root=nfs4 DHCP path,options" \
-         52:54:00:12:34:85 "root=nfs4" 192.168.50.1 wsize=4096 || return
 
-     client_test "NFSv4 root=nfs4 DHCP IP:path,options" \
-         52:54:00:12:34:86 "root=nfs4" 192.168.50.2 wsize=4096 || return
-
-When is it ever necessary to use explicitly root=nfs or root=nfs4 
-instead of root=dhcp?  It seems functionally equivalent while 
-unnecessarily limiting since DHCP should tell you the protocol.
-
-Benefits of de-supporting these variations:
-* Simplify the documentation further, fewer possible ways to configure 
-it to confuse people.
-* Far fewer redundant test cases to make the test suite slow.
-
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
