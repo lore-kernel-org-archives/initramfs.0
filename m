@@ -1,50 +1,40 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: NFS why root=nfs and root=nfs4?
-Date: Tue, 23 Jun 2009 00:07:02 -0400
-Message-ID: <4A4054E6.2090700@redhat.com>
-References: <4A3FF836.6080208@redhat.com>	 <1245710475.13352.31.camel@obelisk.thedillows.org>	 <4A402CEF.4030506@redhat.com> <1245728880.13352.106.camel@obelisk.thedillows.org>
+Subject: Re: 13 NFS syntax variations
+Date: Tue, 23 Jun 2009 00:15:38 -0400
+Message-ID: <4A4056EA.9010102@redhat.com>
+References: <4A39A9AF.6070009@redhat.com> <4A3A13A8.6050100@bfh.ch>	 <4A3FEFE7.7080907@redhat.com> <1245709757.13352.20.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1245728880.13352.106.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
+In-Reply-To: <1245709757.13352.20.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 06/22/2009 11:48 PM, David Dillow wrote:
->> This is a difference in design philosophy.  We have a native syntax that
->> seems fully feature capable.  Allowing redundancy and variation in this
->> syntax can confuse people less technically savvy than us who follow
->> documentation and examples.
+On 06/22/2009 06:29 PM, David Dillow wrote:
+>> 3) Support it but print deprecation warnings like Legacy nfsroot.txt.
 >
-> The people that do "config by example" are going to find the old HOWTOs
-> that discuss using nfsroot.txt syntax. A current search for "linux nfs
-> root" returns the NFS-root mini-HOWTO (circa 1996) and
-> Diskless-root-NFS-other-HOWTO (circa 2001) as the top two results. In
-> fact 5 of the top 6 results refer to the nfsroot.txt syntax and the
-> sixth one refers one to the NFS-root mini-HOWTO for the kernel command
-> line setup.
-
-Isn't arguing over this moot?  I already said this is a reasonable 
-compromise because of the upstream kernel and initramfs-tools.
-
-None of those other documents however will have root=nfs, root=nfs4 or 
-root=/dev/nfs4 examples.  I object to more confusing variations like 
-this redundant to the preferred, full featured native syntax.
-
-> Or is this both of us arguing from our gut and we'll have to disagree
-> until Harald lays down the law about syntactic support?
+> This would be my choice; the DHCP (BOOTP) root-path=[server:]/root-path
+> formats have been around for decades. I seem to recall network booting a
+> SunOS 4.1.2 box using that back in 1993, and I'll bet it wasn't a new
+> feature then.
 >
+> Some changes I'm thinking about would benefit from dropping the non nfs:
+> formats, as they wouldn't have a clean home otherwise, but I don't think
+> that is a good reason to drop them -- they are too easy to support.
 
-Harald was in favor of removing the three "shortcut" variations of 
-Legacy nfsroot.txt.  He also said I could go ahead and eliminate the 
-netroot= variations if I felt strongly about it.  I do hope he would 
-make his own comments on this matter.
+root=<server-ip>:/path:nfs-options
 
-I will still push chopping either root= or netroot= NFS variations, but 
-only after we see what Harald decides to do for DHCP root-path for 
-remote block devices (his iscsi idea).
+Yes, I am aware it has existed for decades.  However neither Red Hat nor 
+Debian's tools supported this method.[1]  This seems to make it a good 
+candidate for chopping.
+
+Harald, what do you think?
+
+[1]
+mkinitrd supports it only partially, without nfs-options, and without a 
+method to auto-load network drivers prior to NFS, meaning nobody used it.
 
 Warren Togami
 wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
