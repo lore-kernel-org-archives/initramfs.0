@@ -1,7 +1,7 @@
 From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Netboot test suite: PXE instead of qemu -kernel?
-Date: Tue, 23 Jun 2009 13:11:00 -0400
-Message-ID: <4A410CA4.8030506@redhat.com>
+Subject: Old style <server-ip>:/<path> not handled
+Date: Tue, 23 Jun 2009 13:23:51 -0400
+Message-ID: <4A410FA7.8000509@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,17 +10,22 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Just a quick thought.
+> # This script is sourced, so root should be set. But let's be paranoid
+> [ -z "$root" ] && root=$(getarg root=)
+> [ -z "$netroot" ] && netroot=$(getarg netroot=)
+> [ -z "$nfsroot" ] && nfsroot=$(getarg nfsroot=)
+>
+> # Handle old style <server-ip>:/<path
+> case "$netroot" in
+>     [0-9]*:/*|[0-9]*\.[0-9]*\.[0-9]*[!:]|/*)
+>        netroot=nfs:$netroot;;
+> esac
 
-The netboot tests currently create a server and client qemu image.
+By the current code it seems the old style root=<server-ip>:/<path> is 
+not actually handled.
 
-Why are we using -kernel and -initrd on the client-side qemu?  Wouldn't 
-testing PXE with the dhcp + tftp server on the server-side be more 
-realistic?
-
-Additionally we could use -net tap* instead of -net socket, which would 
-allow brctl setfd of a large value like 20 seconds to simulate the link 
-delay in the test suite.
+I'm soon pushing a patch that restricts NFS to only root= which should 
+fix this and eliminate the redundant root= and netroot= test cases.
 
 Warren Togami
 wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
