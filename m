@@ -1,58 +1,39 @@
-From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH 3/5] Be a bit more optimistic when setting mtus
-Date: Wed, 24 Jun 2009 20:08:30 +0200
-Message-ID: <1245866912-3643-4-git-send-email-philippe.seewer@bfh.ch>
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: Re: [PATCH 4/5] Add DAD do dhclient-script
+Date: Wed, 24 Jun 2009 14:39:49 -0400
+Message-ID: <1245868789.31775.16.camel@lap75545.ornl.gov>
 References: <1245866912-3643-1-git-send-email-philippe.seewer@bfh.ch>
+ <1245866912-3643-5-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1245866912-3643-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+In-reply-to: <1245866912-3643-5-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+To: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The usual approach to setting mtus is to set the interface down,
-set the mtu then set the interface back up again. Modern hardware
-and/or drivers may support setting this on the fly, so we try
-this and fall back to the old behaviour it it doesn't work.
+On Wed, 2009-06-24 at 20:08 +0200, Philippe Seewer wrote:
+> The manpage for dhclient-script says:
+> 
+> Before actually configuring the address, dhclient-script should
+> somehow ARP for it and exit with a nonzero status if it receives a
+> reply.
+> 
+> By using arping in dracut this is very easy, since arping has a
+> specific option to do just that.
 
-In addition this patch only allows mtus greater than 576, this is
-taken from debian/ubuntu dhclient-script.
----
- modules.d/40network/dhclient-script |   16 ++++++++++++----
- 1 files changed, 12 insertions(+), 4 deletions(-)
+> --- a/modules.d/40network/dhclient-script
+> +++ b/modules.d/40network/dhclient-script
+> @@ -64,6 +64,7 @@ case $reason in
+>  	sleep 1
+>  	;;
+>      BOUND)
+> +	arping -q -D -c 2 -I $netif $new_ip_address || exit 1
 
-diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
-index 9e7eefd..6df630d 100755
---- a/modules.d/40network/dhclient-script
-+++ b/modules.d/40network/dhclient-script
-@@ -13,10 +13,18 @@ setup_interface() {
- 
-     [ -f /tmp/net.$netif.override ] && . /tmp/net.$netif.override
- 
--    if [ -n "$mtu" ] ; then
--	echo ip link set $netif down
--	echo ip link set $netif mtu $mtu
--	echo ip link set $netif up
-+    # Taken from debian dhclient-script:
-+    # The 576 MTU is only used for X.25 and dialup connections
-+    # where the admin wants low latency.  Such a low MTU can cause
-+    # problems with UDP traffic, among other things.  As such,
-+    # disallow MTUs from 576 and below by default, so that broken
-+    # MTUs are ignored, but higher stuff is allowed (1492, 1500, etc).
-+    if [ -n "$mtu" ] && [ $mtu -gt 576 ] ; then
-+	echo "if ! ip link set $netif mtu $mtu ; then"
-+	echo "ip link set $netif down"
-+	echo "ip link set $netif mtu $mtu"
-+	echo "ip link set $netif up"
-+	echo "fi"
-     fi > /tmp/net.$netif.up
- 
-     echo ip addr add $ip${mask:+/$mask} ${bcast:+broadcast $bcast} dev $netif >> /tmp/net.$netif.up
--- 
-1.6.0.4
+Where's the addition of arping to 40network/install?
+
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
