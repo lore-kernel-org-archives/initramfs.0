@@ -1,7 +1,7 @@
 From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH 2/5] Give the kernel some time to up interfaces
-Date: Wed, 24 Jun 2009 20:08:29 +0200
-Message-ID: <1245866912-3643-3-git-send-email-philippe.seewer@bfh.ch>
+Subject: [PATCH 4/5] Add DAD do dhclient-script
+Date: Wed, 24 Jun 2009 20:08:31 +0200
+Message-ID: <1245866912-3643-5-git-send-email-philippe.seewer@bfh.ch>
 References: <1245866912-3643-1-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -13,42 +13,30 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-It does not really matter if the kernel needs some time or if
-the ethernet handshake takes a while. It's a good idea to wait
-a second after upping an interface to let things settle.
+The manpage for dhclient-script says:
+
+Before actually configuring the address, dhclient-script should
+somehow ARP for it and exit with a nonzero status if it receives a
+reply.
+
+By using arping in dracut this is very easy, since arping has a
+specific option to do just that.
 ---
- modules.d/40network/dhclient-script |    2 ++
- modules.d/40network/ifup            |    3 ++-
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ modules.d/40network/dhclient-script |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
 diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
-index 5b36a40..9e7eefd 100755
+index 6df630d..3fb8da6 100755
 --- a/modules.d/40network/dhclient-script
 +++ b/modules.d/40network/dhclient-script
-@@ -52,6 +52,8 @@ netif=$interface
- case $reason in
-     PREINIT)
- 	ip link set $netif up
-+	# Give the kernel some time to up the interface
-+	sleep 1
+@@ -64,6 +64,7 @@ case $reason in
+ 	sleep 1
  	;;
      BOUND)
++	arping -q -D -c 2 -I $netif $new_ip_address || exit 1
  	setup_interface 
-diff --git a/modules.d/40network/ifup b/modules.d/40network/ifup
-index 89017bb..174edca 100755
---- a/modules.d/40network/ifup
-+++ b/modules.d/40network/ifup
-@@ -32,8 +32,9 @@ do_dhcp() {
- 
- # Handle static ip configuration
- do_static() {
--{
-+    {
- 	echo ip link set $netif up 
-+	echo sleep 1
- 	echo ip addr flush dev $netif
- 	echo ip addr add $ip/$mask dev $netif
-     } > /tmp/net.$netif.up
+ 	set | while read line; do
+ 	    [ "${line#new_}" = "$line" ] && continue
 -- 
 1.6.0.4
 
