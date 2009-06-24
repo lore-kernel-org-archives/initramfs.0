@@ -1,44 +1,54 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Please revert commit fa0115c3c06176bd0fdfcd8966021979ec84f3d7
-Date: Wed, 24 Jun 2009 08:59:38 +0200
-Message-ID: <4A41CEDA.9020504@bfh.ch>
-References: <4A408358.7050706@bfh.ch>
+From: Bogdan Costescu <Bogdan.Costescu-hEciA7+sKtudPOQpRHQ53DeJuz7u0hKX@public.gmane.org>
+Subject: Re: [RFT PATCH] Delay netroot mounting by 1 second
+Date: Wed, 24 Jun 2009 10:29:29 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.0906241020030.410@kenzo.iwr.uni-heidelberg.de>
+References: <4A3B968C.5070600@bfh.ch>  <20090619144705.GD2514@nostromo.devel.redhat.com>
+ <4A3BA5EA.3020202@bfh.ch>  <84DF1DC6-5F06-4D6D-91A4-56D996D229B1@gmail.com>
+  <1245428342.32104.3.camel@lap75545.ornl.gov>  <4A3F37B8.7050902@suse.de>
+ <1245683450.3544.6.camel@obelisk.thedillows.org> <4A3FAE9E.5000201@bfh.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A408358.7050706-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <4A3FAE9E.5000201-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Type: TEXT/PLAIN; charset="us-ascii"; format="flowed"
+Content-Transfer-Encoding: 7bit
 To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Seewer Philippe wrote:
-> Commit fa0115c3c06176bd0fdfcd8966021979ec84f3d7 moved calling
-> cryptsetup from the mount hook to inside a udev rule. While this is a 
-> good idea it causes more problems than it solves:
-> 
-> cryptsetup version 1.6 (and possibly earlier versions) calls
-> 'udevadm settle' on it's own. This must not be done from inside
-> udev rules as it potentially results in a deadlock depending
-> on udev version.
+On Mon, 22 Jun 2009, Seewer Philippe wrote:
 
-A short amendment to this:
+> DHCP timeout already is 60 seconds. That's dhclient's default if you 
+> don't provide other options.
 
-- Fedora cryptsetup is patched, removing the udevadm settle altogether.
-That's why it was working for most of you. (Thanks to Warren for helping
-to debug this)
+On a network where I don't have control over the switch (some Cisco 
+model) and people connect laptops, I've seen random cases of DHCP 
+failing. That's because the STP can take 60 seconds and DHCP gives up 
+just when the link becomes usable... For the workstations connected on 
+another network where STP is also enabled, I've experimented with 
+various solutions, the one using ping to the gateway (with a timeout 
+of 100 seconds) worked best and was simplest for me to maintain.
 
-- In addition I don't think its a good idea to include anything in a
-udev-rule that does user interaction, since udev has an built-in
-event-timeout.
+> The problem only manifests itself it we have to correct the mtu 
+> after dhcp, which currently set's the interface down and up 
+> (paranoia I guess), or if we do static configuration.
 
-> 
-> Thank you,
-> Philippe
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+No, it's not paranoia. Maybe things have changed in the meantime, but 
+some years ago when I was involved in the Linux network stack some 
+drivers couldn't change the MTU on the fly due to internal 
+limitations. The only possibility to change it would be to bring the 
+interface down then up. Not all drivers are limited this way, though. 
+Maybe it's possible to try to set the MTU, check whether it has 
+succeeded and only if it failed bring the interface down then up; 
+don't know anymore if a failed MTU setting would make ifconfig return 
+something... maybe just reading the MTU again and compare with desired 
+would work too.
+
+-- 
+Bogdan Costescu
+
+IWR, University of Heidelberg, INF 368, D-69120 Heidelberg, Germany
+Phone: +49 6221 54 8240, Fax: +49 6221 54 8850
+E-mail: bogdan.costescu-hEciA7+sKtudPOQpRHQ53DeJuz7u0hKX@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
