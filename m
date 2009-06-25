@@ -1,70 +1,126 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [PATCH 4/5] Add DAD do dhclient-script
-Date: Wed, 24 Jun 2009 21:56:03 +0200
-Message-ID: <4A4284D3.5050007@bfh.ch>
-References: <1245866912-3643-1-git-send-email-philippe.seewer@bfh.ch> <1245866912-3643-5-git-send-email-philippe.seewer@bfh.ch> <1245868789.31775.16.camel@lap75545.ornl.gov>
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: Re: [RFT PATCH] Delay netroot mounting by 1 second
+Date: Wed, 24 Jun 2009 23:30:38 -0400
+Message-ID: <1245900638.22064.24.camel@obelisk.thedillows.org>
+References: <4A3B968C.5070600@bfh.ch>
+	 <20090619144705.GD2514@nostromo.devel.redhat.com> <4A3BA5EA.3020202@bfh.ch>
+	 <84DF1DC6-5F06-4D6D-91A4-56D996D229B1@gmail.com>
+	 <1245428342.32104.3.camel@lap75545.ornl.gov> <4A3F37B8.7050902@suse.de>
+	 <1245683450.3544.6.camel@obelisk.thedillows.org> <4A3FAE9E.5000201@bfh.ch>
+	 <1245691069.3875.11.camel@lap75545.ornl.gov> <4A3FD1C5.30006@bfh.ch>
+	 <1245704521.3875.31.camel@lap75545.ornl.gov> <4A4084D3.3060705@bfh.ch>
+	 <1245773764.11486.21.camel@lap75545.ornl.gov>  <4A41CE20.5000809@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1245868789.31775.16.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
+In-Reply-To: <4A41CE20.5000809-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-David Dillow wrote:
-> On Wed, 2009-06-24 at 20:08 +0200, Philippe Seewer wrote:
->> The manpage for dhclient-script says:
->>
->> Before actually configuring the address, dhclient-script should
->> somehow ARP for it and exit with a nonzero status if it receives a
->> reply.
->>
->> By using arping in dracut this is very easy, since arping has a
->> specific option to do just that.
+On Wed, 2009-06-24 at 08:56 +0200, Seewer Philippe wrote:
+> David Dillow wrote:
+> [snip]
+> > I've been thinking about this a bit, and I'd like to split the duties up
+> > a bit, as I'd like to know the server IPs needed for other reasons. My
+> > proposed split is that legacy handling -- ie nfsroot=blah to
+> > netroot=nfs:blah conversion -- is done as it is now, and have the root
+> > handler do syntax validation and stop, spit out the server IP(s), and do
+> > the mount, depending on options handed to it (--validate, --servers, and
+> > no options, respectively).
 > 
->> --- a/modules.d/40network/dhclient-script
->> +++ b/modules.d/40network/dhclient-script
->> @@ -64,6 +64,7 @@ case $reason in
->>  	sleep 1
->>  	;;
->>      BOUND)
->> +	arping -q -D -c 2 -I $netif $new_ip_address || exit 1
+> Hmmm... just so that I understand you correctly. Are you proposing to 
+> move the cmdline-parsers back into the root handlers and add arguments? 
+> If not maybe you could a more detailed example of your idea?
+
+Yes, something like that.
+
+parse-nfsroot.sh, parse-nbdroot.sh, and parse-iscsiroot.sh would only
+exist to convert legacy command line arguments to the
+netroot={nfs,nbd,iscsi}: format. They would not validate the netroot=
+format.
+
+As part of the command line parsing, the appropriate handler would be
+called for netroot to check its validity, such as:
+
+/cmdline/98-check-netroot.sh:
+
+if [ -n "$netroot" ]; then
+    [ -e /sbin/${netroot%%:*}-root ] || die "No root handler for protocol ${netroot%%:*}"
+    /sbin/${netroot%%:*}-root --validate "$netroot"
+    case $? in
+	0) rootok=1 ;; # All's good
+	1) DHCPORSERVER=1 ;; # No server specified
+	*) die "Invalid argument to root handler ${netroot%%:*}" ;;
+    esac
+fi
+
+Checking the validity of the DHCP root-option becomes (modulo NFS legacy
+support):
+
+[ -e /sbin/${rootpath%%:*}-root ] || die "No root handler for protocol ${rootpath%%:*}"
+/sbin/${rootpath%%:*}-root --validate "$rootpath" ||
+	die "Invalid DHCP root-option for ${rootpath%%:*}"
+
+
+Later, we can decide which IP to arping:
+
+server=$(/sbin/${netroot%%:*}-root --server "$netroot")
+destip=$gateway
+is_ip_local $server $myip $netmask && destip=$server
+
+while ! arping ... $server; do
+    # count here to break out, etc.
+    sleep 1
+done
+
+
+The variable names will likely change a bit, and the messages will need
+to be massaged, but we have a need to decode the netroot= arguments
+three times -- once for validation, once for extracting the server, and
+once for the actual mounting. It makes sense to have the same parser for
+all three uses. I think it would also clean things up to separate the
+legacy handling from the supported mechanisms.
+
+I haven't started coding this up; I wanted to try to get some consensus
+first. NFSv4 would get its own handler, which I think makes sense --
+I'll probably break it out into it's own module anyway.
+
+> > The sourced scripts could just call into their handler to do the final
+> > validation, and netroot would get rid of its loop as it can call the
+> > handler directly since it has the protocol field.
 > 
-> Where's the addition of arping to 40network/install?
+> Uhhh... which loop are you talking about?
 
-*sigh* Thanks for noticing, forgot to add it to the commit. Complete
-Patch below
+/sbin/netroot:
+# Source netroot hooks before we start the handler
+source_all netroot
 
----
- modules.d/40network/dhclient-script |    1 +
- modules.d/40network/install         |    2 +-
- 2 files changed, 2 insertions(+), 1 deletions(-)
+That would become the validity check above.
 
-diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
-index 6df630d..3fb8da6 100755
---- a/modules.d/40network/dhclient-script
-+++ b/modules.d/40network/dhclient-script
-@@ -64,6 +64,7 @@ case $reason in
- 	sleep 1
- 	;;
-     BOUND)
-+	arping -q -D -c 2 -I $netif $new_ip_address || exit 1
- 	setup_interface 
- 	set | while read line; do
- 	    [ "${line#new_}" = "$line" ] && continue
-diff --git a/modules.d/40network/install b/modules.d/40network/install
-index 0b76cbd..513503c 100755
---- a/modules.d/40network/install
-+++ b/modules.d/40network/install
-@@ -1,5 +1,5 @@
- #!/bin/bash
--dracut_install ip dhclient hostname
-+dracut_install ip dhclient hostname arping
- # Include wired net drivers, excluding wireless
- for modname in $(find "/lib/modules/$kernel/kernel/drivers" -name '*.ko'); do
-   if nm -uPA $modname | grep -q eth_type_trans; then
+> > The only issue is handling the legacy NFS root-path options, everything
+> > else is expected to have nfs:/nfs4:/nbd:/iscsi: or what not. I don't
+> > think it would be the end of the world if the that handling lived in
+> > netroot itself, as it will be the only root-path legacy handler we have.
+> 
+> If possible, netroot should remain as generic as possible. You never 
+> know what the future holds.
+
+As a general design principle, I tend to agree with you. However, the
+only root-path we support that doesn't match the form protocol:arguments
+is the [serverip:]/path syntax of NFS. I think it makes sense to either
+pull that into netroot.
+
+Of course, I just thought of an alternative solution -- maybe we could
+pass both netroot and root-path in to the root handler, and it can do
+the right thing. The initial cmdline parse would pass in "" for
+root-path, or perhaps find another way to indicate we don't have the
+root-path yet.
+
+It's a wart, but I think we can get it cleaned up.
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
