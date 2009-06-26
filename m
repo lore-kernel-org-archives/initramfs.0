@@ -1,42 +1,43 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [PATCH 4/5] Add DAD do dhclient-script
-Date: Thu, 25 Jun 2009 22:45:51 -0400
-Message-ID: <1245984351.30948.0.camel@obelisk.thedillows.org>
+Subject: Re: [PATCH 5/5] Add multinic test suite
+Date: Thu, 25 Jun 2009 22:56:45 -0400
+Message-ID: <1245985005.30948.11.camel@obelisk.thedillows.org>
 References: <1245866912-3643-1-git-send-email-philippe.seewer@bfh.ch>
-	 <1245866912-3643-5-git-send-email-philippe.seewer@bfh.ch>
-	 <1245868789.31775.16.camel@lap75545.ornl.gov>  <4A4284D3.5050007@bfh.ch>
+	 <1245866912-3643-6-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A4284D3.5050007-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <1245866912-3643-6-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+To: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, 2009-06-24 at 21:56 +0200, Seewer Philippe wrote:
-> David Dillow wrote:
-> > On Wed, 2009-06-24 at 20:08 +0200, Philippe Seewer wrote:
-> >> The manpage for dhclient-script says:
-> >>
-> >> Before actually configuring the address, dhclient-script should
-> >> somehow ARP for it and exit with a nonzero status if it receives a
-> >> reply.
-> >>
-> >> By using arping in dracut this is very easy, since arping has a
-> >> specific option to do just that.
-> > 
-> >> --- a/modules.d/40network/dhclient-script
-> >> +++ b/modules.d/40network/dhclient-script
-> >> @@ -64,6 +64,7 @@ case $reason in
-> >>  	sleep 1
-> >>  	;;
-> >>      BOUND)
-> >> +	arping -q -D -c 2 -I $netif $new_ip_address || exit 1
+On Wed, 2009-06-24 at 20:08 +0200, Philippe Seewer wrote:
+> This is a start at a test suite for the multinic part of dracut
 
-Also, this seems like it is screaming for a message -- it will confuse
-the user if it just doesn't work without saying why....
+Seems sane, some minor issues.
+
+> diff --git a/test/TEST-50-MULTINIC/test.log b/test/TEST-50-MULTINIC/test.log
+> new file mode 100644
+> index 0000000..f3c0c59
+> --- /dev/null
+> +++ b/test/TEST-50-MULTINIC/test.log
+
+This shouldn't be part of the commit... 
+
+> +MULTINIC TEST SETUP: Starting DHCP/NFS server
+> +setsockopt(IP_ADD_MEMBERSHIP): No such device
+> +Could not initialize device 'socket'
+> +Failed to start server
+> +cat: server.pid: Permission denied
+> +Usage:
+> +  kill pid ...              Send SIGTERM to every process listed.
+
+What's this all about? Does the test suite work?
+
+
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
