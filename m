@@ -1,29 +1,30 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [PATCH 0/5] Netroot updates and multinic test-suite
-Date: Thu, 25 Jun 2009 23:20:58 -0400
-Message-ID: <1245986458.30948.15.camel@obelisk.thedillows.org>
-References: <1245866912-3643-1-git-send-email-philippe.seewer@bfh.ch>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: TODO: Legacy NFS should be root= only
+Date: Fri, 26 Jun 2009 00:26:21 -0400
+Message-ID: <4A444DED.7040601@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1245866912-3643-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Wed, 2009-06-24 at 20:08 +0200, Philippe Seewer wrote:
-> This is a first start at a multinic testsuite, some
-> improvements to netroot and a bugfix.
-> 
-> Patches can be pulled from 
-> git://github.com/seewer/dracut-seewer.git
-> as well
+mkinitrd Legacy
+	root=IP:path
+	(IP:path is OK in DHCP root-path too.)
+nfsroot.tx Legacy
+	root=/dev/nfs [nfsroot=...]
 
-The BOOTIF bug fix could go as-is, but I think the rest of the series
-needs to be respun once the issues are addressed.
+netroot= equivalents of the two Legacy we shouldn't support.  They are 
+not from legacy precedents.
 
+(I tried to get de-support netroot= by unconditionally netroot=$root, 
+but the argument parser can't recognize root=dhcp in that case.  Dillow 
+says he has an idea to split and clean up argument parsing.)
+
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
