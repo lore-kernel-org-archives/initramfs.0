@@ -1,52 +1,33 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH] Don't use absolute paths for utilities
-Date: Thu, 2 Jul 2009 16:03:39 +0200
-Message-ID: <4A4CBE3B.10703@bfh.ch>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: firmware loading
+Date: Thu, 02 Jul 2009 16:08:02 +0200
+Message-ID: <4A4CBF42.1060405@redhat.com>
+References: <1246541530.2168.7.camel@polyethylene>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1246541530.2168.7.camel@polyethylene>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-diff --git a/dracut b/dracut
-index 826fbda..1d440ef 100755
---- a/dracut
-+++ b/dracut
-@@ -61,6 +61,8 @@ while (($# > 0)); do
-     shift
- done
- 
-+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-+
- [[ $debug ]] && { 
-     export PS4='${BASH_SOURCE}@${LINENO}(${FUNCNAME[0]}): ';
-     set -x
-@@ -138,8 +140,8 @@ echo $mods_to_load
- ## final stuff that has to happen
- 
- # generate module dependencies for the initrd
--if ! /sbin/depmod -a -b "$initdir" $kernel; then
--    echo "\"/sbin/depmod -a $kernel\" failed."
-+if ! depmod -a -b "$initdir" $kernel; then
-+    echo "\"depmod -a $kernel\" failed."
-     exit 1
- fi
- 
-diff --git a/dracut-functions b/dracut-functions
-index 8fbfa97..e525179 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -307,7 +307,7 @@ instmods() {
- 		    fi
- 		    inst_simple "$modpath"
- 		done
--		for fw in $(/sbin/modinfo -F firmware $mod 2>/dev/null); do
-+		for fw in $(modinfo -F firmware $mod 2>/dev/null); do
- 		    if [[ -f /lib/firmware/$fw ]]; then
- 			inst_simple "/lib/firmware/$fw"
- 		    else
+On 07/02/2009 03:32 PM, Daniel Drake wrote:
+> Hi,
+>
+> Dracut seems to lack a mechanism for firmware loading i.e. it doesn't
+> install the udev rules or the firmware loading helper.
+>
+> Is this planned?
+>
+> I'd be happy to come up with a patch. Would it be sensible to add it to
+> 95udev-rules?
+>
+> Thanks,
+> Daniel
+
+yep
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
