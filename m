@@ -1,33 +1,32 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: firmware loading
-Date: Thu, 02 Jul 2009 16:08:02 +0200
-Message-ID: <4A4CBF42.1060405@redhat.com>
-References: <1246541530.2168.7.camel@polyethylene>
+Subject: Re: initqueue
+Date: Thu, 02 Jul 2009 16:10:54 +0200
+Message-ID: <4A4CBFEE.2020500@redhat.com>
+References: <4A4C87DF.10904@redhat.com> <4A4CAA92.9000401@bfh.ch> <4A4CAD9B.10503@redhat.com> <4A4CB136.6000109@bfh.ch> <4A4CB241.8080406@redhat.com> <4A4CB434.1010001@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1246541530.2168.7.camel@polyethylene>
+In-Reply-To: <4A4CB434.1010001-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07/02/2009 03:32 PM, Daniel Drake wrote:
-> Hi,
+On 07/02/2009 03:20 PM, Seewer Philippe wrote:
+>>> Why not just put cryptsetup back into mountscripts as I've suggested
+>>> before?
+>>>
+>>
+>> Because so much more can be inside the crypto partition, which might
+>> need further processing.
 >
-> Dracut seems to lack a mechanism for firmware loading i.e. it doesn't
-> install the udev rules or the firmware loading helper.
->
-> Is this planned?
->
-> I'd be happy to come up with a patch. Would it be sensible to add it to
-> 95udev-rules?
->
-> Thanks,
-> Daniel
+> That is correct. But if it's in mountscripts, it would fire more
+> udev-events which are caught again by udevadm settle. I don't see
+> a problem there.
 
-yep
+Hmm, we maybe should think of merging pre-mount and mount.
+pre-mount makes no sense, if mounting is done inside udev rules.
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
