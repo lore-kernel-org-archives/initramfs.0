@@ -1,31 +1,49 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [PATCH] Don't use absolute paths for utilities
-Date: Thu, 2 Jul 2009 16:40:54 +0200
-Message-ID: <4A4CC6F6.2070907@bfh.ch>
-References: <4A4CBE3B.10703@bfh.ch> <1246545040.28989.7.camel@lap75545.ornl.gov>
+From: Harald Hoyer <harald@redhat.com>
+Subject: Re: RFC: writing kernel cmdline options to grub.conf for dracut
+Date: Thu, 02 Jul 2009 17:09:31 +0200
+Message-ID: <4A4CCDAB.60102@redhat.com>
+References: <4A4B4443.50503@redhat.com> <4A4CC19F.9020906@bfh.ch>
+Reply-To: Discussion of Development and Customization of the Red Hat Linux
+	Installer <anaconda-devel-list@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1246545040.28989.7.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
+Return-path: <anaconda-devel-list-bounces@redhat.com>
+In-Reply-To: <4A4CC19F.9020906@bfh.ch>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/anaconda-devel-list>, 
+	<mailto:anaconda-devel-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/anaconda-devel-list>
+List-Post: <mailto:anaconda-devel-list@redhat.com>
+List-Help: <mailto:anaconda-devel-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/anaconda-devel-list>, 
+	<mailto:anaconda-devel-list-request@redhat.com?subject=subscribe>
+Sender: anaconda-devel-list-bounces@redhat.com
+Errors-To: anaconda-devel-list-bounces@redhat.com
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Seewer Philippe <philippe.seewer@bfh.ch>
+Cc: initramfs@vger.kernel.org, Discussion of Development and Customization of the Red Hat Linux Installer <anaconda-devel-list@redhat.com>
 
+On 07/02/2009 04:18 PM, Seewer Philippe wrote:
+> Hans de Goede wrote:
+>> 3) chmod /proc/cmdline 400, so that it cannot be read by ordinary
+>> users, plugging
+>> the passwork leak problem
+>
+> This does not really plug the leak. Just boot until initramfs is loaded,
+> pull the network plug and wait until dracut drops us to a (root-)shell.
 
+Ah, which reminds me, that we should have an option to turn that off.
 
-David Dillow wrote:
-> On Thu, 2009-07-02 at 16:03 +0200, Seewer Philippe wrote:
->> diff --git a/dracut b/dracut
-> 
-> It would be good if your commit message mentioned why it is not a good
-> idea to use absolute paths, eg different distros put things in different
-> places, etc.
+>
+>>
+>> Now the remaining question is how to implement the adding of the needed
+>> cmdline options to grub.conf.
+>
+> Question: Is it really necessary to provide username/password to dracut?
+> Wouldn't it be better to ask the user? I mean if a mount is password
+> protected, be it cryptroot, nfs4 or whatever, shouldn't the user enter
+> the data?
+>
 
-We've had the discussion about absolute paths and distros a few times, 
-so it should be obvious.
---
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+username/password for iSCSI disks entered by a normal user every day he boots 
+his diskless client?
