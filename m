@@ -1,55 +1,56 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Don't use absolute paths for utilities
-Date: Thu, 02 Jul 2009 18:47:52 +0200
-Message-ID: <4A4CE4B8.3070801@redhat.com>
-References: <4A4CBE3B.10703@bfh.ch>
+Subject: Re: [PATCH] Remove modules dependency
+Date: Thu, 02 Jul 2009 18:48:04 +0200
+Message-ID: <4A4CE4C4.7020208@redhat.com>
+References: <20090702090615.44C0E9D405C@zog.reactivated.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A4CBE3B.10703-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <20090702090615.44C0E9D405C-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07/02/2009 04:03 PM, Seewer Philippe wrote:
+On 07/02/2009 11:06 AM, Daniel Drake wrote:
+> This makes it possible to build a dracut initramfs without modules,
+> where all needed kernel drivers are built into the kernel image.
+> ---
+>   dracut                 |    8 +++++---
+>   modules.d/99base/check |    4 ++--
+>   2 files changed, 7 insertions(+), 5 deletions(-)
+>
 > diff --git a/dracut b/dracut
-> index 826fbda..1d440ef 100755
+> index f10af83..6bd2374 100755
 > --- a/dracut
 > +++ b/dracut
-> @@ -61,6 +61,8 @@ while (($# > 0)); do
-> shift
-> done
+> @@ -135,9 +135,11 @@ echo $mods_to_load
+>   ## final stuff that has to happen
 >
-> +PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
-> +
-> [[ $debug ]] && { export PS4='${BASH_SOURCE}@${LINENO}(${FUNCNAME[0]}): ';
-> set -x
-> @@ -138,8 +140,8 @@ echo $mods_to_load
-> ## final stuff that has to happen
->
-> # generate module dependencies for the initrd
+>   # generate module dependencies for the initrd
 > -if ! /sbin/depmod -a -b "$initdir" $kernel; then
-> - echo "\"/sbin/depmod -a $kernel\" failed."
-> +if ! depmod -a -b "$initdir" $kernel; then
-> + echo "\"depmod -a $kernel\" failed."
-> exit 1
-> fi
+> -    echo "\"/sbin/depmod -a $kernel\" failed."
+> -    exit 1
+> +if [ -d "$initdir/lib/modules/$kernel" ]; then
+> +    if ! /sbin/depmod -a -b "$initdir" $kernel; then
+> +        echo "\"/sbin/depmod -a $kernel\" failed."
+> +        exit 1
+> +    fi
+>   fi
 >
-> diff --git a/dracut-functions b/dracut-functions
-> index 8fbfa97..e525179 100755
-> --- a/dracut-functions
-> +++ b/dracut-functions
-> @@ -307,7 +307,7 @@ instmods() {
-> fi
-> inst_simple "$modpath"
-> done
-> - for fw in $(/sbin/modinfo -F firmware $mod 2>/dev/null); do
-> + for fw in $(modinfo -F firmware $mod 2>/dev/null); do
-> if [[ -f /lib/firmware/$fw ]]; then
-> inst_simple "/lib/firmware/$fw"
-> else
+>   # make sure that library links are correct and up to date
+> diff --git a/modules.d/99base/check b/modules.d/99base/check
+> index 5c3bc51..1128497 100755
+> --- a/modules.d/99base/check
+> +++ b/modules.d/99base/check
+> @@ -1,3 +1,3 @@
+>   #!/bin/bash
+> -[[ $1 = -d ]]&&  echo udev-rules kernel-modules
+> -exit 0
+> \ No newline at end of file
+> +[[ $1 = -d ]]&&  echo udev-rules
+> +exit 0
 
 pushed
 --
