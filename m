@@ -1,82 +1,38 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: initqueue
-Date: Thu, 2 Jul 2009 15:20:52 +0200
-Message-ID: <4A4CB434.1010001@bfh.ch>
-References: <4A4C87DF.10904@redhat.com> <4A4CAA92.9000401@bfh.ch> <4A4CAD9B.10503@redhat.com> <4A4CB136.6000109@bfh.ch> <4A4CB241.8080406@redhat.com>
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Subject: firmware loading
+Date: Thu, 02 Jul 2009 14:32:10 +0100
+Message-ID: <1246541530.2168.7.camel@polyethylene>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A4CB241.8080406-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:sender:subject:from:to
+         :content-type:date:message-id:mime-version:x-mailer
+         :content-transfer-encoding;
+        bh=o8Zijj8cGDy3D2pEqHfy2zj4WTbsFroyhTctTbf6EXo=;
+        b=tiC8il7nAAv1BGfnRibW6q04cLcVlSsI8rcRigd6DOHlZOTDOufUg3ZfNdxkZew92t
+         EKqFStwfzrD4JpPcz+ZB4PWcCANfrif6fXdOrPDE6UtmLzOQYKxBEGxy6vEZPsSlPO4s
+         WszCpNHqFnltR/a0TsKmUCsqSiBqFKp1YkPC8=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+Hi,
+
+Dracut seems to lack a mechanism for firmware loading i.e. it doesn't
+install the udev rules or the firmware loading helper.
+
+Is this planned?
+
+I'd be happy to come up with a patch. Would it be sensible to add it to
+95udev-rules?
+
+Thanks,
+Daniel
 
 
-
-Harald Hoyer wrote:
-> On 07/02/2009 03:08 PM, Seewer Philippe wrote:
->> Harald Hoyer wrote:
->>> On 07/02/2009 02:39 PM, Seewer Philippe wrote:
->>>> Harald Hoyer wrote:
->>>>> To move all "big" jobs out of the udev event handling, I introduce the
->>>>> "initqueue". This prevents the job from being killed by udev timeouts.
->>>>>
->>>>> See
->>>>> http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut;a=commit;h=eab677a2164bccb3990487dc5ef4549b30cb1055 
->>>>>
->>>>>
->>>>>
->>>>>
->>>>> for the patch.
->>>>>
->>>>> Basically inside a udev event, you don't do
->>>>>
->>>>> RUN+="/sbin/ifup $env{INTERFACE}"
->>>>>
->>>>> you now queue this in the initqueue with:
->>>>>
->>>>> RUN+="/sbin/initqueue /sbin/ifup $env{INTERFACE}"
->>>>>
->>>>> Inside init all jobs are worked on in serial order by the
->>>>> do_initqueue() function.
->>>>>
->>>>> Now we have no more side effects due to the parallel nature of udev
->>>>> and still be fast, in case udev supports "udevadm settle
->>>>> --exit-if-exists="
->>>>
->>>> Please don't do that. That way we actually loose the benefit of 
->>>> doing as
->>>> much in parallel as possible. Instead please consider the patch below.
->>>> I've been fiddling with this for a few weeks now. It basically replaces
->>>> the current "wait-for-root" loop with a loop that queries the 
->>>> udev-queue
->>>> and only exits if either root is available or all udev events have been
->>>> processed.
->>>>
->>>> It works, except if a udev event takes longer than the default 180s
->>>> as is
->>>> the case with an unpatches cryptsetup and/or if we do user-interaction
->>>> from within udev which we shouldn't do anyway.
->>>>
->>>> Thank you,
->>>> Philippe
->>>>
->>>
->>> Well, you could remove the initqueue for ifup events, but I would like
->>> to keep it at least for cryptsetup.
->>
->> Why not just put cryptsetup back into mountscripts as I've suggested
->> before?
->>
-> 
-> Because so much more can be inside the crypto partition, which might 
-> need further processing.
-
-That is correct. But if it's in mountscripts, it would fire more
-udev-events which are caught again by udevadm settle. I don't see
-a problem there.
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
