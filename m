@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 06/10] add rm to be installed for initqueue
-Date: Fri,  3 Jul 2009 18:45:16 +0200
-Message-ID: <1246639520-3094-7-git-send-email-harald@redhat.com>
+Subject: [PATCH 05/10] add firmware packages to be required by the dracut-generic package
+Date: Fri,  3 Jul 2009 18:45:15 +0200
+Message-ID: <1246639520-3094-6-git-send-email-harald@redhat.com>
 References: <1246639520-3094-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1246639520-3094-1-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -14,21 +14,32 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 ---
- modules.d/99base/install |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ dracut.spec |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-diff --git a/modules.d/99base/install b/modules.d/99base/install
-index 4ecba9c..3f5b29a 100755
---- a/modules.d/99base/install
-+++ b/modules.d/99base/install
-@@ -1,5 +1,6 @@
- #!/bin/bash
--dracut_install mount mknod mkdir modprobe pidof sleep chroot sed ls flock cp mv dmesg 
-+dracut_install mount mknod mkdir modprobe pidof sleep chroot \
-+    sed ls flock cp mv dmesg rm
- if [ ! -e "${initdir}/bin/sh" ]; then
-     dracut_install bash
-     (ln -s bash "${initdir}/bin/sh" || :)
+diff --git a/dracut.spec b/dracut.spec
+index 3e33819..4fae92b 100644
+--- a/dracut.spec
++++ b/dracut.spec
+@@ -60,12 +60,17 @@ Requires: rpcbind nfs-utils
+ Requires: iscsi-initiator-utils
+ Requires: nbd
+ Requires: net-tools iproute
++Requires: kernel-firmware
++Requires: ql2100-firmware
++Requires: ql2200-firmware
++Requires: ql23xx-firmware
++Requires: ql2400-firmware
++Requires: ql2500-firmware
+ 
+ %description generic
+ This package requires everything which is needed to build a generic
+ all purpose initramfs.
+ 
+-
+ %prep
+ %setup -q -n %{name}-%{version}%{?dashgittag}
+ 
 -- 
 1.6.2.5
 
