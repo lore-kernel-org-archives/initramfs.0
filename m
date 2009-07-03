@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 07/10] fail iscsiroot, if iscsistart fails
-Date: Fri,  3 Jul 2009 18:45:17 +0200
-Message-ID: <1246639520-3094-8-git-send-email-harald@redhat.com>
+Subject: [PATCH 06/10] add rm to be installed for initqueue
+Date: Fri,  3 Jul 2009 18:45:16 +0200
+Message-ID: <1246639520-3094-7-git-send-email-harald@redhat.com>
 References: <1246639520-3094-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1246639520-3094-1-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -14,22 +14,21 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 ---
- modules.d/95iscsi/iscsiroot |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ modules.d/99base/install |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/modules.d/95iscsi/iscsiroot b/modules.d/95iscsi/iscsiroot
-index 316d8f4..b7e3cf8 100755
---- a/modules.d/95iscsi/iscsiroot
-+++ b/modules.d/95iscsi/iscsiroot
-@@ -130,7 +130,7 @@ iscsistart -i $iscsi_initiator -t $iscsi_target_name	\
-     ${iscsi_username+-u $iscsi_username} \
-     ${iscsi_password+-w $iscsi_password} \
-     ${iscsi_in_username+-U $iscsi_in_username} \
--    ${iscsi_in_password+-W $iscsi_in_password}
-+    ${iscsi_in_password+-W $iscsi_in_password} || exit 1
- 
- # now we have a root filesystem somewhere in /dev/sda*
- # let the normal block handler handle root=
+diff --git a/modules.d/99base/install b/modules.d/99base/install
+index 4ecba9c..3f5b29a 100755
+--- a/modules.d/99base/install
++++ b/modules.d/99base/install
+@@ -1,5 +1,6 @@
+ #!/bin/bash
+-dracut_install mount mknod mkdir modprobe pidof sleep chroot sed ls flock cp mv dmesg 
++dracut_install mount mknod mkdir modprobe pidof sleep chroot \
++    sed ls flock cp mv dmesg rm
+ if [ ! -e "${initdir}/bin/sh" ]; then
+     dracut_install bash
+     (ln -s bash "${initdir}/bin/sh" || :)
 -- 
 1.6.2.5
 
