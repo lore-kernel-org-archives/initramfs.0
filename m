@@ -1,97 +1,101 @@
 From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [RFC ONLY 4/5] netroot: move dracut syntax validation to root
- handlers
-Date: Tue, 07 Jul 2009 10:57:28 -0400
-Message-ID: <1246978648.22613.18.camel@obelisk.thedillows.org>
+Subject: Re: [RFC ONLY 5/5] PROOF-OF-CONCEPT: wait for spanning tree
+ timeout via arping
+Date: Tue, 07 Jul 2009 11:09:32 -0400
+Message-ID: <1246979372.22613.30.camel@obelisk.thedillows.org>
 References: <cover.1246656269.git.dave@thedillows.org>
-	 <d1aed501ae771d769efcd370f47184f12b9800d6.1246656269.git.dave@thedillows.org>
-	 <4A52FD93.3000406@bfh.ch>
+	 <8cf3d034e4611fbe661d4585fbfd1a03a6fd094b.1246656269.git.dave@thedillows.org>
+	 <4A530297.1020906@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A52FD93.3000406-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <4A530297.1020906-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, 2009-07-07 at 09:47 +0200, Seewer Philippe wrote:
+On Tue, 2009-07-07 at 10:08 +0200, Seewer Philippe wrote:
 > David Dillow wrote:
-> > This reduces the argument parsers in the cmdline hook to giving warnings
-> > about usage and translating legacy syntaxes to dracut's syntax. The root
-> > handlers themselves become responsible for validating the dracut syntax.
-> > This simplifies the cmdline parsers and centralizes the syntax parsers,
-> > which keeps them from multiplying as new functionality is added.
+> > +    echo mynet=$ip/$mask > /tmp/net.$netif.up
+> > +
 > 
-> I don't think that centralizing code is that important. Dracut is
-> module based after all and the central point to find code is the module
-> directory. 
+> Please don't do this. $ip/$mask is in .override so we don't need
+> more variables.
 
-I'd rather centralize code into a single file as long as it doesn't get
-too big -- and our scripts are no where close to that limit. When making
-changes -- or just trying to understand how things work -- it is really
-annoying to have to have umpteen different files open just to trace the
-flow.
+This is why it is proof-of-concept, I don't like $mynet either. But, not
+having it means that we have to parse both .override and .dhcpopts and
+figure out which one applies in this case.
 
-> But there's a two things about this approach that bug me:
-> - The netroot handlers become some sort of multi-call utilities, doing
->   possibly entirely different things depending on arguments. From a
->   functional point of view netroot handlers should only care about
->   the actual mount/login.
+I think the real solution is to not use scriptlets in the net.$netif.up
+files and move to a /tmp/net.$netif.cfg that has all the variables we
+need for configuration, which we can then source. This gets rid of the
+$netif.gw and $netif.hostname files as well, since we can pick the one
+we want in netroot then.
 
-I'm OK with the multicall handler, obviously. :) I like that all of the
-knowledge about a protocol (modulo legacies) is in one file, and the
-code to mount/login is usually a small portion of it -- the bulk is the
-parsing.
 
-> - Arguments are constantly reparsed. This is unnecessary but applies to
->   the current implementation as well
 
-This doesn't bug me very much, as we're talking milliseconds. And the
-alternative is yet more files.
-
-> Suggestion: We don't use the netroot argument inside netroot. Instead, the
-> different parsers should write out /tmp/netroot.info in a similar format
-> to net.ethX.override or dhclient.ethX.dhcpopts. Netroot modules would
-> have to provide three files: Legacy cmdline parser (optional),
-> dracut-syntax parser (for netroot= and dhcp root-path), mount/login handler.
+> > +# FIXME make 120 configurable
+> > +TIMEOUT=$(( $(date +%s) + 120 ))
 > 
-> This would work like this:
-> cmdline step 1: All legacy parsers run first, validating if necessary
->                 and/or reformat arguments into netroot= if possible
-> cmdline step 2: call proto-validate.sh which parses and validates
->                 dracut-syntax
-> ==> After this step, if all parameters are correct and root!=dhcp,
->     /tmp/netroot.info should be available.
+> Is 120 seconds really necessary? I've worked with 60 seconds and haven't
+> had any problems, even when specifically provoking STP with ip down/up 
+> before issuing arping.
 
-Minor nit: Unless you're doing NFS and getting info from root-path, or
-any netroot handler that supports defaulting the server the DHCP
-server-id.
+Someone said that the STP timeout could be up to 100 seconds, so I added
+a bit for safety. If I made it configurable, we could default to
+something like 45-60 seconds and those that run a larger blocking time
+could bump it up.
 
-> netroot step 1: If root=dhcp do the same as cmdline step 2
-> ==> After this step and if all parameters are correct /tmp/netroot.info
->     should be available.
-
-Minor nit: you have to re-run it for the same reasons above.
-
-> netroot step 2: Source /tmp/netroot.info and use "$server" for STP arping.
->                 If it's empty, issue a warning, use dhcp server and rewrite
->                 the file with the new server=.
-
-Minor nit: you have to fall back to the default gateway if server isn't
-available.
-
-> netroot step 3: Just call the mount/login handler without any arguments.
->                 Everything it needs is in /tmp/netroot.info
+> Something else: If we really have to use 120 seconds and/or do this on 
+> multiple interface we might run into the default udev event timeout of 
+> 180 seconds. Netroot should be moved into the new initqueue in that case.
 > 
-> What do you think?
+> > +while [ -z "$proceed" -a $(date +%s) -lt $TIMEOUT ]; do
+> > +    for iface in $IFACES; do
+> > +	arping -q -f -c 1 -I $iface $target && proceed=1 && break
+> > +    done
+> > +done
+> 
+> Just so that I understand you correctly: You're trying to arping on all
+> interfaces until one says OK? 
+> 
+> If we have multiple interface to up before mount/login, we should take care 
+> to try and enable all interfaces:
 
-It would work, but it isn't my preferred method due to spreading the
-knowledge of a protocol over multiple files. I like the idea of making
-the cmdline parsers only do legacy rather than the legacy + warnings and
-invoke the netroot handler, but there may be some gothcas there that
-make things uglier. I'd have to think about that.
+Good point.
+
+> > +if [ -n "$proceed" ]; then
+> >      warn "Mounting root via '$netif' failed"
+> > -    # If we're trying with multiple interfaces, put that one down.
+> > -    # ip down/flush ensures that routeing info goes away as well
+> > -    if [ -z "$BOOTDEV" ] ; then
+> > -	ip link set $netif down
+> > -	ip addr flush dev $netif
+> > -	echo "#empty" > /etc/resolv.conf
+> > -    fi
+> > +else
+> > +    warn "Unable to ARP ping $target via $netif"
+> > +fi
+> > +
+> > +# If we're trying with multiple interfaces, put that one down.
+> > +# ip down/flush ensures that routeing info goes away as well
+> > +if [ -z "$BOOTDEV" ] ; then
+> > +    ip link set $netif down
+> > +    ip addr flush dev $netif
+> > +    echo "#empty" > /etc/resolv.conf
+> >  fi
+> >  exit 0
+> 
+> I'd suggest to move [ -n "$proceed" ] to before mount/login and just do 
+> [ -z "$proceed" ] && die "..."
+> 
+> that way loose the if/else.
+
+But then you leave the interface configured.
+
+Thanks for reviewing and the good comments on this series.
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
