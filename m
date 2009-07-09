@@ -1,102 +1,61 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: [RFC ONLY 5/5] PROOF-OF-CONCEPT: wait for spanning tree
- timeout via arping
-Date: Tue, 07 Jul 2009 11:09:32 -0400
-Message-ID: <1246979372.22613.30.camel@obelisk.thedillows.org>
-References: <cover.1246656269.git.dave@thedillows.org>
-	 <8cf3d034e4611fbe661d4585fbfd1a03a6fd094b.1246656269.git.dave@thedillows.org>
-	 <4A530297.1020906@bfh.ch>
+From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 2/3] raid: external and internal metadata support
+Date: Thu, 09 Jul 2009 16:19:48 -0400
+Message-ID: <4A5650E4.3040806@redhat.com>
+References: <20090206164019.GD552@redhat.com>	 <A9DE54D0CD747C4CB06DCE5B6FA2246F4B496AFA@irsmsx504.ger.corp.intel.com>	 <20090206165601.GF11144@nostromo.devel.redhat.com>	 <e9c3a7c20902060927j2b900940kd851573469110135@mail.gmail.com>	 <20090206173814.GA3541@nostromo.devel.redhat.com>	 <e9c3a7c20902061012w15a31e7br6ce2074b7b9db555@mail.gmail.com>	 <20090206182118.GA4413@nostromo.devel.redhat.com>	 <e9c3a7c20902061119i2120cc5fpda0a5cdc3aedc17b@mail.gmail.com>	 <20090206200818.GC6150@nostromo.devel.redhat.com> <e9c3a7c20902061226m3f1e9e55pc2986a8527ade77@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A530297.1020906-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <e9c3a7c20902061226m3f1e9e55pc2986a8527ade77-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Danecki, Jacek" <jacek.danecki-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "neilb-l3A5Bk7waGM@public.gmane.org" <neilb-l3A5Bk7waGM@public.gmane.org>
 
-On Tue, 2009-07-07 at 10:08 +0200, Seewer Philippe wrote:
-> David Dillow wrote:
-> > +    echo mynet=$ip/$mask > /tmp/net.$netif.up
-> > +
-> 
-> Please don't do this. $ip/$mask is in .override so we don't need
-> more variables.
+On 02/06/2009 03:26 PM, Dan Williams wrote:
+> On Fri, Feb 6, 2009 at 1:08 PM, Bill Nottingham<notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>  wrote:
+>> Dan Williams (dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org) said:
+>>> Actually no, your not necessarily stuck with the mdmon from boot.  In
+>>> a pinch you could "mdmon /proc/mdstat /".
+>> Not really.
+>>
+>> You state:
+>>
+>>> One might say "just set the dirty bit, terminate, and wait for the
+>>> mdmon in the rootfs to take over".  The problem is that a disk could
+>>> fail in this window, and this event needs to be handled before the
+>>> kernel does anything else to the array.
+>> ...
+>>> The clean bit can be set as soon as the parity data is in sync with
+>>> the data on the other drives.  We typically wait for some period of
+>>> write-inactivity to avoid needlessly touching the metadata after every
+>>> write.
+>> You shut down the machine. After a while, you get to the point where
+>> you're getting ready to unmount the filesystem. Since mdmon's running
+>> on it (if you started it post boot), you have to kill it. After that
+>> point, there are going to be writes (a final sync, if nothing else,
+>> when you unmount the filesystem.) And you won't be able to set any
+>> RAID metadata flags then, as the daemon won't be running. So, doing
+>> a later run of "mdmon /proc/mdstat" doesn't fully protect you.
+>>
+>
+> mdmon needs some coordination with the shutdown scripts to be kept
+> alive until the rootfs is marked readonly... actually up until the
+> point where the rootdev can be marked readonly.
+>
+> If you take a look at Debian's killall implementation it has
+> provisions to exclude fuse and other critical userspace process from
+> killall.  A similar exclusion is needed for mdmon.
 
-This is why it is proof-of-concept, I don't like $mynet either. But, not
-having it means that we have to parse both .override and .dhcpopts and
-figure out which one applies in this case.
+It appears we have no solution for this yet in Fedora 12.
 
-I think the real solution is to not use scriptlets in the net.$netif.up
-files and move to a /tmp/net.$netif.cfg that has all the variables we
-need for configuration, which we can then source. This gets rid of the
-$netif.gw and $netif.hostname files as well, since we can pick the one
-we want in netroot then.
+https://bugzilla.redhat.com/show_bug.cgi?id=496843
+This bug has a similar request for network block devices that need a 
+userspace process.
 
-
-
-> > +# FIXME make 120 configurable
-> > +TIMEOUT=$(( $(date +%s) + 120 ))
-> 
-> Is 120 seconds really necessary? I've worked with 60 seconds and haven't
-> had any problems, even when specifically provoking STP with ip down/up 
-> before issuing arping.
-
-Someone said that the STP timeout could be up to 100 seconds, so I added
-a bit for safety. If I made it configurable, we could default to
-something like 45-60 seconds and those that run a larger blocking time
-could bump it up.
-
-> Something else: If we really have to use 120 seconds and/or do this on 
-> multiple interface we might run into the default udev event timeout of 
-> 180 seconds. Netroot should be moved into the new initqueue in that case.
-> 
-> > +while [ -z "$proceed" -a $(date +%s) -lt $TIMEOUT ]; do
-> > +    for iface in $IFACES; do
-> > +	arping -q -f -c 1 -I $iface $target && proceed=1 && break
-> > +    done
-> > +done
-> 
-> Just so that I understand you correctly: You're trying to arping on all
-> interfaces until one says OK? 
-> 
-> If we have multiple interface to up before mount/login, we should take care 
-> to try and enable all interfaces:
-
-Good point.
-
-> > +if [ -n "$proceed" ]; then
-> >      warn "Mounting root via '$netif' failed"
-> > -    # If we're trying with multiple interfaces, put that one down.
-> > -    # ip down/flush ensures that routeing info goes away as well
-> > -    if [ -z "$BOOTDEV" ] ; then
-> > -	ip link set $netif down
-> > -	ip addr flush dev $netif
-> > -	echo "#empty" > /etc/resolv.conf
-> > -    fi
-> > +else
-> > +    warn "Unable to ARP ping $target via $netif"
-> > +fi
-> > +
-> > +# If we're trying with multiple interfaces, put that one down.
-> > +# ip down/flush ensures that routeing info goes away as well
-> > +if [ -z "$BOOTDEV" ] ; then
-> > +    ip link set $netif down
-> > +    ip addr flush dev $netif
-> > +    echo "#empty" > /etc/resolv.conf
-> >  fi
-> >  exit 0
-> 
-> I'd suggest to move [ -n "$proceed" ] to before mount/login and just do 
-> [ -z "$proceed" ] && die "..."
-> 
-> that way loose the if/else.
-
-But then you leave the interface configured.
-
-Thanks for reviewing and the good comments on this series.
-
+Warren Togami
+wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
