@@ -1,29 +1,65 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: Warn if defaulting to ip=dhcp
-Date: Thu, 09 Jul 2009 17:02:28 -0400
-Message-ID: <1247173348.8067.3.camel@lap75545.ornl.gov>
-References: <4A5656A1.90703@redhat.com>
+From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: PATCH: Fix / on lvm
+Date: Fri, 10 Jul 2009 18:49:23 +0200
+Message-ID: <4A577113.2040804@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="------------010504040706010908050103"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <4A5656A1.90703-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Thu, 2009-07-09 at 16:44 -0400, Warren Togami wrote:
-> 99parse-ip-opts.sh:
-> > # Warn if defaulting to ip=dhcp
-> > if [ -n "$netroot" ] && [ -z "$(getarg ip=)" ] ; then
-> >     warn "No ip= argument(s) for netroot provided, defaulting to DHCP"
-> >     return;
-> > fi
-> 
-> Is this really necessary?  This is not a warning.  There is nothing 
-> wrong with this.  Any objections to just removing this?
+This is a multi-part message in MIME format.
+--------------010504040706010908050103
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Please do! It's been low on my hit list for a while...
+Hi,
+
+Currently / on lvm is not working because the udev rules test for KERNEL="dm-*" which of course
+will not be true for PV's, so PV's are not recognized and thus lvm does not work.
+
+The attached patch fixes this.
+
+Regards,
+
+Hans
+
+--------------010504040706010908050103
+Content-Type: text/plain;
+ name="dracut-patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="dracut-patch"
+
+diff --git a/modules.d/90lvm/64-lvm-vol_id.rules b/modules.d/90lvm/64-lvm-vol_id.rules
+index d4b5269..0ebf009 100644
+--- a/modules.d/90lvm/64-lvm-vol_id.rules
++++ b/modules.d/90lvm/64-lvm-vol_id.rules
+@@ -6,7 +6,6 @@
+ 
+ SUBSYSTEM!="block", GOTO="lvm_end"
+ ACTION!="add|change", GOTO="lvm_end"
+-KERNEL!="dm-*", GOTO="lvm_end"
+ 
+ IMPORT{program}="vol_id --export $tempnode"
+ 
+diff --git a/modules.d/90lvm/64-lvm.rules b/modules.d/90lvm/64-lvm.rules
+index 3eddd07..7218862 100644
+--- a/modules.d/90lvm/64-lvm.rules
++++ b/modules.d/90lvm/64-lvm.rules
+@@ -6,7 +6,6 @@
+ 
+ SUBSYSTEM!="block", GOTO="lvm_end"
+ ACTION!="add|change", GOTO="lvm_end"
+-KERNEL!="dm-*", GOTO="lvm_end"
+ 
+ IMPORT{program}="/sbin/blkid -o udev -p $tempnode"
+ 
+
+--------------010504040706010908050103--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
