@@ -1,35 +1,31 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 10/10] add "rdshell" command line argument
-Date: Mon, 13 Jul 2009 12:30:20 +0200
-Message-ID: <4A5B0CBC.1040707@redhat.com>
-References: <1246639520-3094-1-git-send-email-harald@redhat.com> <1246639520-3094-11-git-send-email-harald@redhat.com> <20090706015313.GA70037@redhat.com>
+Subject: Re: Warn if defaulting to ip=dhcp
+Date: Mon, 13 Jul 2009 14:56:26 +0200
+Message-ID: <4A5B2EFA.5020000@redhat.com>
+References: <4A5656A1.90703@redhat.com> <1247173348.8067.3.camel@lap75545.ornl.gov>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20090706015313.GA70037-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1247173348.8067.3.camel-FqX9LgGZnHWDB2HL1qBt2PIbXMQ5te18@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07/06/2009 03:53 AM, Jeremy Katz wrote:
-> On Friday, July 03 2009, Harald Hoyer said:
->> Only drop to an interactive shell if "rdshell" is specified on the
->> command line. This prevents malicious users from gaining easy shell
->> access to the host system (grub might be secured with a password).
+On 07/09/2009 11:02 PM, David Dillow wrote:
+> On Thu, 2009-07-09 at 16:44 -0400, Warren Togami wrote:
+>> 99parse-ip-opts.sh:
+>>> # Warn if defaulting to ip=dhcp
+>>> if [ -n "$netroot" ]&&  [ -z "$(getarg ip=)" ] ; then
+>>>      warn "No ip= argument(s) for netroot provided, defaulting to DHCP"
+>>>      return;
+>>> fi
+>> Is this really necessary?  This is not a warning.  There is nothing
+>> wrong with this.  Any objections to just removing this?
 >
-> I don't have a strong opinion about doing this vs not, but how could
-> they end up getting easy shell access?  If grub is secured with a
-> password, they can't change kernel arguments.  If they can change kernel
-> arguments, they can just add rdshell rather than change the root=
-> specifier.
->
-> Jeremy
+> Please do! It's been low on my hit list for a while...
 
-If root is on a network device, they can just unplug the network cable and end 
-up with a shell, then they can replug the cable and do whatever they want in the 
-shell.
+removed
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
