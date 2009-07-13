@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 10/10] add "rdshell" command line argument
-Date: Mon, 13 Jul 2009 12:29:41 +0200
-Message-ID: <4A5B0C95.3030609@redhat.com>
+Date: Mon, 13 Jul 2009 12:30:20 +0200
+Message-ID: <4A5B0CBC.1040707@redhat.com>
 References: <1246639520-3094-1-git-send-email-harald@redhat.com> <1246639520-3094-11-git-send-email-harald@redhat.com> <20090706015313.GA70037@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
