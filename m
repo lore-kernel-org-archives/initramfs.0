@@ -1,121 +1,204 @@
-From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] switch_root: add subroot support
-Date: Tue, 14 Jul 2009 13:56:13 +0200
-Message-ID: <4A5C725D.8080603@harald-hoyer.de>
+Date: Tue, 14 Jul 2009 15:06:29 +0200
+Message-ID: <20090714130629.GA2768@nb.net.home>
 References: <20090712110243.F3E7E9D405C@zog.reactivated.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms000909080200080402060409"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <20090712110243.F3E7E9D405C-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-This is a cryptographically signed message in MIME format.
-
---------------ms000909080200080402060409
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 07/12/2009 01:02 PM, Daniel Drake wrote:
+On Sun, Jul 12, 2009 at 12:02:43PM +0100, Daniel Drake wrote:
 > The current switch_root can only switch to a new root that is the root
 > of a mount point.
->
-> This patch adds support for "subroots", where the new root is somewhere=
-
+> 
+> This patch adds support for "subroots", where the new root is somewhere
 > below a mount point. It does this by adding in a few extra steps to
 > chroot into the subroot after the enclosing partition has been moved
 > and entered.
->
+> 
 > This will be used by OLPC, who sort-of have 2 copies of Fedora stored
 > on a single partition under different directory trees, where the
 > initramfs decides which one to boot into.
-> ---
->   switch_root.c |   91 ++++++++++++++++++++++++++++++++++++++++++++++++=
-+++++++--
->   1 files changed, 88 insertions(+), 3 deletions(-)
->
-=2E..
 
-forwarded to Karel Zak, who maintains switch_root in util-linux-ng
+ Sounds crazy :-) 
+ 
+ Applied with some minor changes. Please, review the patch below or
+  
+   git://git.kernel.org/pub/scm/utils/util-linux-ng/util-linux-ng.git
+
+ Thanks.
+
+    Karel
 
 
---------------ms000909080200080402060409
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+From a692a8745941a192528c5e2a05de97155ba586f9 Mon Sep 17 00:00:00 2001
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Date: Tue, 14 Jul 2009 14:41:33 +0200
+Subject: [PATCH] switch_root: add subroot support
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIKeDCC
-BTgwggMgoAMCAQICAwbD1zANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wOTA0
-MjIxMzEzNTNaFw0xMTA0MjIxMzEzNTNaMD4xFTATBgNVBAMTDEhhcmFsZCBIb3llcjElMCMG
-CSqGSIb3DQEJARYWaGFyYWxkQGhhcmFsZC1ob3llci5kZTCCASIwDQYJKoZIhvcNAQEBBQAD
-ggEPADCCAQoCggEBAMWJ6ewlyqPdfi2JF6XsM9hxa/l6edcmLEALUs5fblqJxA9ixAoWI+WY
-0agbuZgs/iudr69sU9lJIfpXUdLdZoVUn6iWxwRuJmvgihnFpLfojx+l4wDZu5JeJUXbcml4
-2wHvykdBfkfTEmUGn09CbPWeG5fAfOq37s9TIyAq4AnVWPaR4ZtIgg/s9ns9DoCAKP1pzgLn
-qTu94pfLtl5dB/dpCV9seqe+YtUZqedXhFOtWkq/w2hbFA+mXSbSDts6rZMlQO8+Rzkx1fSc
-aMZYBZ3OqRRxk6+oC4Tlv24Yj2lPMV+inTyXllxxqUa9NuXYK9hI+juy4fa3BIbKBCKidCEC
-AwEAAaOCAQIwgf8wDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIg
-b3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2Vy
-dC5vcmcwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMCEGA1UdEQQaMBiBFmhhcmFsZEBoYXJhbGQtaG95ZXIuZGUwDQYJ
-KoZIhvcNAQEFBQADggIBALxiL/vzgv95mAJoJvuoZML7haGKzFe7L3DTqDEZNNW/AhYiqZKW
-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
-VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
-GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
-ZXJ0Lm9yZwIDBsPXMAkGBSsOAwIaBQCgggHoMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEw
-HAYJKoZIhvcNAQkFMQ8XDTA5MDcxNDExNTYxM1owIwYJKoZIhvcNAQkEMRYEFE2vaKpPIVdL
-p3cJadxyZEMzw6Y1MF8GCSqGSIb3DQEJDzFSMFAwCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMH
-MA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIB
-KDCBkQYJKwYBBAGCNxAEMYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0
-dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0
-eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMGw9cwgZMGCyqGSIb3DQEJ
-EAILMYGDoIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2Fj
-ZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3
-DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMGw9cwDQYJKoZIhvcNAQEBBQAEggEAOXqjdKvc
-I4E+x0BzpM925dHZ9G6rLKGV17eJHmAEAVYCtghYOWlxCwLY+QfN8wL0c3AKhDK6Fi+ayzMj
-3r/SWouM5GUlaLf5wBFZaPthmn3mCYbCqFfhMGpKyVhxW33StSJqhlQE4eqlQHPL32GOMmFD
-6j+gqmUgYM/CqL9v/nWCajhHwFlElKkSPTeKxCWWVqpnUkmU1wbidtt1l4bqztJucFaXhIc8
-fe9GkMmpKC9kpTesVhO1FSJ2o/dIq+VHDaruPGd3H/fb9Fq00qewX5ZREL4ixuiFHh7G9Y5c
-L8uKf/nFPP9PFQ5k6c6iJF+6z8xWkYJ4cjC0jnAeBsbRFgAAAAAAAA==
---------------ms000909080200080402060409--
+The current switch_root can only switch to a new root that is the root
+of a mount point.
+
+This patch adds support for "subroots", where the new root is
+somewhere below a mount point. It does this by adding in a few extra
+steps to chroot into the subroot after the enclosing partition has
+been moved and entered.
+
+This will be used by OLPC, who sort-of have 2 copies of Fedora stored
+on a single partition under different directory trees, where the
+initramfs decides which one to boot into
+
+[kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org:
+    - port to the current u-l-ng switch_root code
+    - don't use static buffer for "dir" in get_parent_mount()]
+
+CC: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Signed-off-by: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ sys-utils/switch_root.c |   81 ++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 76 insertions(+), 5 deletions(-)
+
+diff --git a/sys-utils/switch_root.c b/sys-utils/switch_root.c
+index b947f54..b192a08 100644
+--- a/sys-utils/switch_root.c
++++ b/sys-utils/switch_root.c
+@@ -33,6 +33,7 @@
+ #include <ctype.h>
+ #include <dirent.h>
+ #include <err.h>
++#include <libgen.h>
+ 
+ #ifndef MS_MOVE
+ #define MS_MOVE 8192
+@@ -108,13 +109,58 @@ done:
+ 	return rc;
+ }
+ 
++/* find the enclosing mount point of a path, by examining the backing device
++ * of parent directories until we reach / or find a parent with a differing
++ * device. Result must be freed.
++ */
++static char *get_parent_mount(const char *path)
++{
++	struct stat sb;
++	char *dir;
++	char tmp[PATH_MAX];
++	dev_t inner_dev;
++
++	if (stat(path, &sb) != 0) {
++		warn("failed to stat %s", path);
++		return NULL;
++	}
++
++	inner_dev = sb.st_dev;
++	dir = strdup(path);
++
++	while (dir) {
++		char *parent;
++
++		strncpy(tmp, dir, PATH_MAX);
++		tmp[PATH_MAX - 1] = '\0';
++		parent = dirname(tmp);
++
++		if (stat(parent, &sb) != 0) {
++			warn("failed to stat %s", parent);
++			return NULL;
++		}
++		if (sb.st_dev != inner_dev)
++			return dir;
++
++		strncpy(dir, parent, PATH_MAX);
++		dir[PATH_MAX - 1] = '\0';
++
++		/* maybe we've reached / */
++		if (*dir == '/' && !*(dir + 1))
++			return dir;
++	}
++	return NULL;
++}
++
+ static int switchroot(const char *newroot)
+ {
+ 	/*  Don't try to unmount the old "/", there's no way to do it. */
+ 	const char *umounts[] = { "/dev", "/proc", "/sys", NULL };
+ 	int i;
+-	int cfd;
++	int cfd, rc = -1;
+ 	pid_t pid;
++	const char *chroot_path = NULL;
++	char *newroot_mnt;
+ 
+ 	for (i = 0; umounts[i] != NULL; i++) {
+ 		char newmount[PATH_MAX];
+@@ -129,21 +175,43 @@ static int switchroot(const char *newroot)
+ 		}
+ 	}
+ 
++	newroot_mnt = get_parent_mount(newroot);
++	if (newroot_mnt && strcmp(newroot, newroot_mnt)) {
++		/* newroot is not a mount point, so we have to MS_MOVE the
++		 * parent mount point and then chroot in to the "subroot"
++		 */
++		chroot_path = newroot + strlen(newroot_mnt);
++		newroot = newroot_mnt;
++	}
++
+ 	if (chdir(newroot)) {
+ 		warn("failed to change directory to %s", newroot);
+-		return -1;
++		goto done;
+ 	}
+ 
+ 	cfd = open("/", O_RDONLY);
+ 
+ 	if (mount(newroot, "/", NULL, MS_MOVE, NULL) < 0) {
+ 		warn("failed to mount moving %s to /", newroot);
+-		return -1;
++		goto done;
+ 	}
+ 
++	/* move to the real root of the device */
+ 	if (chroot(".")) {
+ 		warn("failed to change root");
+-		return -1;
++		goto done;
++	}
++
++	/* move to the subdirectory on the root device (subroot) */
++	if (chroot_path) {
++		if (chdir(chroot_path)) {
++			warn("failed to chdir to subroot %s", chroot_path);
++			goto done;
++		}
++		if (chroot(".")) {
++			warn("failed to change root to subroot %s", chroot_path);
++			goto done;
++		}
+ 	}
+ 
+ 	if (cfd >= 0) {
+@@ -155,7 +223,10 @@ static int switchroot(const char *newroot)
+ 		}
+ 		close(cfd);
+ 	}
+-	return 0;
++	rc = 0;
++done:
++	free(newroot_mnt);
++	return rc;
+ }
+ 
+ static void usage(FILE *output)
+-- 
+1.6.2.2
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
