@@ -1,69 +1,122 @@
-From: Hans de Goede <hdegoede@redhat.com>
-Subject: RFC: mdadm and bringing up raid sets from initrd (dracut)
-Date: Tue, 14 Jul 2009 12:59:13 +0200
-Message-ID: <4A5C6501.3080607@redhat.com>
+From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
+Subject: Re: [PATCH] switch_root: add subroot support
+Date: Tue, 14 Jul 2009 13:56:13 +0200
+Message-ID: <4A5C725D.8080603@harald-hoyer.de>
+References: <20090712110243.F3E7E9D405C@zog.reactivated.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-hotplug-owner@vger.kernel.org>
-Sender: linux-hotplug-owner@vger.kernel.org
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms000909080200080402060409"
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20090712110243.F3E7E9D405C-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs@vger.kernel.org>
-Cc: linux-hotplug@vger.kernel.org, "Danecki, Jacek" <jacek.danecki@intel.com>, Harald Hoyer <harald@redhat.com>, Doug Ledford <dledford@redhat.com>
+To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Hi,
+This is a cryptographically signed message in MIME format.
 
-As you probably know I'm working on making Fedora 12 use mdraid
-instead of dmraid for Intel BIOS-RAID setups.
+--------------ms000909080200080402060409
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-The installer (anaconda) part is mostly done (needs more testing)
-and now I'm looking at implementing support for this in dracut
-(the new mkinitrd for Fedora 12).
+On 07/12/2009 01:02 PM, Daniel Drake wrote:
+> The current switch_root can only switch to a new root that is the root
+> of a mount point.
+>
+> This patch adds support for "subroots", where the new root is somewhere=
 
-So I've been testing how this works for both imsm mdraid sets
-and native mdraid metadata sets, in both cases using a 2 disk
-mirror, so that the set can also be brought up in degraded mode.
+> below a mount point. It does this by adding in a few extra steps to
+> chroot into the subroot after the enclosing partition has been moved
+> and entered.
+>
+> This will be used by OLPC, who sort-of have 2 copies of Fedora stored
+> on a single partition under different directory trees, where the
+> initramfs decides which one to boot into.
+> ---
+>   switch_root.c |   91 ++++++++++++++++++++++++++++++++++++++++++++++++=
++++++++--
+>   1 files changed, 88 insertions(+), 3 deletions(-)
+>
+=2E..
 
-Currently the udev rules use incremental assembly like this:
-mdadm -I /dev/mdraid-member
+forwarded to Karel Zak, who maintains switch_root in util-linux-ng
 
-There are 2 problems with this:
-1) When doing this for native mdraid metadata arrays, if only
-    one disk is present the set never gets activated
-2) When doing this for imsm metadata arrays, as soon as the
-    first disk is incrementally added, the set gets activated
-    in degraded mode and stays that way, the second disk
-    will get added to the container, but not to the actual
-    sets in the container
 
-And these 2 problems have 2 different solutions:
-1) An incomplete, but potentially activatable in degraded mode
-    set can be activated using mdadm --run /dev/md#
-2) One can stop this problem by using:
-    mdadm -I --no-degraded /dev/mdraid-member
-    instead (this does not change anything for
-    native mdraid metadata format sets)
-    But if that is done, the sets in the container never get
-    activated, this can be fixed by running
-    mdadm -I /dev/md# on the container device
+--------------ms000909080200080402060409
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-So my proposed solution for this is when udev is done scanning
-(when the event queue is empty, detected using the same mechanism as
-dracut is using for dmraid), do the following:
-
-For each /dev/md#
-   run mdadm --export --detail, and get the MD_LEVEL
-   if MD_LEVEL == "container":
-     mdadm -I /dev/md#
-   else
-     mdadm --run /dev/md#
-
-This will:
-1) Bring up raid sets inside containers (such as imsm raidsets)
-2) Bring up incomplete raid sets in degraded mode where possible
-
-I'll post a patch implementing this later today.
-
-Regards,
-
-Hans
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIKeDCC
+BTgwggMgoAMCAQICAwbD1zANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wOTA0
+MjIxMzEzNTNaFw0xMTA0MjIxMzEzNTNaMD4xFTATBgNVBAMTDEhhcmFsZCBIb3llcjElMCMG
+CSqGSIb3DQEJARYWaGFyYWxkQGhhcmFsZC1ob3llci5kZTCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBAMWJ6ewlyqPdfi2JF6XsM9hxa/l6edcmLEALUs5fblqJxA9ixAoWI+WY
+0agbuZgs/iudr69sU9lJIfpXUdLdZoVUn6iWxwRuJmvgihnFpLfojx+l4wDZu5JeJUXbcml4
+2wHvykdBfkfTEmUGn09CbPWeG5fAfOq37s9TIyAq4AnVWPaR4ZtIgg/s9ns9DoCAKP1pzgLn
+qTu94pfLtl5dB/dpCV9seqe+YtUZqedXhFOtWkq/w2hbFA+mXSbSDts6rZMlQO8+Rzkx1fSc
+aMZYBZ3OqRRxk6+oC4Tlv24Yj2lPMV+inTyXllxxqUa9NuXYK9hI+juy4fa3BIbKBCKidCEC
+AwEAAaOCAQIwgf8wDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIg
+b3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2Vy
+dC5vcmcwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMCEGA1UdEQQaMBiBFmhhcmFsZEBoYXJhbGQtaG95ZXIuZGUwDQYJ
+KoZIhvcNAQEFBQADggIBALxiL/vzgv95mAJoJvuoZML7haGKzFe7L3DTqDEZNNW/AhYiqZKW
+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
+VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
+GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
+ZXJ0Lm9yZwIDBsPXMAkGBSsOAwIaBQCgggHoMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEw
+HAYJKoZIhvcNAQkFMQ8XDTA5MDcxNDExNTYxM1owIwYJKoZIhvcNAQkEMRYEFE2vaKpPIVdL
+p3cJadxyZEMzw6Y1MF8GCSqGSIb3DQEJDzFSMFAwCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMH
+MA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIB
+KDCBkQYJKwYBBAGCNxAEMYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0
+dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0
+eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMGw9cwgZMGCyqGSIb3DQEJ
+EAILMYGDoIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2Fj
+ZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3
+DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMGw9cwDQYJKoZIhvcNAQEBBQAEggEAOXqjdKvc
+I4E+x0BzpM925dHZ9G6rLKGV17eJHmAEAVYCtghYOWlxCwLY+QfN8wL0c3AKhDK6Fi+ayzMj
+3r/SWouM5GUlaLf5wBFZaPthmn3mCYbCqFfhMGpKyVhxW33StSJqhlQE4eqlQHPL32GOMmFD
+6j+gqmUgYM/CqL9v/nWCajhHwFlElKkSPTeKxCWWVqpnUkmU1wbidtt1l4bqztJucFaXhIc8
+fe9GkMmpKC9kpTesVhO1FSJ2o/dIq+VHDaruPGd3H/fb9Fq00qewX5ZREL4ixuiFHh7G9Y5c
+L8uKf/nFPP9PFQ5k6c6iJF+6z8xWkYJ4cjC0jnAeBsbRFgAAAAAAAA==
+--------------ms000909080200080402060409--
+--
+To unsubscribe from this list: send the line "unsubscribe initramfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
