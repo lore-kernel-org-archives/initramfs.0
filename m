@@ -1,205 +1,135 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] switch_root: add subroot support
-Date: Tue, 14 Jul 2009 15:06:29 +0200
-Message-ID: <20090714130629.GA2768@nb.net.home>
-References: <20090712110243.F3E7E9D405C@zog.reactivated.net>
-Mime-Version: 1.0
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20090712110243.F3E7E9D405C-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+From: Doug Ledford <dledford@redhat.com>
+Subject: Re: RFC: mdadm and bringing up raid sets from initrd (dracut)
+Date: Tue, 14 Jul 2009 09:39:43 -0400
+Message-ID: <1955210A-EF27-479F-8C58-BA4FA9018A56@redhat.com>
+References: <4A5C6501.3080607@redhat.com>
+Mime-Version: 1.0 (Apple Message framework v935.3)
+Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-87-836127628"
 Content-Transfer-Encoding: 7bit
-To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-hotplug-owner@vger.kernel.org>
+In-Reply-To: <4A5C6501.3080607@redhat.com>
+Sender: linux-hotplug-owner@vger.kernel.org
+List-ID: <initramfs.vger.kernel.org>
+To: Hans de Goede <hdegoede@redhat.com>
+Cc: initramfs <initramfs@vger.kernel.org>, linux-hotplug@vger.kernel.org, "Danecki, Jacek" <jacek.danecki@intel.com>, Harald Hoyer <harald@redhat.com>
 
-On Sun, Jul 12, 2009 at 12:02:43PM +0100, Daniel Drake wrote:
-> The current switch_root can only switch to a new root that is the root
-> of a mount point.
-> 
-> This patch adds support for "subroots", where the new root is somewhere
-> below a mount point. It does this by adding in a few extra steps to
-> chroot into the subroot after the enclosing partition has been moved
-> and entered.
-> 
-> This will be used by OLPC, who sort-of have 2 copies of Fedora stored
-> on a single partition under different directory trees, where the
-> initramfs decides which one to boot into.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--Apple-Mail-87-836127628
+Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
+Content-Transfer-Encoding: 7bit
 
- Sounds crazy :-) 
- 
- Applied with some minor changes. Please, review the patch below or
-  
-   git://git.kernel.org/pub/scm/utils/util-linux-ng/util-linux-ng.git
+On Jul 14, 2009, at 6:59 AM, Hans de Goede wrote:
+> Hi,
+>
+> As you probably know I'm working on making Fedora 12 use mdraid
+> instead of dmraid for Intel BIOS-RAID setups.
+>
+> The installer (anaconda) part is mostly done (needs more testing)
+> and now I'm looking at implementing support for this in dracut
+> (the new mkinitrd for Fedora 12).
+>
+> So I've been testing how this works for both imsm mdraid sets
+> and native mdraid metadata sets, in both cases using a 2 disk
+> mirror, so that the set can also be brought up in degraded mode.
+>
+> Currently the udev rules use incremental assembly like this:
+> mdadm -I /dev/mdraid-member
 
- Thanks.
+Hmmm...does dracut use udev during initramfs time?  mkinitrd didn't,  
+so this would be a change.  In particular, I didn't have these  
+problems with mkinitrd because I didn't use udev rules in the initrd,  
+I ran mdadm -A instead.  In fact, the F11 method of bringup of raid  
+devices is as such:
 
-    Karel
+initrd: use mdadm -As --run <mddevice name with matching ARRAY entry  
+in /etc/mdadm.conf>
+rc.sysinit: use mdadm -As --run (no md device name, which means all  
+arrays listed in mdadm.conf will get brought up, plus extra arrays not  
+listed in mdadm.conf but which can be found and identified by metadata)
+udev: in 65-md-incremental.rules use mdadm -I <block device> (but only  
+if /dev/.in.rcsysinit does not exist, so we don't run udev incremental  
+rules until after the system is up and running, which means for hot  
+plugged devices...in particular we will never run the udev rule on any  
+device that was present on boot, instead the previous two calls will  
+catch these devices, and those previous calls will run degraded  
+arrays, this allows me to safely refuse to run degraded arrays in the  
+udev rules file without risking failing to boot, instead a degraded  
+hot plugged array will need minor manual intervention, but the system  
+will be fully up and operational no matter what)
+
+I find this setup to be a rather safe, conservative way of handling md  
+raid array hot plug.  Are we going to be totally changing this with  
+dracut and F12?  This method very nicely resolves the issues you posted.
+
+> There are 2 problems with this:
+> 1) When doing this for native mdraid metadata arrays, if only
+>   one disk is present the set never gets activated
+> 2) When doing this for imsm metadata arrays, as soon as the
+>   first disk is incrementally added, the set gets activated
+>   in degraded mode and stays that way, the second disk
+>   will get added to the container, but not to the actual
+>   sets in the container
+>
+> And these 2 problems have 2 different solutions:
+> 1) An incomplete, but potentially activatable in degraded mode
+>   set can be activated using mdadm --run /dev/md#
+> 2) One can stop this problem by using:
+>   mdadm -I --no-degraded /dev/mdraid-member
+>   instead (this does not change anything for
+>   native mdraid metadata format sets)
+>   But if that is done, the sets in the container never get
+>   activated, this can be fixed by running
+>   mdadm -I /dev/md# on the container device
+>
+> So my proposed solution for this is when udev is done scanning
+> (when the event queue is empty, detected using the same mechanism as
+> dracut is using for dmraid), do the following:
+>
+> For each /dev/md#
+>  run mdadm --export --detail, and get the MD_LEVEL
+>  if MD_LEVEL == "container":
+>    mdadm -I /dev/md#
+>  else
+>    mdadm --run /dev/md#
+>
+> This will:
+> 1) Bring up raid sets inside containers (such as imsm raidsets)
+> 2) Bring up incomplete raid sets in degraded mode where possible
+>
+> I'll post a patch implementing this later today.
+>
+> Regards,
+>
+> Hans
 
 
-From a692a8745941a192528c5e2a05de97155ba586f9 Mon Sep 17 00:00:00 2001
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Date: Tue, 14 Jul 2009 14:41:33 +0200
-Subject: [PATCH] switch_root: add subroot support
-
-The current switch_root can only switch to a new root that is the root
-of a mount point.
-
-This patch adds support for "subroots", where the new root is
-somewhere below a mount point. It does this by adding in a few extra
-steps to chroot into the subroot after the enclosing partition has
-been moved and entered.
-
-This will be used by OLPC, who sort-of have 2 copies of Fedora stored
-on a single partition under different directory trees, where the
-initramfs decides which one to boot into
-
-[kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org:
-    - port to the current u-l-ng switch_root code
-    - don't use static buffer for "dir" in get_parent_mount()]
-
-CC: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Signed-off-by: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- sys-utils/switch_root.c |   81 ++++++++++++++++++++++++++++++++++++++++++++---
- 1 files changed, 76 insertions(+), 5 deletions(-)
-
-diff --git a/sys-utils/switch_root.c b/sys-utils/switch_root.c
-index b947f54..b192a08 100644
---- a/sys-utils/switch_root.c
-+++ b/sys-utils/switch_root.c
-@@ -33,6 +33,7 @@
- #include <ctype.h>
- #include <dirent.h>
- #include <err.h>
-+#include <libgen.h>
- 
- #ifndef MS_MOVE
- #define MS_MOVE 8192
-@@ -108,13 +109,58 @@ done:
- 	return rc;
- }
- 
-+/* find the enclosing mount point of a path, by examining the backing device
-+ * of parent directories until we reach / or find a parent with a differing
-+ * device. Result must be freed.
-+ */
-+static char *get_parent_mount(const char *path)
-+{
-+	struct stat sb;
-+	char *dir;
-+	char tmp[PATH_MAX];
-+	dev_t inner_dev;
-+
-+	if (stat(path, &sb) != 0) {
-+		warn("failed to stat %s", path);
-+		return NULL;
-+	}
-+
-+	inner_dev = sb.st_dev;
-+	dir = strdup(path);
-+
-+	while (dir) {
-+		char *parent;
-+
-+		strncpy(tmp, dir, PATH_MAX);
-+		tmp[PATH_MAX - 1] = '\0';
-+		parent = dirname(tmp);
-+
-+		if (stat(parent, &sb) != 0) {
-+			warn("failed to stat %s", parent);
-+			return NULL;
-+		}
-+		if (sb.st_dev != inner_dev)
-+			return dir;
-+
-+		strncpy(dir, parent, PATH_MAX);
-+		dir[PATH_MAX - 1] = '\0';
-+
-+		/* maybe we've reached / */
-+		if (*dir == '/' && !*(dir + 1))
-+			return dir;
-+	}
-+	return NULL;
-+}
-+
- static int switchroot(const char *newroot)
- {
- 	/*  Don't try to unmount the old "/", there's no way to do it. */
- 	const char *umounts[] = { "/dev", "/proc", "/sys", NULL };
- 	int i;
--	int cfd;
-+	int cfd, rc = -1;
- 	pid_t pid;
-+	const char *chroot_path = NULL;
-+	char *newroot_mnt;
- 
- 	for (i = 0; umounts[i] != NULL; i++) {
- 		char newmount[PATH_MAX];
-@@ -129,21 +175,43 @@ static int switchroot(const char *newroot)
- 		}
- 	}
- 
-+	newroot_mnt = get_parent_mount(newroot);
-+	if (newroot_mnt && strcmp(newroot, newroot_mnt)) {
-+		/* newroot is not a mount point, so we have to MS_MOVE the
-+		 * parent mount point and then chroot in to the "subroot"
-+		 */
-+		chroot_path = newroot + strlen(newroot_mnt);
-+		newroot = newroot_mnt;
-+	}
-+
- 	if (chdir(newroot)) {
- 		warn("failed to change directory to %s", newroot);
--		return -1;
-+		goto done;
- 	}
- 
- 	cfd = open("/", O_RDONLY);
- 
- 	if (mount(newroot, "/", NULL, MS_MOVE, NULL) < 0) {
- 		warn("failed to mount moving %s to /", newroot);
--		return -1;
-+		goto done;
- 	}
- 
-+	/* move to the real root of the device */
- 	if (chroot(".")) {
- 		warn("failed to change root");
--		return -1;
-+		goto done;
-+	}
-+
-+	/* move to the subdirectory on the root device (subroot) */
-+	if (chroot_path) {
-+		if (chdir(chroot_path)) {
-+			warn("failed to chdir to subroot %s", chroot_path);
-+			goto done;
-+		}
-+		if (chroot(".")) {
-+			warn("failed to change root to subroot %s", chroot_path);
-+			goto done;
-+		}
- 	}
- 
- 	if (cfd >= 0) {
-@@ -155,7 +223,10 @@ static int switchroot(const char *newroot)
- 		}
- 		close(cfd);
- 	}
--	return 0;
-+	rc = 0;
-+done:
-+	free(newroot_mnt);
-+	return rc;
- }
- 
- static void usage(FILE *output)
--- 
-1.6.2.2
 --
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Doug Ledford <dledford@redhat.com>
+
+GPG KeyID: CFBFF194
+http://people.redhat.com/dledford
+
+InfiniBand Specific RPMS
+http://people.redhat.com/dledford/Infiniband
+
+
+
+
+
+--Apple-Mail-87-836127628
+content-type: application/pgp-signature; x-mac-type=70674453;
+	name=PGP.sig
+content-description: This is a digitally signed message part
+content-disposition: inline; filename=PGP.sig
+content-transfer-encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.11 (Darwin)
+
+iEYEARECAAYFAkpcip8ACgkQQ9aEs6Ims9gFrwCeJaRTPjU7ApfT8BYGqTnfG7nI
+4hAAn2KsTrkPLCmdhePBtj9pqF7tAa+b
+=nFUK
+-----END PGP SIGNATURE-----
+
+--Apple-Mail-87-836127628--
