@@ -1,141 +1,79 @@
 From: David Zeuthen <david-o55+BOBDEFg@public.gmane.org>
 Subject: Re: RFC: mdadm and bringing up raid sets from initrd (dracut)
-Date: Tue, 14 Jul 2009 11:00:32 -0400
-Message-ID: <1247583632.1991.39.camel@localhost.localdomain>
+Date: Tue, 14 Jul 2009 10:30:47 -0400
+Message-ID: <1247581847.1991.16.camel@localhost.localdomain>
 References: <4A5C6501.3080607@redhat.com>
-	 <1955210A-EF27-479F-8C58-BA4FA9018A56@redhat.com>
-	 <4A5C9E17.2060106@redhat.com>
-	 <D758972F-0E5A-4860-9011-6B2DA1FA771A@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <D758972F-0E5A-4860-9011-6B2DA1FA771A-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A5C6501.3080607-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Doug Ledford <dledford-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-hotplug-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Danecki, Jacek" <jacek.danecki-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-hotplug-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Danecki, Jacek" <jacek.danecki-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Doug Ledford <dledford-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Tue, 2009-07-14 at 10:14 -0400, Doug Ledford wrote:
-> On Jul 14, 2009, at 11:02 AM, Hans de Goede wrote:
-> > Hi,
-> > On 07/14/2009 03:39 PM, Doug Ledford wrote:
-> >> On Jul 14, 2009, at 6:59 AM, Hans de Goede wrote:
-> >>> Hi,
-> >>>
-> >>> As you probably know I'm working on making Fedora 12 use mdraid
-> >>> instead of dmraid for Intel BIOS-RAID setups.
-> >>>
-> >>> The installer (anaconda) part is mostly done (needs more testing)
-> >>> and now I'm looking at implementing support for this in dracut
-> >>> (the new mkinitrd for Fedora 12).
-> >>>
-> >>> So I've been testing how this works for both imsm mdraid sets
-> >>> and native mdraid metadata sets, in both cases using a 2 disk
-> >>> mirror, so that the set can also be brought up in degraded mode.
-> >>>
-> >>> Currently the udev rules use incremental assembly like this:
-> >>> mdadm -I /dev/mdraid-member
-> >>
-> >> Hmmm...does dracut use udev during initramfs time?
-> >
-> > Yes, it uses udev for everything, making discovery of / consistent
-> > with the discovery of other storage devices.
+On Tue, 2009-07-14 at 12:59 +0200, Hans de Goede wrote:
+> Currently the udev rules use incremental assembly like this:
+> mdadm -I /dev/mdraid-member
 > 
-> I'm not sure I like or agree with that philosophy.  I absolutely  
-> *don't* want my / filesystem or raid device treated like some plug in,  
-> temporary, roaming raid device.  They *aren't* the same, not in terms  
-> of importance to the running of the machine and not in terms of  
-> reliability requirements.  By using mdadm -A in the mkinitrd calls, I  
-> was able to put in an mdadm.conf file and limit what arrays get  
-> started to arrays found non-ambiguously in that mdadm.conf file and  
-> identified by UUID.  When you switch to incremental assembly for root,  
-> you risk the possibility of name space collisions and non- 
-> deterministic bring up of your / array.
+> There are 2 problems with this:
+> 1) When doing this for native mdraid metadata arrays, if only
+>     one disk is present the set never gets activated
+> 2) When doing this for imsm metadata arrays, as soon as the
+>     first disk is incrementally added, the set gets activated
+>     in degraded mode and stays that way, the second disk
+>     will get added to the container, but not to the actual
+>     sets in the container
 
-I'm concerned about this too. To be more specific, I'm concerned about
-both automatically assembling things like RAID arrays / LVM logical
-volumes and also automounting devices [1].
+FWIW, this incremental assembly business in mdadm is actually not a very
+good idea. At least not the current implementation. I'm not sure whether
+it's still a Fedora-ism or whether it's something that's in upstream
+mdadm yet. I'm talking about this udev rule
 
-Anyway, my point with all this is that maybe we are going about things
-wrong in the initramfs. My understanding is that dracut roughly works
-this way (please let me know if this is wrong)
+ /lib/udev/rules.d/65-md-incremental.rules:
+ # This file causes block devices with Linux RAID (mdadm) signatures to
+ # automatically cause mdadm to be run.
+ # See udev(8) for syntax
+ 
+ SUBSYSTEM=="block", ACTION=="add", ENV{ID_FS_TYPE}=="linux_raid_member", \
+	IMPORT{program}="/sbin/mdadm --examine --export $tempnode", \
+	RUN+="/bin/bash -c '[ ! -f /dev/.in_sysinit ] && mdadm -I $env{DEVNAME}'"
 
- 1. when generating the initramfs image, we leave information in
-    the kernel command-line about the root filesystem - typically
-    the UUID - e.g. root=UUID=786263c4-5e28-4cdc-97b8-1ab6e221c344
+For example if the user plugs in a random old disk that happens to
+contain half of a RAID1 mirror, then the incremental assembly bits sets
+up an inert md-device and the user is now left to his own devices as to
+sort this out when he's told by partitioning tools etc. that the disk
+(or partition of) he just plugged in, is "busy" (it is claimed by the
+inert md node).
 
- 2. when the initramfs starts, we trigger all uevents and wait for
-    things to settle
+I actually had to add some extra code to the GNOME Disk Utility bits to
+handle such things (stop inert md devices) - makes the user experience
+quite a bit worse since there's now an extra state to worry about. And
+most current users don't use the UI bits yet for this so they get extra
+confused when trying to use e.g. parted(8) or fdisk(8) on the device.
 
- 3. Autoassembly / magic:
+FWIW, I'd wish people would stop playing games like this. If you want to
+do auto-assembly at the system-level, at the very least don't leave the
+system in a state like this. For example, one way to do auto-assembly
+without such bugs would be to use libudev to enumerate all md component
+devices with the same MD_UUID. Then you count the number of components
+and only start the array if the number of components equals MD_DEVICES.
+That's much better than incrementally adding to an md device node that
+might never get used.
 
-    - If we see e.g. md components, we activate them via udev rules
-    - If we see e.g. LUKS devices, we unlock them (by interacting with
-      the user asking for the passphrase) via udev rules.
-    - Ditto for e.g. LVM
+I've complained to Doug about this already for Fedora but, since it's
+still broken and, AFAICT, up it's way to upstream mdadm, it's worth
+reiterating the complaint.
 
- 5. if we see the rootfs (matching on e.g. the UUID passed on the
-    kernel command line) we create the /dev/root symlink
-
- 6. when the system has settled (e.g. no more uevents) we mount
-    /dev/root and transition to non-early user space. If there
-    is no /dev/root link, we bail out
-
-Now, my beef is 3. above. I think it is way too optimistic to just
-auto-assemble / unlock etc. everything. E.g. we end up doing a lot of
-work not related to the rootfs that is better done in non-early user
-space.
-
-Instead, just like we specify the UUID for rootfs on the command-line,
-we need to leave some instructions to the initramfs logic on _exactly_
-what things should be autoassembled / unlocked / etc. in order to find
-the rootfs. So the kernel command-line wouldn't really be "just" the
-UUID of rootfs; it would be a whole recipe of actions to do. E.g.
-
- ROOTFS=UUID=1234          \ # this the UUID of my rootfs
- MD_ASSEMBLE=UUID=4567     \ # assemble MD array with UUID 4567
- LUKS_UNLOCK=UUID=89ab       # unlock LUKS device with UUID 89ab
-
-which would work for e.g. cases where rootfs is on a LUKS device which
-is on a MD array. In other words, we'd need a whole "recipe" passed to
-the initramfs (the mkinitrd tool would generate this recipe), not just
-the UUID of the rootfs.
-
-Coincidentally, if we had something like this and the format of the
-"recipe" was documented somewhere, it would be easy to e.g. implement
-"rescue" functionality as described here
-
-http://www.redhat.com/archives/fedora-desktop-list/2009-July/msg00019.html
-
-since graphical disk utilities would just find /etc/grub.conf (or
-similar), read the recipe and then start assembling/unlocking bits and
-mount them as appropriate in /mnt/rescue/.
-
-Actually this is very close to what Doug is asking for when he says
-(paraphrased) "just include mdadm.conf instead of this magic". The key
-difference, however, is that the user _won't_ have to use mdadm.conf or
-care about config files - it's all taken care of by the mkinitrd binary
-when building the recipe. This is a good thing as having one less config
-file to worry about is good.
-
-Thanks for considering, and sorry for the long mail,
+Thanks,
 David
 
-[1] : As some background information, I've spent a good chunk of my
-life, five years or so, dealing with end users complaining about how
-plain block devices got automounted when they were plugged in. FWIW, the
-complaints ranges from both non-sensical (irritated users: "these
-desktop kids shall not decide how UNIX works") to actual bugs where the
-on-disk contents were mis-detected and either something wrong got
-automounted or we failed to automount at all.
-
-If I've learned anything it's that you need to be very very careful here
-- unlike Windows and other operating systems with such capabilities,
-Linux is.. different.. mostly because we support so many different ways
-to put a file system through things likd md and dm. And you need to make
-it very easy to turn things like this off.
-
+[1] : And, except for booting, it's not clear to me that you want to
+have policy like auto-assembling RAID arrays at the system. I'd leave
+such policy to desktop bits where the user can control it and the
+software can actually interact with the user. And where it's easy to
+turn off features like this.
 
 
 --
