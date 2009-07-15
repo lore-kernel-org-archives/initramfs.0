@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 06/14] limit the devices for which lvm vgscan will scan
-Date: Wed, 15 Jul 2009 18:50:38 +0200
-Message-ID: <1247676646-3837-7-git-send-email-harald@redhat.com>
+Subject: [PATCH 02/14] 10redhat-i18n: Fix handling of kbd maps which are a symlink
+Date: Wed, 15 Jul 2009 18:50:34 +0200
+Message-ID: <1247676646-3837-3-git-send-email-harald@redhat.com>
 References: <1247676646-3837-1-git-send-email-harald@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1247676646-3837-1-git-send-email-harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -11,44 +11,35 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Build the filter list and create /etc/lvm/lvm.conf for all LVM_member
-devices found by udev.
+From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+Some keyboard maps are symlinks to others, we were not handling this
+properly, this patch fixes this.
 ---
- modules.d/90lvm/lvm_scan.sh |   19 +++++++++++++++++++
- 1 files changed, 19 insertions(+), 0 deletions(-)
+ modules.d/10redhat-i18n/install |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/modules.d/90lvm/lvm_scan.sh b/modules.d/90lvm/lvm_scan.sh
-index cd843aa..489c7a1 100755
---- a/modules.d/90lvm/lvm_scan.sh
-+++ b/modules.d/90lvm/lvm_scan.sh
-@@ -3,6 +3,25 @@
- if $UDEV_QUEUE_EMPTY >/dev/null 2>&1; then
-     [ -h "$job" ] && rm -f "$job"
-     # run lvm scan if udev has settled
-+
-+    [ -d /etc/lvm ] || mkdir -p /etc/lvm
-+    # build a list of devices to scan
-+    lvmdevs=$(
-+	for f in /tmp/.lvm_scan-*; do
-+	    [ -e "$f" ] || continue
-+	    echo ${f##/tmp/.lvm_scan-}
-+	done
-+	)
-+    {
-+	echo 'devices {';
-+	echo -n '    filter = [ '
-+	for dev in $lvmdevs; do
-+	    printf '"a|^/dev/%s$|", ' $dev;
-+	done;
-+	echo '"r/.*/" ]';
-+	echo '}';	  
-+    } > /etc/lvm/lvm.conf
-+
-     lvm vgscan
-     lvm vgchange -ay
- fi
+diff --git a/modules.d/10redhat-i18n/install b/modules.d/10redhat-i18n/install
+index 3658193..a6dbc07 100755
+--- a/modules.d/10redhat-i18n/install
++++ b/modules.d/10redhat-i18n/install
+@@ -32,6 +32,14 @@ if [[ -f /etc/sysconfig/keyboard || -f /etc/sysconfig/console/default.kmap ]]; t
+         findkeymap $KEYMAP
+ 
+         for FN in $KEYMAPS; do
++            if [ -L $FN ]; then
++		TARGET=$(readlink -f $FN)
++		TG=$(echo $TARGET | sed -e 's/\.gz$//' -e 's/\.bz2$//')
++		LN=$(echo $FN | sed -e 's/\.gz$//' -e 's/\.bz2$//')
++                mkdir -p "$initdir/$(dirname $LN)"
++                ln -s "$TG" "$initdir/$LN"
++                FN=$TARGET
++            fi
+             inst $FN
+             case $FN in
+                 *.gz) gzip -d "$initdir$FN" ;;
 -- 
 1.6.2.5
 
