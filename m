@@ -1,62 +1,94 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: RFC: mdadm and bringing up raid sets from initrd (dracut)
-Date: Thu, 16 Jul 2009 02:11:27 -0500
-Message-ID: <921e043f0907160011g59e4f75cu788cc7740c91e29e@mail.gmail.com>
-References: <4A5C6501.3080607@redhat.com>
-	 <1247581847.1991.16.camel@localhost.localdomain>
-	 <e9c3a7c20907151147q3e48e681ufd0916f6e4e390c4@mail.gmail.com>
-	 <20090716001651.GB45537@redhat.com>
+Subject: Re: RFC Bridging plan
+Date: Thu, 16 Jul 2009 02:20:01 -0500
+Message-ID: <1247728801.3597.9.camel@sentry-no.fnordovax.org>
+References: <4A5EAFEC.4080705@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:in-reply-to:references
-         :date:message-id:subject:from:to:cc:content-type
-         :content-transfer-encoding;
-        bh=kN799ih7A2XbbDVKIECKi604pMV5FVkYm/89cxvOBEg=;
-        b=CUGqw3wbdjmaxKXYP3JtBLo3kseq9YONKWpb12JcS97nU6cfmRwQf5eqYlfbGYJaDY
-         oZncXRTB5bxUr7u2Ep9Hg8eAvOgsUDEFYv2J6p1mtveqyKKIqzVKrHJrXMdw33is8v8B
-         c50jzwIUCQaZKl/0bnSr+Li+n0LODe/Y3z38Y=
-In-Reply-To: <20090716001651.GB45537-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+        h=domainkey-signature:received:received:received:subject:from:to:cc
+         :in-reply-to:references:content-type:content-transfer-encoding:date
+         :message-id:mime-version:x-mailer;
+        bh=BFllNyXASVi7zqoaZXOnwGJOlkjmNLlMp1c7ay8vJeE=;
+        b=us718x8npL3z0XzVYZgSuoOP2Vm+XPkXcB9rSCtXrwhbDhfDH9Q6y7+Q5eSeowe9sa
+         kq+UrYOi26nJ7AuFuaGJfZiB9VQSSSeKMKOb7BmMaaVZ0p95fSyzOJWWn9iWwNgYCa20
+         BO7SwKiCAq0MXIk+DaXB5ZoG3pYpfqL7Ul1LM=
+In-Reply-To: <4A5EAFEC.4080705-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, David Zeuthen <david-o55+BOBDEFg@public.gmane.org>, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-hotplug-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Danecki, Jacek" <jacek.danecki-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Doug Ledford <dledford-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Jul 15, 2009 at 7:16 PM, Jeremy Katz<katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On Wednesday, July 15 2009, Dan Williams said:
->> mdadm-3.0 has facilities to prevent assembly of certain metadata typ=
-es
->> [1] or arrays with certain uuids [2]. =A0I wonder if we also need a
->> facility to prevent auto-assembly of arrays *not* listed in
->> mdadm.conf? =A0So the mdadm.conf file installed in the initramfs wou=
-ld
->> only identify the root array and all other randomly identified md
->> devices would be ignored (rather than assembled with a foreign name)=
-=2E
->>
->> Thoughts?
->
-> There is no mdadm.conf in the initramfs -- in fact, the initramfs may
-> not even be generated on the system that you're booting and instead b=
-e
-> "generic" for the kernel in question
+On Thu, 2009-07-16 at 00:43 -0400, Warren Togami wrote:
+> Attached is the parser of this bridging plan.  Bridge details if parsed 
+> from cmdline are written to /tmp/bridge.info for later use by network 
+> scripts with the following behavior.  Any comments?
 
-Still, it sounds like a good feature to be added for a --hostonly initr=
-amfs.
+I was under the impression that you could swizzle IP addresses from
+"real" userspace even if the root filesystem was mounted over the
+network.
 
-(especially on systems that are attaching to iscsi and/or fibre channel=
- luns)
+That said, did you have a specific use case in mind?
 
-> Jeremy
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" =
-in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
+> SYNTAX
+> ======
+> bridge=<bridgename>:<ethname>
+> If bridge without parameters, assume bridge=br0:eth0
+> 
+> BASIC IDEA
+> ==========
+> * When <ethname> would be configured by network scripts, instead create 
+> a bridge named <bridgename> then add <ethname> to that bridge.
+> * <bridgename> automatically inherits the MAC address of <ethname>. 
+> BOOTIF thus should be optionally workable.
+> * Then $netif becomes <bridgename> instead of <ethname> and all existing 
+> scripts process netroot mount via this new $netif instead of <ethname>.
+> * Try only the one specified <ethname> interface, do not try others.  (I 
+> suppose trying others in the "bridge root=dhcp" case would be possible, 
+> but let's get the basics working first.)
+> * write-ifcfg.sh writes out both ifcfg-<bridgename> and ifcfg-<ethname> 
+> files for later use by NetworkManager.
+> 
+> BOOT EXAMPLE
+> ============
+> ifconfig eth0 up
+> brctl addbr br0
+> brctl setfd br0 0
+> brctl addif br0 eth0
+> dhclient br0
+> ifconfig br0 <parameters>
+> mount -t nfs server:/path /sysroot
+> switch_root /sysroot
+> 
+> ifcfg-br0 example
+> =================
+> # Generated by dracut initrd
+> DEVICE=br0
+> TYPE=Bridge
+> ONBOOT=yes
+> BOOTPROTO=dhcp
+> STP=off
+> USERCTL=no
+> 
+> ifcfg-eth0 example
+> ==================
+> # Generated by dracut initrd
+> TYPE=Ethernet
+> DEVICE=eth0
+> HWADDR=52:54:00:12:34:56
+> ONBOOT=yes
+> BRIDGE=br0
+> USERCTL=no
+> 
+> Warren Togami
+> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+-- 
+Victor Lowther
+RHCE# 805008539634727
+LPIC-2# LPI000140019
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
