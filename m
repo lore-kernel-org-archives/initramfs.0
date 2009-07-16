@@ -1,95 +1,167 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: RFC Bridging plan
-Date: Thu, 16 Jul 2009 02:20:01 -0500
-Message-ID: <1247728801.3597.9.camel@sentry-no.fnordovax.org>
-References: <4A5EAFEC.4080705@redhat.com>
+From: Harald Hoyer <harald@redhat.com>
+Subject: Re: RFC: mdadm and bringing up raid sets from initrd (dracut)
+Date: Thu, 16 Jul 2009 12:56:18 +0200
+Message-ID: <4A5F0752.1020400@redhat.com>
+References: <4A5C6501.3080607@redhat.com>	 <1955210A-EF27-479F-8C58-BA4FA9018A56@redhat.com>	 <4A5C9E17.2060106@redhat.com>	 <D758972F-0E5A-4860-9011-6B2DA1FA771A@redhat.com> <1247583632.1991.39.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:content-transfer-encoding:date
-         :message-id:mime-version:x-mailer;
-        bh=BFllNyXASVi7zqoaZXOnwGJOlkjmNLlMp1c7ay8vJeE=;
-        b=us718x8npL3z0XzVYZgSuoOP2Vm+XPkXcB9rSCtXrwhbDhfDH9Q6y7+Q5eSeowe9sa
-         kq+UrYOi26nJ7AuFuaGJfZiB9VQSSSeKMKOb7BmMaaVZ0p95fSyzOJWWn9iWwNgYCa20
-         BO7SwKiCAq0MXIk+DaXB5ZoG3pYpfqL7Ul1LM=
-In-Reply-To: <4A5EAFEC.4080705-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-hotplug-owner@vger.kernel.org>
+In-Reply-To: <1247583632.1991.39.camel@localhost.localdomain>
+Sender: linux-hotplug-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: David Zeuthen <david@fubar.dk>
+Cc: Doug Ledford <dledford@redhat.com>, Hans de Goede <hdegoede@redhat.com>, initramfs <initramfs@vger.kernel.org>, linux-hotplug@vger.kernel.org, "Danecki, Jacek" <jacek.danecki@intel.com>
 
-On Thu, 2009-07-16 at 00:43 -0400, Warren Togami wrote:
-> Attached is the parser of this bridging plan.  Bridge details if parsed 
-> from cmdline are written to /tmp/bridge.info for later use by network 
-> scripts with the following behavior.  Any comments?
+On 07/14/2009 05:00 PM, David Zeuthen wrote:
+> On Tue, 2009-07-14 at 10:14 -0400, Doug Ledford wrote:
+>> On Jul 14, 2009, at 11:02 AM, Hans de Goede wrote:
+>>> Hi,
+>>> On 07/14/2009 03:39 PM, Doug Ledford wrote:
+>>>> On Jul 14, 2009, at 6:59 AM, Hans de Goede wrote:
+>>>>> Hi,
+>>>>>
+>>>>> As you probably know I'm working on making Fedora 12 use mdraid
+>>>>> instead of dmraid for Intel BIOS-RAID setups.
+>>>>>
+>>>>> The installer (anaconda) part is mostly done (needs more testing)
+>>>>> and now I'm looking at implementing support for this in dracut
+>>>>> (the new mkinitrd for Fedora 12).
+>>>>>
+>>>>> So I've been testing how this works for both imsm mdraid sets
+>>>>> and native mdraid metadata sets, in both cases using a 2 disk
+>>>>> mirror, so that the set can also be brought up in degraded mode.
+>>>>>
+>>>>> Currently the udev rules use incremental assembly like this:
+>>>>> mdadm -I /dev/mdraid-member
+>>>> Hmmm...does dracut use udev during initramfs time?
+>>> Yes, it uses udev for everything, making discovery of / consistent
+>>> with the discovery of other storage devices.
+>> I'm not sure I like or agree with that philosophy.  I absolutely
+>> *don't* want my / filesystem or raid device treated like some plug in,
+>> temporary, roaming raid device.  They *aren't* the same, not in terms
+>> of importance to the running of the machine and not in terms of
+>> reliability requirements.  By using mdadm -A in the mkinitrd calls, I
+>> was able to put in an mdadm.conf file and limit what arrays get
+>> started to arrays found non-ambiguously in that mdadm.conf file and
+>> identified by UUID.  When you switch to incremental assembly for root,
+>> you risk the possibility of name space collisions and non-
+>> deterministic bring up of your / array.
+>
+> I'm concerned about this too. To be more specific, I'm concerned about
+> both automatically assembling things like RAID arrays / LVM logical
+> volumes and also automounting devices [1].
+>
+> Anyway, my point with all this is that maybe we are going about things
+> wrong in the initramfs. My understanding is that dracut roughly works
+> this way (please let me know if this is wrong)
+>
+>   1. when generating the initramfs image, we leave information in
+>      the kernel command-line about the root filesystem - typically
+>      the UUID - e.g. root=UUID=786263c4-5e28-4cdc-97b8-1ab6e221c344
+>
+>   2. when the initramfs starts, we trigger all uevents and wait for
+>      things to settle
+>
+>   3. Autoassembly / magic:
+>
+>      - If we see e.g. md components, we activate them via udev rules
+>      - If we see e.g. LUKS devices, we unlock them (by interacting with
+>        the user asking for the passphrase) via udev rules.
+>      - Ditto for e.g. LVM
+>
+>   5. if we see the rootfs (matching on e.g. the UUID passed on the
+>      kernel command line) we create the /dev/root symlink
+>
+>   6. when the system has settled (e.g. no more uevents) we mount
+>      /dev/root and transition to non-early user space. If there
+>      is no /dev/root link, we bail out
+>
+> Now, my beef is 3. above. I think it is way too optimistic to just
+> auto-assemble / unlock etc. everything. E.g. we end up doing a lot of
+> work not related to the rootfs that is better done in non-early user
+> space.
+>
+> Instead, just like we specify the UUID for rootfs on the command-line,
+> we need to leave some instructions to the initramfs logic on _exactly_
+> what things should be autoassembled / unlocked / etc. in order to find
+> the rootfs. So the kernel command-line wouldn't really be "just" the
+> UUID of rootfs; it would be a whole recipe of actions to do. E.g.
+>
+>   ROOTFS=UUID=1234          \ # this the UUID of my rootfs
+>   MD_ASSEMBLE=UUID=4567     \ # assemble MD array with UUID 4567
+>   LUKS_UNLOCK=UUID=89ab       # unlock LUKS device with UUID 89ab
+>
+> which would work for e.g. cases where rootfs is on a LUKS device which
+> is on a MD array. In other words, we'd need a whole "recipe" passed to
+> the initramfs (the mkinitrd tool would generate this recipe), not just
+> the UUID of the rootfs.
+>
+> Coincidentally, if we had something like this and the format of the
+> "recipe" was documented somewhere, it would be easy to e.g. implement
+> "rescue" functionality as described here
+>
+> http://www.redhat.com/archives/fedora-desktop-list/2009-July/msg00019.html
+>
+> since graphical disk utilities would just find /etc/grub.conf (or
+> similar), read the recipe and then start assembling/unlocking bits and
+> mount them as appropriate in /mnt/rescue/.
+>
+> Actually this is very close to what Doug is asking for when he says
+> (paraphrased) "just include mdadm.conf instead of this magic". The key
+> difference, however, is that the user _won't_ have to use mdadm.conf or
+> care about config files - it's all taken care of by the mkinitrd binary
+> when building the recipe. This is a good thing as having one less config
+> file to worry about is good.
+>
+> Thanks for considering, and sorry for the long mail,
+> David
+>
+> [1] : As some background information, I've spent a good chunk of my
+> life, five years or so, dealing with end users complaining about how
+> plain block devices got automounted when they were plugged in. FWIW, the
+> complaints ranges from both non-sensical (irritated users: "these
+> desktop kids shall not decide how UNIX works") to actual bugs where the
+> on-disk contents were mis-detected and either something wrong got
+> automounted or we failed to automount at all.
+>
+> If I've learned anything it's that you need to be very very careful here
+> - unlike Windows and other operating systems with such capabilities,
+> Linux is.. different.. mostly because we support so many different ways
+> to put a file system through things likd md and dm. And you need to make
+> it very easy to turn things like this off.
+>
+>
+>
 
-I was under the impression that you could swizzle IP addresses from
-"real" userspace even if the root filesystem was mounted over the
-network.
+David, thanks for your suggestion. As of yesterday, dracut recognizes now the 
+following command line parameters:
 
-That said, did you have a specific use case in mind?
+LVM
+        rd_NO_LVM
+               disable LVM detection
 
-> SYNTAX
-> ======
-> bridge=<bridgename>:<ethname>
-> If bridge without parameters, assume bridge=br0:eth0
-> 
-> BASIC IDEA
-> ==========
-> * When <ethname> would be configured by network scripts, instead create 
-> a bridge named <bridgename> then add <ethname> to that bridge.
-> * <bridgename> automatically inherits the MAC address of <ethname>. 
-> BOOTIF thus should be optionally workable.
-> * Then $netif becomes <bridgename> instead of <ethname> and all existing 
-> scripts process netroot mount via this new $netif instead of <ethname>.
-> * Try only the one specified <ethname> interface, do not try others.  (I 
-> suppose trying others in the "bridge root=dhcp" case would be possible, 
-> but let's get the basics working first.)
-> * write-ifcfg.sh writes out both ifcfg-<bridgename> and ifcfg-<ethname> 
-> files for later use by NetworkManager.
-> 
-> BOOT EXAMPLE
-> ============
-> ifconfig eth0 up
-> brctl addbr br0
-> brctl setfd br0 0
-> brctl addif br0 eth0
-> dhclient br0
-> ifconfig br0 <parameters>
-> mount -t nfs server:/path /sysroot
-> switch_root /sysroot
-> 
-> ifcfg-br0 example
-> =================
-> # Generated by dracut initrd
-> DEVICE=br0
-> TYPE=Bridge
-> ONBOOT=yes
-> BOOTPROTO=dhcp
-> STP=off
-> USERCTL=no
-> 
-> ifcfg-eth0 example
-> ==================
-> # Generated by dracut initrd
-> TYPE=Ethernet
-> DEVICE=eth0
-> HWADDR=52:54:00:12:34:56
-> ONBOOT=yes
-> BRIDGE=br0
-> USERCTL=no
-> 
-> Warren Togami
-> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
--- 
-Victor Lowther
-RHCE# 805008539634727
-LPIC-2# LPI000140019
---
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+        rd_LVM_VG=<volume group name>
+               only activate the volume groups with the given name
+
+crypto LUKS
+        rd_NO_LUKS
+               disable crypto LUKS detection
+
+        rd_LUKS_UUID=<luks uuid>
+               only activate the LUKS partitions with the given UUID
+
+MD
+        rd_NO_MD
+               disable MD RAID detection
+
+        rd_MD_UUID=<md uuid>
+               only activate the raid sets with the given UUID
+
+DMRAID
+        rd_NO_DM
+               disable DM RAID detection
+
+        rd_DM_UUID=<dmraid uuid>
+               only activate the raid sets with the given UUID
+
