@@ -1,45 +1,118 @@
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: installing modules from outside of /
-Date: Thu, 16 Jul 2009 12:58:37 +0100
-Message-ID: <1247745517.2197.20.camel@polyethylene>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCEMENT] dracut-0.5
+Date: Fri, 17 Jul 2009 16:38:11 +0200
+Message-ID: <4A608CD3.7070107@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:sender:subject:from:to
-         :content-type:date:message-id:mime-version:x-mailer
-         :content-transfer-encoding;
-        bh=O3inofBp+jD62JTq5lIvoxUEqUUf++nqKU2eblzb1Bw=;
-        b=Al6I81rau/vp0z7vKNhblQFpBjwWBAFNGs3RUJY4L6z9a13jzM7gSukS134gvh74If
-         wY6kUcyULfgUvjji0tgIhApDmhtD1BOQyzs5iiE8rYgfZ4+ta6HZsSL0uU/TiSja4bqH
-         6lCiL3dtF4A0N9fZEVRX/qxZtfqaNwOfAvNsU=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi,
+What's new in dracut-0.5:
+=========================
 
-dracut-functions instmods() seems to only look for modules
-in /lib/modules/$kernel
+- more generic (all plymouth modules, all keyboards, all console fonts)
+- more kernel command line parameters (see also man dracut(8))
+- a helper tool, which generates the kernel command line (dracut-gencmdline)
 
-In the case of OLPC, we are hoping to build the dracut initramfs in the
-%install part of our kernel RPM package. That way, the target systems do
-not need to have dracut installed in order to install the
-kernel/initramfs -- avoiding a huge pile of dependencies including
-cryptsetup, device-mapper, etc. This was suggested by Harald.
+for my machine this looks like this:
+# /sbin/dracut-gencmdline
+rd_DM_UUID=nvidia_dddhfead 
+rd_LUKS_UUID=luks-227fe0ce-7e8c-453a-823f-d5bf34ca1da3 rd_LVM_VG=VolGroup00 
+KEYBOARDTYPE=pc KEYTABLE=de-latin1 SYSFONT=latarcyrheb-sun16 LANG=en_US.UTF-8
 
-In this particular scenario, the modules we'd want to include in the
-initramfs are not at /lib/modules/$kernel. They are at
-$RPM_BUILD_ROOT/lib/modules/$kernel
+If you have Fedora and encrypted partitions you should at least set "KEYTABLE" 
+to have the correct keyboard setting.
 
-Can dracut be extended to work in this situation?
+rd_DM_UUID, rd_LUKS_UUID, rd_MD_UUID help you, if dracut does more than you want 
+in its automatic mode. So if you want to be more specific on what dracut is 
+allowed to assemble, uncrypt etc. just specify the exact parameters.
 
-Thanks,
-Daniel
+For those with an Intel fake software raid onboard (imsm/isw), you might not 
+want MD handle those, but fallback to the old behaviour with DM. To do so add
+rd_NO_MDIMSM to the kernel command line.
 
 
+Debugging
+=========
+
+Create your image with the debug module:
+
+# dracut -a debug /boot/test-$(uname -r) $(uname -r)
+
+Add "rdshell" to the kernel command line, remove "rhgb" and "quiet" and boot the 
+image.
+
+Once you are dropped to a shell do:
+
+# dmesg|grep dracut
+
+Add the output and your kernel command line to the bug report.
+
+see also: https://fedoraproject.org/wiki/Dracut/Debugging
+
+
+New kernel command line parameters:
+===================================
+
+I18N
+        e.g. LANG=en_US.UTF-8 SYSFONT=latarcyrheb-sun16 
+KEYTABLE=de-latin1-nodeadkeys
+
+        KEYBOARDTYPE=sun|pc
+               will be written to /etc/sysconfig/keyboard in the initramfs
+
+        KEYTABLE=<keytable filename>
+               will be written to /etc/sysconfig/keyboard in the initramfs
+
+        SYSFONT= Console font
+               will be written to /etc/sysconfig/i18n in the initramfs
+
+        SYSFONTACM= Unicode font map
+               will be written to /etc/sysconfig/i18n in the initramfs
+
+        UNIMAP= Unicode font map
+               will be written to /etc/sysconfig/i18n in the initramfs
+
+        LANG=<locale>
+               will be written to /etc/sysconfig/i18n in the initramfs
+
+Bootsplash - plymouth
+        rd_plytheme=<theme name>
+               specify the plymouth bootsplash theme (fallback is text)
+
+LVM
+        rd_NO_LVM
+               disable LVM detection
+
+        rd_LVM_VG=<volume group name>
+               only activate the volume groups with the given name
+
+crypto LUKS
+        rd_NO_LUKS
+               disable crypto LUKS detection
+
+        rd_LUKS_UUID=<luks uuid>
+               only activate the LUKS partitions with the given UUID
+
+MD
+        rd_NO_MD
+               disable MD RAID detection
+
+        rd_NO_MDIMSM
+               no MD RAID for imsm/isw raids, use dmraid instead
+
+        rd_MD_UUID=<md uuid>
+               only activate the raid sets with the given UUID
+
+DMRAID
+        rd_NO_DM
+               disable DM RAID detection
+
+        rd_DM_UUID=<dmraid uuid>
+               only activate the raid sets with the given UUID
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
