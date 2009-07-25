@@ -1,77 +1,56 @@
-From: Thilo Bangert <thilo.bangert-hi6Y0CQ0nG0@public.gmane.org>
-Subject: [patch] support for unusual terminfo location
-Date: Fri, 24 Jul 2009 22:01:35 +0200
-Message-ID: <200907242201.39741.thilo.bangert@gmx.net>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: Re: initramfs-tools stable release 0.93.3
+Date: Sat, 25 Jul 2009 11:21:59 +0200
+Message-ID: <20090725092159.GJ11967@stro.at>
+References: <20090610153017.GA19401@stro.at>
+ <1244716927.4532.34.camel@quest>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2470651.7MFhGl0GEC";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1244716927.4532.34.camel@quest>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
---nextPart2470651.7MFhGl0GEC
-Content-Type: multipart/mixed;
-  boundary="Boundary-01=_hMhaKkF28o9Tqw0"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+To: Scott James Remnant <scott-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
 
---Boundary-01=_hMhaKkF28o9Tqw0
-Content-Type: text/plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+On Thu, 11 Jun 2009, Scott James Remnant wrote:
 
-Hi,
+> On Wed, 2009-06-10 at 17:30 +0200, maximilian attems wrote:
+> 
+> > hook-functions: Add i915 module for kms.
+> > 
+> This is exactly the kind of bloat I want to avoid for the initramfs.
+> The initramfs should do one thing only, that's mount the root filesystem
+> and chain load into it.
 
-the following patch makes the 95terminfo module work on gentoo.
+well it is useful to resume or to load acpi modules early so boxes don't
+overheat. also there are quite some different scenarios your root can be
+on.
+ 
+> Anything else is an extravagance.
+> 
+> Why load the KMS driver in the initramfs?  Because it takes too long to
+> get to the point in the real system where we can load it!  Why does it
+> take too long to get there?  Because we spend so long in the initramfs!
 
-thanks
-kind regards
-Thilo
+fb modules got scrammed in the initramfs from early on since
+the time of jbailey.
+ 
+> Slimming the initramfs right down to the essentials reduces the boot
+> time by over a second!  Paradoxically, this means that the driver can be
+> loaded in the real system at roughly the same time point as it would be
+> loaded in a bloated initramfs.
 
---Boundary-01=_hMhaKkF28o9Tqw0
-Content-Type: text/x-patch;
-  charset="UTF-8";
-  name="95terminfo-fix-for-weird-distros.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
-	filename="95terminfo-fix-for-weird-distros.patch"
+well afair the intel fast boot doesn't use initramfs in the fast path
+at all, what are you up to axe. on irc you mentioned locales (which
+are not in initramfs), fonts (detto), keymaps (only if you have cryptsetup
+installed), splash screen (you need to have the relevant installed)
+and kms.
 
-diff --git a/modules.d/95terminfo/install b/modules.d/95terminfo/install
-index 7f14aa1..4d8f395 100755
---- a/modules.d/95terminfo/install
-+++ b/modules.d/95terminfo/install
-@@ -1,3 +1,8 @@
- #!/bin/bash
- # terminfo bits make things work better if you fall into interactive mode
--dracut_install $(find /lib/terminfo -type f)
-\ No newline at end of file
-+TERMINFODIR="/lib/terminfo"
-+
-+[ ! -d ${TERMINFODIR} -a -d "/etc/terminfo" ] && \
-+	TERMINFODIR="/etc/terminfo"
-+
-+dracut_install $(find ${TERMINFODIR} -type f)
 
---Boundary-01=_hMhaKkF28o9Tqw0--
 
---nextPart2470651.7MFhGl0GEC
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.11 (GNU/Linux)
-
-iEYEABECAAYFAkpqEyMACgkQxRElEoA5AneABgCg2W7+A0Nh47HO9rA7QouIrgOc
-4DcAnROAYRyuHuuhUjMgudHKem9YQFEv
-=JaBv
------END PGP SIGNATURE-----
-
---nextPart2470651.7MFhGl0GEC--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
