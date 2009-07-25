@@ -1,56 +1,41 @@
-From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Subject: Re: initramfs-tools stable release 0.93.3
-Date: Sat, 25 Jul 2009 11:21:59 +0200
-Message-ID: <20090725092159.GJ11967@stro.at>
-References: <20090610153017.GA19401@stro.at>
- <1244716927.4532.34.camel@quest>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [ANNOUNCEMENT] dracut-0.5
+Date: Sun, 26 Jul 2009 00:59:44 +0200
+Message-ID: <20090725225944.GC27655@nb.net.home>
+References: <4A608CD3.7070107@redhat.com> <20090720020150.GA50193@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1244716927.4532.34.camel@quest>
+In-Reply-To: <20090720020150.GA50193-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Scott James Remnant <scott-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
+To: Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Thu, 11 Jun 2009, Scott James Remnant wrote:
-
-> On Wed, 2009-06-10 at 17:30 +0200, maximilian attems wrote:
+On Sun, Jul 19, 2009 at 10:01:51PM -0400, Jeremy Katz wrote:
+> On Friday, July 17 2009, Harald Hoyer said:
 > 
-> > hook-functions: Add i915 module for kms.
-> > 
-> This is exactly the kind of bloat I want to avoid for the initramfs.
-> The initramfs should do one thing only, that's mount the root filesystem
-> and chain load into it.
-
-well it is useful to resume or to load acpi modules early so boxes don't
-overheat. also there are quite some different scenarios your root can be
-on.
- 
-> Anything else is an extravagance.
+> > - more kernel command line parameters (see also man dracut(8))
+> > - a helper tool, which generates the kernel command line (dracut-gencmdline)
+> [snip]
+> > rd_DM_UUID, rd_LUKS_UUID, rd_MD_UUID help you, if dracut does more than 
+> > you want in its automatic mode. So if you want to be more specific on 
+> > what dracut is allowed to assemble, uncrypt etc. just specify the exact 
+> > parameters.
 > 
-> Why load the KMS driver in the initramfs?  Because it takes too long to
-> get to the point in the real system where we can load it!  Why does it
-> take too long to get there?  Because we spend so long in the initramfs!
+> Hmmm, requiring/expecting this much in the way of kernel parameters in
+> the default case feels like it has a likelihood of hitting
+> architecture-specific limits on command line size.  I know that's been a
+> problem in a lot of cases on s390 in the past.
 
-fb modules got scrammed in the initramfs from early on since
-the time of jbailey.
- 
-> Slimming the initramfs right down to the essentials reduces the boot
-> time by over a second!  Paradoxically, this means that the driver can be
-> loaded in the real system at roughly the same time point as it would be
-> loaded in a bloated initramfs.
+ Is it still valid problem? http://lkml.org/lkml/2007/1/18/55
 
-well afair the intel fast boot doesn't use initramfs in the fast path
-at all, what are you up to axe. on irc you mentioned locales (which
-are not in initramfs), fonts (detto), keymaps (only if you have cryptsetup
-installed), splash screen (you need to have the relevant installed)
-and kms.
+    Karel
 
-
-
+-- 
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
