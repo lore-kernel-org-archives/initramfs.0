@@ -1,63 +1,46 @@
-From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Implement extended iscsi: rfc4173 syntax which allows specifying credentials
-Date: Fri, 31 Jul 2009 10:31:16 +0200
-Message-ID: <1249029076-3531-1-git-send-email-hdegoede@redhat.com>
+From: "Sergey Fionov" <fionov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] Fix full pathname condition in find_library
+Date: Sat, 01 Aug 2009 11:52:16 +0400
+Message-ID: <op.uxy35cntfzkdih@etgc>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:content-type:to:subject:date
+         :mime-version:content-transfer-encoding:from:message-id:user-agent;
+        bh=OpkqIzfsCJuP2/UvxSR4uaSh2I2PE9ZLxGRLy89yFa8=;
+        b=gOtDzN9WhFo+BJ37TFeuwPfXmEztc+taBMKr9iNO4R1BJ97KD7aZAXhj6cuC94A/Yp
+         RKmyZZab6YDL8+OUg+djcX4dvFNpd2/t4rIOY+C7nMLtTyMfd1W2tG8svIDzyBLM0sq3
+         HfPVHuq1f98k3HC+pFOhZhLUSKX/d8bXi2ygo=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"; delsp="yes"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-As discussed before, it would be nice to be able to specify
-the iscsi chap credentials inside the netroot=iscsi:.....
-syntax, this patch implements this in a backwards compatible way, like
-this:
-iscsi:username:pass-savSHZN5Fh8qMp+WYRx65w@public.gmane.org::3260::iqn.2009-01.com.example:testdisk
-iscsi:username:pass:reverse:pass-savSHZN5Fh8qMp+WYRx65w@public.gmane.org::3260::iqn.2009-01.com.example:test
+Hello,
 
-The only downside is that the backwards compatibility is broken when there
-is an @ in the iscsi target name (very unlikely), that can still be used,
-but only like this:
-iscsi:@192.168.1.100::3260::iqn.2009-01.com.example:testdi@sk
----
- modules.d/95iscsi/iscsiroot |   18 ++++++++++++++++++
- 1 files changed, 18 insertions(+), 0 deletions(-)
+Now a fact that the path is full is checked by
+[[ -x $1 ]]
 
-diff --git a/modules.d/95iscsi/iscsiroot b/modules.d/95iscsi/iscsiroot
-index a9ad14a..e28cbaa 100755
---- a/modules.d/95iscsi/iscsiroot
-+++ b/modules.d/95iscsi/iscsiroot
-@@ -77,6 +77,24 @@ fi
- # override conf/commandline options by dhcp root_path
- # FIXME this assumes that all values have been provided
- OLDIFS="$IFS"
-+IFS=@
-+set $iroot
-+if [ $# -gt 1 ]; then
-+    authinfo=$1; shift 
-+    iroot=$*
-+    # allow empty authinfo to allow having an @ in iscsi_target_name like this:
-+    # netroot=iscsi:@192.168.1.100::3260::iqn.2009-01.com.example:testdi@sk
-+    if [ -n "$authinfo" ]; then
-+        IFS=:
-+        set $authinfo
-+        iscsi_username=$1
-+        iscsi_password=$2
-+        if [ $# -gt 2 ]; then
-+            iscsi_in_username=$3
-+            iscsi_in_password=$4
-+        fi
-+    fi
-+fi  
- IFS=:
- set $iroot
- iscsi_target_ip=$1; shift
--- 
-1.6.2.2
+But if the working directory is /bin or a directory with a file named  
+"mount",
+this condition will be met for "inst mount", and "mount" will not be copied
+into initrd at all.
 
+diff --git a/dracut-functions b/dracut-functions
+index d4caacf..1078bfd 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -83,7 +83,7 @@ inst_library() {
+  # search in the usual places to find the binary.
+  find_binary() {
+      local binpath="/bin /sbin /usr/bin /usr/sbin" p
+-    [[ -x $1 ]] && { echo $1; return 0; }
++    [[ -z ${1##/*} && -x $1 ]] && { echo $1; return 0; }
+      for p in $binpath; do
+         [[ -x $p/$1 ]] && { echo "$p/$1"; return 0; }
+      done
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
