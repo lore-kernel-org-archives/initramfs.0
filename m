@@ -1,49 +1,38 @@
 From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Race condition? /tmp/net.ifaces and pre-pivot
-Date: Fri, 7 Aug 2009 09:35:10 +0200
-Message-ID: <4A7BD92E.5010004@bfh.ch>
-References: <4A68D828.40506@redhat.com>
+Subject: Re: initramfs-tools stable release 0.93.3
+Date: Fri, 7 Aug 2009 09:37:24 +0200
+Message-ID: <4A7BD9B4.1090109@bfh.ch>
+References: <20090610153017.GA19401@stro.at> <1244716927.4532.34.camel@quest>  <20090725092159.GJ11967@stro.at> <1248871471.23840.50.camel@quest>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A68D828.40506-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1248871471.23840.50.camel@quest>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Scott James Remnant <scott-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
 
+Scott James Remnant wrote:
+[snip]
+>>> Slimming the initramfs right down to the essentials reduces the boot
+>>> time by over a second!  Paradoxically, this means that the driver can be
+>>> loaded in the real system at roughly the same time point as it would be
+>>> loaded in a bloated initramfs.
+>> well afair the intel fast boot doesn't use initramfs in the fast path
+>> at all
+>>
+> Our fast boot does use an initramfs.
 
+This is a bit offtopic: Do you have any more info about intel fast boot? 
+I use an intel atom board at home which supposedly has intel fast boot, 
+but I haven't found any info on how to make use of that.
 
-Warren Togami wrote:
-> I am running into an odd issue that is supposedto be impossible.
-> 
-> pre-pivot/20write-ifcfg.sh is often being run but fails to write 
-> net.*.ifcfg files because /tmp/net.ifaces does not exist at that moment. 
->  The mount was otherwise successful, and rdbreak before switch_root sees 
-> that /tmp/net.ifaces exists.
-> 
-> With plain "root=dhcp" with a NFS rootfs, it seems to never happen. 
-> However with "root=dhcp bridge", perhaps 25-75% of the time it is 
-> failing to write ifcfg files.
-> 
-> Some kind of race going on?  An inspection of the code seems to me that 
-> /tmp/net.ifaces should have already been created prior to pre-pivot?
-
-This is not entirely unexpected due to the asynchronousness of 
-udev-events and the new initqueue/mount-loop.
-
-The correct solution would be to move the whole call of netroot to the 
-initqueue, which we'll have to do anyway when we start handling 
-interface timeouts with arp.
+Thanks,
+Philippe
 
 > 
-> Warren Togami
-> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Scott
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
