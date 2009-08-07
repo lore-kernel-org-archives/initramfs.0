@@ -1,66 +1,49 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Implement extended iscsi: rfc4173 syntax which allows
- specifying credentials
-Date: Wed, 05 Aug 2009 16:23:05 +0200
-Message-ID: <4A7995C9.100@redhat.com>
-References: <1249029076-3531-1-git-send-email-hdegoede@redhat.com>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: Race condition? /tmp/net.ifaces and pre-pivot
+Date: Fri, 7 Aug 2009 09:35:10 +0200
+Message-ID: <4A7BD92E.5010004@bfh.ch>
+References: <4A68D828.40506@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1249029076-3531-1-git-send-email-hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A68D828.40506-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 07/31/2009 10:31 AM, Hans de Goede wrote:
-> As discussed before, it would be nice to be able to specify
-> the iscsi chap credentials inside the netroot=iscsi:.....
-> syntax, this patch implements this in a backwards compatible way, like
-> this:
-> iscsi:username:pass-savSHZN5Fh8qMp+WYRx65w@public.gmane.org::3260::iqn.2009-01.com.example:testdisk
-> iscsi:username:pass:reverse:pass-savSHZN5Fh8qMp+WYRx65w@public.gmane.org::3260::iqn.2009-01.com.example:test
->
-> The only downside is that the backwards compatibility is broken when there
-> is an @ in the iscsi target name (very unlikely), that can still be used,
-> but only like this:
-> iscsi:@192.168.1.100::3260::iqn.2009-01.com.example:testdi@sk
-> ---
->   modules.d/95iscsi/iscsiroot |   18 ++++++++++++++++++
->   1 files changed, 18 insertions(+), 0 deletions(-)
->
-> diff --git a/modules.d/95iscsi/iscsiroot b/modules.d/95iscsi/iscsiroot
-> index a9ad14a..e28cbaa 100755
-> --- a/modules.d/95iscsi/iscsiroot
-> +++ b/modules.d/95iscsi/iscsiroot
-> @@ -77,6 +77,24 @@ fi
->   # override conf/commandline options by dhcp root_path
->   # FIXME this assumes that all values have been provided
->   OLDIFS="$IFS"
-> +IFS=@
-> +set $iroot
-> +if [ $# -gt 1 ]; then
-> +    authinfo=$1; shift
-> +    iroot=$*
-> +    # allow empty authinfo to allow having an @ in iscsi_target_name like this:
-> +    # netroot=iscsi:@192.168.1.100::3260::iqn.2009-01.com.example:testdi@sk
-> +    if [ -n "$authinfo" ]; then
-> +        IFS=:
-> +        set $authinfo
-> +        iscsi_username=$1
-> +        iscsi_password=$2
-> +        if [ $# -gt 2 ]; then
-> +            iscsi_in_username=$3
-> +            iscsi_in_password=$4
-> +        fi
-> +    fi
-> +fi
->   IFS=:
->   set $iroot
->   iscsi_target_ip=$1; shift
 
-merged in git
+
+Warren Togami wrote:
+> I am running into an odd issue that is supposedto be impossible.
+> 
+> pre-pivot/20write-ifcfg.sh is often being run but fails to write 
+> net.*.ifcfg files because /tmp/net.ifaces does not exist at that moment. 
+>  The mount was otherwise successful, and rdbreak before switch_root sees 
+> that /tmp/net.ifaces exists.
+> 
+> With plain "root=dhcp" with a NFS rootfs, it seems to never happen. 
+> However with "root=dhcp bridge", perhaps 25-75% of the time it is 
+> failing to write ifcfg files.
+> 
+> Some kind of race going on?  An inspection of the code seems to me that 
+> /tmp/net.ifaces should have already been created prior to pre-pivot?
+
+This is not entirely unexpected due to the asynchronousness of 
+udev-events and the new initqueue/mount-loop.
+
+The correct solution would be to move the whole call of netroot to the 
+initqueue, which we'll have to do anyway when we start handling 
+interface timeouts with arp.
+
+> 
+> Warren Togami
+> wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
