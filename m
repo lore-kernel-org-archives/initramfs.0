@@ -1,7 +1,7 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 03/18] Update dracut-catimages to make it much more robust.
+Subject: [PATCH 05/18] Some quotation cleanups in dracut-functions.
 Date: Sun, 16 Aug 2009 16:14:54 -0500 (CDT)
-Message-ID: <2790d5b2ed6993c01158e96aea24404cd40eb0c0.1250455879.git.victor.lowther@gmail.com>
+Message-ID: <161efa1f40edd72d561b20b12b7dc4b435187209.1250455879.git.victor.lowther@gmail.com>
 References: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
@@ -12,86 +12,120 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-dracut-catimages will now handle image filenames with spaces, carriage returns,
-and other such nasty characters in them.  Bash arrays are very useful for 
-these sorts of things.
+Quotes are generally not needed in when assigning one variable to another,
+and are also not needed inside [[ ]] comaprisons, as word splitting and
+pathname expansion are not performed in these cases.
 
 ---
- dracut-catimages |   26 ++++++++++++++------------
- 1 files changed, 14 insertions(+), 12 deletions(-)
+ dracut-functions |   30 +++++++++++++++---------------
+ 1 files changed, 15 insertions(+), 15 deletions(-)
 
-diff --git a/dracut-catimages b/dracut-catimages
-index 66b03fe..b19f20a 100755
---- a/dracut-catimages
-+++ b/dracut-catimages
-@@ -70,7 +70,7 @@ done
- 
- outfile=$1; shift
- 
--if [ -z "$outfile" ]; then
-+if [[ -z $outfile ]]; then
-     derror "No output file specified."
-     usage
-     exit 1
-@@ -78,45 +78,47 @@ fi
- 
- baseimage=$1; shift
- 
--if [ -z "$baseimage" ]; then
-+if [[ -z $baseimage ]]; then
-     derror "No base image specified."
-     usage
-     exit 1
+diff --git a/dracut-functions b/dracut-functions
+index 73bf1fe..c82c7c7 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -29,23 +29,23 @@ if ! [[ $dracutlogfile ]]; then
+     [[ $dsrc = /usr/share/dracut ]] && \
+        dracutlogfile=/var/log/dracut.log || \
+        dracutlogfile=/tmp/dracut.log
+-    [[ -w "$dracutlogfile" ]] || dracutlogfile=/tmp/dracut.log
++    [[ -w $dracutlogfile ]] || dracutlogfile=/tmp/dracut.log
+     >"$dracutlogfile"
  fi
  
--if [ -f $outfile -a -z "$force" ]; then
-+if [[ -f $outfile && ! $force ]]; then
-     derror "Will not override existing initramfs ($outfile) without --force"
-     exit 1
- fi
+ dwarning() {
+     echo "W: $@" >&2
+-    [[ -w "$dracutlogfile" ]] && echo "W: $@" >>"$dracutlogfile"
++    [[ -w $dracutlogfile ]] && echo "W: $@" >>"$dracutlogfile"
+ }
  
--if [ -z "$no_imagedir" -a ! -d "$imagedir" ]; then
-+if [[ ! $no_imagedir && ! -d $imagedir ]]; then
-     derror "Image directory $overlay is not a directory"
-     exit 1
- fi
+ dinfo() {
+     [[ $beverbose ]] && echo "I: $@" >&2
+-    [[ -w "$dracutlogfile" ]] && echo "I: $@" >>"$dracutlogfile"
++    [[ -w $dracutlogfile ]] && echo "I: $@" >>"$dracutlogfile"
+ }
  
--if [ -z "$no_overlay" -a ! -d "$overlay" ]; then
-+if [[ ! $no_overlay && ! -d $overlay ]]; then
-     derror "Overlay $overlay is not a directory"
-     exit 1
- fi
+ derror() {
+     echo "E: $@" >&2
+-    [[ -w "$dracutlogfile" ]] && echo "E: $@" >>"$dracutlogfile"
++    [[ -w $dracutlogfile ]] && echo "E: $@" >>"$dracutlogfile"
+ }
  
--if [ -z "$no_overlay" ]; then
-+if [[ ! $no_overlay ]]; then
-     ofile="$imagedir/90-overlay.img"
-     dinfo "Creating image $ofile from directory $overlay"
-     ( cd "$overlay"; find . |cpio --quiet -H newc -o  |gzip -9 > "$ofile"; )
- fi
+ # $1 = file to copy to ramdisk
+@@ -55,7 +55,7 @@ derror() {
+ inst_simple() {
+     local src target
+     [[ -f $1 ]] || return 1
+-    src=$1 target="${initdir}${2:-$1}"
++    src=$1 target=${initdir}${2:-$1}
+     [[ -f $target ]] && return 0
+     mkdir -p "${target%/*}"
+     dinfo "Installing $src" 
+@@ -69,10 +69,10 @@ inst_library() {
+     local src=$1 dest=${2:-$1}
+     [[ -f $initdir$dest ]] && return 0
+     if [[ -L $src ]]; then
+-	reallib="$(readlink -f "$src")"
++	reallib=$(readlink -f "$src")
+ 	lib=${src##*/}
+ 	inst_simple "$reallib" "$reallib"
+-	mkdir -p ${initdir}${dest%/*}
++	mkdir -p "${initdir}${dest%/*}"
+ 	(cd "${initdir}${dest%/*}" && ln -s "$reallib" "$lib")
+     else
+ 	inst_simple "$src" "$dest"
+@@ -115,15 +115,15 @@ inst_binary() {
+ 	lib_regex='^(/lib[^/]*).*'
+ 	if [[ $FILE =~ $lib_regex ]]; then
+             TLIBDIR=${BASH_REMATCH[1]}
+-            BASE="${FILE##*/}"
++            BASE=${FILE##*/}
+ 	    # prefer nosegneg libs, then unoptimized ones.
+ 	    for f in "$TLIBDIR/i686/nosegneg" "$TLIBDIR"; do
+ 		[[ -f $f/$BASE ]] || continue
+-		FILE="$f/$BASE"
++		FILE=$f/$BASE
+ 		break
+ 	    done
+ 	    inst_library "$FILE" "$TLIBDIR/$BASE"
+-            IF_dynamic="yes"
++            IF_dynamic=yes
+ 	    continue
+ 	fi
+         inst_library "$FILE" 
+@@ -150,7 +150,7 @@ inst_symlink() {
+     [[ -L $1 ]] || return 1
+     [[ -L $target ]] && return 0
+     realsrc=$(readlink -f "$src")
+-    [[ $realsrc = ${realsrc##*/} ]] && realsrc="${src%/*}/$realsrc"
++    [[ $realsrc = ${realsrc##*/} ]] && realsrc=${src%/*}/$realsrc
+     inst "$realsrc" && ln -s "$realsrc" "$target"
+ }
  
--if [ -z "$no_imagedir" ]; then
--    images=$(for i in $imagedir/*.img;do [ -f $i ] || continue; echo $i; done)
-+if [[ ! $no_imagedir ]]; then
-+    for i in "$imagedir/"*.img; do
-+	[[ -f $i ]] && images+=("$i")
-+    done
- fi
- 
--images="$images $@"
-+images+=($@)
- 
- dinfo "Using base image $baseimage"
--cat $baseimage > $outfile
-+cat "$baseimage" > "$outfile"
- 
--for i in $images; do 
-+for i in "${images[@]}"; do 
-     dinfo "Appending $i"
--    cat $i >> $outfile
-+    cat "$i" >> "$outfile"
- done
- 
- dinfo "Created $outfile"
+@@ -166,10 +166,10 @@ find_rule() {
+ # udev rules always get installed in the same place, so
+ # create a function to install them to make life simpler.
+ inst_rules() { 
+-    local target="/etc/udev/rules.d"
++    local target=/etc/udev/rules.d
+     mkdir -p "$initdir/lib/udev/rules.d" "$initdir$target"
+     for rule in "$@"; do 
+-	rule=$(find_rule $rule) && \
++	rule=$(find_rule "$rule") && \
+ 	    inst_simple "$rule" "$target/${rule##*/}"
+     done
+ }
+@@ -206,8 +206,8 @@ dracut_install() {
+     local optional=
+     while (($# > 0)); do
+         # Might be nice to optionally install a binary
+-        if [ "$1" == "-o" ]; then
+-           optional="yes"
++        if [[ $1 = '-o' ]]; then
++           optional=yes
+            shift
+            continue
+         fi
 -- 
 1.6.0.4
 
