@@ -1,7 +1,7 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 07/18] More quotation fixups in dracut-functions
-Date: Sun, 16 Aug 2009 16:14:54 -0500 (CDT)
-Message-ID: <0c1a8ebc37f1bdb19cbd65b98266e554e8f2e92b.1250455879.git.victor.lowther@gmail.com>
+Subject: [PATCH 17/18] Make mdraid checking use stuff in dracut-functions
+Date: Sun, 16 Aug 2009 16:14:55 -0500 (CDT)
+Message-ID: <7e2b4f8367df360d326fe1497d1a3c009c2acc5c.1250455879.git.victor.lowther@gmail.com>
 References: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
@@ -13,57 +13,77 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 ---
- dracut-functions |   10 ++++++----
- 1 files changed, 6 insertions(+), 4 deletions(-)
+ modules.d/90mdraid/check |   62 ++++++++++++++++-----------------------------
+ 1 files changed, 22 insertions(+), 40 deletions(-)
 
-diff --git a/dracut-functions b/dracut-functions
-index ffc2724..79982ce 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -245,7 +245,7 @@ check_module_deps() {
- should_source_module() {
-     local dep
-     [[ -x $1/install ]] || return 1
--    if [[ "$kernel_only" = "yes" ]]; then
-+    if [[ $kernel_only = yes ]]; then
-         [[ -x $1/installkernel ]] && return 0
-         return 1
-     fi
-@@ -277,14 +277,14 @@ check_modules() {
- 
- # install kernel modules, and handle installing all their dependencies as well.
- instmods() {
--    [[ "$no_kernel" = "yes" ]] && return
-+    [[ $no_kernel = yes ]] && return
-     local mod mpargs modpath modname cmd
-     while (($# > 0)); do
- 	mod=${1%.ko}
- 	case $mod in
- 	    =*) # This introduces 2 incompatible meanings for =* arguments
-                 # to instmods.  We need to decide which one to keep.
--		if [ "$mod" = "=ata" -a -f $srcmods/modules.block ] ; then 
-+		if [[ $mod = =ata && -f $srcmods/modules.block ]] ; then 
- 		    instmods $mpargs $(egrep 'ata|ahci' "${srcmods}/modules.block")
- 		elif [ -f $srcmods/modules.${mod#=} ]; then
- 		    instmods $mpargs $(cat ${srcmods}/modules.${mod#=} )
-@@ -306,6 +306,8 @@ instmods() {
- 		[[ $hostonly ]] && ! grep -q "$mod" /proc/modules && { 
- 		    shift; continue; 
- 		}
-+		# ok, load the module, all its dependencies, and any firmware
-+		# it may require
-                 modprobe $mpargs --ignore-install --set-version $kernel -d ${srcmods%%/lib/modules/*}/ \
- 		    --show-depends $mod 2>/dev/null | \
- 		    while read cmd modpath options; do
-@@ -326,7 +328,7 @@ instmods() {
- 				found=yes
- 			    fi
- 			done
--			if [ "$found" != "yes" ]; then
-+			if [[ $found != yes ]]; then
- 			    dwarning "Possible missing firmware ${fw} for module ${mod}.ko"
- 			fi
- 		    done
+diff --git a/modules.d/90mdraid/check b/modules.d/90mdraid/check
+dissimilarity index 86%
+index a13d671..d002bdc 100755
+--- a/modules.d/90mdraid/check
++++ b/modules.d/90mdraid/check
+@@ -1,40 +1,22 @@
+-#!/bin/bash
+-
+-# No mdadm?  No mdraid support.
+-which mdadm >/dev/null 2>&1 || exit 1
+-
+-is_mdraid() { /lib/udev/vol_id /dev/block/$1 |egrep -q '(linux|isw)_raid'; }
+-
+-check_block_and_slaves() (
+-    # $1 = block device in major:minor format
+-    local x
+-    cd /sys/dev/block/$1
+-    [[ -b /dev/block/$1 ]] || return 1 # Not a block device? So sorry.
+-    is_mdraid $1 && return
+-    [[ -d slaves ]] || return 1 # there are no underlying devices, done.
+-    # we want to search the tree breadthwise, so...
+-    for x in slaves/*/dev; do
+-	is_mdraid $(cat "$x") && return 0
+-    done
+-    for x in slaves/*/dev; do
+-	check_block_and_slaves $(cat "$x") &&  return 0
+-    done
+-    return 1
+-)
+-
+-if [[ $1 = '-h' ]] ; then
+-    rootdev=''
+-    while read blkdev fs type opts misc; do
+-	[[ $blkdev = rootfs ]] && continue # skip rootfs entry
+-	[[ $fs = / ]] && { rootdev=$blkdev; break; }
+-    done < /proc/mounts
+-    [[ -b $rootdev ]] || exit 1 # Not on a block device?  Definitly not mdraid.
+-    # get major/minor for the device
+-    majmin=$(ls -nLl "$rootdev" | \
+-	(read x x x x maj min x; maj=${maj//,/}; echo $maj:$min))
+-    # now, walk backwards though our master/slave relationships looking
+-    # for a mdraid device
+-    check_block_and_slaves $majmin || exit 1
+-fi
+-
+-exit 0
++#!/bin/bash
++
++# No mdadm?  No mdraid support.
++which mdadm >/dev/null 2>&1 || exit 1
++
++. $dracutfunctions
++
++is_mdraid() { /lib/udev/vol_id /dev/block/$1 |egrep -q '(linux|isw)_raid'; }
++
++[[ $1 = '-h' ]] && {
++    rootdev=$(find_root_block_device)
++    if [[ $rootdev ]]; then
++	# root lives on a block device, so we can be more precise about 
++	# hostonly checking
++	check_block_and_slaves is_mdraid "$rootdev" || exit 1
++    else
++	# root is not on a block device, use the shotgun approach
++	blkid | grep -q linux_raid || exit 1
++    fi
++}
++
++exit 0
 -- 
 1.6.0.4
 
