@@ -1,7 +1,7 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 02/18] No need to quote variable expansion in [[ ]]
+Subject: [PATCH 06/18] Simplify dracut_install a bit, an make a minor fixup to check_module_deps
 Date: Sun, 16 Aug 2009 16:14:54 -0500 (CDT)
-Message-ID: <98adb06ea3d2c41a2c1500be855881ada2b50cad.1250455879.git.victor.lowther@gmail.com>
+Message-ID: <bd4c4bcb76902578a6a35f4a3bcae390fe0f1b40.1250455879.git.victor.lowther@gmail.com>
 References: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
@@ -13,77 +13,60 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 ---
- dracut |   18 +++++++++---------
- 1 files changed, 9 insertions(+), 9 deletions(-)
+ dracut-functions |   33 ++++++++++++++-------------------
+ 1 files changed, 14 insertions(+), 19 deletions(-)
 
-diff --git a/dracut b/dracut
-index 78cd2ef..6d4fccb 100755
---- a/dracut
-+++ b/dracut
-@@ -155,7 +155,7 @@ chmod 755 "$initdir"
- export initdir hookdirs dsrc dracutmodules drivers \
-     fw_dir drivers_dir debug beverbose no_kernel kernel_only
+diff --git a/dracut-functions b/dracut-functions
+index c82c7c7..ffc2724 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -203,32 +203,27 @@ inst_hook() {
+ }
  
--if [[ "$kernel_only" != "yes" ]]; then
-+if [[ $kernel_only != yes ]]; then
-     # Create some directory structure first
-     for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot tmp dev/pts var/run; do 
- 	mkdir -p "$initdir/$d"; 
-@@ -170,11 +170,11 @@ check_modules
- for moddir in "$dsrc/modules.d"/[0-9][0-9]*; do
-     mod=${moddir##*/}; mod=${mod#[0-9][0-9]}
-     if strstr "$mods_to_load" " $mod "; then
--	if [[ "$kernel_only" = "yes" ]]; then
--	    [[ -x "$moddir/installkernel" ]] && . "$moddir/installkernel"
-+	if [[ $kernel_only = yes ]]; then
-+	    [[ -x $moddir/installkernel ]] && . "$moddir/installkernel"
- 	else
- 	    . "$moddir/install"
--	    if [[ "$no_kernel" != "yes" && -x "$moddir/installkernel" ]]; then
-+	    if [[ $no_kernel != yes && -x $moddir/installkernel ]]; then
- 		. "$moddir/installkernel"
- 	    fi
- 	fi
-@@ -187,7 +187,7 @@ echo $mods_to_load
- ## final stuff that has to happen
- 
- # generate module dependencies for the initrd
--if [ -d "$initdir/lib/modules/$kernel" ]; then
-+if [[ -d $initdir/lib/modules/$kernel ]]; then
-     if ! depmod -a -b "$initdir" $kernel; then
-         echo "\"depmod -a $kernel\" failed."
-         exit 1
-@@ -207,10 +207,10 @@ for item in $install_items; do
- done
- unset item
- 
--[[ "$beverbose" = "yes" ]] && (du -c "$initdir" | sort -n)
-+[[ $beverbose = yes ]] && (du -c "$initdir" | sort -n)
- 
- # strip binaries 
--if [ "$do_strip" = "yes" ] ; then
-+if [[ $do_strip = yes ]] ; then
-     for p in strip objdump sed grep find; do 
- 	if ! which $p >/dev/null 2>&1; then
- 	    derror "Could not find '$p'. You should run $0 with '--nostrip'."
-@@ -219,7 +219,7 @@ if [ "$do_strip" = "yes" ] ; then
+ dracut_install() {
+-    local optional=
++    if [[ $1 = '-o' ]]; then 
++	local optional=yes
++	shift
++    fi
+     while (($# > 0)); do
+-        # Might be nice to optionally install a binary
+-        if [[ $1 = '-o' ]]; then
+-           optional=yes
+-           shift
+-           continue
+-        fi
+-	if inst "$1" ; then
+-            shift 
+-            continue
+-        fi
+-        if [ "$optional" == "yes" ]; then
+-          dwarning "Skipping program $1 as it cannot be found and is flagged to be optional"
+-          shift
+-          continue
+-        else
+-          derror "Failed to install $1"; exit 1
+-        fi
++	if ! inst "$1" ; then
++	    if [[ $optional = yes ]]; then
++		dwarning "Skipping program $1 as it cannot be found and is flagged to be optional"
++	    else
++		derror "Failed to install $1"
++		exit 1
++            fi
++	fi
++	shift
      done
- fi
+ }
  
--if [ "$do_strip" = "yes" ] ; then
-+if [[ $do_strip = yes ]] ; then
-     for f in $(find "$initdir" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | 
- 	grep -v ' shared object,' | 
- 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do
-@@ -240,7 +240,7 @@ fi
- 
- ( cd "$initdir"; find . |cpio -R 0:0 -H newc -o |gzip -9 > "$outfile"; )
- 
--[[ "$beverbose" = "yes" ]] && ls -lh "$outfile"
-+[[ $beverbose = yes ]] && ls -lh "$outfile"
- 
- exit 0
- 
+ check_module_deps() {
+     local moddir dep ret
+     # if we are already set to be loaded, we do not have to be checked again.
+-    strstr "$mods_to_load" " $1 "
++    strstr "$mods_to_load" " $1 " && return
+     # turn a module name into a directory, if we can.
+     moddir=$(echo ${dsrc}/modules.d/??${1})
+     [[ -d $moddir && -x $moddir/install ]] || return 1
 -- 
 1.6.0.4
 
