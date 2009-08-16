@@ -1,7 +1,7 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 05/18] Some quotation cleanups in dracut-functions.
+Subject: [PATCH 16/18] Make dmraid checking use stuff in dracut-functions
 Date: Sun, 16 Aug 2009 16:14:54 -0500 (CDT)
-Message-ID: <161efa1f40edd72d561b20b12b7dc4b435187209.1250455879.git.victor.lowther@gmail.com>
+Message-ID: <bc9ae19deb70f27a54bd2f7904cb3059f6d06568.1250455879.git.victor.lowther@gmail.com>
 References: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
@@ -12,120 +12,82 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Quotes are generally not needed in when assigning one variable to another,
-and are also not needed inside [[ ]] comaprisons, as word splitting and
-pathname expansion are not performed in these cases.
-
 ---
- dracut-functions |   30 +++++++++++++++---------------
- 1 files changed, 15 insertions(+), 15 deletions(-)
+ modules.d/90dmraid/check |   66 ++++++++++++++++-----------------------------
+ 1 files changed, 24 insertions(+), 42 deletions(-)
 
-diff --git a/dracut-functions b/dracut-functions
-index 73bf1fe..c82c7c7 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -29,23 +29,23 @@ if ! [[ $dracutlogfile ]]; then
-     [[ $dsrc = /usr/share/dracut ]] && \
-        dracutlogfile=/var/log/dracut.log || \
-        dracutlogfile=/tmp/dracut.log
--    [[ -w "$dracutlogfile" ]] || dracutlogfile=/tmp/dracut.log
-+    [[ -w $dracutlogfile ]] || dracutlogfile=/tmp/dracut.log
-     >"$dracutlogfile"
- fi
- 
- dwarning() {
-     echo "W: $@" >&2
--    [[ -w "$dracutlogfile" ]] && echo "W: $@" >>"$dracutlogfile"
-+    [[ -w $dracutlogfile ]] && echo "W: $@" >>"$dracutlogfile"
- }
- 
- dinfo() {
-     [[ $beverbose ]] && echo "I: $@" >&2
--    [[ -w "$dracutlogfile" ]] && echo "I: $@" >>"$dracutlogfile"
-+    [[ -w $dracutlogfile ]] && echo "I: $@" >>"$dracutlogfile"
- }
- 
- derror() {
-     echo "E: $@" >&2
--    [[ -w "$dracutlogfile" ]] && echo "E: $@" >>"$dracutlogfile"
-+    [[ -w $dracutlogfile ]] && echo "E: $@" >>"$dracutlogfile"
- }
- 
- # $1 = file to copy to ramdisk
-@@ -55,7 +55,7 @@ derror() {
- inst_simple() {
-     local src target
-     [[ -f $1 ]] || return 1
--    src=$1 target="${initdir}${2:-$1}"
-+    src=$1 target=${initdir}${2:-$1}
-     [[ -f $target ]] && return 0
-     mkdir -p "${target%/*}"
-     dinfo "Installing $src" 
-@@ -69,10 +69,10 @@ inst_library() {
-     local src=$1 dest=${2:-$1}
-     [[ -f $initdir$dest ]] && return 0
-     if [[ -L $src ]]; then
--	reallib="$(readlink -f "$src")"
-+	reallib=$(readlink -f "$src")
- 	lib=${src##*/}
- 	inst_simple "$reallib" "$reallib"
--	mkdir -p ${initdir}${dest%/*}
-+	mkdir -p "${initdir}${dest%/*}"
- 	(cd "${initdir}${dest%/*}" && ln -s "$reallib" "$lib")
-     else
- 	inst_simple "$src" "$dest"
-@@ -115,15 +115,15 @@ inst_binary() {
- 	lib_regex='^(/lib[^/]*).*'
- 	if [[ $FILE =~ $lib_regex ]]; then
-             TLIBDIR=${BASH_REMATCH[1]}
--            BASE="${FILE##*/}"
-+            BASE=${FILE##*/}
- 	    # prefer nosegneg libs, then unoptimized ones.
- 	    for f in "$TLIBDIR/i686/nosegneg" "$TLIBDIR"; do
- 		[[ -f $f/$BASE ]] || continue
--		FILE="$f/$BASE"
-+		FILE=$f/$BASE
- 		break
- 	    done
- 	    inst_library "$FILE" "$TLIBDIR/$BASE"
--            IF_dynamic="yes"
-+            IF_dynamic=yes
- 	    continue
- 	fi
-         inst_library "$FILE" 
-@@ -150,7 +150,7 @@ inst_symlink() {
-     [[ -L $1 ]] || return 1
-     [[ -L $target ]] && return 0
-     realsrc=$(readlink -f "$src")
--    [[ $realsrc = ${realsrc##*/} ]] && realsrc="${src%/*}/$realsrc"
-+    [[ $realsrc = ${realsrc##*/} ]] && realsrc=${src%/*}/$realsrc
-     inst "$realsrc" && ln -s "$realsrc" "$target"
- }
- 
-@@ -166,10 +166,10 @@ find_rule() {
- # udev rules always get installed in the same place, so
- # create a function to install them to make life simpler.
- inst_rules() { 
--    local target="/etc/udev/rules.d"
-+    local target=/etc/udev/rules.d
-     mkdir -p "$initdir/lib/udev/rules.d" "$initdir$target"
-     for rule in "$@"; do 
--	rule=$(find_rule $rule) && \
-+	rule=$(find_rule "$rule") && \
- 	    inst_simple "$rule" "$target/${rule##*/}"
-     done
- }
-@@ -206,8 +206,8 @@ dracut_install() {
-     local optional=
-     while (($# > 0)); do
-         # Might be nice to optionally install a binary
--        if [ "$1" == "-o" ]; then
--           optional="yes"
-+        if [[ $1 = '-o' ]]; then
-+           optional=yes
-            shift
-            continue
-         fi
+diff --git a/modules.d/90dmraid/check b/modules.d/90dmraid/check
+dissimilarity index 79%
+index 1757dfd..7008f81 100755
+--- a/modules.d/90dmraid/check
++++ b/modules.d/90dmraid/check
+@@ -1,42 +1,24 @@
+-#!/bin/bash
+-
+-# if we don't have dmraid installed on the host system, no point
+-# in trying to support it in the initramfs.
+-which dmraid >/dev/null 2>&1 || exit 1
+-
+-is_dmraid() { /lib/udev/vol_id /dev/block/$1 |grep -v linux_raid_member | \
+-    grep -q _raid_member; }
+-
+-check_block_and_slaves() (
+-    # $1 = block device in major:minor format
+-    local x
+-    cd /sys/dev/block/$1
+-    [[ -b /dev/block/$1 ]] || return 1 # Not a block device? So sorry.
+-    is_dmraid $1 && return
+-    [[ -d slaves ]] || return 1 # there are no underlying devices, done.
+-    # we want to search the tree breadthwise, so...
+-    for x in slaves/*/dev; do
+-	is_dmraid $(cat "$x") && return 0
+-    done
+-    for x in slaves/*/dev; do
+-	check_block_and_slaves $(cat "$x") &&  return 0
+-    done
+-    return 1
+-)
+-
+-if [[ $1 = '-h' ]] ; then
+-    rootdev=''
+-    while read blkdev fs type opts misc; do
+-	[[ $blkdev = rootfs ]] && continue # skip rootfs entry
+-	[[ $fs = / ]] && { rootdev=$blkdev; break; }
+-    done < /proc/mounts
+-    [[ -b $rootdev ]] || exit 1 # Not on a block device?  Definitly not dmraid
+-    # get major/minor for the device
+-    majmin=$(ls -nLl "$rootdev" | \
+-	(read x x x x maj min x; maj=${maj//,/}; echo $maj:$min))
+-    # now, walk backwards though our master/slave relationships looking
+-    # for a dmraid device
+-    check_block_and_slaves $majmin || exit 1
+-fi
+-
+-exit 0
++#!/bin/bash
++
++# if we don't have dmraid installed on the host system, no point
++# in trying to support it in the initramfs.
++which dmraid >/dev/null 2>&1 || exit 1
++
++. $dracutfunctions
++
++is_dmraid() { /lib/udev/vol_id /dev/block/$1 |grep -v linux_raid_member | \
++    grep -q _raid_member; }
++
++[[ $1 = '-h' ]] && {
++    rootdev=$(find_root_block_device)
++    if [[ $rootdev ]]; then
++	# root lives on a block device, so we can be more precise about 
++	# hostonly checking
++	check_block_and_slaves is_dmraid "$rootdev" || exit 1
++    else
++	# root is not on a block device, use the shotgun approach
++	dmraid -r | grep -q ok || exit 1
++    fi
++}
++
++exit 0
 -- 
 1.6.0.4
 
