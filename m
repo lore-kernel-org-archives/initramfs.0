@@ -1,120 +1,93 @@
-From: Harald Hoyer <harald@redhat.com>
-Subject: [ANNOUNCEMENT] dracut-0.9
-Date: Fri, 14 Aug 2009 18:10:37 +0200
-Message-ID: <4A858C7D.9070209@redhat.com>
-Reply-To: Development discussions related to Fedora
-	<fedora-devel-list@redhat.com>
-Mime-Version: 1.0
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 02/18] No need to quote variable expansion in [[ ]]
+Date: Sun, 16 Aug 2009 16:14:54 -0500 (CDT)
+Message-ID: <98adb06ea3d2c41a2c1500be855881ada2b50cad.1250455879.git.victor.lowther@gmail.com>
+References: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther@gmail.com>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <0b90cfaa9ff10f594018fdcc686fe1b7a3924e4f.1250455879.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <fedora-devel-list-bounces@redhat.com>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>, 
-	<mailto:fedora-devel-list-request@redhat.com?subject=unsubscribe>
-List-Archive: <https://www.redhat.com/archives/fedora-devel-list>
-List-Post: <mailto:fedora-devel-list@redhat.com>
-List-Help: <mailto:fedora-devel-list-request@redhat.com?subject=help>
-List-Subscribe: <https://www.redhat.com/mailman/listinfo/fedora-devel-list>,
-	<mailto:fedora-devel-list-request@redhat.com?subject=subscribe>
-Sender: fedora-devel-list-bounces@redhat.com
-Errors-To: fedora-devel-list-bounces@redhat.com
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, Development discussions related to Fedora Core <fedora-devel-list@redhat.com>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-dracut-0.9
-==========
-- let plymouth attach to the terminal (nice text output now)
-- new kernel command line parameter "rdinfo" show dracut output, even when
-   "quiet" is specified
-- rd_LUKS_UUID is now handled correctly
-- dracut-gencmdline: rd_LUKS_UUID and rd_MD_UUID is now correctly generated
-- now generates initrd-generic with around 15MB
-- smaller bugfixes
+---
+ dracut |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
-dracut-0.8
-==========
-- iSCSI with username and password
-- support for live images (dmsquashed live images)
-- iscsi_firmware fixes
-- smaller images
-- bugfixes
-
-dracut-0.7
-==========
-- dracut:     strip binaries in initramfs
-
-            --strip
-                   strip binaries in the initramfs (default)
-
-            --nostrip
-                   do not strip binaries in the initramfs
-- dracut-catimages
-
-     Usage: ./dracut-catimages [OPTION]... <initramfs> <base image>
-     [<image>...]
-     Creates initial ramdisk image by concatenating several images from the
-     command
-     line and /boot/dracut/
-
-       -f, --force           Overwrite existing initramfs file.
-       -i, --imagedir        Directory with additional images to add
-                             (default: /boot/dracut/)
-       -o, --overlaydir      Overlay directory, which contains files that
-                             will be used to create an additional image
-       --nooverlay           Do not use the overlay directory
-       --noimagedir          Do not use the additional image directory
-       -h, --help            This message
-       --debug               Output debug information of the build process
-       -v, --verbose         Verbose output during the build process
-
-- s390 dasd support
-
-dracut-0.6
-==========
-- dracut: add --kernel-only and --no-kernel arguments
-
-            --kernel-only
-                   only install kernel drivers and firmware files
-
-            --no-kernel
-                   do not install kernel drivers and firmware files
-
-     All kernel module related install commands moved from "install"
-     to "installkernel".
-
-     For "--kernel-only" all installkernel scripts of the specified
-     modules are used, regardless of any checks, so that all modules
-     which might be needed by any dracut generic image are in.
-
-     The basic idea is to create two images. One image with the kernel
-     modules and one without. So if the kernel changes, you only have
-     to replace one image.
-
-     Grub and the kernel can handle multiple images, so grub entry can
-     look like this:
-
-     title Fedora (2.6.29.5-191.fc11.i586)
-             root (hd0,0)
-             kernel /vmlinuz-2.6.29.5-191.fc11.i586 ro rhgb quiet
-             initrd /initrd-20090722.img 
-/initrd-kernel-2.6.29.5-191.fc11.i586.img /initrd-config.img
-
-     initrd-20090722.img
-       the image provided by the initrd rpm
-       one old backup version is kept like with the kernel
-
-     initrd-kernel-2.6.29.5-191.fc11.i586.img
-       the image provided by the kernel rpm
-
-     initrd-config.img
-       optional image with local configuration files
-
-- dracut: add --kmoddir directory, where to look for kernel modules
-
-            -k, --kmoddir [DIR]
-                   specify the directory, where to look for kernel modules
-
-
+diff --git a/dracut b/dracut
+index 78cd2ef..6d4fccb 100755
+--- a/dracut
++++ b/dracut
+@@ -155,7 +155,7 @@ chmod 755 "$initdir"
+ export initdir hookdirs dsrc dracutmodules drivers \
+     fw_dir drivers_dir debug beverbose no_kernel kernel_only
+ 
+-if [[ "$kernel_only" != "yes" ]]; then
++if [[ $kernel_only != yes ]]; then
+     # Create some directory structure first
+     for d in bin sbin usr/bin usr/sbin usr/lib etc proc sys sysroot tmp dev/pts var/run; do 
+ 	mkdir -p "$initdir/$d"; 
+@@ -170,11 +170,11 @@ check_modules
+ for moddir in "$dsrc/modules.d"/[0-9][0-9]*; do
+     mod=${moddir##*/}; mod=${mod#[0-9][0-9]}
+     if strstr "$mods_to_load" " $mod "; then
+-	if [[ "$kernel_only" = "yes" ]]; then
+-	    [[ -x "$moddir/installkernel" ]] && . "$moddir/installkernel"
++	if [[ $kernel_only = yes ]]; then
++	    [[ -x $moddir/installkernel ]] && . "$moddir/installkernel"
+ 	else
+ 	    . "$moddir/install"
+-	    if [[ "$no_kernel" != "yes" && -x "$moddir/installkernel" ]]; then
++	    if [[ $no_kernel != yes && -x $moddir/installkernel ]]; then
+ 		. "$moddir/installkernel"
+ 	    fi
+ 	fi
+@@ -187,7 +187,7 @@ echo $mods_to_load
+ ## final stuff that has to happen
+ 
+ # generate module dependencies for the initrd
+-if [ -d "$initdir/lib/modules/$kernel" ]; then
++if [[ -d $initdir/lib/modules/$kernel ]]; then
+     if ! depmod -a -b "$initdir" $kernel; then
+         echo "\"depmod -a $kernel\" failed."
+         exit 1
+@@ -207,10 +207,10 @@ for item in $install_items; do
+ done
+ unset item
+ 
+-[[ "$beverbose" = "yes" ]] && (du -c "$initdir" | sort -n)
++[[ $beverbose = yes ]] && (du -c "$initdir" | sort -n)
+ 
+ # strip binaries 
+-if [ "$do_strip" = "yes" ] ; then
++if [[ $do_strip = yes ]] ; then
+     for p in strip objdump sed grep find; do 
+ 	if ! which $p >/dev/null 2>&1; then
+ 	    derror "Could not find '$p'. You should run $0 with '--nostrip'."
+@@ -219,7 +219,7 @@ if [ "$do_strip" = "yes" ] ; then
+     done
+ fi
+ 
+-if [ "$do_strip" = "yes" ] ; then
++if [[ $do_strip = yes ]] ; then
+     for f in $(find "$initdir" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | 
+ 	grep -v ' shared object,' | 
+ 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do
+@@ -240,7 +240,7 @@ fi
+ 
+ ( cd "$initdir"; find . |cpio -R 0:0 -H newc -o |gzip -9 > "$outfile"; )
+ 
+-[[ "$beverbose" = "yes" ]] && ls -lh "$outfile"
++[[ $beverbose = yes ]] && ls -lh "$outfile"
+ 
+ exit 0
+ 
 -- 
-fedora-devel-list mailing list
-fedora-devel-list@redhat.com
-https://www.redhat.com/mailman/listinfo/fedora-devel-list
+1.6.0.4
+
+--
+To unsubscribe from this list: send the line "unsubscribe initramfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
