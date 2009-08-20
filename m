@@ -1,10 +1,8 @@
 From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 21/18] Speed up loading block drivers with --hostonly
+Subject: [PATCH 20/18] Abstract out vol_id vs. blkid usage
 Date: Wed, 19 Aug 2009 22:25:01 -0500 (CDT)
-Message-ID: <f76ef3aa3dd61cae9ea434bcec5eca006b1ab472.1250738566.git.victor.lowther@gmail.com>
-References: <59c88f499f404429ea331252bd6ad8c9d537f7d3.1250738566.git.victor.lowther@gmail.com>
+Message-ID: <59c88f499f404429ea331252bd6ad8c9d537f7d3.1250738566.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <59c88f499f404429ea331252bd6ad8c9d537f7d3.1250738566.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -12,90 +10,101 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Instead of grovelling through all the modules available for the
-kernel looking for block devices, only look at the modules that are
-actually loaded. This speeds things up by a rather large amount
-when generating the initramfs with --hostonly.
-
-While we are at it, only load the filesystem module that will actually
-be used for the root filesystem when running in --hostonly instead
-of all the filesystem modules that happen to be loaded at the time.
+Since different distros may or may not use vol_id in udev, and blkid
+is generally replacing vol_id, abstract them out into a function which
+tries to use vol_id first and blkid second, on the assumption that
+blkid can take over for vol_id if vol_id is no longer there.
 ---
- dracut-functions                         |    8 +++++---
- modules.d/90kernel-modules/installkernel |   23 +++++++++++++++++------
- 2 files changed, 22 insertions(+), 9 deletions(-)
+ dracut-functions         |   11 +++++++++++
+ modules.d/90crypt/check  |    2 +-
+ modules.d/90dmraid/check |    2 +-
+ modules.d/90lvm/check    |    4 ++--
+ modules.d/90mdraid/check |    2 +-
+ 5 files changed, 16 insertions(+), 5 deletions(-)
 
 diff --git a/dracut-functions b/dracut-functions
-index 655d311..f2a9202 100755
+index 1df2045..655d311 100755
 --- a/dracut-functions
 +++ b/dracut-functions
-@@ -22,7 +22,7 @@ IF_RTLD=""
- IF_dynamic=""
- 
- # Generic substring function.  If $2 is in $1, return 0.
--strstr() { [[ ! ${1#*$2*} = $1 ]]; }
-+strstr() { [[ $1 =~ $2 ]]; }
- 
- # Log initrd creation.
- if ! [[ $dracutlogfile ]]; then
-@@ -60,11 +60,11 @@ get_fs_type() (
- )
- 
- # finds the major:minor of the block device backing the root filesystem.
--find_root_block_device() {
-+find_block_device() {
-     local rootdev blkdev fs type opts misc
-     while read blkdev fs type opts misc; do
- 	[[ $blkdev = rootfs ]] && continue # skip rootfs entry
--	[[ $fs = / ]] && { rootdev=$blkdev; break; } # we have a winner!
-+	[[ $fs = $1 ]] && { rootdev=$blkdev; break; } # we have a winner!
-     done < /proc/mounts
-     [[ -b $rootdev ]] || return 1 # oops, not a block device.
-     # get major/minor for the device
-@@ -72,6 +72,8 @@ find_root_block_device() {
- 	(read x x x x maj min x; maj=${maj//,/}; echo $maj:$min)
+@@ -48,6 +48,17 @@ derror() {
+     [[ -w $dracutlogfile ]] && echo "E: $@" >>"$dracutlogfile"
  }
  
-+find_root_block_device() { find_block_device /; }
++get_fs_type() (
++    if [[ -x /lib/udev/vol_id ]]; then
++	eval /usr/udev/vol_id --export $1
++	echo $ID_FS_TYPE
++    elif find_binary >/dev/null; then
++	blkid -o value -s TYPE $1
++    else
++	return 1
++    fi
++)
 +
- # Walk all the slave relationships for a given block device.
- # Stop when our helper function returns success
- # $1 = function to call on every found block device
-diff --git a/modules.d/90kernel-modules/installkernel b/modules.d/90kernel-modules/installkernel
-index f9a1ab4..253cdc0 100755
---- a/modules.d/90kernel-modules/installkernel
-+++ b/modules.d/90kernel-modules/installkernel
-@@ -1,13 +1,24 @@
- #!/bin/bash
- if [[ -z $drivers ]]; then
--  drivers="sd_mod =fs"
-+  drivers="sd_mod"
-   # Include block controller drivers
-   blockfuncs='ata_scsi_ioctl|scsi_add_host|blk_init_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device'
--  for modname in $(find "$srcmods/kernel/drivers" -name '*.ko'); do
--    if nm -uPA $modname | egrep -q "$blockfuncs"; then
--      drivers="${drivers} $modname"
--    fi
--  done
-+  if [[ $hostonly = "" ]]; then
-+      for modname in $(find "$srcmods/kernel/drivers" -name '*.ko'); do
-+	  if nm -uPA $modname | egrep -q "$blockfuncs"; then
-+	      drivers="${drivers} $modname"
-+	  fi
-+      done
-+      drivers="${drivers} =fs"
-+  else
-+      while read modname rest; do
-+	  modname=$(modinfo -F filename -k $kernel $modname)
-+	  if nm -uPA $modname |egrep -q "$blockfuncs"; then
-+	      drivers="${drivers} $modname"
-+	  fi
-+      done </proc/modules
-+      instmods $(get_fs_type "/dev/block/$(find_root_block_device)")
-+  fi
-   instmods $drivers
-   # hardcoded list of exceptions
-   rm -fr ${initdir}/lib/modules/*/kernel/fs/ocfs2
+ # finds the major:minor of the block device backing the root filesystem.
+ find_root_block_device() {
+     local rootdev blkdev fs type opts misc
+diff --git a/modules.d/90crypt/check b/modules.d/90crypt/check
+index edd450d..07c53f9 100755
+--- a/modules.d/90crypt/check
++++ b/modules.d/90crypt/check
+@@ -9,7 +9,7 @@ which cryptsetup >/dev/null 2>&1 || exit 1
+ 
+ . $dracutfunctions
+ 
+-is_crypt() { /lib/udev/vol_id /dev/block/$1 |grep -q crypto_LUKS; }
++is_crypt() { [[ $(get_fs_type /dev/block/$1) = crypto_LUKS ]]; }
+ 
+ [[ $1 = '-h' ]] && {
+     rootdev=$(find_root_block_device)
+diff --git a/modules.d/90dmraid/check b/modules.d/90dmraid/check
+index 7008f81..4dd9d7a 100755
+--- a/modules.d/90dmraid/check
++++ b/modules.d/90dmraid/check
+@@ -6,7 +6,7 @@ which dmraid >/dev/null 2>&1 || exit 1
+ 
+ . $dracutfunctions
+ 
+-is_dmraid() { /lib/udev/vol_id /dev/block/$1 |grep -v linux_raid_member | \
++is_dmraid() { get_fs_type /dev/block/$1 |grep -v linux_raid_member | \
+     grep -q _raid_member; }
+ 
+ [[ $1 = '-h' ]] && {
+diff --git a/modules.d/90lvm/check b/modules.d/90lvm/check
+index 3e6a990..e57d60f 100755
+--- a/modules.d/90lvm/check
++++ b/modules.d/90lvm/check
+@@ -5,7 +5,7 @@ which lvm >/dev/null 2>&1 || exit 1
+ 
+ . $dracutfunctions
+ 
+-is_lvm() { /lib/udev/vol_id /dev/block/$1 |grep -q LVM2_member; }
++is_lvm() { [[ $(get_fs_type /dev/block/$1) = LVM2_member ]]; }
+ 
+ [[ $1 = '-h' ]] && {
+     rootdev=$(find_root_block_device)
+@@ -15,7 +15,7 @@ is_lvm() { /lib/udev/vol_id /dev/block/$1 |grep -q LVM2_member; }
+ 	check_block_and_slaves is_lvm "$rootdev" || exit 1
+     else
+ 	# root is not on a block device, use the shotgun approach
+-	blkid | grep -q lvm2pv || exit 1
++	blkid | grep -q LVM2_member || exit 1
+     fi
+ }
+ 
+diff --git a/modules.d/90mdraid/check b/modules.d/90mdraid/check
+index d002bdc..5bffd36 100755
+--- a/modules.d/90mdraid/check
++++ b/modules.d/90mdraid/check
+@@ -5,7 +5,7 @@ which mdadm >/dev/null 2>&1 || exit 1
+ 
+ . $dracutfunctions
+ 
+-is_mdraid() { /lib/udev/vol_id /dev/block/$1 |egrep -q '(linux|isw)_raid'; }
++is_mdraid() { get_fs_type /dev/block/$1 |egrep -q '(linux|isw)_raid'; }
+ 
+ [[ $1 = '-h' ]] && {
+     rootdev=$(find_root_block_device)
 -- 
 1.6.3.3
 
