@@ -1,181 +1,68 @@
-From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Add fcoe booting support
-Date: Tue, 25 Aug 2009 21:58:18 +0200
-Message-ID: <1251230298-3267-1-git-send-email-hdegoede@redhat.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Hans de Goede <hdegoede@redhat.com>
+Subject: Issues with dracut and network device naming
+Date: Fri, 28 Aug 2009 14:14:18 +0200
+Message-ID: <4A97CA1A.5080606@redhat.com>
+Reply-To: Discussion of Development and Customization of the Red Hat Linux
+	Installer <anaconda-devel-list@redhat.com>
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Return-path: <anaconda-devel-list-bounces@redhat.com>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/anaconda-devel-list>, 
+	<mailto:anaconda-devel-list-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/anaconda-devel-list>
+List-Post: <mailto:anaconda-devel-list@redhat.com>
+List-Help: <mailto:anaconda-devel-list-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/anaconda-devel-list>, 
+	<mailto:anaconda-devel-list-request@redhat.com?subject=subscribe>
+Sender: anaconda-devel-list-bounces@redhat.com
+Errors-To: anaconda-devel-list-bounces@redhat.com
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs <initramfs@vger.kernel.org>
+Cc: Discussion of Development and Customization of the Red Hat Linux Installer <anaconda-devel-list@redhat.com>
 
-Supported cmdline formats:
-fcoe=<networkdevice>:<dcb|nodcb>
-fcoe=<macaddress>:<dcb|nodcb>
+Hi all,
 
-Note currently only nodcb is supported, the dcb option is reserved for
-future use.
+When using iscsi for example, an interface name (usually eth#) is
+specified on the dracut cmdline, but if a machine has multiple nics
+the probe order done by dracut may very well differ as the one
+which was used during install when the dracut cmdline gets generated.
 
-Note letters in the macaddress must be lowercase!
+For the fcoe support I've allowed specifying a mac address instead,
+however this has issues too. As now the udev run from rc.sysinit
+complains it cannot rename the interface to what the running system
+expects as the interface is busy (oops).
 
-Examples:
-fcoe=eth0:nodcb
-fcoe=4A:3F:4C:04:F8:D7:nodcb
----
- modules.d/95fcoe/check            |   11 ++++++++
- modules.d/95fcoe/fcoe-genrules.sh |   14 ++++++++++
- modules.d/95fcoe/fcoe-up          |   16 ++++++++++++
- modules.d/95fcoe/install          |    7 +++++
- modules.d/95fcoe/installkernel    |    2 +
- modules.d/95fcoe/parse-fcoe.sh    |   48 +++++++++++++++++++++++++++++++++++++
- 6 files changed, 98 insertions(+), 0 deletions(-)
- create mode 100755 modules.d/95fcoe/check
- create mode 100755 modules.d/95fcoe/fcoe-genrules.sh
- create mode 100755 modules.d/95fcoe/fcoe-up
- create mode 100755 modules.d/95fcoe/install
- create mode 100755 modules.d/95fcoe/installkernel
- create mode 100755 modules.d/95fcoe/parse-fcoe.sh
+So it looks like we need to somehow tell dracut to use the same
+mac <-> interface name mapping as during the running system.
 
-diff --git a/modules.d/95fcoe/check b/modules.d/95fcoe/check
-new file mode 100755
-index 0000000..95c1aa1
---- /dev/null
-+++ b/modules.d/95fcoe/check
-@@ -0,0 +1,11 @@
-+#!/bin/sh
-+
-+# We depend on network modules being loaded
-+[ "$1" = "-d" ] && echo network
-+
-+# FIXME
-+# If hostonly was requested, fail the check if we are not actually
-+# booting from root.
-+#[ "$1" = "-h" ] && ! egrep -q '/ /dev/nbd[0-9]*' /proc/mounts && exit 1
-+
-+exit 0
-diff --git a/modules.d/95fcoe/fcoe-genrules.sh b/modules.d/95fcoe/fcoe-genrules.sh
-new file mode 100755
-index 0000000..b5d6f07
---- /dev/null
-+++ b/modules.d/95fcoe/fcoe-genrules.sh
-@@ -0,0 +1,14 @@
-+#!/bin/sh
-+
-+# We use (fcoe_interface or fcoe_mac) and fcoe_dcb as set by parse-fcoe.sh
-+# If neither mac nor interface are set we don't continue
-+[ -z "$fcoe_interface" -a -z "$fcoe_mac" ] && return
-+
-+# Write udev rules
-+{
-+    if [ -n "$fcoe_mac" ] ; then
-+	printf 'ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="%s", RUN+="/sbin/fcoe-up $env{INTERFACE} %s"\n' "$fcoe_mac" "$fcoe_dcb"
-+    else
-+	printf 'ACTION=="add", SUBSYSTEM=="net", KERNEL=="%s", RUN+="/sbin/fcoe-up $env{INTERFACE} %s"\n' "$fcoe_interface" "$fcoe_dcb"
-+    fi
-+} > /etc/udev/rules.d/60-fcoe.rules
-diff --git a/modules.d/95fcoe/fcoe-up b/modules.d/95fcoe/fcoe-up
-new file mode 100755
-index 0000000..8a70a62
---- /dev/null
-+++ b/modules.d/95fcoe/fcoe-up
-@@ -0,0 +1,16 @@
-+#!/bin/sh
-+#
-+# We get called like this:
-+# /sbin/fcoe-up <network-device> <dcb|nodcb>
-+#
-+# Note currently only nodcb is supported, the dcb option is reserved for
-+# future use.
-+
-+# Huh? Missing arguments ??
-+[ -z "$1" -o -z "$2" ] && exit 1
-+
-+netif=$1
-+dcb=$2
-+
-+/sbin/ip link set "$netif" up
-+echo -n "$netif" > /sys/module/fcoe/parameters/create
-diff --git a/modules.d/95fcoe/install b/modules.d/95fcoe/install
-new file mode 100755
-index 0000000..0bd9ed4
---- /dev/null
-+++ b/modules.d/95fcoe/install
-@@ -0,0 +1,7 @@
-+#!/bin/bash
-+
-+dracut_install ip
-+
-+inst "$moddir/fcoe-up" "/sbin/fcoe-up"
-+inst_hook pre-udev 60 "$moddir/fcoe-genrules.sh"
-+inst_hook cmdline 99 "$moddir/parse-fcoe.sh"
-diff --git a/modules.d/95fcoe/installkernel b/modules.d/95fcoe/installkernel
-new file mode 100755
-index 0000000..f3409b3
---- /dev/null
-+++ b/modules.d/95fcoe/installkernel
-@@ -0,0 +1,2 @@
-+#!/bin/bash
-+instmods fcoe
-diff --git a/modules.d/95fcoe/parse-fcoe.sh b/modules.d/95fcoe/parse-fcoe.sh
-new file mode 100755
-index 0000000..81ec760
---- /dev/null
-+++ b/modules.d/95fcoe/parse-fcoe.sh
-@@ -0,0 +1,48 @@
-+#!/bin/sh
-+#
-+# Supported formats:
-+# fcoe=<networkdevice>:<dcb|nodcb>
-+# fcoe=<macaddress>:<dcb|nodcb>
-+#
-+# Note currently only nodcb is supported, the dcb option is reserved for
-+# future use.
-+#
-+# Note letters in the macaddress must be lowercase!
-+#
-+# Examples:
-+# fcoe=eth0:nodcb
-+# fcoe=4A:3F:4C:04:F8:D7:nodcb
-+
-+[ -z "$fcoe" ] && fcoe=$(getarg fcoe=)
-+
-+# If it's not set we don't continue
-+[ -z "$fcoe" ] && return
-+
-+parse_fcoe_opts() {
-+    local IFS=:
-+    set $fcoe
-+
-+    case $# in
-+        2)
-+            fcoe_interface=$1
-+            fcoe_dcb=$2
-+            ;;
-+        7)
-+            fcoe_mac=$1:$2:$3:$4:$5:$6
-+            fcoe_dcb=$7
-+            ;;
-+        *)
-+            die "Invalid arguments for fcoe="
-+            ;;
-+    esac
-+}
-+
-+parse_fcoe_opts
-+
-+# currently only nodcb is supported
-+if [ "$fcoe_dcb" != "nodcb" ] ; then
-+    die "Invalid FCoE DCB option: $fcoe_dcb"
-+fi
-+
-+# FCoE actually supported?
-+[ -e /sys/module/fcoe/parameters/create ] || modprobe fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
--- 
-1.6.4
+One way of doing this would be to have a configuration initrd with
+the persistent net rules. But I see multiple issues with this:
 
---
-To unsubscribe from this list: send the line "unsubscribe initramfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1) I'm not sure all bootloaders support loading multiple initrd's
+    and I'm not sure dracut supports having files over multiple
+    initrd's at the moment either
+
+2) Merging the generic initrd and the config initrd, although it
+    should be safe may turn out fragile
+
+3) To me the biggest problem. Currently what dracut does is very
+    transparent, if we know the cmdline and the hardware configuration /
+    disk layouts, we should be able to predict what it is going to do
+    Once we start hiding configration inside an image file, it becames
+    less transparent
+
+4) I don't know how well the persistent network device rules and our
+    current generated during boot network device rules play together.
+    The current generated rules do not seem to be ready for handling
+    device name changes
+
+So I would like to propose another solution for this, allow specifying
+both an interface-name and a mac with ip=, and then have the dracut
+generated rules do the rename and init. This way problems 3) and 4)
+above are solved, and we can easily also write the mac address to
+grub.conf from anaconda when generating the ip= cmdline.
+
+Regards,
+
+Hans
