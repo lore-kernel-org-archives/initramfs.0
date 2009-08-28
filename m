@@ -1,38 +1,45 @@
-From: Jon Masters <jcm-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Subject: Re: Issues with dracut and network device naming
-Date: Fri, 28 Aug 2009 10:36:11 -0400
-Message-ID: <1251470171.1305.144.camel@perihelion.bos.jonmasters.org>
-References: <4A97CA1A.5080606@redhat.com>
+Date: Fri, 28 Aug 2009 17:25:26 +0200
+Message-ID: <4A97F6E6.4040206@bfh.ch>
+References: <4A97CA1A.5080606@redhat.com> <4A97D0F9.9020302@redhat.com> <4A97D17F.10405@bfh.ch> <4A97E6CA.2020200@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4A97CA1A.5080606-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4A97E6CA.2020200-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Discussion of Development and Customization of the Red Hat Linux Installer <anaconda-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-
-On Fri, 2009-08-28 at 14:14 +0200, Hans de Goede wrote:
-
-> When using iscsi for example, an interface name (usually eth#) is
-> specified on the dracut cmdline, but if a machine has multiple nics
-> the probe order done by dracut may very well differ as the one
-> which was used during install when the dracut cmdline gets generated.
-
-It's worth talking to Prarit about this stuff because he's looking into
-persistent network device naming issues in general. I'm sure you know,
-but there's a generic DMI extension that allows you to determine from
-the system what the PCI slot->device name mapping should be so that e.g.
-moving the disk from one system to another doesn't affect the naming.
-
-Of course this only works on systems with the requisite SMBUS/DMI
-extension *but* it will (eventually) be a nice solution to the naming
-issues and worth working with him on if you're not already.
-
-Jon.
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Discussion of Development and Customization of the Red Hat Linux Installer <anaconda-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 
+
+Hans de Goede wrote:
+> Hi,
+> 
+> On 08/28/2009 02:45 PM, Seewer Philippe wrote:
+>>
+>> Harald Hoyer wrote:
+>> [snip]
+>>>> So I would like to propose another solution for this, allow specifying
+>>>> both an interface-name and a mac with ip=, and then have the dracut
+>>>> generated rules do the rename and init. This way problems 3) and 4)
+>>>> above are solved, and we can easily also write the mac address to
+>>>> grub.conf from anaconda when generating the ip= cmdline.
+>>> yes, sane solution .. +1
+>> Yes, +1 as well. I'd vote for not doing this inside the ip= parameter,
+>> but use something like ifname=iface:mac.
+>>
+> 
+> Hmm, I'm not so sure about that, it sure would be easier for the genrules
+> script to have all the info in one place, instead of having to piece
+> bits together.
+
+Yes. But I think from a user's point of view, the ip= argument is 
+already overloaded. ifname= (or whatever) would be much clearer and easier.
+
+Regards,
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
