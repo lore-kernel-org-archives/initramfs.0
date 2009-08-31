@@ -1,15 +1,16 @@
 From: Hans de Goede <hdegoede@redhat.com>
 Subject: Re: Issues with dracut and network device naming
-Date: Mon, 31 Aug 2009 13:17:41 +0200
-Message-ID: <4A9BB155.8020106@redhat.com>
-References: <4A97CA1A.5080606@redhat.com>
-	<1251470171.1305.144.camel@perihelion.bos.jonmasters.org>
+Date: Mon, 31 Aug 2009 13:20:38 +0200
+Message-ID: <4A9BB206.4050609@redhat.com>
+References: <4A97CA1A.5080606@redhat.com> <4A97D0F9.9020302@redhat.com>
+	<4A97D17F.10405@bfh.ch> <4A97E6CA.2020200@redhat.com>
+	<4A97F6E6.4040206@bfh.ch>
 Reply-To: Discussion of Development and Customization of the Red Hat Linux
 	Installer <anaconda-devel-list@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <anaconda-devel-list-bounces@redhat.com>
-In-Reply-To: <1251470171.1305.144.camel@perihelion.bos.jonmasters.org>
+In-Reply-To: <4A97F6E6.4040206@bfh.ch>
 List-Id: <initramfs.vger.kernel.org>
 List-Unsubscribe: <https://www.redhat.com/mailman/listinfo/anaconda-devel-list>, 
 	<mailto:anaconda-devel-list-request@redhat.com?subject=unsubscribe>
@@ -21,40 +22,44 @@ List-Subscribe: <https://www.redhat.com/mailman/listinfo/anaconda-devel-list>,
 Sender: anaconda-devel-list-bounces@redhat.com
 Errors-To: anaconda-devel-list-bounces@redhat.com
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Discussion of Development and Customization of the Red Hat Linux Installer <anaconda-devel-list@redhat.com>
-Cc: initramfs <initramfs@vger.kernel.org>
+To: Seewer Philippe <philippe.seewer@bfh.ch>
+Cc: initramfs <initramfs@vger.kernel.org>, Discussion of Development and Customization of the Red Hat Linux Installer <anaconda-devel-list@redhat.com>, Harald Hoyer <harald@redhat.com>
 
-Hi all,
+Hi,
 
-On 08/28/2009 04:36 PM, Jon Masters wrote:
-> On Fri, 2009-08-28 at 14:14 +0200, Hans de Goede wrote:
+On 08/28/2009 05:25 PM, Seewer Philippe wrote:
 >
->> When using iscsi for example, an interface name (usually eth#) is
->> specified on the dracut cmdline, but if a machine has multiple nics
->> the probe order done by dracut may very well differ as the one
->> which was used during install when the dracut cmdline gets generated.
 >
-> It's worth talking to Prarit about this stuff because he's looking into
-> persistent network device naming issues in general. I'm sure you know,
-> but there's a generic DMI extension that allows you to determine from
-> the system what the PCI slot->device name mapping should be so that e.g.
-> moving the disk from one system to another doesn't affect the naming.
+> Hans de Goede wrote:
+>> Hi,
+>>
+>> On 08/28/2009 02:45 PM, Seewer Philippe wrote:
+>>>
+>>> Harald Hoyer wrote:
+>>> [snip]
+>>>>> So I would like to propose another solution for this, allow specifying
+>>>>> both an interface-name and a mac with ip=, and then have the dracut
+>>>>> generated rules do the rename and init. This way problems 3) and 4)
+>>>>> above are solved, and we can easily also write the mac address to
+>>>>> grub.conf from anaconda when generating the ip= cmdline.
+>>>> yes, sane solution .. +1
+>>> Yes, +1 as well. I'd vote for not doing this inside the ip= parameter,
+>>> but use something like ifname=iface:mac.
+>>>
+>>
+>> Hmm, I'm not so sure about that, it sure would be easier for the genrules
+>> script to have all the info in one place, instead of having to piece
+>> bits together.
 >
-> Of course this only works on systems with the requisite SMBUS/DMI
-> extension *but* it will (eventually) be a nice solution to the naming
-> issues and worth working with him on if you're not already.
+> Yes. But I think from a user's point of view, the ip= argument is
+> already overloaded. ifname= (or whatever) would be much clearer and easier.
 >
 
-Hmm, well I really want to have something in place soon, and currently
-all Fedora persistent network device naming is done based on MAC.
-
-But I would like to keep possibilities like this open for the future, so
-I'll go ahead and implement Seewer's suggeston to use a separate cmdline
-arg for this called ifname, for now we will then have / use:
-ifname=eth0:aa:bb:cc:dd:ee:ff
-
-But in the future it could also be something like for example:
-ifname=eth0:/sys/devices/bus/pci/00:00:00:01.5
+See my relpy to Jon Masters mail about there in the future potentially being
+other unique identifiers to persistenly name a NIC, given this I'm going to
+implement a ifname=eth0:<unique-id> syntax, where for now the unique id will
+be a mac, but this way we can easily use other unique-id strings in the future
+(much more easily then when we put everything in the ip= syntax)
 
 Regards,
 
