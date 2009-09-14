@@ -1,10 +1,11 @@
 From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] Document netroot=fcoe:....
-Date: Mon, 14 Sep 2009 11:42:53 +0200
-Message-ID: <1252921374-2798-2-git-send-email-hdegoede@redhat.com>
+Subject: [PATCH 3/3] Document that MAC addresses must be lowercase
+Date: Mon, 14 Sep 2009 11:42:54 +0200
+Message-ID: <1252921374-2798-3-git-send-email-hdegoede@redhat.com>
 References: <1252921374-2798-1-git-send-email-hdegoede@redhat.com>
+ <1252921374-2798-2-git-send-email-hdegoede@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1252921374-2798-1-git-send-email-hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1252921374-2798-2-git-send-email-hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -14,26 +15,31 @@ To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 ---
- dracut.8 |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+ dracut.8 |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
 diff --git a/dracut.8 b/dracut.8
-index e9bd0d8..322f879 100644
+index 322f879..32d2e5b 100644
 --- a/dracut.8
 +++ b/dracut.8
-@@ -224,6 +224,12 @@ e.g.
- .B root=??? iscsi_firmware
- will read the iscsi parameter from the BIOS firmware
+@@ -228,7 +228,8 @@ will read the iscsi parameter from the BIOS firmware
+ .TP
+ .B netroot=fcoe:<interface|MAC>:<dcb|nodcb>
+ Try to connect to a FCoE SAN through the NIC specified by <interface> or <MAC>,
+-for the second argument, currently only nodcb is supported.
++for the second argument, currently only nodcb is supported. Note letters in
++the MAC-address must be lowercase!
  
-+.SH FCoE
-+.TP
-+.B netroot=fcoe:<interface|MAC>:<dcb|nodcb>
-+Try to connect to a FCoE SAN through the NIC specified by <interface> or <MAC>,
-+for the second argument, currently only nodcb is supported.
-+
  .SH NBD
  .TP
- .B root=nbd:<server>:<port>[:<fstype>][:<mountopts>]
+@@ -256,6 +257,7 @@ explicit network configuration
+ .TP
+ .B ifname=<interface>:<MAC>
+ Assign network device name <interface> (ie eth0) to the NIC with MAC <MAC>.
++Note letters in the MAC-address must be lowercase!
+ Note that if you use this option you \fBmust\fR specify an ifname= argument
+ for all interfaces used in ip= or fcoe= arguments
+ 
 -- 
 1.6.4.2
 
