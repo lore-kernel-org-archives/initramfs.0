@@ -1,7 +1,7 @@
 From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH 1/8] Give the kernel some time to up interfaces
-Date: Thu, 17 Sep 2009 17:16:42 +0200
-Message-ID: <1253200609-31629-2-git-send-email-philippe.seewer@bfh.ch>
+Subject: [PATCH 3/8] Get rid of hostname utility
+Date: Thu, 17 Sep 2009 17:16:44 +0200
+Message-ID: <1253200609-31629-4-git-send-email-philippe.seewer@bfh.ch>
 References: <1253200609-31629-1-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -13,42 +13,65 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-According to stock isc dhclient-script and other implementations
-it is a good idea to wait a second after upping an interface to
-let things settle.
+dracut doesn't really need a utility to set the hostname. It only
+saves a few ks of space, but every bit is good.
 ---
- modules.d/40network/dhclient-script |    2 ++
- modules.d/40network/ifup            |    3 ++-
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ modules.d/40network/check           |    2 +-
+ modules.d/40network/dhclient-script |    2 +-
+ modules.d/40network/ifup            |    2 +-
+ modules.d/40network/install         |    2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
 
+diff --git a/modules.d/40network/check b/modules.d/40network/check
+index f2b137c..cf06c74 100755
+--- a/modules.d/40network/check
++++ b/modules.d/40network/check
+@@ -2,7 +2,7 @@
+ 
+ . $dracutfunctions
+ 
+-for program in ip hostname; do 
++for program in ip; do 
+   which $program >/dev/null 2>&1
+   if [ $? -ne 0 ]; then
+     dwarning "Could not find program \"$program\" required by network." 
 diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
-index a866952..c7c73cc 100755
+index e3da4ea..013c8f1 100755
 --- a/modules.d/40network/dhclient-script
 +++ b/modules.d/40network/dhclient-script
-@@ -52,6 +52,8 @@ netif=$interface
- case $reason in
-     PREINIT)
- 	ip link set $netif up
-+	# Give the kernel some time to up the interface
-+	sleep 1
- 	;;
-     BOUND)
- 	setup_interface 
+@@ -38,7 +38,7 @@ setup_interface() {
+ 	done
+     fi >> /tmp/resolv.conf
+ 
+-    [ -n "$hostname" ] && echo hostname $hostname > /tmp/net.$netif.hostname
++    [ -n "$hostname" ] && echo "echo $hostname > /proc/sys/kernel/hostname" > /tmp/net.$netif.hostname
+ }
+ 
+ PATH=$PATH:/sbin:/usr/sbin
 diff --git a/modules.d/40network/ifup b/modules.d/40network/ifup
-index 37b78cd..ce39dcd 100755
+index ce39dcd..25cab26 100755
 --- a/modules.d/40network/ifup
 +++ b/modules.d/40network/ifup
-@@ -32,8 +32,9 @@ do_dhcp() {
- 
- # Handle static ip configuration
- do_static() {
--{
-+    {
- 	echo ip link set $netif up 
-+	echo sleep 1
- 	echo ip addr flush dev $netif
- 	echo ip addr add $ip/$mask dev $netif
+@@ -40,7 +40,7 @@ do_static() {
      } > /tmp/net.$netif.up
+ 
+     [ -n "$gw" ] && echo ip route add default via $gw dev $netif > /tmp/net.$netif.gw
+-    [ -n "$hostname" ] && echo hostname $hostname > /tmp/net.$netif.hostname
++    [ -n "$hostname" ] && echo "echo $hostname > /proc/sys/kernel/hostname" > /tmp/net.$netif.hostname
+ 
+     echo online > /sys/class/net/$netif/uevent
+ }
+diff --git a/modules.d/40network/install b/modules.d/40network/install
+index ded70da..a711cb5 100755
+--- a/modules.d/40network/install
++++ b/modules.d/40network/install
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-dracut_install ip dhclient hostname brctl
++dracut_install ip dhclient brctl
+ inst "$moddir/ifup" "/sbin/ifup"
+ inst "$moddir/netroot" "/sbin/netroot"
+ inst "$moddir/dhclient-script" "/sbin/dhclient-script"
 -- 
 1.6.0.4
 
