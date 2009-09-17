@@ -1,9 +1,11 @@
 From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH 0/8] Netroot updates and multinic test-suite
-Date: Thu, 17 Sep 2009 17:16:41 +0200
-Message-ID: <1253200609-31629-1-git-send-email-philippe.seewer@bfh.ch>
+Subject: [PATCH 2/8] Be a bit more optimistic when setting mtus
+Date: Thu, 17 Sep 2009 17:16:43 +0200
+Message-ID: <1253200609-31629-3-git-send-email-philippe.seewer@bfh.ch>
+References: <1253200609-31629-1-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1253200609-31629-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
@@ -11,51 +13,46 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-A bit late, but this is the corrected updates to netroot I sent
-a while ago, plus some new things that are needed.
+The usual approach to setting mtus is to set the interface down,
+set the mtu then set the interface back up again. Modern hardware
+and/or drivers may support setting this on the fly, so we try
+this and fall back to the old behaviour it it doesn't work.
 
-Philippe Seewer (8):
-  Give the kernel some time to up interfaces
-  Be a bit more optimistic when setting mtus
-  Get rid of hostname utility
-  Add simple STP timeout handler
-  Add DAD to dhclient-script
-  Add multinic test suite
-  Move write-ifcfg to its own module
-  Move netroot to initqueue
+In addition this patch only allows mtus greater than 576, this is
+taken from debian/ubuntu dhclient-script.
+---
+ modules.d/40network/dhclient-script |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
 
- modules.d/40network/check           |    2 +-
- modules.d/40network/dhclient-script |   24 +++-
- modules.d/40network/ifup            |    5 +-
- modules.d/40network/install         |    6 +-
- modules.d/40network/net-genrules.sh |    2 +-
- modules.d/40network/netroot         |   23 ++++
- modules.d/40network/write-ifcfg.sh  |   52 --------
- modules.d/45ifcfg/check             |    6 +
- modules.d/45ifcfg/install           |    2 +
- modules.d/45ifcfg/write-ifcfg.sh    |   60 +++++++++
- modules.d/99base/init               |   11 +--
- test/TEST-50-MULTINIC/Makefile      |   10 ++
- test/TEST-50-MULTINIC/client-init   |    9 ++
- test/TEST-50-MULTINIC/dhcpd.conf    |   36 ++++++
- test/TEST-50-MULTINIC/exports       |    1 +
- test/TEST-50-MULTINIC/hard-off.sh   |    2 +
- test/TEST-50-MULTINIC/hosts         |    5 +
- test/TEST-50-MULTINIC/server-init   |   30 +++++
- test/TEST-50-MULTINIC/test.sh       |  226 +++++++++++++++++++++++++++++++++++
- 19 files changed, 436 insertions(+), 76 deletions(-)
- delete mode 100755 modules.d/40network/write-ifcfg.sh
- create mode 100755 modules.d/45ifcfg/check
- create mode 100755 modules.d/45ifcfg/install
- create mode 100755 modules.d/45ifcfg/write-ifcfg.sh
- create mode 100644 test/TEST-50-MULTINIC/Makefile
- create mode 100755 test/TEST-50-MULTINIC/client-init
- create mode 100644 test/TEST-50-MULTINIC/dhcpd.conf
- create mode 100644 test/TEST-50-MULTINIC/exports
- create mode 100755 test/TEST-50-MULTINIC/hard-off.sh
- create mode 100644 test/TEST-50-MULTINIC/hosts
- create mode 100755 test/TEST-50-MULTINIC/server-init
- create mode 100755 test/TEST-50-MULTINIC/test.sh
+diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
+index c7c73cc..e3da4ea 100755
+--- a/modules.d/40network/dhclient-script
++++ b/modules.d/40network/dhclient-script
+@@ -13,10 +13,18 @@ setup_interface() {
+ 
+     [ -f /tmp/net.$netif.override ] && . /tmp/net.$netif.override
+ 
+-    if [ -n "$mtu" ] ; then
+-	echo ip link set $netif down
+-	echo ip link set $netif mtu $mtu
+-	echo ip link set $netif up
++    # Taken from debian dhclient-script:
++    # The 576 MTU is only used for X.25 and dialup connections
++    # where the admin wants low latency.  Such a low MTU can cause
++    # problems with UDP traffic, among other things.  As such,
++    # disallow MTUs from 576 and below by default, so that broken
++    # MTUs are ignored, but higher stuff is allowed (1492, 1500, etc).
++    if [ -n "$mtu" ] && [ $mtu -gt 576 ] ; then
++	echo "if ! ip link set $netif mtu $mtu ; then"
++	echo "ip link set $netif down"
++	echo "ip link set $netif mtu $mtu"
++	echo "ip link set $netif up"
++	echo "fi"
+     fi > /tmp/net.$netif.up
+ 
+     echo ip addr add $ip${mask:+/$mask} ${bcast:+broadcast $bcast} dev $netif >> /tmp/net.$netif.up
+-- 
+1.6.0.4
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
