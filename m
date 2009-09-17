@@ -1,47 +1,57 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] Document that MAC addresses must be lowercase
-Date: Wed, 16 Sep 2009 17:45:21 +0200
-Message-ID: <4AB10811.8040108@redhat.com>
-References: <1252921374-2798-1-git-send-email-hdegoede@redhat.com> <1252921374-2798-2-git-send-email-hdegoede@redhat.com> <1252921374-2798-3-git-send-email-hdegoede@redhat.com>
+From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: [PATCH 1/8] Give the kernel some time to up interfaces
+Date: Thu, 17 Sep 2009 17:16:42 +0200
+Message-ID: <1253200609-31629-2-git-send-email-philippe.seewer@bfh.ch>
+References: <1253200609-31629-1-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1252921374-2798-3-git-send-email-hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1253200609-31629-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-On 09/14/2009 11:42 AM, Hans de Goede wrote:
-> ---
->   dracut.8 |    4 +++-
->   1 files changed, 3 insertions(+), 1 deletions(-)
->
-> diff --git a/dracut.8 b/dracut.8
-> index 322f879..32d2e5b 100644
-> --- a/dracut.8
-> +++ b/dracut.8
-> @@ -228,7 +228,8 @@ will read the iscsi parameter from the BIOS firmware
->   .TP
->   .B netroot=fcoe:<interface|MAC>:<dcb|nodcb>
->   Try to connect to a FCoE SAN through the NIC specified by<interface>  or<MAC>,
-> -for the second argument, currently only nodcb is supported.
-> +for the second argument, currently only nodcb is supported. Note letters in
-> +the MAC-address must be lowercase!
->
->   .SH NBD
->   .TP
-> @@ -256,6 +257,7 @@ explicit network configuration
->   .TP
->   .B ifname=<interface>:<MAC>
->   Assign network device name<interface>  (ie eth0) to the NIC with MAC<MAC>.
-> +Note letters in the MAC-address must be lowercase!
->   Note that if you use this option you \fBmust\fR specify an ifname= argument
->   for all interfaces used in ip= or fcoe= arguments
->
+According to stock isc dhclient-script and other implementations
+it is a good idea to wait a second after upping an interface to
+let things settle.
+---
+ modules.d/40network/dhclient-script |    2 ++
+ modules.d/40network/ifup            |    3 ++-
+ 2 files changed, 4 insertions(+), 1 deletions(-)
 
-applied and pushed
+diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
+index a866952..c7c73cc 100755
+--- a/modules.d/40network/dhclient-script
++++ b/modules.d/40network/dhclient-script
+@@ -52,6 +52,8 @@ netif=$interface
+ case $reason in
+     PREINIT)
+ 	ip link set $netif up
++	# Give the kernel some time to up the interface
++	sleep 1
+ 	;;
+     BOUND)
+ 	setup_interface 
+diff --git a/modules.d/40network/ifup b/modules.d/40network/ifup
+index 37b78cd..ce39dcd 100755
+--- a/modules.d/40network/ifup
++++ b/modules.d/40network/ifup
+@@ -32,8 +32,9 @@ do_dhcp() {
+ 
+ # Handle static ip configuration
+ do_static() {
+-{
++    {
+ 	echo ip link set $netif up 
++	echo sleep 1
+ 	echo ip addr flush dev $netif
+ 	echo ip addr add $ip/$mask dev $netif
+     } > /tmp/net.$netif.up
+-- 
+1.6.0.4
+
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
