@@ -1,45 +1,52 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Please revert commit "There is only one resolv.conf."
-Date: Fri, 18 Sep 2009 08:43:20 +0200
-Message-ID: <4AB32C08.2000406@bfh.ch>
-References: <4AB254A3.5000302@bfh.ch> <4AB300B8.4090307@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Recognize nodmraid and noiswmd kernel cmdline options
+Date: Fri, 18 Sep 2009 09:01:09 +0200
+Message-ID: <1253257269-2548-1-git-send-email-hdegoede@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4AB300B8.4090307-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
+Recognize nodmraid and noiswmd kernel cmdline options, for anaconda /
+rc.sysinit / mkinitrd compatibility.
+---
+ modules.d/90dmraid/parse-dm.sh |    3 ++-
+ modules.d/90mdraid/parse-md.sh |    4 +++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
+diff --git a/modules.d/90dmraid/parse-dm.sh b/modules.d/90dmraid/parse-dm.sh
+index 07208a5..f031569 100644
+--- a/modules.d/90dmraid/parse-dm.sh
++++ b/modules.d/90dmraid/parse-dm.sh
+@@ -1,4 +1,5 @@
+-if getarg rd_NO_DM; then
++# nodmraid for anaconda / rc.sysinit compatibility
++if getarg rd_NO_DM || getarg nodmraid; then
+     info "rd_NO_DM: removing DM RAID activation"
+     udevproperty rd_NO_DM=1
+ fi
+diff --git a/modules.d/90mdraid/parse-md.sh b/modules.d/90mdraid/parse-md.sh
+index cf9298f..6e2a3bf 100644
+--- a/modules.d/90mdraid/parse-md.sh
++++ b/modules.d/90mdraid/parse-md.sh
+@@ -30,7 +30,9 @@ if [ -e /etc/mdadm.conf ] && ! getarg rd_NO_MDADMCONF; then
+     rm -f /pre-pivot/*mdraid-cleanup.sh
+ fi
+ 
+-if getarg rd_NO_MDIMSM; then
++# noiswmd nodmraid for anaconda / rc.sysinit compatibility
++# note nodmraid really means nobiosraid, so we don't want MDIMSM then either
++if getarg rd_NO_MDIMSM || getarg noiswmd || getarg nodmraid; then
+     info "rd_NO_MDIMSM: no MD RAID for imsm/isw raids"
+     udevproperty rd_NO_MDIMSM=1
+ fi
+-- 
+1.6.4.2
 
-Warren Togami wrote:
-> On 09/17/2009 11:24 AM, Seewer Philippe wrote:
->> Having only one resolv.conf is ok for a booted client. That is the
->> normal and the usual behaviour is that the first interface to be up and
->> ready with data is the one to write the contents.
->>
->> But inside dracut we really do not want that behaviour. First the
->> primary interface (see bootdev cmdline argument) might not be the first
->> interface to come up, second if we are in guess-the-interface mode,
->> multiple interface might receive different data for resolv.conf and we
->> have to use the correct stuff to mount.
->>
->> So please revert that commit.
-> 
-> Do you agree the one copied ultimately should be the interface that 
-> successfully netbooted?
-
-Well if you mean by that the one ultimately copied to the booted system 
-that is correct. Just use the one /etc/resolv.conf after a successful mount.
-
-Regards,
-Philippe
-
-> 
-> Warren
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
