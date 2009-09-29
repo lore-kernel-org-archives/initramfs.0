@@ -1,53 +1,65 @@
-From: "wilbur.chan" <wilbur512-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Why get_fs_names return NULL?
-Date: Sat, 26 Sep 2009 17:43:11 +0800
-Message-ID: <e997b7420909260243h4c63222aod54727056384f9c3@mail.gmail.com>
+From: Lance Albertson <lance-CJG/fkoVOTIdnm+yROfE0A@public.gmane.org>
+Subject: dracut now in Gentoo
+Date: Tue, 29 Sep 2009 09:36:47 -0700
+Message-ID: <4AC2379F.2080409@osuosl.org>
 Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigB7BD5C12377471AE3896A7C4"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:date:message-id:subject
-         :from:to:content-type;
-        bh=EN7SQB2R2a6TfA+Qp6K4PTLFCW3D4iLimnsAclyA1sM=;
-        b=JU2H12cJwB/fIbAqrukh46sW/K+J5yZ9axGWALUhL+EU7SiMho24k16HEGXvMewpLX
-         EHwQNh16OsgH9ipnI4JtRz+tb6TKd2kuvkgUzG8C2rllmCMHVJq0nLFBgqOKpSjcQ0Fe
-         sQp2phRUoYEtw2tKWd0iwve+Jg2yXPWO064Nw=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-I am going to start a kernel(2.6.21.7)  using ramdisk, but  kernel panic  when
-mounting the ramdisk fs.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigB7BD5C12377471AE3896A7C4
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+I recently attended Linux Plumbers Conf and saw Harald's talk on dracut
+which got me interested in getting it into Gentoo. I just committed a
+working ebuild for the latest version into the tree [1]. We had to make
+a few patches in order to get it to work for us, so I created a branch
+of the patches on github [2] for you guys to look at. If you prefer, I
+can send the patches directly here. I wasn't the original author for
+some of the patches, but you can see the discussion in the original bug
+[3]. Specifically 3649a19207 needs some more work to make it more distro
+agnostic.
+
+I tested an image on a Gentoo machine and it worked but I haven't fully
+tested all of the capabilities yet (I'm planning on doing that soon). If
+you have any comments or suggestions for the Gentoo package, please
+direct them to me since I'm the new maintainer.
+
+Cheers-
+
+[1] http://packages.gentoo.org/package/sys-kernel/dracut
+[2] http://github.com/ramereth/dracut/tree/gentoo-002
+[3] http://bugs.gentoo.org/show_bug.cgi?id=3D278442
+
+--=20
+Lance Albertson                                    lance <at> osuosl.org
+Systems Administrator / Architect                        Open Source Lab
+Network Services                                 Oregon State University
+Work: 541-737-9975                                   PGP Key: 0x27F4B742
+GPG Fingerprint       0423 92F3 544A 1282 5AB1  4D07 416F A15D 27F4 B742
 
 
-After traped the code , I found that , when kernel invoked
-get_fs_names, it got a NULL list of existing file system names.
+--------------enigB7BD5C12377471AE3896A7C4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-That is to say,
-prepare_namespace--->mount_root-->mount_block_root-->get_fs_names-->get_filesystem_list
- ,
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+Comment: Using GnuPG with Fedora - http://enigmail.mozdev.org/
 
-return  a list of nothing...
+iD8DBQFKwjefQW+hXSf0t0IRAokoAJ9GOAAcDaeCgIchcvbBlGJajmmOaQCgozRE
+IPiNlo/48MQyh4MT1hP3KCM=
+=Exwq
+-----END PGP SIGNATURE-----
 
-I thought that , maybe module_init(init_ext2_fs) failed , but I don't
-know why? and how to solve it ?
-
-here is my ramdisk script:
-
-mkdir initrd
-dd if=/dev/zero of=initrd.img bs=1k count=4096
-mke2fs -F -v -m0 initrd.img
-mount -o loop initrd.img initrd
-cp -av rootfs/* initrd
-sync
-umount initrd
-sync
-gzip -f -9 initrd.img
-sync
-./mkimage -T ramdisk -C gzip -n ' Ramdisk Image' -d initrd.img.gz
-your.ramdisk.u-boot
+--------------enigB7BD5C12377471AE3896A7C4--
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
