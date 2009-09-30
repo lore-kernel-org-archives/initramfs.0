@@ -1,28 +1,25 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Linux Plumber's Conference Dracut talk
-Date: Wed, 30 Sep 2009 09:51:54 -0500
-Message-ID: <88885EFA-48A4-4CF3-8DDD-6674784BE89A@gmail.com>
-Mime-Version: 1.0 (iPhone Mail 7A341)
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Linux Plumber's Conference Dracut talk
+Date: Wed, 30 Sep 2009 17:12:01 +0200
+Message-ID: <4AC37541.8090908@redhat.com>
+References: <88885EFA-48A4-4CF3-8DDD-6674784BE89A@gmail.com>
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id:from:to
-         :content-type:content-transfer-encoding:x-mailer:mime-version
-         :subject:date;
-        bh=OXGvHcnL+v0qhGOXIz/qWgXIa+dUfFoFC/+QoF901Pk=;
-        b=SDJSxF34LgVojQDImZDJRpXsl2uILhy2I7lMhQwlL9KXY9JafjeMeZmFDgXjeI5j2p
-         ukI6uQNoMrRPJK8PJxUQz87+7VBTZwQ8dz9XziC/Ax2vB/uM2dTarPCz6rKlvaBlMb7O
-         saVjmMmJQhdQDlWq1qKRJ2UM1USNamg/Bkj5E=
+In-Reply-To: <88885EFA-48A4-4CF3-8DDD-6674784BE89A-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"; delsp="yes"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Harald, do you have a copy of your talk anywhere we could read or  
-watch it?
+On 09/30/2009 04:51 PM, Victor Lowther wrote:
+> Harald, do you have a copy of your talk anywhere we could read or watch it?
+>
 
+err, yes.. :) not exactly a masterpiece of a presentation, but..
 
+http://harald.fedorapeople.org/downloads/dracut.pdf
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
