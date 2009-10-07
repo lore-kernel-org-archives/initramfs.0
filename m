@@ -1,43 +1,71 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] dracut.8: fix typo
-Date: Mon,  5 Oct 2009 13:08:08 +0200
-Message-ID: <1254740888-9794-1-git-send-email-kzak@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/8] Netroot updates and multinic test-suite
+Date: Wed, 07 Oct 2009 16:50:18 +0200
+Message-ID: <4ACCAAAA.7070003@redhat.com>
+References: <1253200609-31629-1-git-send-email-philippe.seewer@bfh.ch>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1253200609-31629-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Signed-off-by: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.8 |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+pushed most of these
 
-diff --git a/dracut.8 b/dracut.8
-index fccd574..88f1901 100644
---- a/dracut.8
-+++ b/dracut.8
-@@ -1,12 +1,12 @@
- .TH DRACUT 8 "June 2009" "Linux"
- .SH NAME
--switch_root \- switch to another filesystem as the root of the mount tree.
-+dracut \- creates an initial image used by the kernel
- .SH SYNOPSIS
- \fBdracut\fR [\fIOPTION\fR]... \fI<image>\fR  \fI<kernel-version>\fR
- 
- .SH DESCRIPTION
--.B switch_root
--\fBdracut\fR creates an initial image used by the kernel for
-+.B dracut
-+creates an initial image used by the kernel for
- preloading the block device modules (such as IDE, SCSI or RAID)
- which are needed to access the root filesystem.
- 
--- 
-1.6.2.5
+On 09/17/2009 05:16 PM, Philippe Seewer wrote:
+> A bit late, but this is the corrected updates to netroot I sent
+> a while ago, plus some new things that are needed.
+>
+> Philippe Seewer (8):
+>    Give the kernel some time to up interfaces
+>    Be a bit more optimistic when setting mtus
+>    Get rid of hostname utility
+>    Add simple STP timeout handler
+>    Add DAD to dhclient-script
+>    Add multinic test suite
+>    Move write-ifcfg to its own module
+>    Move netroot to initqueue
+>
+>   modules.d/40network/check           |    2 +-
+>   modules.d/40network/dhclient-script |   24 +++-
+>   modules.d/40network/ifup            |    5 +-
+>   modules.d/40network/install         |    6 +-
+>   modules.d/40network/net-genrules.sh |    2 +-
+>   modules.d/40network/netroot         |   23 ++++
+>   modules.d/40network/write-ifcfg.sh  |   52 --------
+>   modules.d/45ifcfg/check             |    6 +
+>   modules.d/45ifcfg/install           |    2 +
+>   modules.d/45ifcfg/write-ifcfg.sh    |   60 +++++++++
+>   modules.d/99base/init               |   11 +--
+>   test/TEST-50-MULTINIC/Makefile      |   10 ++
+>   test/TEST-50-MULTINIC/client-init   |    9 ++
+>   test/TEST-50-MULTINIC/dhcpd.conf    |   36 ++++++
+>   test/TEST-50-MULTINIC/exports       |    1 +
+>   test/TEST-50-MULTINIC/hard-off.sh   |    2 +
+>   test/TEST-50-MULTINIC/hosts         |    5 +
+>   test/TEST-50-MULTINIC/server-init   |   30 +++++
+>   test/TEST-50-MULTINIC/test.sh       |  226 +++++++++++++++++++++++++++++++++++
+>   19 files changed, 436 insertions(+), 76 deletions(-)
+>   delete mode 100755 modules.d/40network/write-ifcfg.sh
+>   create mode 100755 modules.d/45ifcfg/check
+>   create mode 100755 modules.d/45ifcfg/install
+>   create mode 100755 modules.d/45ifcfg/write-ifcfg.sh
+>   create mode 100644 test/TEST-50-MULTINIC/Makefile
+>   create mode 100755 test/TEST-50-MULTINIC/client-init
+>   create mode 100644 test/TEST-50-MULTINIC/dhcpd.conf
+>   create mode 100644 test/TEST-50-MULTINIC/exports
+>   create mode 100755 test/TEST-50-MULTINIC/hard-off.sh
+>   create mode 100644 test/TEST-50-MULTINIC/hosts
+>   create mode 100755 test/TEST-50-MULTINIC/server-init
+>   create mode 100755 test/TEST-50-MULTINIC/test.sh
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
