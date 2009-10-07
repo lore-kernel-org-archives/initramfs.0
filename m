@@ -1,62 +1,108 @@
-From: Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Please revert commit "There is only one resolv.conf."
-Date: Wed, 07 Oct 2009 17:21:45 -0400
-Message-ID: <4ACD0669.8010904@redhat.com>
-References: <4AB254A3.5000302@bfh.ch> <4AB300B8.4090307@redhat.com> <4AB32C08.2000406@bfh.ch>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 3/3] Do not worry at all about selinux stuff if we cannot find load_policy
+Date: Wed,  7 Oct 2009 10:48:25 -0500 (CDT)
+Message-ID: <76e534e17db7c50fe89c8878b4fccfce837380dd.1254930149.git.victor.lowther@gmail.com>
+References: <a989fe01e19bd214cae75b705ac0c5e8aefb71d4.1254930149.git.victor.lowther@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4AB32C08.2000406-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <a989fe01e19bd214cae75b705ac0c5e8aefb71d4.1254930149.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 09/18/2009 02:43 AM, Seewer Philippe wrote:
->
->
-> Warren Togami wrote:
->> On 09/17/2009 11:24 AM, Seewer Philippe wrote:
->>> Having only one resolv.conf is ok for a booted client. That is the
->>> normal and the usual behaviour is that the first interface to be up and
->>> ready with data is the one to write the contents.
->>>
->>> But inside dracut we really do not want that behaviour. First the
->>> primary interface (see bootdev cmdline argument) might not be the first
->>> interface to come up, second if we are in guess-the-interface mode,
->>> multiple interface might receive different data for resolv.conf and we
->>> have to use the correct stuff to mount.
->>>
->>> So please revert that commit.
->>
->> Do you agree the one copied ultimately should be the interface that
->> successfully netbooted?
->
-> Well if you mean by that the one ultimately copied to the booted system
-> that is correct. Just use the one /etc/resolv.conf after a successful
-> mount.
->
+Dying horribly whenever load_policy is not found because we assume by default
+that people want selinux loaded is very RHEL/fedora specifc. Instead, we 
+should assume that we do not care at all about selinux if we cannot find
+load_policy on the target filesystem.
 
-modules.d/40network/netroot:
-[ -e /tmp/net.$netif.gw ]          && . /tmp/net.$netif.gw
-[ -e /tmp/net.$netif.hostname ]    && . /tmp/net.$netif.hostname
-[ -e /tmp/resolv.conf ] && cp -f /tmp/resolv.conf /etc/resolv.conf
+Ideally, each distro would maintain their own module that uses pre-pivot
+hooks to do whatever security policy magic they want -- 99base should not
+know or care about any of that stuff.
 
-Previous to this change:
-[ -e /tmp/net.$netif.gw ]          && . /tmp/net.$netif.gw
-[ -e /tmp/net.$netif.hostname ]    && . /tmp/net.$netif.hostname
-[ -e /tmp/net.$netif.resolv.conf ] && cp -f /tmp/net.$netif.resolv.conf 
-/etc/resolv.conf
+---
+ modules.d/99base/selinux-loadpolicy.sh |   45 ++++++++++++++-----------------
+ 1 files changed, 20 insertions(+), 25 deletions(-)
 
-Even the previous version appears to not guarantee that /etc/resolv.conf 
-is the interface that successfully mounted the rootfs because this 
-happens before the mount handler in the netroot script.
+diff --git a/modules.d/99base/selinux-loadpolicy.sh b/modules.d/99base/selinux-loadpolicy.sh
+index 9e95b8d..7599355 100755
+--- a/modules.d/99base/selinux-loadpolicy.sh
++++ b/modules.d/99base/selinux-loadpolicy.sh
+@@ -3,25 +3,24 @@
+ 
+ rd_load_policy()
+ {
+-
+-    SELINUX="enforcing"
+-    [ -e "$NEWROOT/etc/selinux/config" ] && . "$NEWROOT/etc/selinux/config"
+-
+-    # If SELinux is disabled exit now 
+-    getarg "selinux=0" > /dev/null
+-    if [ $? -eq 0 -o "$SELINUX" = "disabled" ]; then
+-	return 0
+-    fi
+-
+-    # Check whether SELinux is in permissive mode
+-    permissive=0
+-    getarg "enforcing=0" > /dev/null
+-    if [ $? -eq 0 -o "$SELINUX" = "permissive" ]; then
+-	permissive=1
+-    fi
+-
++    
+     # Attempt to load SELinux Policy
+     if [ -x "$NEWROOT/usr/sbin/load_policy" -o -x "$NEWROOT/sbin/load_policy" ]; then
++	SELINUX="enforcing"
++	[ -e "$NEWROOT/etc/selinux/config" ] && . "$NEWROOT/etc/selinux/config"
++	
++        # If SELinux is disabled exit now 
++	getarg "selinux=0" > /dev/null
++	if [ $? -eq 0 -o "$SELINUX" = "disabled" ]; then
++	    return 0
++	fi
++
++        # Check whether SELinux is in permissive mode
++	permissive=0
++	getarg "enforcing=0" > /dev/null
++	if [ $? -eq 0 -o "$SELINUX" = "permissive" ]; then
++	    permissive=1
++	fi
+ 	ret=0
+ 	info "Loading SELinux policy"
+ 	{
+@@ -35,11 +34,11 @@ rd_load_policy()
+ 		ret=$?
+             fi
+ 	} 2>&1 | vinfo
+-
++	
+ 	if [ $ret -eq 0 -o $ret -eq 2 ]; then
+ 	    return 0
+ 	fi
+-
++	
+ 	warn "Initial SELinux policy load failed."
+ 	if [ $ret -eq 3 -o $permissive -eq 0 ]; then
+ 	    warn "Machine in enforcing mode."
+@@ -48,12 +47,8 @@ rd_load_policy()
+ 	    exit 1
+ 	fi
+ 	return 0
+-    elif [ $permissive -eq 0 ]; then
+-	warn "Machine in enforcing mode and cannot execute load_policy."
+-	warn "To disable selinux, add selinux=0 to the kernel command line."
+-	warn "Not continuing"
+-	sleep 100d
+-	exit 1
++    else 
++	return 0
+     fi
+ }
+ 
+-- 
+1.6.4.4
 
-Could you please suggest a patch?  Simply reverting it doesn't seem to 
-improve things.
-
-Warren Togami
-wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 --
 To unsubscribe from this list: send the line "unsubscribe initramfs" in
 the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
