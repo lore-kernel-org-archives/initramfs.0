@@ -1,7 +1,7 @@
 From: Alan Jenkins <alan-jenkins-cCz0Lq7MMjm9FHfhHBbuYA@public.gmane.org>
-Subject: [PATCH] dracut-gencmdline: fix freadlink() on debian
-Date: Thu, 29 Oct 2009 09:26:20 +0000
-Message-ID: <4AE95FBC.2010501@tuffmail.co.uk>
+Subject: [PATCH] dracut-gencmdline: emit "resume="
+Date: Thu, 29 Oct 2009 09:27:07 +0000
+Message-ID: <4AE95FEB.7090304@tuffmail.co.uk>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,28 +10,30 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:received:received:sender:message-id:date:from
          :user-agent:mime-version:to:subject:content-type
          :content-transfer-encoding;
-        bh=c7z+NRTLasTlFXiP16llspkBM/Ga4OH53QJ3FRaRJL8=;
-        b=tzZ+7o6evDhCL7pwfhxY3YBSIj/pXS0KZFc4ISFjhqlt7m7904JnR6gzyMNh2oddeg
-         8tRLrnateAc05fSBbkRMNU6E6ay1Iz9/szDB7Ydxy/tlJ7zs4WaODLHXjGqWGiVNV0dI
-         hMPeJLa5L0xd+bdZpsXKUU6EAQjSfC3cKb3/M=
+        bh=CMiIziOMgt84EPsfhb/v2qBw4BvuzzGEvbW8KDYP8dA=;
+        b=R4LNp6yYQIWRx4EgDmNDbWNa7APT6g1hCAohST9U6uxxRYGGi2xtQt8RZoueyBrqSk
+         IAT9UjorQI0Jf/uiIi3fExWHbiuGOM0acGkUA2T3tyjGzk4Qe0ksfNmN7tW19aVbXyFo
+         Lc9cOV7sS+YkF1fawsVTE7CYPTghtn6BsKOIY=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-In Debian, readlink lives in /bin.
+I haven't tested resume either way, but I can't imagine it working if
+we don't tell it which device to use :-).
 
 diff --git a/dracut-gencmdline b/dracut-gencmdline
-index 689f49e..978f5a2 100755
+index 978f5a2..625546c 100755
 --- a/dracut-gencmdline
 +++ b/dracut-gencmdline
-@@ -154,7 +154,7 @@ qpopd() {
+@@ -711,5 +711,9 @@ if [ -n "$rootdev" ]; then
+     echo -n "root=$rootdev "
+ fi
  
- 
- freadlink() {
--    /usr/bin/readlink -f "$1"
-+    readlink -f "$1"
- }
- 
- resolve_device_name() {
++if [ -n "$swsuspdev" ]; then
++    echo -n "resume=$swsuspdev "
++fi
++
+ echo
+ # vim:ts=8:sw=4:sts=4:et
 
