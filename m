@@ -1,78 +1,80 @@
-From: Alan Jenkins <alan-jenkins-cCz0Lq7MMjm9FHfhHBbuYA@public.gmane.org>
-Subject: [PATCH] dracut-gencmdline: fix regex quoting in findstoragedriver()
-Date: Thu, 29 Oct 2009 11:25:53 +0000
-Message-ID: <4AE97BC1.6010205@tuffmail.co.uk>
+From: Yanko Kaneti <yaneti-jUE9FD3ILm5BDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH] Basic root filesystem maintenance module
+Date: Mon, 02 Nov 2009 17:17:41 +0200
+Message-ID: <1257175061.5298.8.camel@d2>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:sender:message-id:date:from
-         :user-agent:mime-version:to:subject:content-type
-         :content-transfer-encoding;
-        bh=HKSou6p4kHuda8Fo0v3rDGrfGsOgvsWTsQyHBe/fVmY=;
-        b=mAj5EJilc0bXYwKYSW/JkmJmZnK+B5XIZb7D5HzxY+PLzTQLBSS0D+Fxfgk/as8021
-         mBTn/iwfL6zQ7BSGs7omlqkZVEg8Ns/xfc1ZDfzrO697NrPsXQmXWMHETnQw5wvNeUHg
-         z4BeL2asWUB2Hcc/s5h/UF3UzvYm4RHTZmVCM=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On my LVM system this changes the relevant output from "rd_NO_LVM" to
-"rd_LVM_VG=alan-desktop.Linux"
+Just the other day I rebooted with rdbreak with the idea to shrink the
+root fs a little, only to find that none of the fack/resize/tune tools
+for ext3 were actually in the initramfs. Here is a first attempt at a
+basic dracut module that includes those. Worked in brief testing.
 
-Note that on my newer system, it now reaches moduledep() and complains.
-I don't know enough awk to tell whose fault it is :). 
+Not really attached to the patch itself, but I would like to have a way
+to include those basic tools one way or the other.
 
-    awk: line 2: function gensub never defined
-    awk: line 2: function gensub never defined
-    rd_NO_MD rd_NO_LVM rd_NO_LUKS LANG=en_GB.UTF-8 root=/dev/sda2
+Cheers
+Yanko
 
-Both my systems (old ubuntu and debian unstable) agree that bash
-regexes should not be quoted:
+---
+ dracut.spec               |   11 +++++++++++
+ modules.d/60maint/check   |    2 ++
+ modules.d/60maint/install |    2 ++
+ 3 files changed, 15 insertions(+), 0 deletions(-)
+ create mode 100755 modules.d/60maint/check
+ create mode 100755 modules.d/60maint/install
 
-    $ [[ 'a' =~ a ]] && echo match
-    match
-    $ [[ 'a' =~ ^a$ ]] && echo match
-    match
-    $ [[ 'a' =~ '^a$' ]] && echo match
-    $
-
-(and yes, it is safe against globbing)
-
-    $ touch 9
-    $ echo [0-9]
-    9
-    $ [[ 1 =~ [0-9] ]] && echo match
-    match
-
-diff --git a/dracut-gencmdline b/dracut-gencmdline
-index 978f5a2..02509dd 100755
---- a/dracut-gencmdline
-+++ b/dracut-gencmdline
-@@ -212,7 +215,7 @@ findstoragedriverinsys () {
-         sysfs=$(freadlink ${sysfs%/*})
-     fi
+diff --git a/dracut.spec b/dracut.spec
+index 01d58e1..2ac8d52 100644
+--- a/dracut.spec
++++ b/dracut.spec
+@@ -82,6 +82,13 @@ Requires: %{name}-network = %{version}-%{release}
+ This package requires everything which is needed to build a generic
+ all purpose initramfs with dracut.
  
--    if [[ ! "$sysfs" =~ '^/sys/.*block/.*$' ]]; then
-+    if [[ ! "$sysfs" =~ ^/sys/.*block/.*$ ]]; then
-         #error "WARNING: $sysfs is a not a block sysfs path, skipping"
-         return
-     fi
-@@ -223,12 +226,12 @@ findstoragedriverinsys () {
-         *) handleddevices="$handleddevices $sysfs" ;;
-     esac
++%package maint
++Summary: dracut module for basic root filesystem maintenance
++Requires: e2fsprogs, util-linux-ng
++
++%description maint
++This package requires everything needed for basic root filesystem maintenance
++from within the initramfs (currently only ext234)
  
--    if [[ "$sysfs" =~ '^/sys/.*block/md[0-9]+$' ]]; then
-+    if [[ "$sysfs" =~ ^/sys/.*block/md[0-9]+$ ]]; then
-         local raid=${sysfs##*/}
-         vecho "Found MDRAID component $raid"
-         handleraid $raid
-     fi
--    if [[ "$sysfs" =~ '^/sys/.*block/dm-[0-9]+$' ]]; then
-+    if [[ "$sysfs" =~ ^/sys/.*block/dm-[0-9]+$ ]]; then
-         vecho "Found DeviceMapper component ${sysfs##*/}"
-         handledm $(cat $sysfs/dev |cut -d : -f 1) $(cat $sysfs/dev |cut -d : -f 2)
-     fi
+ %package kernel
+ Summary: Metapackage to build generic initramfs with dracut with only kernel modules
+@@ -183,6 +190,10 @@ rm -rf $RPM_BUILD_ROOT
+ %defattr(-,root,root,0755)
+ %doc README.generic
+ 
++%files maint
++%defattr(-,root,root,0755)
++%{_datadir}/dracut/modules.d/60maint
++
+ %files tools 
+ %defattr(-,root,root,0755)
+ %doc COPYING NEWS
+diff --git a/modules.d/60maint/check b/modules.d/60maint/check
+new file mode 100755
+index 0000000..fc59a03
+--- /dev/null
++++ b/modules.d/60maint/check
+@@ -0,0 +1,2 @@
++#!/bin/bash
++which fsck fsck.ext4 fsck.ext2 fsck.ext3 resize2fs tune2fs >/dev/null
+diff --git a/modules.d/60maint/install b/modules.d/60maint/install
+new file mode 100755
+index 0000000..e7f2848
+--- /dev/null
++++ b/modules.d/60maint/install
+@@ -0,0 +1,2 @@
++#!/bin/bash
++dracut_install fsck fsck.ext4 fsck.ext2 fsck.ext3 resize2fs tune2fs
+-- 
+1.6.5.1
+
 
