@@ -1,61 +1,89 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] switch_root: a better approach to subroots
-Date: Fri, 20 Nov 2009 15:30:17 +0100
-Message-ID: <20091120143017.GA29950@nb.net.home>
-References: <20091118153312.16E989D404F@zog.reactivated.net> <20091118184706.GB23977@nb.net.home> <4B045586.1090906@redhat.com> <20091118153312.16E989D404F@zog.reactivated.net>
+From: Pawel Krzesniak <pawel.krzesniak-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: ls to stat patch
+Date: Mon, 23 Nov 2009 14:44:59 +0000 (UTC)
+Message-ID: <loom.20091123T144413-833@post.gmane.org>
+References: <4A9F6345.4050003@gmail.com> <2C8691D2-389B-4F15-A406-AD4D51B9D0D4@gmail.com>
 Mime-Version: 1.0
-Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20091118153312.16E989D404F-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
-Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>, Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Nov 18, 2009 at 03:33:12PM +0000, Daniel Drake wrote:
-> This reverts commit a692a8745941a192528c5e2a05de97155ba586f9.
+Victor Lowther <victor.lowther@...> writes:
 
- Revered and man page updated. switch_root does not support subroots
- from now.
-
-On Wed, Nov 18, 2009 at 03:13:58PM -0500, Peter Jones wrote:
-> On 11/18/2009 01:47 PM, Karel Zak wrote:
-> > On Wed, Nov 18, 2009 at 03:33:12PM +0000, Daniel Drake wrote:
-> >> +.SH NOTES
-> >> +switch_root will fail to function if
-> >> +.B newroot
-> >> +is not the root of a mount. If you want to switch root into a directory that
-> >> +does not meet this requirement then you can first use a bind-mounting trick to
-> >> +turn any directory into a mount point:
-> >> +.sp
-> >> +.nf
-> >> +.RS
-> >> +mount --bind $DIR $DIR
-> > 
-> >  Cannot we add this functionality directly to the switch_root command?
-> >  I mean call:
-> > 
-> >     mount --bind /newroot/subroot /newroot/subroot 
-> >     mount --move /newroot/subroot /
-> > 
-> >  Now we have:
-> > 
-> >     mount --move newroot /
-> >     chroot /newroot/subroot
+> On Sep 3, 2009, at 1:33 AM, Joe Pelkey <pelkeyj@...> wrote:
 > 
-> That certainly seems preferable to reverting the patch, especially if, as
+> > Hi,
+> > I was randomly looking through the git repository and came across
+> > modules.d/95resume/resume.sh and its comment about not liking the  
+> > use of
+> > ls.  I modified it to use stat instead, and since stat has been in
+> > coreutils since at least late 2005, I assume it's safe to use.
+> 
+> <snip patch>
+> 
+> We had a patch that did that initally, but dropped it because it adds  
+> another binary to the initramfs.
 
- I agree. People (IMHO OLPC project only) who need subroots can easily
- add "mount --bind" to their initrd. 
+What else depends on 'ls'?
+I can see 'ls' is used only in modules.d/95nfs/install which is invoked during
+creating initramfs image only. Am I wrong?
 
-    Karel
+btw: Joe's patch has bug, because stat returns major and minor in hex and we
+need decimal values. We can use printf (which is part of dash) to convert values.
 
+my version:
 
+Subject: [PATCH] use stat binary instead of ls
+
+Signed-off-by: Pawel Krzesniak <pawel.krzesniak-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ modules.d/95resume/install   |    1 +
+ modules.d/95resume/resume.sh |    7 +++----
+ modules.d/99base/install     |    2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/modules.d/95resume/install b/modules.d/95resume/install
+index 9200f95..a88d608 100755
+--- a/modules.d/95resume/install
++++ b/modules.d/95resume/install
+@@ -1,4 +1,5 @@
+ #!/bin/bash
++dracut_install stat
+ inst_hook cmdline 10 "$moddir/parse-resume.sh"
+ inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
+ inst_hook mount 10 "$moddir/resume.sh"
+diff --git a/modules.d/95resume/resume.sh b/modules.d/95resume/resume.sh
+index 8bb4114..022ef0e 100755
+--- a/modules.d/95resume/resume.sh
++++ b/modules.d/95resume/resume.sh
+@@ -1,8 +1,7 @@
+ #!/bin/sh
+ [ -s /.resume -a -b "$resume" ] && {
+-    # parsing the output of ls is Bad, but until there is a better way...
+-    ls -lH "$resume" | ( 
+-	read x x x x maj min x;
+-	echo "${maj%,}:$min"> /sys/power/resume)
++    stat -L -c "0x%t 0x%T" "$resume" | ( 
++	read maj min;
++	echo "$(printf %d $maj):$(printf %d $min)"> /sys/power/resume)
+     >/.resume
+ }
+diff --git a/modules.d/99base/install b/modules.d/99base/install
+index 801c8d7..68c89c6 100755
+--- a/modules.d/99base/install
++++ b/modules.d/99base/install
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ dracut_install mount mknod mkdir modprobe pidof sleep chroot \
+-    sed ls flock cp mv dmesg rm ln rmmod mkfifo less 
++    sed flock cp mv dmesg rm ln rmmod mkfifo less 
+ if [ ! -e "${initdir}/bin/sh" ]; then
+     dracut_install bash
+     (ln -s bash "${initdir}/bin/sh" || :)
 -- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
---
-To unsubscribe from this list: send the line "unsubscribe util-linux-ng" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1.6.5.2
+
+
