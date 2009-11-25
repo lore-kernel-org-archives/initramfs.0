@@ -1,12 +1,13 @@
 From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] Make sure and get all the multipath related modules.
-Date: Wed, 25 Nov 2009 11:23:05 +0100
-Message-ID: <4B0D0589.6080909@redhat.com>
-References: <1259092378-14143-1-git-send-email-pjones@redhat.com> <4B0C40C7.7010206@redhat.com>
+Subject: Re: [PATCH 4/4] Bring up multipath devices that are configured in
+ multipath.conf.
+Date: Wed, 25 Nov 2009 11:35:42 +0100
+Message-ID: <4B0D087E.1030502@redhat.com>
+References: <1259092378-14143-1-git-send-email-pjones@redhat.com> <4B0C40ED.9000909@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4B0C40C7.7010206-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4B0C40ED.9000909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
@@ -15,35 +16,71 @@ Cc: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 Hi,
 
-On 11/24/2009 09:23 PM, Peter Jones wrote:
-> Install all modules that are any of:
-> - scsi device handler
-> - dm log handler
-> - dm path selector
-> - dm target
->
-> It would be nice if we could tell which log handlers and targets are
-> multipath related, but we really can't.
+On 11/24/2009 09:24 PM, Peter Jones wrote:
+> This brings up multipath devices which are configured in multipath.conf
+> as we find them.
 > ---
->   modules.d/90multipath/installkernel |    9 ++++++++-
->   1 files changed, 8 insertions(+), 1 deletions(-)
+>   modules.d/90multipath/14-multipath-scan.rules |    9 +++++++++
+>   modules.d/90multipath/install                 |    3 +++
+>   modules.d/90multipath/multipath-scan.sh       |   16 ++++++++++++++++
+>   3 files changed, 28 insertions(+), 0 deletions(-)
+>   create mode 100644 modules.d/90multipath/14-multipath-scan.rules
+>   create mode 100644 modules.d/90multipath/multipath-scan.sh
 >
-> diff --git a/modules.d/90multipath/installkernel b/modules.d/90multipath/installkernel
-> index 50c7d6a..4a596f0 100755
-> --- a/modules.d/90multipath/installkernel
-> +++ b/modules.d/90multipath/installkernel
-> @@ -1 +1,8 @@
-> -instmods dm-multipath dm-round-robin multipath
-> +#!/bin/bash
-> +
-> +mp_mod_test() {
-> +    local mpfuncs='scsi_register_device_handler|dm_dirty_log_type_register|dm_register_path_selector|dm_register_target'
-> +    nm -uPA "$1" | egrep -q "$mpfuncs"
-> +}
-> +
-> +instmods $(filter_kernel_modules mp_mod_test)
+> diff --git a/modules.d/90multipath/14-multipath-scan.rules b/modules.d/90multipath/14-multipath-scan.rules
+> new file mode 100644
+> index 0000000..fcb8173
+> --- /dev/null
+> +++ b/modules.d/90multipath/14-multipath-scan.rules
+> @@ -0,0 +1,9 @@
+> +# scan for multipath devices
+> +SUBSYSTEM!="block", GOTO="end_mpath_scan"
+> +KERNEL!="sd*", GOTO="end_mpath_scan"
+> +PROGRAM=="/bin/sh -c 'for i in //holders/dm-[0-9]*; do [ -e 9429i ]&&  exit 0; done; exit 1;' ", GOTO="end_mpath_scan"
 
-Looks good to me, ack.
+What is this 9429i thingie ? a comment about this in the rules file might be good to have.
+
+> +RUN+="/sbin/modprobe dm-multipath"
+> +RUN+="/bin/echo 'queuing multipath scan'"
+> +RUN+="/sbin/initqueue --settled --onetime --unique --name=mpscan /sbin/multipath-scan"
+> +RUN+="/bin/sh -c '>/tmp/.multipath-scan-%k;'"
+> +LABEL="end_mpath_scan"
+> diff --git a/modules.d/90multipath/install b/modules.d/90multipath/install
+> index 52d69f5..9662848 100755
+> --- a/modules.d/90multipath/install
+> +++ b/modules.d/90multipath/install
+> @@ -22,3 +22,6 @@ done
+>   inst_hook pre-trigger 02 "$moddir/multipathd.sh"
+>   inst_hook pre-pivot   02 "$moddir/multipathd-stop.sh"
+>   inst_rules 40-multipath.rules
+> +
+> +inst "$moddir/multipath-scan.sh" /sbin/multipath-scan
+> +inst_rules "$moddir/14-multipath-scan.rules"
+> diff --git a/modules.d/90multipath/multipath-scan.sh b/modules.d/90multipath/multipath-scan.sh
+> new file mode 100644
+> index 0000000..0e1d3f2
+> --- /dev/null
+> +++ b/modules.d/90multipath/multipath-scan.sh
+> @@ -0,0 +1,16 @@
+> +#!/bin/sh
+> +
+> +# scan for multipaths if udev has settled
+> +
+> +. /lib/dracut-lib.sh
+> +
+> +[ -d /etc/multipath ] || mkdir -p /etc/multipath
+> +mpdevs=$(
+> +    for f in /tmp/.multipath-scan-* ; do
+> +        [ -e "$f" ] || continue
+> +        echo -n "${f##/tmp/.multipath-scan-} "
+> +    done
+> +)
+> +
+> +[ -e /etc/multipath.conf ] || exit 1
+> +multipath ${mpdevs}
+  command / where does it come from ?
+
+Other then that I wonder what the 9429i thingie is, it looks good.
 
 Regards,
 
