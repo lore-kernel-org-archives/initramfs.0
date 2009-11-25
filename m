@@ -1,76 +1,56 @@
 From: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/4] Bring up multipath devices that are configured in
- multipath.conf.
-Date: Wed, 25 Nov 2009 10:52:04 -0500
-Message-ID: <4B0D52A4.6000105@redhat.com>
-References: <4B0D4A9F.1090606@redhat.com> <1259162752-22372-5-git-send-email-pjones@redhat.com> <4B0D5306.8050706@redhat.com>
+Subject: Re: [PATCH 1/4] Use glob for libdir when installing multipath libraries.
+Date: Wed, 25 Nov 2009 10:52:20 -0500
+Message-ID: <4B0D52B4.5090501@redhat.com>
+References: <4B0D4A9F.1090606@redhat.com> <1259162752-22372-2-git-send-email-pjones@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4B0D5306.8050706-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1259162752-22372-2-git-send-email-pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 11/25/2009 10:53 AM, Hans de Goede wrote:
-> Hi,
+On 11/25/2009 10:25 AM, Peter Jones wrote:
+> Use "/lib*/" not "/lib/" so it works when they're in /lib/multipath as
+> well as when they're in /lib64/multipath
+> ---
+>  modules.d/90multipath/install |   10 ++++++++--
+>  1 files changed, 8 insertions(+), 2 deletions(-)
 > 
-> Patch 1-3 look good.
-> 
-> On 11/25/2009 04:25 PM, Peter Jones wrote:
->> This brings up multipath devices which are configured in multipath.conf
->> as we find them.
->> ---
->>   modules.d/90multipath/14-multipath-scan.rules |    9 +++++++++
->>   modules.d/90multipath/install                 |    3 +++
->>   modules.d/90multipath/multipath-scan.sh       |   16 ++++++++++++++++
->>   3 files changed, 28 insertions(+), 0 deletions(-)
->>   create mode 100644 modules.d/90multipath/14-multipath-scan.rules
->>   create mode 100644 modules.d/90multipath/multipath-scan.sh
->>
->> diff --git a/modules.d/90multipath/14-multipath-scan.rules
->> b/modules.d/90multipath/14-multipath-scan.rules
->> new file mode 100644
->> index 0000000..b4acf57
->> --- /dev/null
->> +++ b/modules.d/90multipath/14-multipath-scan.rules
->> @@ -0,0 +1,9 @@
->> +# scan for multipath devices
->> +SUBSYSTEM!="block", GOTO="end_mpath_scan"
->> +KERNEL!="sd*", GOTO="end_mpath_scan"
->> +PROGRAM=="/bin/sh -c 'for i in //holders/dm-[0-9]*; do [ -e $$i ]&& 
->> exit 0; done; exit 1;' ", GOTO="end_mpath_scan"
->> +RUN+="/sbin/modprobe dm-multipath"
->> +RUN+="/bin/echo 'queuing multipath scan'"
->> +RUN+="/sbin/initqueue --settled --onetime --unique --name=mpscan
->> /sbin/multipath-scan"
->> +RUN+="/bin/sh -c '>/tmp/.multipath-scan-%k;'"
->> +LABEL="end_mpath_scan"
-> 
-> Hmm, I just realized something, this rule will keep on triggering if a
-> disk is
-> not part of a multipath setup. As in that case it will never become a
-> holder
-> of a device mapper device.
-> 
-> And since things like opening /dev/sda rw (which /sbin/multipath might
-> very well do), trigger a change event, this feels like an infinite loop
-> to me.
+> diff --git a/modules.d/90multipath/install b/modules.d/90multipath/install
+> index 9552918..4890825 100755
+> --- a/modules.d/90multipath/install
+> +++ b/modules.d/90multipath/install
+> @@ -2,6 +2,12 @@ if [[ $hostonly ]]; then
+>      inst /etc/multipath.conf
+>  fi
+>  
+> +if ldd $(/sbin/multipath) |grep -q lib64; then
 
-It does not trigger a change event.
+This is obviously wrong.
 
-> Maybe this rule should have a
-> ACTION!="add", GOTO="end_mpath_scan"
-> 
-> ?
-> 
-> I think it would be best to discuss this with Harald.
-> 
-> Regards,
-> 
-> Hans
+> +    LIBDIR="/lib64"
+> +else
+> +    LIBDIR="/lib"
+> +fi
+> +
+>  for f in  \
+>      /sbin/dmsetup \
+>      /sbin/kpartx \
+> @@ -11,8 +17,8 @@ for f in  \
+>      /sbin/xdrgetuid \
+>      /sbin/xdrgetprio \
+>      /etc/xdrdevices.conf \
+> -    /lib/libmultipath*  \
+> -    /lib/multipath/* ;do 
+> +    $(ls $LIBDIR/libmultipath* $LIBDIR/multipath/*) \
+> +    	;do
+>      inst $f
+>  done
+>  
 
 
 -- 
