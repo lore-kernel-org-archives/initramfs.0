@@ -1,87 +1,67 @@
-From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/4] Bring up multipath devices that are configured in
- multipath.conf.
-Date: Wed, 25 Nov 2009 11:35:42 +0100
-Message-ID: <4B0D087E.1030502@redhat.com>
-References: <1259092378-14143-1-git-send-email-pjones@redhat.com> <4B0C40ED.9000909@redhat.com>
+From: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/4] Use glob for libdir when installing multipath libraries.
+Date: Wed, 25 Nov 2009 10:10:53 -0500
+Message-ID: <4B0D48FD.8080705@redhat.com>
+References: <1259092378-14143-1-git-send-email-pjones@redhat.com> <4B0C40BC.5000107@redhat.com> <4B0D0531.2050401@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4B0C40ED.9000909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4B0D0531.2050401-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi,
+On 11/25/2009 05:21 AM, Hans de Goede wrote:
+> Hi,
+> 
+> On 11/24/2009 09:23 PM, Peter Jones wrote:
+>> Use "/lib*/" not "/lib/" so it works when they're in /lib/multipath as
+>> well as when they're in /lib64/multipath
+>> ---
+>>   modules.d/90multipath/install |    5 +++--
+>>   1 files changed, 3 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/modules.d/90multipath/install
+>> b/modules.d/90multipath/install
+>> index 9552918..d20ea38 100755
+>> --- a/modules.d/90multipath/install
+>> +++ b/modules.d/90multipath/install
+>> @@ -11,8 +11,9 @@ for f in  \
+>>       /sbin/xdrgetuid \
+>>       /sbin/xdrgetprio \
+>>       /etc/xdrdevices.conf \
+>> -    /lib/libmultipath*  \
+>> -    /lib/multipath/* ;do
+>> +    /lib*/libmultipath* \
+>> +    /lib*/multipath/*
+>> +        ;do
+>>       inst $f
+>>   done
+>>
+> 
+> Not sure if we want to handle this this way, this way if both a 32 bit and
+> 64 bit version are present on a system both will get copied to the
+> initrd, I think it would be better to handle this how it is handled in
+> for example:
+> modules/01fips/install
+> or
+> modules/95nfs/install:
+> 
+> if ldd $(which rpc.idmapd) |grep -q lib64; then
+>     LIBDIR="/lib64"
+> else
+>     LIBDIR="/lib"
+> fi
+> 
+> dracut_install $(ls {/usr,}$LIBDIR/libnfsidmap_nsswitch.so* 2>/dev/null )
 
-On 11/24/2009 09:24 PM, Peter Jones wrote:
-> This brings up multipath devices which are configured in multipath.conf
-> as we find them.
-> ---
->   modules.d/90multipath/14-multipath-scan.rules |    9 +++++++++
->   modules.d/90multipath/install                 |    3 +++
->   modules.d/90multipath/multipath-scan.sh       |   16 ++++++++++++++++
->   3 files changed, 28 insertions(+), 0 deletions(-)
->   create mode 100644 modules.d/90multipath/14-multipath-scan.rules
->   create mode 100644 modules.d/90multipath/multipath-scan.sh
->
-> diff --git a/modules.d/90multipath/14-multipath-scan.rules b/modules.d/90multipath/14-multipath-scan.rules
-> new file mode 100644
-> index 0000000..fcb8173
-> --- /dev/null
-> +++ b/modules.d/90multipath/14-multipath-scan.rules
-> @@ -0,0 +1,9 @@
-> +# scan for multipath devices
-> +SUBSYSTEM!="block", GOTO="end_mpath_scan"
-> +KERNEL!="sd*", GOTO="end_mpath_scan"
-> +PROGRAM=="/bin/sh -c 'for i in //holders/dm-[0-9]*; do [ -e 9429i ]&&  exit 0; done; exit 1;' ", GOTO="end_mpath_scan"
+Fair point.  I'm really not sure why device-mapper-multipath is a multilib
+package at all, but I guess it's best to do what you're saying.
 
-What is this 9429i thingie ? a comment about this in the rules file might be good to have.
+-- 
+        Peter
 
-> +RUN+="/sbin/modprobe dm-multipath"
-> +RUN+="/bin/echo 'queuing multipath scan'"
-> +RUN+="/sbin/initqueue --settled --onetime --unique --name=mpscan /sbin/multipath-scan"
-> +RUN+="/bin/sh -c '>/tmp/.multipath-scan-%k;'"
-> +LABEL="end_mpath_scan"
-> diff --git a/modules.d/90multipath/install b/modules.d/90multipath/install
-> index 52d69f5..9662848 100755
-> --- a/modules.d/90multipath/install
-> +++ b/modules.d/90multipath/install
-> @@ -22,3 +22,6 @@ done
->   inst_hook pre-trigger 02 "$moddir/multipathd.sh"
->   inst_hook pre-pivot   02 "$moddir/multipathd-stop.sh"
->   inst_rules 40-multipath.rules
-> +
-> +inst "$moddir/multipath-scan.sh" /sbin/multipath-scan
-> +inst_rules "$moddir/14-multipath-scan.rules"
-> diff --git a/modules.d/90multipath/multipath-scan.sh b/modules.d/90multipath/multipath-scan.sh
-> new file mode 100644
-> index 0000000..0e1d3f2
-> --- /dev/null
-> +++ b/modules.d/90multipath/multipath-scan.sh
-> @@ -0,0 +1,16 @@
-> +#!/bin/sh
-> +
-> +# scan for multipaths if udev has settled
-> +
-> +. /lib/dracut-lib.sh
-> +
-> +[ -d /etc/multipath ] || mkdir -p /etc/multipath
-> +mpdevs=$(
-> +    for f in /tmp/.multipath-scan-* ; do
-> +        [ -e "$f" ] || continue
-> +        echo -n "${f##/tmp/.multipath-scan-} "
-> +    done
-> +)
-> +
-> +[ -e /etc/multipath.conf ] || exit 1
-> +multipath ${mpdevs}
-  command / where does it come from ?
-
-Other then that I wonder what the 9429i thingie is, it looks good.
-
-Regards,
-
-Hans
+"I can imagine a world without war, without hate. I can imagine us
+attacking it, because they'd never expect it."
