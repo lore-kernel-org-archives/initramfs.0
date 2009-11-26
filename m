@@ -1,60 +1,50 @@
-From: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] Use glob for libdir when installing multipath libraries.
-Date: Wed, 25 Nov 2009 10:52:20 -0500
-Message-ID: <4B0D52B4.5090501@redhat.com>
-References: <4B0D4A9F.1090606@redhat.com> <1259162752-22372-2-git-send-email-pjones@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Wildcards need dracut_install
+Date: Thu, 26 Nov 2009 19:13:14 +0100
+Message-ID: <4B0EC53A.8090102@redhat.com>
+References: <1259099416.15712.2.camel@d2>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1259162752-22372-2-git-send-email-pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1259099416.15712.2.camel@d2>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Yanko Kaneti <yaneti-jUE9FD3ILm5BDgjK7y7TUQ@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/25/2009 10:25 AM, Peter Jones wrote:
-> Use "/lib*/" not "/lib/" so it works when they're in /lib/multipath as
-> well as when they're in /lib64/multipath
+On 11/24/2009 10:50 PM, Yanko Kaneti wrote:
 > ---
->  modules.d/90multipath/install |   10 ++++++++--
->  1 files changed, 8 insertions(+), 2 deletions(-)
-> 
-> diff --git a/modules.d/90multipath/install b/modules.d/90multipath/install
-> index 9552918..4890825 100755
-> --- a/modules.d/90multipath/install
-> +++ b/modules.d/90multipath/install
-> @@ -2,6 +2,12 @@ if [[ $hostonly ]]; then
->      inst /etc/multipath.conf
->  fi
->  
-> +if ldd $(/sbin/multipath) |grep -q lib64; then
+>   modules.d/90dmraid/install |    2 +-
+>   modules.d/90lvm/install    |    2 +-
+>   2 files changed, 2 insertions(+), 2 deletions(-)
+>
+> diff --git a/modules.d/90dmraid/install b/modules.d/90dmraid/install
+> index ac88212..46e912d 100755
+> --- a/modules.d/90dmraid/install
+> +++ b/modules.d/90dmraid/install
+> @@ -2,7 +2,7 @@
+>   dracut_install dmraid partx kpartx
+>
+>   inst  dmeventd
+> -inst  /usr/lib*/libdmraid-events*.so
+> +dracut_install  /usr/lib*/libdmraid-events*.so
+>   inst_rules 10-dm.rules 13-dm-disk.rules 95-dm-notify.rules
+>
+>   inst "$moddir/dmraid.sh" /sbin/dmraid_scan
+> diff --git a/modules.d/90lvm/install b/modules.d/90lvm/install
+> index 825d1fc..524258f 100755
+> --- a/modules.d/90lvm/install
+> +++ b/modules.d/90lvm/install
+> @@ -8,7 +8,7 @@ if [[ $hostonly ]] || [[ $lvmconf = "yes" ]]; then
+>       [ -f /etc/lvm/lvm.conf ]&&  inst /etc/lvm/lvm.conf
+>   fi
+>
+> -inst /lib*/libdevmapper-event*.so
+> +dracut_install /lib*/libdevmapper-event*.so
+>   inst_rules 10-dm.rules 13-dm-disk.rules 95-dm-notify.rules
+> 11-dm-lvm.rules
+>
+>   inst "$moddir/lvm_scan.sh" /sbin/lvm_scan
 
-This is obviously wrong.
-
-> +    LIBDIR="/lib64"
-> +else
-> +    LIBDIR="/lib"
-> +fi
-> +
->  for f in  \
->      /sbin/dmsetup \
->      /sbin/kpartx \
-> @@ -11,8 +17,8 @@ for f in  \
->      /sbin/xdrgetuid \
->      /sbin/xdrgetprio \
->      /etc/xdrdevices.conf \
-> -    /lib/libmultipath*  \
-> -    /lib/multipath/* ;do 
-> +    $(ls $LIBDIR/libmultipath* $LIBDIR/multipath/*) \
-> +    	;do
->      inst $f
->  done
->  
-
-
--- 
-        Peter
-
-"I can imagine a world without war, without hate. I can imagine us
-attacking it, because they'd never expect it."
+pushed in a modified version
