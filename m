@@ -1,7 +1,7 @@
 From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH 2/2] Debian support: Add necessary control files for packaging
-Date: Fri, 27 Nov 2009 14:46:31 +0100
-Message-ID: <1259329591-23148-2-git-send-email-philippe.seewer@bfh.ch>
+Subject: [PATCH 1/2] Debian support: Add dracut-update-initramfs
+Date: Fri, 27 Nov 2009 14:46:30 +0100
+Message-ID: <1259329591-23148-1-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
@@ -10,326 +10,579 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This patch adds all necessary files to build dracut debian packages.
+This script is necessary to integrate dracut into the initramfs-
+infrastructure of debian.
 
-- I've split dracut into two parts: The dracut package for booting from block
-  devices and dracut-net for netroot.
-- I've deliberately left out all redhat specific modules, they do not make any
-  sense on debian at all
+The file itself is just a copy from initramfs-tools' update-initramfs,
+with a few lines modified to run dracut instead of mkinitramfs.
 ---
- debian/changelog          |   53 +++++++++++++++++++++++++++++++++++++++++++++
- debian/compat             |    1 +
- debian/control            |   40 ++++++++++++++++++++++++++++++++++
- debian/copyright          |   39 +++++++++++++++++++++++++++++++++
- debian/dracut-net.dirs    |    5 ++++
- debian/dracut-net.install |    5 ++++
- debian/dracut.dirs        |   22 ++++++++++++++++++
- debian/dracut.docs        |    4 +++
- debian/dracut.install     |   25 +++++++++++++++++++++
- debian/dracut.manpages    |    2 +
- debian/dracut.postinst    |    8 ++++++
- debian/dracut.triggers    |    1 +
- debian/rules              |    3 ++
- 13 files changed, 208 insertions(+), 0 deletions(-)
- create mode 100644 debian/changelog
- create mode 100644 debian/compat
- create mode 100644 debian/control
- create mode 100644 debian/copyright
- create mode 100644 debian/dracut-net.dirs
- create mode 100644 debian/dracut-net.install
- create mode 100644 debian/dracut.dirs
- create mode 100644 debian/dracut.docs
- create mode 100644 debian/dracut.install
- create mode 100644 debian/dracut.manpages
- create mode 100644 debian/dracut.postinst
- create mode 100644 debian/dracut.triggers
- create mode 100755 debian/rules
+ dracut-update-initramfs |  558 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 558 insertions(+), 0 deletions(-)
+ create mode 100755 dracut-update-initramfs
 
-diff --git a/debian/changelog b/debian/changelog
-new file mode 100644
-index 0000000..b7a9d12
+diff --git a/dracut-update-initramfs b/dracut-update-initramfs
+new file mode 100755
+index 0000000..36a98a2
 --- /dev/null
-+++ b/debian/changelog
-@@ -0,0 +1,53 @@
-+dracut (2.26) unstable; urgency=low
-+
-+  [ Harald Hoyer ]
-+  * multipath: install udev rules and helper tools
-+  * NEWS update
-+  * multipath: install xdr utils
-+  * multipath: install multipath kernel module
-+  * specfile update
-+  * dracut.8: fixed formatting for rootfs and mount options
-+  * dracut: check more return codes, check for permissions and use
-+    derror
-+  * dracut: create initramfs-$(kernelversion).img by default
-+  * Makefile: add WITH_SWITCH_ROOT
-+  * fips: search different lib paths
-+  * kernel-modules: add firewire-ohci to hardcoded modules list
-+  * 90dm: install more device mapper kernel modules
-+  * specfile update
-+
-+  [ Peter Jones ]
-+  * Use glob for libdir when installing multipath libraries.
-+  * Add #!/bin/bash for consistency.
-+  * Make sure and get all the multipath related modules.
-+  * Bring up multipath devices that are configured in multipath.conf.
-+  * Fix missing shell variables.
-+  * This has to be executable.
-+  * Handle modules with hyphens in their names properly.
-+
-+  [ Harald Hoyer ]
-+  * lvm: scan without monitor
-+
-+  [ Yanko Kaneti ]
-+  * Wildcards need dracut_install
-+
-+  [ Harald Hoyer ]
-+  * lvm/dmraid: make LIBDIR depend on the binary
-+  * nfs: install passwd entries for nobody and nfsnobody
-+  * nfs: add rd_NFS_DOMAIN parameter to set the NFSv4 domain name
-+  * dracut-functions: inst_simple(): do not bail out if target is a dir
-+    and exists
-+  * dm: install dmsetup
-+  * multipath: corrected initqueue parameter
-+  * rootfs-block/mount-root: remount root with /etc/fstab filesystem
-+    options
-+  * test: set PATH
-+
-+ -- Philippe Seewer <philippe.seewer@.bfh.ch>  Fri, 27 Nov 2009 10:58:26 +0100
-+
-+dracut (2.21) unstable; urgency=low
-+  [ Harald Hoyer ]
-+  * fix rd_DASD argument handling (bug #531720)
-+  * Resolves: rhbz#531720
-+
-+ -- Philippe Seewer <philippe.seewer@.bfh.ch>  Fri, 06 Nov 2009 15:52:00 +0100
-diff --git a/debian/compat b/debian/compat
-new file mode 100644
-index 0000000..7ed6ff8
---- /dev/null
-+++ b/debian/compat
-@@ -0,0 +1 @@
-+5
-diff --git a/debian/control b/debian/control
-new file mode 100644
-index 0000000..fbbe19c
---- /dev/null
-+++ b/debian/control
-@@ -0,0 +1,40 @@
-+Source: dracut
-+Section: utils
-+Priority: optional
-+Maintainer: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-+Build-Depends: debhelper (>= 5.0), cdbs
-+Standards-Version: 3.8.3
-+Vcs-Browser: http://dracut.git.sourceforge.net/git/gitweb-index.cgi
-+Vcs-Git: git://dracut.git.sourceforge.net/gitroot/dracut/dracut
-+
-+Package: dracut
-+Architecture: all
-+Recommends: cryptsetup, dmsetup, dmraid, lvm2, mdadm
-+Depends: cpio, module-init-tools, udev, ${misc:Depends}
-+Provides: linux-initramfs-tool
-+Description: A new initramfs infrastructure
-+ Unlike existing initramfs's, this is an attempt at having as little as
-+ possible hard-coded into the initramfs as possible.  The initramfs has
-+ (basically) one purpose in life -- getting the rootfs mounted so that
-+ we can transition to the real rootfs.  This is all driven off of
-+ device availability.  Therefore, instead of scripts hard-coded to do
-+ various things, we depend on udev to create device nodes for us and
-+ then when we have the rootfs's device node, we mount and carry on. 
-+ Having the root on MD, LVM2, LUKS is supported as well as NFS, iSCSI,
-+ NBD and FCOE with dracut-net.
-+
-+Package: dracut-net
-+Architecture: all
-+Recommends: nfs-common, open-iscsi, nbd-client
-+Depends: dracut, iputils-arping, dhcp3-client, ${misc:Depends}
-+Description: A new initramfs infrastucture
-+ Unlike existing initramfs's, this is an attempt at having as little as
-+ possible hard-coded into the initramfs as possible.  The initramfs has
-+ (basically) one purpose in life -- getting the rootfs mounted so that
-+ we can transition to the real rootfs.  This is all driven off of
-+ device availability.  Therefore, instead of scripts hard-coded to do
-+ various things, we depend on udev to create device nodes for us and
-+ then when we have the rootfs's device node, we mount and carry on. 
-+ Having the root on MD, LVM2, LUKS is supported as well as NFS, iSCSI,
-+ NBD and FCOE with dracut-net.
-+
-diff --git a/debian/copyright b/debian/copyright
-new file mode 100644
-index 0000000..c1424d0
---- /dev/null
-+++ b/debian/copyright
-@@ -0,0 +1,39 @@
-+This package was debianized by Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org> on
-+Fri Nov 20 15:45:00 +0100
-+
-+Sources can be downloaded from:
-+
-+    https://sourceforge.net/projects/dracut/
-+
-+Upstream Maintainer:
-+    Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+
-+Updstream Authors:
-+    Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-+    Warren Togami <wtogami-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Jeremy Katz <katzj-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-+    David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-+    Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
-+    Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Marc Grimme <grimme-lQ0MjLpiXiw@public.gmane.org>
-+    Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-+    Lance Albertson <lance-CJG/fkoVOTIdnm+yROfE0A@public.gmane.org>
-+    Michael Ploujnikov <plouj-nIlK2fN7gY0WhyVFc8JwjA@public.gmane.org>
-+    Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Peter Rajnoha <prajnoha-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+    Quentin Armitage <quentin-/BKvNsQo1N6tmTQ+vhA3Yw@public.gmane.org>
-+    Sergey Fionov <fionov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-+    Thilo Bangert <thilo.bangert-hi6Y0CQ0nG0@public.gmane.org>
-+
-+Copyright:
-+    Copyright 2009 Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+
-+
-+License: GPLv2
-+
-+On Debian systems, the complete text of the GNU General Public 
-+License version 2 can be found in `/usr/share/common-licenses/GPL-2'.
-diff --git a/debian/dracut-net.dirs b/debian/dracut-net.dirs
-new file mode 100644
-index 0000000..44f96fb
---- /dev/null
-+++ b/debian/dracut-net.dirs
-@@ -0,0 +1,5 @@
-+usr/share/dracut/modules.d/40network
-+usr/share/dracut/modules.d/95fcoe
-+usr/share/dracut/modules.d/95iscsi
-+usr/share/dracut/modules.d/95nbd
-+usr/share/dracut/modules.d/95nfs
-diff --git a/debian/dracut-net.install b/debian/dracut-net.install
-new file mode 100644
-index 0000000..dd11096
---- /dev/null
-+++ b/debian/dracut-net.install
-@@ -0,0 +1,5 @@
-+modules.d/40network	usr/share/dracut/modules.d
-+modules.d/95fcoe	usr/share/dracut/modules.d
-+modules.d/95iscsi	usr/share/dracut/modules.d
-+modules.d/95nbd		usr/share/dracut/modules.d
-+modules.d/95nfs		usr/share/dracut/modules.d
-diff --git a/debian/dracut.dirs b/debian/dracut.dirs
-new file mode 100644
-index 0000000..87682f0
---- /dev/null
-+++ b/debian/dracut.dirs
-@@ -0,0 +1,22 @@
-+usr/share/dracut
-+usr/share/dracut/modules.d/00dash
-+usr/share/dracut/modules.d/01fips
-+usr/share/dracut/modules.d/90crypt
-+usr/share/dracut/modules.d/90dm
-+usr/share/dracut/modules.d/90dmraid
-+usr/share/dracut/modules.d/90kernel-modules
-+usr/share/dracut/modules.d/90lvm
-+usr/share/dracut/modules.d/90mdraid
-+usr/share/dracut/modules.d/90multipath
-+usr/share/dracut/modules.d/95dasd
-+usr/share/dracut/modules.d/95dasd_mod
-+usr/share/dracut/modules.d/95debug
-+usr/share/dracut/modules.d/95resume
-+usr/share/dracut/modules.d/95rootfs-block
-+usr/share/dracut/modules.d/95terminfo
-+usr/share/dracut/modules.d/95udev-rules
-+usr/share/dracut/modules.d/95zfcp
-+usr/share/dracut/modules.d/95znet
-+usr/share/dracut/modules.d/98syslog
-+usr/share/dracut/modules.d/99base
-+/var/lib/dracut
-diff --git a/debian/dracut.docs b/debian/dracut.docs
-new file mode 100644
-index 0000000..883ffc9
---- /dev/null
-+++ b/debian/dracut.docs
-@@ -0,0 +1,4 @@
-+HACKING
-+README.generic
-+README.kernel
-+README.modules
-diff --git a/debian/dracut.install b/debian/dracut.install
-new file mode 100644
-index 0000000..75b5fd1
---- /dev/null
-+++ b/debian/dracut.install
-@@ -0,0 +1,25 @@
-+dracut			usr/sbin
-+dracut-catimages	usr/sbin
-+dracut-update-initramfs	usr/sbin
-+dracut-functions	usr/share/dracut
-+dracut.conf		etc
-+modules.d/00dash		usr/share/dracut/modules.d
-+modules.d/01fips		usr/share/dracut/modules.d
-+modules.d/90crypt		usr/share/dracut/modules.d
-+modules.d/90dm			usr/share/dracut/modules.d
-+modules.d/90dmraid		usr/share/dracut/modules.d
-+modules.d/90kernel-modules	usr/share/dracut/modules.d
-+modules.d/90lvm			usr/share/dracut/modules.d
-+modules.d/90mdraid		usr/share/dracut/modules.d
-+modules.d/90multipath		usr/share/dracut/modules.d
-+modules.d/95dasd		usr/share/dracut/modules.d
-+modules.d/95dasd_mod		usr/share/dracut/modules.d
-+modules.d/95debug		usr/share/dracut/modules.d
-+modules.d/95resume		usr/share/dracut/modules.d
-+modules.d/95rootfs-block	usr/share/dracut/modules.d
-+modules.d/95terminfo		usr/share/dracut/modules.d
-+modules.d/95udev-rules		usr/share/dracut/modules.d
-+modules.d/95zfcp		usr/share/dracut/modules.d
-+modules.d/95znet		usr/share/dracut/modules.d
-+modules.d/98syslog		usr/share/dracut/modules.d
-+modules.d/99base		usr/share/dracut/modules.d
-diff --git a/debian/dracut.manpages b/debian/dracut.manpages
-new file mode 100644
-index 0000000..002d7d7
---- /dev/null
-+++ b/debian/dracut.manpages
-@@ -0,0 +1,2 @@
-+dracut.8
-+dracut.conf.5
-diff --git a/debian/dracut.postinst b/debian/dracut.postinst
-new file mode 100644
-index 0000000..f2f61ed
---- /dev/null
-+++ b/debian/dracut.postinst
-@@ -0,0 +1,8 @@
++++ b/dracut-update-initramfs
+@@ -0,0 +1,558 @@
 +#!/bin/sh
++
++STATEDIR=/var/lib/dracut
++BOOTDIR=/boot
++CONF=/etc/dracut.conf
++KPKGCONF=/etc/kernel-img.conf
++USETRIGGERS=true
++mode=""
++version=""
 +
 +set -e
 +
-+# Regenerate initramfs when we're `installed`
-+DPKG_MAINTSCRIPT_PACKAGE='' dracut-update-initramfs -u
++if        $USETRIGGERS                                         \
++       && [ x"$DPKG_MAINTSCRIPT_PACKAGE" != x ]                \
++       && [ $# = 1 ]                                           \
++       && [ x"$1" = x-u ]                                      \
++       && dpkg-trigger --check-supported 2>/dev/null
++then
++       if dpkg-trigger --no-await update-initramfs; then
++               echo "dracut-update-initramfs: deferring update (trigger activated)"
++               exit 0
++       fi
++fi
 +
-+#DEBHELPER#
-diff --git a/debian/dracut.triggers b/debian/dracut.triggers
-new file mode 100644
-index 0000000..860c664
---- /dev/null
-+++ b/debian/dracut.triggers
-@@ -0,0 +1 @@
-+interest update-initramfs
-diff --git a/debian/rules b/debian/rules
-new file mode 100755
-index 0000000..e6192f6
---- /dev/null
-+++ b/debian/rules
-@@ -0,0 +1,3 @@
-+#!/usr/bin/make -f
++usage()
++{
++       if [ -n "${1}" ]; then
++               printf "${@}\n\n" >&2
++       fi
++       cat >&2 << EOF
++Usage: ${0} [OPTION]...
 +
-+include /usr/share/cdbs/1/rules/debhelper.mk
++Options:
++ -k [version]  Specify kernel version or 'all'
++ -c            Create a new initramfs
++ -u            Update an existing initramfs
++ -d            Remove an existing initramfs
++ -t            Take over a custom initramfs with this one
++ -b            Set alternate boot directory
++ -v            Be verbose
++ -h            This message
++
++EOF
++       exit 1
++}
++
++# chroot check
++chrooted()
++{
++        # borrowed from udev's postinst
++        if [ "$(stat -c %d/%i /)" = "$(stat -Lc %d/%i /proc/1/root 2>/dev/null)" ]; then
++                # the devicenumber/inode pair of / is the same as that of
++                # /sbin/init's root, so we're *not* in a chroot and hence
++                # return false.
++                return 1
++        fi
++        return 0
++}
++
++mild_panic()
++{
++       if [ -n "${1}" ]; then
++               printf "${@}\n" >&2
++       fi
++       exit 0
++}
++
++panic()
++{
++       if [ -n "${1}" ]; then
++               printf "${@}\n" >&2
++       fi
++       exit 1
++}
++
++verbose()
++{
++       if [ "${verbose}" = 1 ]; then
++               printf "${@}\n"
++       fi
++}
++
++version_exists()
++{
++       [ -e "${STATEDIR}/${1}" ] && [ -e "${initramfs}" ]
++       return $?
++}
++
++set_initramfs()
++{
++       initramfs="${BOOTDIR}/dracut.img-${version}"
++}
++
++
++# backup initramfs while running
++backup_initramfs()
++{
++       [ ! -r "${initramfs}" ] && return 0
++       initramfs_bak="${initramfs}.dpkg-bak"
++       [ -r "${initramfs_bak}" ] && rm -f "${initramfs_bak}"
++       ln -f "${initramfs}" "${initramfs_bak}" \
++               || cp -a "${initramfs}" "${initramfs_bak}"
++       verbose "Keeping ${initramfs_bak}"
++}
++
++# keep booted initramfs
++backup_booted_initramfs()
++{
++       initramfs_bak="${initramfs}.dpkg-bak"
++
++       # first time run thus no backup
++       [ ! -r "${initramfs_bak}" ] && return 0
++
++       # chroot with no /proc
++       [ ! -r /proc/uptime ] && rm -f "${initramfs_bak}" && return 0
++
++       # no kept backup wanted
++       [ "${backup_initramfs}" = "no" ] && rm -f "${initramfs_bak}" && return 0
++
++       # no backup yet
++       if [ ! -r "${initramfs}.bak" ]; then
++               mv -f ${initramfs_bak} "${initramfs}.bak"
++               verbose "Backup ${initramfs}.bak"
++               return 0
++       fi
++
++       # keep booted initramfs
++       uptime_days=$(awk '{printf "%d", $1 / 3600 / 24}' /proc/uptime)
++       if [ -n "$uptime_days" ]; then
++               boot_initramfs=$(find "${initramfs}.bak" -mtime +${uptime_days})
++       fi
++       if [ -n "${boot_initramfs}" ]; then
++               mv -f "${initramfs_bak}" "${initramfs}.bak"
++               verbose "Backup ${initramfs}.bak"
++               return 0
++       fi
++       verbose "Removing current backup ${initramfs_bak}"
++       rm -f ${initramfs_bak}
++}
++
++# nuke generated copy
++remove_initramfs()
++{
++       [ -z "${initramfs_bak}" ] && return 0
++       rm -f "${initramfs_bak}"
++       verbose "Removing ${initramfs_bak}"
++}
++
++
++generate_initramfs()
++{
++       echo "dracut-update-initramfs: Generating ${initramfs}"
++       OPTS=""
++       if [ "${verbose}" = 1 ]; then
++               OPTS="-v ${OPTS}"
++       fi
++       ##WORK HERE!
++       if dracut ${OPTS} "${initramfs}.new" "${version}"; then
++               mv -f "${initramfs}.new" "${initramfs}"
++               set_sha1
++       else
++               mkinitramfs_return="$?"
++               remove_initramfs
++               rm -f "${initramfs}.new"
++               if [ "$mkinitramfs_return" = "2" ]; then
++                       # minversion wasn't met, exit 0
++                       exit 0
++               fi
++               echo "update-initramfs: failed for ${initramfs}"
++               exit $mkinitramfs_return
++       fi
++}
++
++# lilo call
++run_lilo()
++{
++       # show lilo errors on failure
++       if ! lilo -t  > /dev/null 2>&1 ; then
++               echo "ERROR lilo fails for new ${initramfs}:"
++               echo
++               lilo -t
++       fi
++       lilo
++}
++
++# check if lilo is on mbr
++mbr_check()
++{
++       # try to discover grub|grub2 and be happy
++       [ -r /boot/grub/grub.cfg ] \
++               && groot=$(awk '/^set root=/{print substr($2, 7, 3); exit}' \
++                       /boot/grub/grub.cfg)
++       [ -r /boot/grub/menu.lst ] \
++               && groot=$(awk '/^root/{print substr($2, 2, 3); exit}' \
++                       /boot/grub/menu.lst)
++       [ -e /boot/grub/device.map ] && [ -n "${groot}" ] \
++               && dev=$(awk "/${groot}/{ print \$NF}" /boot/grub/device.map)
++       [ -n "${dev}" ] && [ -r ${dev} ] \
++               && dd if="${dev}" bs=512 skip=0 count=1 2> /dev/null \
++               | grep -q GRUB && return 0
++
++       # check out lilo.conf for validity
++       boot=$(awk -F = '/^boot=/{ print $2}' /etc/lilo.conf)
++       [ -z "${boot}" ] && return 0
++       case ${boot} in
++       /dev/md/*)
++               if [ -r /proc/mdstat ]; then
++                       MD=${boot#/dev/md/}
++                       boot="/dev/$(awk "/^md${MD}/{print substr(\$5, 1, 3)}" \
++                       /proc/mdstat)"
++               fi
++               ;;
++       /dev/md*)
++               if [ -r /proc/mdstat ]; then
++                       MD=${boot#/dev/}
++                       boot="/dev/$(awk "/^${MD}/{print substr(\$5, 1, 3)}" \
++                       /proc/mdstat)"
++               fi
++               ;;
++       esac
++       [ ! -r "${boot}" ] && return 0
++       dd if="${boot}" bs=512 skip=0 count=1 2> /dev/null | grep -q LILO \
++               && run_lilo && return 0
++
++       # no idea which bootloader is used
++       echo
++       echo "WARNING: grub and lilo installed."
++       echo "If you use grub as bootloader everything is fine."
++       echo "If you use lilo as bootloader you must run lilo!"
++       echo
++}
++
++# Invoke bootloader
++run_bootloader()
++{
++       # if both lilo and grub around, figure out if lilo needs to be run
++       if ( command -v update-grub >/dev/null 2>&1 \
++               || [ -e /boot/grub/menu.lst ] || [ -e /boot/grub/grub.cfg ] ) \
++       && ( [ -e /etc/lilo.conf ] && command -v lilo >/dev/null 2>&1 ); then
++               [ -r "${KPKGCONF}" ] && \
++               do_b=$(awk  '/^do_bootloader/{print $3}' "${KPKGCONF}")
++               if [ "${do_b}" = "yes" ] || [ "${do_b}" = "Yes" ] \
++               || [ "${do_b}" = "YES" ]; then
++                       run_lilo
++                       return 0
++               elif [ "${do_b}" = "no" ] || [ "${do_b}" = "No" ] \
++               || [ "${do_b}" = "NO" ]; then
++                       return 0
++               fi
++
++               # do_bootloader unconfigured
++               mbr_check
++               return 0
++       fi
++       if [ -r /etc/lilo.conf ] && command -v lilo >/dev/null 2>&1; then
++               run_lilo
++               return 0
++       fi
++       if command -v elilo >/dev/null 2>&1; then
++               elilo
++               return 0
++       fi
++       if [ -r /etc/zipl.conf ]; then
++               zipl
++       fi
++       if flash-kernel --supported >/dev/null 2>&1; then
++               flash-kernel ${version}
++       fi
++}
++
++compare_sha1()
++{
++       sha1sum "${initramfs}" | diff "${STATEDIR}/${version}" - >/dev/null 2>&1
++       return $?
++}
++
++# Note that this must overwrite so that updates work.
++set_sha1()
++{
++       sha1sum "${initramfs}" > "${STATEDIR}/${version}"
++}
++
++delete_sha1()
++{
++       rm -f "${STATEDIR}/${version}"
++}
++
++# ro /boot is not modified
++ro_boot_check()
++{
++       # check irrelevant inside of a chroot
++       if [ ! -r /proc/mounts ] || chrooted; then
++               return 0
++       fi
++
++       boot_opts=$(awk '/boot/{if ((match($4, /^ro/) || match($4, /,ro/)) \
++               && $2 == "/boot") print "ro"}' /proc/mounts)
++       if [ -n "${boot_opts}" ]; then
++               echo "WARNING: /boot is ro mounted."
++               echo "update-initramfs: Not updating ${initramfs}"
++               exit 0
++       fi
++}
++
++get_sorted_versions()
++{
++       version_list=""
++
++       for gsv_x in "${STATEDIR}"/*; do
++               gsv_x="$(basename "${gsv_x}")"
++               if [ "${gsv_x}" = '*' ]; then
++                       return 0
++               fi
++               worklist=""
++               for gsv_i in $version_list; do
++                       if dpkg --compare-versions "${gsv_x}" '>' "${gsv_i}"; then
++                               worklist="${worklist} ${gsv_x} ${gsv_i}"
++                               gsv_x=""
++                       else
++                               worklist="${worklist} ${gsv_i}"
++                       fi
++               done
++               if [ "${gsv_x}" != "" ]; then
++                       worklist="${worklist} ${gsv_x}"
++               fi
++               version_list="${worklist}"
++       done
++
++       verbose "Available versions: ${version_list}"
++}
++
++set_current_version()
++{
++       if [ -f /boot/dracut.img-`uname -r` ]; then
++               version=`uname -r`
++       fi
++}
++
++set_linked_version()
++{
++       if [ -e /initrd.img ] && [ -L /initrd.img ]; then
++               linktarget="$(basename "$(readlink /initrd.img)")"
++       fi
++
++       if [ -e /boot/initrd.img ] && [ -L /boot/initrd.img ]; then
++               linktarget="$(basename "$(readlink /boot/initrd.img)")"
++       fi
++
++       if [ -z "${linktarget}" ]; then
++               return
++       fi
++
++       version="${linktarget##*img-}"
++}
++
++set_highest_version()
++{
++       get_sorted_versions
++       set -- ${version_list}
++       version=${1}
++}
++
++create()
++{
++       if [ -z "${version}" ]; then
++               usage "Create mode requires a version argument"
++       fi
++
++       set_initramfs
++
++       if [ "${takeover}" = 0 ]; then
++               if version_exists "${version}"; then
++                       panic "Cannot create version ${version}: already exists"
++               fi
++
++               if [ -e "${initramfs}" ]; then
++                       panic "${initramfs} already exists, cannot create."
++               fi
++       fi
++
++       generate_initramfs
++}
++
++update()
++{
++       if [ "${update_initramfs}" = "no" ]; then
++               echo "update-initramfs: Not updating initramfs."
++               exit 0
++       fi
++
++       if [ -z "${version}" ]; then
++               set_highest_version
++       fi
++
++       if [ -z "${version}" ]; then
++               set_linked_version
++       fi
++
++       if [ -z "${version}" ]; then
++               set_current_version
++       fi
++
++       if [ -z "${version}" ]; then
++               verbose "Nothing to do, exiting."
++               exit 0
++       fi
++
++       set_initramfs
++
++       ro_boot_check
++
++       altered_check
++
++       backup_initramfs
++
++       generate_initramfs
++
++       run_bootloader
++
++       backup_booted_initramfs
++}
++
++delete()
++{
++       if [ -z "${version}" ]; then
++               usage "Delete mode requires a version argument"
++       fi
++
++       set_initramfs
++
++       if [ ! -e "${initramfs}" ]; then
++               panic "Cannot delete ${initramfs}, doesn't exist."
++       fi
++
++       if ! version_exists "${version}"; then
++               panic "Cannot delete version ${version}: Not created by this utility."
++       fi
++
++       altered_check
++
++       echo "update-initramfs: Deleting ${initramfs}"
++
++       delete_sha1
++
++       rm -f "${initramfs}"
++}
++
++# Check for update mode on existing and modified initramfs
++altered_check()
++{
++       # No check on takeover
++       [ "${takeover}" = 1 ] && return 0
++       if [ ! -e "${initramfs}" ]; then
++               mild_panic "${initramfs} does not exist. Cannot update."
++       fi
++       if ! compare_sha1; then
++               echo "update-initramfs: ${initramfs} has been altered." >&2
++               mild_panic "update-initramfs: Cannot update. Override with -t option."
++       fi
++}
++
++# Defaults
++verbose=0
++yes=0
++# We default to takeover=1 in Ubuntu, but not Debian
++takeover=0
++
++##
++
++while getopts "k:cudyvtb:h?" flag; do
++       case "${flag}" in
++       k)
++               version="${OPTARG}"
++               ;;
++       c)
++               mode="c"
++               ;;
++       d)
++               mode="d"
++               ;;
++       u)
++               mode="u"
++               ;;
++       v)
++               verbose="1"
++               ;;
++       y)
++               yes="1"
++               ;;
++       t)
++               takeover="1"
++               ;;
++       b)
++               BOOTDIR="${OPTARG}"
++               if [ ! -d "${BOOTDIR}" ]; then
++                       echo "Error: ${BOOTDIR} is not a directory."
++                       exit 1
++               fi
++               ;;
++       h|?)
++               usage
++               ;;
++       esac
++done
++
++shift $((${OPTIND} - 1))
++
++if [ $# -ne 0 ]; then
++       echo "Invalid argument for option -k."
++       usage
++fi
++
++# Validate arguments
++if [ -z "${mode}" ]; then
++       usage "You must specify at least one of -c, -u, or -d."
++fi
++
++if [ "${version}" = "all" ] \
++       || ( [ "${update_initramfs}" = "all" ] && [ -z "${version}" ] ); then
++       : FIXME check for --yes, and if not ask are you sure
++       get_sorted_versions
++       if [ -z "${version_list}" ]; then
++               verbose "Nothing to do, exiting."
++               exit 0
++       fi
++
++       OPTS="-b ${BOOTDIR}"
++       if [ "${verbose}" = "1" ]; then
++               OPTS="${OPTS} -v"
++       fi
++       if [ "${takeover}" = "1" ]; then
++               OPTS="${OPTS} -t"
++       fi
++       if [ "${yes}" = "1" ]; then
++               OPTS="${OPTS} -y"
++       fi
++       for u_version in ${version_list}; do
++               # Don't stop if one version doesn't work.
++               set +e
++               verbose "Execute: ${0} -${mode} -k \"${u_version}\" ${OPTS}"
++               "${0}" -${mode} -k "${u_version}" ${OPTS}
++               set -e
++       done
++       exit 0
++fi
++
++
++case "${mode}" in
++       c)
++               create
++               ;;
++       d)
++               delete
++               ;;
++       u)
++               update
++               ;;
++esac
 -- 
 1.6.5.3
