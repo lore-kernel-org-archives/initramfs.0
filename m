@@ -1,53 +1,53 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/6] Various cleanups
-Date: Fri, 27 Nov 2009 14:08:38 +0100
-Message-ID: <4B0FCF56.7080208@redhat.com>
-References: <1259319436-14925-1-git-send-email-philippe.seewer@bfh.ch>
+Subject: Re: [PATCH] Remove Ubuntu 8.10 support
+Date: Fri, 27 Nov 2009 14:08:46 +0100
+Message-ID: <4B0FCF5E.902@redhat.com>
+References: <1259326048-15392-1-git-send-email-philippe.seewer@bfh.ch>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1259319436-14925-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <1259326048-15392-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/27/2009 11:57 AM, Philippe Seewer wrote:
-> While debianizing dracut, debians package checker (lintian) came up with
-> a few errors and warnings. Since they're not debian specific at all it
-> makes sense to fix them.
+On 11/27/2009 01:47 PM, Philippe Seewer wrote:
+> This is outdated and no longer needed
+> ---
+>   modules.d/95udev-rules.ub810/check   |    3 ---
+>   modules.d/95udev-rules.ub810/install |   12 ------------
+>   2 files changed, 0 insertions(+), 15 deletions(-)
+>   delete mode 100755 modules.d/95udev-rules.ub810/check
+>   delete mode 100755 modules.d/95udev-rules.ub810/install
 >
-> Philippe Seewer (6):
->    initqueue: Remove trailing ;
->    syslog-genrules.sh: Shebang should be /bin/sh not /bin/dash
->    Module scripts should be executable
->    All module scripts should have a shebang
->    loginit: Fix shebang
->    Fix manpage display errors
->
->   dracut.8                                         |   38 ++++++++++++++-------
->   modules.d/90crypt/crypt-cleanup.sh               |    1 +
->   modules.d/90crypt/parse-crypt.sh                 |    1 +
->   modules.d/90dmsquash-live/parse-dmsquash-live.sh |    1 +
->   modules.d/90lvm/lvm-cleanup.sh                   |    1 +
->   modules.d/90mdraid/mdraid-cleanup.sh             |    1 +
->   modules.d/95dasd/parse-dasd.sh                   |    1 +
->   modules.d/95dasd_mod/parse-dasd-mod.sh           |    1 +
->   modules.d/95iscsi/mount-lun.sh                   |    1 +
->   modules.d/95zfcp/parse-zfcp.sh                   |    2 +-
->   modules.d/95znet/parse-ccw.sh                    |    1 +
->   modules.d/98syslog/syslog-genrules.sh            |    2 +-
->   modules.d/99base/initqueue                       |    1 -
->   modules.d/99base/loginit                         |    2 +-
->   14 files changed, 37 insertions(+), 17 deletions(-)
->   mode change 100644 =>  100755 modules.d/40network/ifname-genrules.sh
->   mode change 100644 =>  100755 modules.d/40network/parse-bridge.sh
->   mode change 100644 =>  100755 modules.d/40network/parse-ifname.sh
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> diff --git a/modules.d/95udev-rules.ub810/check b/modules.d/95udev-rules.ub810/check
+> deleted file mode 100755
+> index 54501f3..0000000
+> --- a/modules.d/95udev-rules.ub810/check
+> +++ /dev/null
+> @@ -1,3 +0,0 @@
+> -#!/bin/sh
+> -# if we are not running Ubuntu 8.10, then we don't need to load this module.
+> -[ -f /etc/lsb-release ]&&  grep -q "Ubuntu 8.10" /etc/lsb-release 2>/dev/null
+> diff --git a/modules.d/95udev-rules.ub810/install b/modules.d/95udev-rules.ub810/install
+> deleted file mode 100755
+> index b8f7186..0000000
+> --- a/modules.d/95udev-rules.ub810/install
+> +++ /dev/null
+> @@ -1,12 +0,0 @@
+> -#!/bin/bash
+> -# udev rules for ubuntu 8.10
+> -# content from /usr/share/initramfs-tools/hooks/udev
+> -mkdir -p "$initdir/var/run"
+> -
+> -dracut_install udevd udevadm pkill /lib/udev/*_id /lib/udev/*_device_name \
+> -    /lib/udev/firmware_helper /lib/udev/ide_media /lib/udev/vio_type \
+> -    /lib/udev/watershed /etc/udev/udev.conf /etc/group /lib*/libnss_files.*
+> -
+> -inst_rules 05-options.rules 20-names.rules 40-basic-permissions.rules \
+> -    60-persistent-storage.rules 61-persistent-storage-edd.rules \
+> -    80-programs.rules 90-modprobe.rules 95-udev-late.rules
 
 pushed
