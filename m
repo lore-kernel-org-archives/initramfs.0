@@ -1,588 +1,105 @@
-From: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: [PATCH 1/2] Debian support: Add dracut-update-initramfs
-Date: Fri, 27 Nov 2009 14:46:30 +0100
-Message-ID: <1259329591-23148-1-git-send-email-philippe.seewer@bfh.ch>
+From: Mike Snitzer <snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut: do not allow lvm to effect metadata changes
+Date: Mon, 30 Nov 2009 17:35:05 -0500
+Message-ID: <20091130223505.GC17549@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: lvm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-This script is necessary to integrate dracut into the initramfs-
-infrastructure of debian.
+mkinitrd produced an environment that was read-only.  As such lvm
+commands that were executed by an initrd could not effect changes to LVM
+VG metadata (because /var/lock/lvm was not writable).  Within an initrd
+lvm commands always needed to use --ignorelockingfailure to allow
+proper activation of the root LV.
 
-The file itself is just a copy from initramfs-tools' update-initramfs,
-with a few lines modified to run dracut instead of mkinitramfs.
+However, Dracut provides a writable /var so it must take steps to
+prevent lvm commands from making metadata changes (either directly
+through lvm commands or indirectly with monitoring via dmeventd or
+the lvm polldaemon that can fork from vgchange).
+
+This patch provides the following changes:
+
+* impose read-only locking for all lvm commands via the initramfs'
+  lvm.conf (locking_type = 4)
+  - the use of sed is placeholder "hack" until lvm2 provides a proper
+    tool for changing lvm.conf
+  - lvm_scan.sh should run lvm commands with --ignorelockingfailure to
+    re-use lvm's existing initrd-specific logic; future lvm2 changes
+    will split this flag out into various new command-line switches
+
+* do not install dmeventd or its libraries into the initramfs
+  - no monitoring should be started from within initramfs
+  - NOTE: the same should apply to 90dmraid/install
+
+* remove (incorrect) custom block device 'types'
+  - the correct types would be: '[ "blkext", 1 , "cciss0", 16 ]'
+  - but lvm2 (>= 2.02.52) already properly supports both 'blkext' and
+    'cciss' (including cciss0 -> cciss7)
+
+Signed-off-by: Mike Snitzer <snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut-update-initramfs |  558 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 558 insertions(+), 0 deletions(-)
- create mode 100755 dracut-update-initramfs
-
-diff --git a/dracut-update-initramfs b/dracut-update-initramfs
-new file mode 100755
-index 0000000..36a98a2
---- /dev/null
-+++ b/dracut-update-initramfs
-@@ -0,0 +1,558 @@
-+#!/bin/sh
-+
-+STATEDIR=/var/lib/dracut
-+BOOTDIR=/boot
-+CONF=/etc/dracut.conf
-+KPKGCONF=/etc/kernel-img.conf
-+USETRIGGERS=true
-+mode=""
-+version=""
-+
-+set -e
-+
-+if        $USETRIGGERS                                         \
-+       && [ x"$DPKG_MAINTSCRIPT_PACKAGE" != x ]                \
-+       && [ $# = 1 ]                                           \
-+       && [ x"$1" = x-u ]                                      \
-+       && dpkg-trigger --check-supported 2>/dev/null
-+then
-+       if dpkg-trigger --no-await update-initramfs; then
-+               echo "dracut-update-initramfs: deferring update (trigger activated)"
-+               exit 0
-+       fi
-+fi
-+
-+usage()
-+{
-+       if [ -n "${1}" ]; then
-+               printf "${@}\n\n" >&2
-+       fi
-+       cat >&2 << EOF
-+Usage: ${0} [OPTION]...
-+
-+Options:
-+ -k [version]  Specify kernel version or 'all'
-+ -c            Create a new initramfs
-+ -u            Update an existing initramfs
-+ -d            Remove an existing initramfs
-+ -t            Take over a custom initramfs with this one
-+ -b            Set alternate boot directory
-+ -v            Be verbose
-+ -h            This message
-+
-+EOF
-+       exit 1
-+}
-+
-+# chroot check
-+chrooted()
-+{
-+        # borrowed from udev's postinst
-+        if [ "$(stat -c %d/%i /)" = "$(stat -Lc %d/%i /proc/1/root 2>/dev/null)" ]; then
-+                # the devicenumber/inode pair of / is the same as that of
-+                # /sbin/init's root, so we're *not* in a chroot and hence
-+                # return false.
-+                return 1
-+        fi
-+        return 0
-+}
-+
-+mild_panic()
-+{
-+       if [ -n "${1}" ]; then
-+               printf "${@}\n" >&2
-+       fi
-+       exit 0
-+}
-+
-+panic()
-+{
-+       if [ -n "${1}" ]; then
-+               printf "${@}\n" >&2
-+       fi
-+       exit 1
-+}
-+
-+verbose()
-+{
-+       if [ "${verbose}" = 1 ]; then
-+               printf "${@}\n"
-+       fi
-+}
-+
-+version_exists()
-+{
-+       [ -e "${STATEDIR}/${1}" ] && [ -e "${initramfs}" ]
-+       return $?
-+}
-+
-+set_initramfs()
-+{
-+       initramfs="${BOOTDIR}/dracut.img-${version}"
-+}
-+
-+
-+# backup initramfs while running
-+backup_initramfs()
-+{
-+       [ ! -r "${initramfs}" ] && return 0
-+       initramfs_bak="${initramfs}.dpkg-bak"
-+       [ -r "${initramfs_bak}" ] && rm -f "${initramfs_bak}"
-+       ln -f "${initramfs}" "${initramfs_bak}" \
-+               || cp -a "${initramfs}" "${initramfs_bak}"
-+       verbose "Keeping ${initramfs_bak}"
-+}
-+
-+# keep booted initramfs
-+backup_booted_initramfs()
-+{
-+       initramfs_bak="${initramfs}.dpkg-bak"
-+
-+       # first time run thus no backup
-+       [ ! -r "${initramfs_bak}" ] && return 0
-+
-+       # chroot with no /proc
-+       [ ! -r /proc/uptime ] && rm -f "${initramfs_bak}" && return 0
-+
-+       # no kept backup wanted
-+       [ "${backup_initramfs}" = "no" ] && rm -f "${initramfs_bak}" && return 0
-+
-+       # no backup yet
-+       if [ ! -r "${initramfs}.bak" ]; then
-+               mv -f ${initramfs_bak} "${initramfs}.bak"
-+               verbose "Backup ${initramfs}.bak"
-+               return 0
-+       fi
-+
-+       # keep booted initramfs
-+       uptime_days=$(awk '{printf "%d", $1 / 3600 / 24}' /proc/uptime)
-+       if [ -n "$uptime_days" ]; then
-+               boot_initramfs=$(find "${initramfs}.bak" -mtime +${uptime_days})
-+       fi
-+       if [ -n "${boot_initramfs}" ]; then
-+               mv -f "${initramfs_bak}" "${initramfs}.bak"
-+               verbose "Backup ${initramfs}.bak"
-+               return 0
-+       fi
-+       verbose "Removing current backup ${initramfs_bak}"
-+       rm -f ${initramfs_bak}
-+}
-+
-+# nuke generated copy
-+remove_initramfs()
-+{
-+       [ -z "${initramfs_bak}" ] && return 0
-+       rm -f "${initramfs_bak}"
-+       verbose "Removing ${initramfs_bak}"
-+}
-+
-+
-+generate_initramfs()
-+{
-+       echo "dracut-update-initramfs: Generating ${initramfs}"
-+       OPTS=""
-+       if [ "${verbose}" = 1 ]; then
-+               OPTS="-v ${OPTS}"
-+       fi
-+       ##WORK HERE!
-+       if dracut ${OPTS} "${initramfs}.new" "${version}"; then
-+               mv -f "${initramfs}.new" "${initramfs}"
-+               set_sha1
-+       else
-+               mkinitramfs_return="$?"
-+               remove_initramfs
-+               rm -f "${initramfs}.new"
-+               if [ "$mkinitramfs_return" = "2" ]; then
-+                       # minversion wasn't met, exit 0
-+                       exit 0
-+               fi
-+               echo "update-initramfs: failed for ${initramfs}"
-+               exit $mkinitramfs_return
-+       fi
-+}
-+
-+# lilo call
-+run_lilo()
-+{
-+       # show lilo errors on failure
-+       if ! lilo -t  > /dev/null 2>&1 ; then
-+               echo "ERROR lilo fails for new ${initramfs}:"
-+               echo
-+               lilo -t
-+       fi
-+       lilo
-+}
-+
-+# check if lilo is on mbr
-+mbr_check()
-+{
-+       # try to discover grub|grub2 and be happy
-+       [ -r /boot/grub/grub.cfg ] \
-+               && groot=$(awk '/^set root=/{print substr($2, 7, 3); exit}' \
-+                       /boot/grub/grub.cfg)
-+       [ -r /boot/grub/menu.lst ] \
-+               && groot=$(awk '/^root/{print substr($2, 2, 3); exit}' \
-+                       /boot/grub/menu.lst)
-+       [ -e /boot/grub/device.map ] && [ -n "${groot}" ] \
-+               && dev=$(awk "/${groot}/{ print \$NF}" /boot/grub/device.map)
-+       [ -n "${dev}" ] && [ -r ${dev} ] \
-+               && dd if="${dev}" bs=512 skip=0 count=1 2> /dev/null \
-+               | grep -q GRUB && return 0
-+
-+       # check out lilo.conf for validity
-+       boot=$(awk -F = '/^boot=/{ print $2}' /etc/lilo.conf)
-+       [ -z "${boot}" ] && return 0
-+       case ${boot} in
-+       /dev/md/*)
-+               if [ -r /proc/mdstat ]; then
-+                       MD=${boot#/dev/md/}
-+                       boot="/dev/$(awk "/^md${MD}/{print substr(\$5, 1, 3)}" \
-+                       /proc/mdstat)"
-+               fi
-+               ;;
-+       /dev/md*)
-+               if [ -r /proc/mdstat ]; then
-+                       MD=${boot#/dev/}
-+                       boot="/dev/$(awk "/^${MD}/{print substr(\$5, 1, 3)}" \
-+                       /proc/mdstat)"
-+               fi
-+               ;;
-+       esac
-+       [ ! -r "${boot}" ] && return 0
-+       dd if="${boot}" bs=512 skip=0 count=1 2> /dev/null | grep -q LILO \
-+               && run_lilo && return 0
-+
-+       # no idea which bootloader is used
-+       echo
-+       echo "WARNING: grub and lilo installed."
-+       echo "If you use grub as bootloader everything is fine."
-+       echo "If you use lilo as bootloader you must run lilo!"
-+       echo
-+}
-+
-+# Invoke bootloader
-+run_bootloader()
-+{
-+       # if both lilo and grub around, figure out if lilo needs to be run
-+       if ( command -v update-grub >/dev/null 2>&1 \
-+               || [ -e /boot/grub/menu.lst ] || [ -e /boot/grub/grub.cfg ] ) \
-+       && ( [ -e /etc/lilo.conf ] && command -v lilo >/dev/null 2>&1 ); then
-+               [ -r "${KPKGCONF}" ] && \
-+               do_b=$(awk  '/^do_bootloader/{print $3}' "${KPKGCONF}")
-+               if [ "${do_b}" = "yes" ] || [ "${do_b}" = "Yes" ] \
-+               || [ "${do_b}" = "YES" ]; then
-+                       run_lilo
-+                       return 0
-+               elif [ "${do_b}" = "no" ] || [ "${do_b}" = "No" ] \
-+               || [ "${do_b}" = "NO" ]; then
-+                       return 0
-+               fi
-+
-+               # do_bootloader unconfigured
-+               mbr_check
-+               return 0
-+       fi
-+       if [ -r /etc/lilo.conf ] && command -v lilo >/dev/null 2>&1; then
-+               run_lilo
-+               return 0
-+       fi
-+       if command -v elilo >/dev/null 2>&1; then
-+               elilo
-+               return 0
-+       fi
-+       if [ -r /etc/zipl.conf ]; then
-+               zipl
-+       fi
-+       if flash-kernel --supported >/dev/null 2>&1; then
-+               flash-kernel ${version}
-+       fi
-+}
-+
-+compare_sha1()
-+{
-+       sha1sum "${initramfs}" | diff "${STATEDIR}/${version}" - >/dev/null 2>&1
-+       return $?
-+}
-+
-+# Note that this must overwrite so that updates work.
-+set_sha1()
-+{
-+       sha1sum "${initramfs}" > "${STATEDIR}/${version}"
-+}
-+
-+delete_sha1()
-+{
-+       rm -f "${STATEDIR}/${version}"
-+}
-+
-+# ro /boot is not modified
-+ro_boot_check()
-+{
-+       # check irrelevant inside of a chroot
-+       if [ ! -r /proc/mounts ] || chrooted; then
-+               return 0
-+       fi
-+
-+       boot_opts=$(awk '/boot/{if ((match($4, /^ro/) || match($4, /,ro/)) \
-+               && $2 == "/boot") print "ro"}' /proc/mounts)
-+       if [ -n "${boot_opts}" ]; then
-+               echo "WARNING: /boot is ro mounted."
-+               echo "update-initramfs: Not updating ${initramfs}"
-+               exit 0
-+       fi
-+}
-+
-+get_sorted_versions()
-+{
-+       version_list=""
-+
-+       for gsv_x in "${STATEDIR}"/*; do
-+               gsv_x="$(basename "${gsv_x}")"
-+               if [ "${gsv_x}" = '*' ]; then
-+                       return 0
-+               fi
-+               worklist=""
-+               for gsv_i in $version_list; do
-+                       if dpkg --compare-versions "${gsv_x}" '>' "${gsv_i}"; then
-+                               worklist="${worklist} ${gsv_x} ${gsv_i}"
-+                               gsv_x=""
-+                       else
-+                               worklist="${worklist} ${gsv_i}"
-+                       fi
-+               done
-+               if [ "${gsv_x}" != "" ]; then
-+                       worklist="${worklist} ${gsv_x}"
-+               fi
-+               version_list="${worklist}"
-+       done
-+
-+       verbose "Available versions: ${version_list}"
-+}
-+
-+set_current_version()
-+{
-+       if [ -f /boot/dracut.img-`uname -r` ]; then
-+               version=`uname -r`
-+       fi
-+}
-+
-+set_linked_version()
-+{
-+       if [ -e /initrd.img ] && [ -L /initrd.img ]; then
-+               linktarget="$(basename "$(readlink /initrd.img)")"
-+       fi
-+
-+       if [ -e /boot/initrd.img ] && [ -L /boot/initrd.img ]; then
-+               linktarget="$(basename "$(readlink /boot/initrd.img)")"
-+       fi
-+
-+       if [ -z "${linktarget}" ]; then
-+               return
-+       fi
-+
-+       version="${linktarget##*img-}"
-+}
-+
-+set_highest_version()
-+{
-+       get_sorted_versions
-+       set -- ${version_list}
-+       version=${1}
-+}
-+
-+create()
-+{
-+       if [ -z "${version}" ]; then
-+               usage "Create mode requires a version argument"
-+       fi
-+
-+       set_initramfs
-+
-+       if [ "${takeover}" = 0 ]; then
-+               if version_exists "${version}"; then
-+                       panic "Cannot create version ${version}: already exists"
-+               fi
-+
-+               if [ -e "${initramfs}" ]; then
-+                       panic "${initramfs} already exists, cannot create."
-+               fi
-+       fi
-+
-+       generate_initramfs
-+}
-+
-+update()
-+{
-+       if [ "${update_initramfs}" = "no" ]; then
-+               echo "update-initramfs: Not updating initramfs."
-+               exit 0
-+       fi
-+
-+       if [ -z "${version}" ]; then
-+               set_highest_version
-+       fi
-+
-+       if [ -z "${version}" ]; then
-+               set_linked_version
-+       fi
-+
-+       if [ -z "${version}" ]; then
-+               set_current_version
-+       fi
-+
-+       if [ -z "${version}" ]; then
-+               verbose "Nothing to do, exiting."
-+               exit 0
-+       fi
-+
-+       set_initramfs
-+
-+       ro_boot_check
-+
-+       altered_check
-+
-+       backup_initramfs
-+
-+       generate_initramfs
-+
-+       run_bootloader
-+
-+       backup_booted_initramfs
-+}
-+
-+delete()
-+{
-+       if [ -z "${version}" ]; then
-+               usage "Delete mode requires a version argument"
-+       fi
-+
-+       set_initramfs
-+
-+       if [ ! -e "${initramfs}" ]; then
-+               panic "Cannot delete ${initramfs}, doesn't exist."
-+       fi
-+
-+       if ! version_exists "${version}"; then
-+               panic "Cannot delete version ${version}: Not created by this utility."
-+       fi
-+
-+       altered_check
-+
-+       echo "update-initramfs: Deleting ${initramfs}"
-+
-+       delete_sha1
-+
-+       rm -f "${initramfs}"
-+}
-+
-+# Check for update mode on existing and modified initramfs
-+altered_check()
-+{
-+       # No check on takeover
-+       [ "${takeover}" = 1 ] && return 0
-+       if [ ! -e "${initramfs}" ]; then
-+               mild_panic "${initramfs} does not exist. Cannot update."
-+       fi
-+       if ! compare_sha1; then
-+               echo "update-initramfs: ${initramfs} has been altered." >&2
-+               mild_panic "update-initramfs: Cannot update. Override with -t option."
-+       fi
-+}
-+
-+# Defaults
-+verbose=0
-+yes=0
-+# We default to takeover=1 in Ubuntu, but not Debian
-+takeover=0
-+
-+##
-+
-+while getopts "k:cudyvtb:h?" flag; do
-+       case "${flag}" in
-+       k)
-+               version="${OPTARG}"
-+               ;;
-+       c)
-+               mode="c"
-+               ;;
-+       d)
-+               mode="d"
-+               ;;
-+       u)
-+               mode="u"
-+               ;;
-+       v)
-+               verbose="1"
-+               ;;
-+       y)
-+               yes="1"
-+               ;;
-+       t)
-+               takeover="1"
-+               ;;
-+       b)
-+               BOOTDIR="${OPTARG}"
-+               if [ ! -d "${BOOTDIR}" ]; then
-+                       echo "Error: ${BOOTDIR} is not a directory."
-+                       exit 1
-+               fi
-+               ;;
-+       h|?)
-+               usage
-+               ;;
-+       esac
-+done
-+
-+shift $((${OPTIND} - 1))
-+
-+if [ $# -ne 0 ]; then
-+       echo "Invalid argument for option -k."
-+       usage
-+fi
-+
-+# Validate arguments
-+if [ -z "${mode}" ]; then
-+       usage "You must specify at least one of -c, -u, or -d."
-+fi
-+
-+if [ "${version}" = "all" ] \
-+       || ( [ "${update_initramfs}" = "all" ] && [ -z "${version}" ] ); then
-+       : FIXME check for --yes, and if not ask are you sure
-+       get_sorted_versions
-+       if [ -z "${version_list}" ]; then
-+               verbose "Nothing to do, exiting."
-+               exit 0
-+       fi
-+
-+       OPTS="-b ${BOOTDIR}"
-+       if [ "${verbose}" = "1" ]; then
-+               OPTS="${OPTS} -v"
-+       fi
-+       if [ "${takeover}" = "1" ]; then
-+               OPTS="${OPTS} -t"
-+       fi
-+       if [ "${yes}" = "1" ]; then
-+               OPTS="${OPTS} -y"
-+       fi
-+       for u_version in ${version_list}; do
-+               # Don't stop if one version doesn't work.
-+               set +e
-+               verbose "Execute: ${0} -${mode} -k \"${u_version}\" ${OPTS}"
-+               "${0}" -${mode} -k "${u_version}" ${OPTS}
-+               set -e
-+       done
-+       exit 0
-+fi
-+
-+
-+case "${mode}" in
-+       c)
-+               create
-+               ;;
-+       d)
-+               delete
-+               ;;
-+       u)
-+               update
-+               ;;
-+esac
--- 
-1.6.5.3
+diff --git a/modules.d/90lvm/install b/modules.d/90lvm/install
+index 56e2eb0..2d622f5 100755
+--- a/modules.d/90lvm/install
++++ b/modules.d/90lvm/install
+@@ -1,23 +1,17 @@
+ #!/bin/bash
+ inst lvm
+-inst dmeventd
+-
+-if ldd $(which lvm) | grep -q lib64; then
+-    LIBDIR="/lib64"
+-else
+-    LIBDIR="/lib"
+-fi
+ 
+ inst_rules "$moddir/64-lvm.rules" 64-lvm.rules
+ 
+ if [[ $hostonly ]] || [[ $lvmconf = "yes" ]]; then 
+-    [ -f /etc/lvm/lvm.conf ] && inst /etc/lvm/lvm.conf
++    if [ -f /etc/lvm/lvm.conf ]; then
++	inst /etc/lvm/lvm.conf
++	# FIXME: near-term hack to establish read-only locking;
++	# use command-line lvm.conf editor once it is available
++	sed -i -e 's/\(^[[:space:]]*\)locking_type[[:space:]]*=[[:space:]]*[[:digit:]]/\1locking_type = 4/' ${initdir}/etc/lvm/lvm.conf
++    fi
+ fi
+ 
+-for i in $(ls /$LIBDIR/libdevmapper-event*.so 2>/dev/null); do 
+-    dracut_install $i
+-done
+-
+ inst_rules 10-dm.rules 13-dm-disk.rules 95-dm-notify.rules 11-dm-lvm.rules
+ 
+ inst "$moddir/lvm_scan.sh" /sbin/lvm_scan
+diff --git a/modules.d/90lvm/lvm_scan.sh b/modules.d/90lvm/lvm_scan.sh
+index 73ba845..3bf858a 100755
+--- a/modules.d/90lvm/lvm_scan.sh
++++ b/modules.d/90lvm/lvm_scan.sh
+@@ -23,14 +23,17 @@ if [ ! -e /etc/lvm/lvm.conf ]; then
+ 	    printf '"a|^/dev/%s$|", ' $dev;
+ 	done;
+ 	echo '"r/.*/" ]';
+-	echo 'types = [ "blkext", 1024 , "cciss0", 1024 ]'
+ 	echo '}';	  
++	# establish read-only locking
++	echo 'global {';
++	echo '    locking_type = 4';
++	echo '}';
+     } > /etc/lvm/lvm.conf
+     lvmwritten=1
+ fi
+ info "Scanning devices $lvmdevs for LVM volume groups $VGS"
+-lvm vgscan 2>&1 | vinfo
+-lvm vgchange -ay --monitor n $VGS 2>&1 | vinfo
++lvm vgscan --ignorelockingfailure 2>&1 | vinfo
++lvm vgchange -ay --ignorelockingfailure --monitor n $VGS 2>&1 | vinfo
+ if [ "$lvmwritten" ]; then
+     rm -f /etc/lvm/lvm.conf
+     ln -s /sbin/lvm-cleanup /pre-pivot/30-lvm-cleanup.sh 2>/dev/null
