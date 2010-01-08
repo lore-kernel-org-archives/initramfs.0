@@ -1,46 +1,102 @@
-From: Luca Berra <bluca-APJUtua8uzqonA0d6jMUrA@public.gmane.org>
-Subject: Re: Patches, Patches, Patches ...
-Date: Wed, 30 Dec 2009 08:42:14 +0100
-Message-ID: <20091230074214.GA752@maude.comedia.it>
-References: <20091229125447.GA5522@maude.comedia.it> <1262103052.8998.8.camel@obelisk.thedillows.org>
+From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+Subject: [PATCH] Ensure UNICODE keyboard layout is functional in emergency shell
+Date: Fri, 8 Jan 2010 10:54:55 +0300
+Message-ID: <201001081054.55497.arvidjaar@mail.ru>
 Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart2428649.WF2dbatYxi";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=comedia.it; h=
-	user-agent:in-reply-to:content-disposition:content-type
-	:mime-version:references:message-id:subject:from:date:received:
-	x-virus-scanned; s=200808; t=1262158934; bh=OeOlABv4N1QM8AjjkUYL
-	dJ+eHaKhJ86Ba1Eg4hR13d8=; b=kwKbSBwLwF9/bvZ281jYH0vJjjlRcaHRH6ql
-	ve2JHGMU9GaZppXmgyppzAvhOlQfHiv+WT+pe6tMButjmA+84dTpnKGP/dxIuZsI
-	GN4W8hK18InLXtJliEPYh1cCa0qIdzR1miawULEW+8ROrfJJh+yoHoepTWmVUoJp
-	lJQhfRs=
-Content-Disposition: inline
-In-Reply-To: <1262103052.8998.8.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+--nextPart2428649.WF2dbatYxi
+Content-Type: multipart/mixed;
+  boundary="Boundary-01=_PTuRLnUixByJjcS"
 Content-Transfer-Encoding: 7bit
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Dec 29, 2009 at 11:10:52AM -0500, David Dillow wrote:
->On Tue, 2009-12-29 at 13:54 +0100, Luca Berra wrote:
->> btw i am unable to git clone from sourceforge:
->> $ git clone -v git://dracut.git.sourceforge.net/gitroot/dracut
->> Initialized empty Git repository in /home/bluca/GIT/dracut/.git/
->> fatal: The remote end hung up unexpectedly
->
->Sourceforge changed the paths at some point in past. Use
->git://dracut.git.sourceforge.net/gitroot/dracut/dracut
->
-thanks a lot.
-btw someone should fix the instructions on the wiki then
 
-L.
+--Boundary-01=_PTuRLnUixByJjcS
+Content-Type: text/plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
--- 
-Luca Berra -- bluca-APJUtua8uzqonA0d6jMUrA@public.gmane.org
-         Communication Media & Services S.r.l.
-  /"\
-  \ /     ASCII RIBBON CAMPAIGN
-   X        AGAINST HTML MAIL
-  / \
+The attached patch ensures that keyboard in emergency shell more closely=20
+corresponds to live system. I am not sure about UNIKEYTABLE which=20
+console_init checks as well - if it is not artifact, it can be easily=20
+added as well.
+
+=2Dandrey
+
+--Boundary-01=_PTuRLnUixByJjcS
+Content-Type: message/rfc822;
+  name="unikbd"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+	filename="unikbd"
+
+Subject: [PATCH] Ensure UNICODE keyboard layout is functional in emergency shell
+From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+
+/lib/udev/cosole_init will load either non-unicode or unicode versions
+of keyboard layout for the same value of KEYMAP depending on language
+setting. The simplest solution is to install both versions in initrd;
+it does not take much space.
+
+While on it, copy some additional maps to ensure emergency shell
+has the same keyboard layout as full system.
+
+Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+
+---
+
+ modules.d/10redhat-i18n/install |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+
+diff --git a/modules.d/10redhat-i18n/install b/modules.d/10redhat-i18n/install
+index 9f74cf7..3cdd57d 100755
+--- a/modules.d/10redhat-i18n/install
++++ b/modules.d/10redhat-i18n/install
+@@ -27,12 +27,20 @@ install_local()
+             KEYMAP=/etc/sysconfig/console/default.kmap
+ 	else
+             . /etc/sysconfig/keyboard
+-            [[ $KEYTABLE && -d /lib/kbd/keymaps ]] && KEYMAP="$KEYTABLE.map"
++	    if [[ $KEYTABLE && -d /lib/kbd/keymaps ]]; then
++		[[ $KEYTABLE =~ *.uni ]] && UNIKEYMAP="$KEYTABLE.map" \
++		    || UNIKEYMAP="$KEYTABLE.uni.map"
++		KEYMAP="$KEYTABLE.map"
++	    fi
+ 	fi
+ 	if [[ $KEYMAP ]]; then
+             [ -f /etc/sysconfig/keyboard ] && inst /etc/sysconfig/keyboard
+             inst loadkeys
+             findkeymap $KEYMAP
++            [[ $UNIKEYMAP ]] && findkeymap $UNIKEYMAP
++	    [[ $GRP_TOGGLE ]] && findkeymap $GRP_TOGGLE.map
++	    findkeymap delete.map
++	    findkeymap backspace.map
+ 
+             for FN in $KEYMAPS; do
+ 		if [ -L $FN ]; then
+
+--Boundary-01=_PTuRLnUixByJjcS--
+
+--nextPart2428649.WF2dbatYxi
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iEYEABECAAYFAktG5M8ACgkQR6LMutpd94zcOQCdEv2bZ+hGdLlzZm6Ag+WJkI6p
+35kAmwapatlJkT6mjHeY2A7SJqifJIM7
+=vvFY
+-----END PGP SIGNATURE-----
+
+--nextPart2428649.WF2dbatYxi--
