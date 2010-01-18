@@ -1,93 +1,59 @@
-From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-Subject: [PATCH] Fix /lib/udev/firmware install for new udev
-Date: Sun, 17 Jan 2010 09:28:58 +0300
-Message-ID: <201001170929.02662.arvidjaar@mail.ru>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Patches, Patches, Patches ...
+Date: Mon, 18 Jan 2010 10:11:18 +0100
+Message-ID: <4B5425B6.6010602@redhat.com>
+References: <20091229125447.GA5522@maude.comedia.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2811521.riE6EohbxI";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20091229125447.GA5522-hdG+WfPrfN2JmafXlB/IVQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Luca Berra <bluca-APJUtua8uzqonA0d6jMUrA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---nextPart2811521.riE6EohbxI
-Content-Type: multipart/mixed;
-  boundary="Boundary-01=_q4qULoIgcnHP64s"
-Content-Transfer-Encoding: 7bit
+On 12/29/2009 01:54 PM, Luca Berra wrote:
+> Hello,
+> I am trying to integrate dracut into Mandriva, so far it looks good but
+> I had to do some modifications in order to have it working.
+> - dracut-003-kbd.patch: we have kbd data in /usr/lib, so this patch will
+> search for /lib/kbd and /usr/lib/kbd and use the existing one
+> - dracut-003-terminfo.patch: same applies to terminfo database
+> - dracut-003-kogz.patch: we use compressed kernel modules, this adds
+> support for those. I actually don't like very much the
+> uncompressing/nm/delete thinghy and I think we should put uncompressed
+> modules in the initrd, which is alreeady compressed, but I did not come
+> up with a clean patch yet
+> - dracut-003-selinux.patch: we dont' use selinux, so it makes no sense to
+> force load policy if selinux is not installed at all.
+>
+> While testing it I also found some issue which I worked around:
+> - dracut-003-umount.patch: some modules call umount, but don't install it.
+> - dracut-003-rdshell.patch: for some unknown reason the emergency shell
+> starts with stderr closed, at first I even tought it was not working at
+> all, then I came up with this hack, which seems to work properly. I also
+> change the prompt to remind which step are we breaking to.
+>
+> and added a feature:
+> - dracut-003-addmod.patch: this makes dracut load kernel module
+> specified in add-drivers even if building an host-only mkinitrd, it is
+> useful in cases where we might change some storage drivers and still
+> don't want to build an enormous initrd (e.g. ahci/ata_piix)
+>
+> latest is a wrapper around dracut with the syntax from mkinitrd, could
+> help transition to dracut.
+> mkinitrd-dracut.sh
+>
+> patches are attached.
+>
+> btw i am unable to git clone from sourceforge:
+> $ git clone -v git://dracut.git.sourceforge.net/gitroot/dracut
+> Initialized empty Git repository in /home/bluca/GIT/dracut/.git/
+> fatal: The remote end hung up unexpectedly
+>
+> Regards,
+> L.
+>
 
-
---Boundary-01=_q4qULoIgcnHP64s
-Content-Type: Text/Plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-Fix firmware loading installation for new udev.
-
--andrey
-
---Boundary-01=_q4qULoIgcnHP64s
-Content-Type: application/x-shellscript;
-  name="firmware.sh"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
-	filename="firmware.sh"
-
-Subject: [PATCH] Fix /lib/udev/firmware install for new udev
-From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-
-Current udev replaced /lib/udev/firmware.sh script with binary
-program. This results in error:
-
-E: Failed to install /lib/udev/firmware.sh
-
-Fix it by not installing firmware.sh explicitly and adding firmware
-to list of files installed conditionally.
-
-Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-
----
-
- modules.d/95udev-rules/install |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-
-diff --git a/modules.d/95udev-rules/install b/modules.d/95udev-rules/install
-index 2d378de..5069630 100755
---- a/modules.d/95udev-rules/install
-+++ b/modules.d/95udev-rules/install
-@@ -15,7 +15,6 @@ inst_rules "$moddir/01-ignore.rules"
- 
- # for firmware loading
- inst_rules 50-firmware.rules
--dracut_install /lib/udev/firmware.sh
- dracut_install cat uname
- 
- if [ ! -x /lib/udev/vol_id ]; then
-@@ -31,6 +30,7 @@ ata_id \
- cdrom_id \
- create_floppy_devices \
- edd_id \
-+firmware \
- firmware.sh \
- fw_unit_symlinks.sh \
- hid2hci \
-
---Boundary-01=_q4qULoIgcnHP64s--
-
---nextPart2811521.riE6EohbxI
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEABECAAYFAktSrioACgkQR6LMutpd94wySgCdE0cTHczT8HEwFsRKNEO5VNJJ
-VKkAoLlSY/yZ0v5LD5UrzVoMQQiEPeIW
-=K4r3
------END PGP SIGNATURE-----
-
---nextPart2811521.riE6EohbxI--
+Pushed most of it.
