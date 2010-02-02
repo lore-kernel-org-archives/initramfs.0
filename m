@@ -1,166 +1,37 @@
-From: Luca Berra <bluca@comedia.it>
-Subject: Re: [[Patch mdadm] 2/5] Move the files mdmon opens into /dev/ to
-	support handoff after pivotroot
-Date: Tue, 2 Feb 2010 08:17:26 +0100
-Message-ID: <20100202071726.GB24147@maude.comedia.it>
-References: <1263242294-5353-1-git-send-email-dledford@redhat.com> <1263242294-5353-3-git-send-email-dledford@redhat.com> <20100119110930.107ca42e@notabene> <4B55F138.7060008@redhat.com> <4B673A5D.2010901@tmr.com> <4B674860.7080604@redhat.com> <4B6758C7.9060301@tmr.com> <4877c76c1002012008u2e32d6a4y9b4fec721dfe8435@mail.gmail.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut version 004 tarball missing on SF
+Date: Tue, 02 Feb 2010 13:44:29 +0100
+Message-ID: <4B681E2D.7080104@redhat.com>
+References: <201001301716.19360.arvidjaar@mail.ru> <4B669ACE.8090504@redhat.com> <4B6702D2.4020203@osuosl.org>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-raid-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=comedia.it; h=
-	user-agent:in-reply-to:content-transfer-encoding
-	:content-disposition:content-type:mime-version:references
-	:message-id:subject:from:date:received:x-virus-scanned; s=200808
-	; t=1265095046; bh=R9ywIrNoWdVw7F8T4bV1gfStIAgo2Moc/fiZQTZvC+M=;
-	 b=eFRKPgjSltQ6SL61JaLX7qVuHB7O0TrhGmWWMkbJS4UWLukk45W4qrs4qCLgS
-	Q2lWS2vP5ZzeOh0ctpNfCkQUf0je8RqvS6KQTB0TFUkkBS51zRFmXSMX+Z5Vvglx
-	9TwWVhJ+hN2Z0XUdN2qgCFO4kC3I71EcEZlzUrZ5KoCD/s=
-Content-Disposition: inline
-In-Reply-To: <4877c76c1002012008u2e32d6a4y9b4fec721dfe8435@mail.gmail.com>
-Sender: linux-raid-owner@vger.kernel.org
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4B6702D2.4020203-CJG/fkoVOTIdnm+yROfE0A@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: linux-raid@vger.kernel.org
-Cc: initramfs@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Lance Albertson <lance-CJG/fkoVOTIdnm+yROfE0A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Ccing intramfs since it could be of interest
-background:
-Doug's patch moves mdmon pid file and socket from /var/run to /dev
-to preserve them after pivot-root
-Rationale is mdmon gets started in initramfs when imsm or ddf arrays ar=
-e
-activated.
-Neil does not like the proposed solution
-
-On Mon, Feb 01, 2010 at 08:08:54PM -0800, Michael Evans wrote:
->On Mon, Feb 1, 2010 at 2:42 PM, Bill Davidsen <davidsen@tmr.com> wrote=
-:
->> Doug Ledford wrote:
->>>
->>> On 02/01/2010 03:32 PM, Bill Davidsen wrote:
->>>
->>>>
->>>> Doug Ledford wrote:
->>>>
->>>>>
->>>>> On 01/18/2010 05:09 PM, Neil Brown wrote:
->>>>>
->>>>>>
->>>>>> I understand there is a problem here, but I don't like this appr=
-oach
->>>>>> to a
->>>>>> solution. =A0I'll give it more though when I get home from LCA20=
-10 and
->>>>>> see
->>>>>> what I can come up with.
->>>>>>
->>>>>
->>>>> Feel free to come up with something different. =A0But, if your so=
-lution
->>>>> involves maintaining an additional read/write mount area in defer=
-ence to
->>>>> a long dead unix tradition, I'm just going to shake my head and p=
-atch
->>>>> your solution away to something sane.
->>>>>
->>>>>
->>>>
->>>> I don't understand you argument here. Not the one where you say yo=
-u're
->>>> going to ignore Neil and do what you want because you can, I under=
-stand
->>>> that, but the "additional read/write mount area" part, isn't /var/=
-run
->>>> r/w on all systems now? Could you clarify why this is "additional"=
- here?
->>>>
->>>>
->>>
->>> It's not necessarily read/write in the initrd time frame, and putti=
-ng
->>> the mdadm files there means it would have to be. =A0We didn't make =
-these
->>> changes because we wanted to, we made them because using mdadm raid
->>> arrays for the root filesystem combined with incremental assembly o=
-r
->>> with imsm raid devices was broken otherwise.
->>>
->>>
+On 02/01/2010 05:35 PM, Lance Albertson wrote:
+> On 02/01/2010 01:11 AM, Harald Hoyer wrote:
+>> On 01/30/2010 03:16 PM, Andrey Borzenkov wrote:
+>>> GIT is tagged with 004, but there is still no tarball on SF. Would
+>>> somebody release it? Thank you!
 >>
->> Do understand that my disquiet related to this isn't because you put=
- a
->> non-device in /dev, it's that you
->> didn't put a process PID in /var/run. And frankly, once you let (for=
-ce) one
->> group of threads to be somewhere
->> else, other services will want their PIDs some other place, and anyo=
-ne
->> maintaining an application
->> which presents information on what's running will need to know where=
- that
->> information.
+>> yes, I will..
 >>
->> In other words, it's not where you put it, it's where you *didn't* p=
-ut it,
->> that seems to be an
->> invitation to put stuff just anywhere. Neil argues that they are not
->> devices, I argue that
->> they are PIDs. It's not as though it were a huge effort to move it a=
-fter
->> pivot root, it's a little code
->> or script and in space which will be released.
+>> If you want a tgz, you can always click on the "snapshot" link in the
+>> gitweb.
 >>
->> --
->> Bill Davidsen <davidsen@tmr.com>
->> =A0"We can't solve today's problems by using the same thinking we
->> =A0used in creating them." - Einstein
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-raid=
-" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->>
+>> http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=snapshot;h=3ee26913e7c39e0f26fc6dd9e19f6975357f37e5;sf=tgz
 >
->Thank you for stating your concern; I think knowing that a very
->plausible solution is obvious.
+> That doesn't make it easy for distributions to use unfortunately.
+> Gentoo's ebuild system doesn't like using the tarball from gitweb as it
+> changes the checksum on it every time someone downloads it. I'll bump it
+> soon in Gentoo.
 >
-># at initrd/initramfs creation time
->ln -s /dev/.run /var/run
+> Thanks!
 >
->#initrd/initramfs script
->mkdir /dev/.run
->
->The usual area becomes a symlink to a memory disk .Most systems have
->ample memory to support a few extra tiny files there. Cleanup on
->reboot is automatic. Any systems that are memory constrained probably
->already either have a drive they could swap this data out to, or would
->rather save the writes from reaching flash media anyway.
 
-this could be interesting, but then you have to move things back to
-/var/run after pivot root, and we cannot move a socket.
-
-still if it would suit both parties we could
-- keep the mdmon pid file in /var/run and use initramfs magik to preser=
-ve
-   those pid files, this could become a standard solution when the next
-   daemon arrives that needs to start from initramfs.
-- put the socket in /dev/md, and i defy anyone to say sockets do not be=
-long
-   in /dev, bringing forth the syslog daemon as a witness.
-
-Regards,
-L.
-
---=20
-Luca Berra -- bluca@comedia.it
-         Communication Media & Services S.r.l.
-  /"\
-  \ /     ASCII RIBBON CAMPAIGN
-   X        AGAINST HTML MAIL
-  / \
---
-To unsubscribe from this list: send the line "unsubscribe linux-raid" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+uploaded
