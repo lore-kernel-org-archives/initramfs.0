@@ -1,97 +1,93 @@
-From: Michael Evans <mjevans1983@gmail.com>
-Subject: Re: [[Patch mdadm] 2/5] Move the files mdmon opens into /dev/ to 
-	support handoff after pivotroot
-Date: Sat, 6 Feb 2010 14:06:46 -0800
-Message-ID: <4877c76c1002061406h1d378552q75e6a33b73b29aad@mail.gmail.com>
-References: <1263242294-5353-1-git-send-email-dledford@redhat.com>
-	 <1263242294-5353-3-git-send-email-dledford@redhat.com>
-	 <20100119110930.107ca42e@notabene> <4B55F138.7060008@redhat.com>
-	 <20100204174009.6072ec07@notabene.brown> <4B6B15B3.8030205@redhat.com>
-	 <e9c3a7c21002041504w17565653m5a8b8cd90543cf1e@mail.gmail.com>
-	 <4B6DAC06.6060909@redhat.com>
-	 <e9c3a7c21002061307le6f5d56ked4fa3711bdd2367@mail.gmail.com>
-	 <20100206214640.GB20587@lapse.rw.madduck.net>
+From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [[Patch mdadm] 2/5] Move the files mdmon opens into /dev/ to
+ support handoff after pivotroot
+Date: Sun, 07 Feb 2010 23:13:49 +0100
+Message-ID: <4B6F3B1D.9020008@redhat.com>
+References: <1263242294-5353-1-git-send-email-dledford@redhat.com>	<1263242294-5353-3-git-send-email-dledford@redhat.com>	<20100119110930.107ca42e@notabene>	<4B55F138.7060008@redhat.com> <20100204174009.6072ec07@notabene.brown> <4B6B15B3.8030205@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-raid-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:in-reply-to:references
-         :date:message-id:subject:from:to:content-type
-         :content-transfer-encoding;
-        bh=XT2Jqfyf+lsiifr+m0mYASU6F+9/TY8DVdzysTC49bI=;
-        b=IMLzuXz10KKNuMJo73Qvy2eySW1Zn8u726vWF9GHZ2qax0UtkPZ7/5qXlFeSIeiYCb
-         H1jTs5EQMQ3ESPua39t/GefG0DL+5XlHvatz1Hie8XOpfqaIExTSOlEwVvsejbsZLVdb
-         bd1qw1jQV/8kbMZH238ND1j/ZErlKXEzgpiEY=
-In-Reply-To: <20100206214640.GB20587@lapse.rw.madduck.net>
-Sender: linux-raid-owner@vger.kernel.org
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4B6B15B3.8030205-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="windows-1252"
-To: Dan Williams <dan.j.williams@intel.com>, Doug Ledford <dledford@redhat.com>, Neil Brown <neilb@suse.de>, linux-raid@vger.kernel.org, initramfs@vger.kernel.org, Michal Marek <mmarek@su>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Doug Ledford <dledford-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, linux-raid-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, martin f krafft <madduck-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>, Michal Marek <mmarek-l3A5Bk7waGM@public.gmane.org>, Bill Nottingham <notting-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Sat, Feb 6, 2010 at 1:46 PM, martin f krafft <madduck@debian.org> wr=
-ote:
-> also sprach Dan Williams <dan.j.williams@intel.com> [2010.02.07.1007 =
-+1300]:
->> This comment makes me see Neil's argument in a different light,
->> (hopefully I am not mischaracterizing it), but essentially we are
->> waiting for the standards to catch up with this new class of
->> program. FUSE, CUSE, and mdmon belong to a class of programs that
->> move traditionally exclusive kernel space functionality to
->> userspace. Debian's /lib/init/rw looks to be a response to this
->> grey area of the standards (not that I have any familiarity with
->> the LSB).
+Hi All,
+
+On 02/04/2010 07:45 PM, Doug Ledford wrote:
+> On 02/04/2010 01:40 AM, Neil Brown wrote:
+>>
+
+<snip>
+
+>> Because we want to unmount and completely discard the filesystem that holds
+>> the mdmon binary that was run early, we need to kill it and start a new one
+>> running from final namespace.  This is also needed as to a small extent the
+>> filesystem is used to communicate between mdadm and a running mdmon, and
+>> having them have the same root is less confusing.
+>>
+>> There are three ways we can achieve this.
+>>
+>> 1/ If we can assume that between the time when the original "mount" completes
+>>     and when the "mount -o remount,rw" happens the filesystem doesn't write to
+>>     the device, then we can simply kill mdmon after the root is mounted, and
+>>     restart it before remounting.   However I don't trust filesystem
+>>     implementers so I won't recommend that.
+>>
+>> 2/ Before the pivot root we can kill the old mdmon and start the new one
+>>     chrooted into the final root.
+>> 3/ After the pivot root we can kill the old mdmon and start the new one.
+>>
+>> Number 2 is the approach that we (Well mostly Dan) originally intended and
+>> that the code implements ... or tries to.  It got broken and I never
+>> noticed.  I think I have fixed it now for 3.1.2.
 >
-> I have not read the full thread for lack of time, but I would like
-> to chime in that I favour user-space over kernel-space any day: it
-> makes for stabler systems, better interfaces, and easier upgrades
-> =97 even though it's definitely more work for the distro maintainers.
->
-> So mdmon seems like a good idea, even though some details might need
-> to be worked out to everyone's satisfaction yet.
->
-> I agree with Dan that this trend is new and that slow-moving
-> standards like the FHS have yet to catch up. But they cannot catch
-> up if distros don't explore the field. Debian's latest move in this
-> exploration was indeed /lib/init/rw, but it's questionable, not only
-> because it's a tmpfs, which makes it unusable for e.g. md bitmaps
-> =97 unless we invented a place that moved to persistent storage as
-> early as possible, in a way that would make it accessible early
-> during the next boot. But now I am diverting the topic=85
->
-> --
-> =A0.''`. =A0 martin f. krafft <madduck@d.o> =A0 =A0 =A0Related projec=
-ts:
-> : :' =A0: =A0proud Debian developer =A0 =A0 =A0 =A0 =A0 =A0 =A0 http:=
-//debiansystem.info
-> `. `'` =A0 http://people.debian.org/~madduck =A0 =A0http://vcs-pkg.or=
-g
-> =A0`- =A0Debian - when you have better things to do than fixing syste=
-ms
->
-> "there are two major products that come out of berkeley: lsd and unix=
-=2E
-> =A0we don't believe this to be a coincidence."
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 =A0 =A0 -- jeremy s. anderson
->
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v1.4.10 (GNU/Linux)
->
-> iEYEAREDAAYFAktt40AACgkQIgvIgzMMSnX4fQCgsyGhAdpfuObqWlkmBLNFI/jO
-> YxQAniFBRkITdqXjkkx1VgkHHNCJDbO2
-> =3DtLKB
-> -----END PGP SIGNATURE-----
->
+> Note, as I recall, Hans switched things to be #3 for various reasons.
+> That he switched it to #3 doesn't effect mdmon really, as it still is
+> just killing and restarting, but doing it after the pivot root solved a
+> couple issues.  I don't recall what they were, you would have to talk to
+> Hans about that.
 >
 
-Shouldn't all /state/ information be held in the kernel in some form
-and exported via one of the virtual filesystems? (dev, proc, sysfs)
+The reasons I made this change was that although the mdmon takeover
+mechanism was designed to be used as 2., at the time I was integrating this
+code in to Fedora and tying all bits together the mdmon code for doing 2
+was very very broken. Back then I've send Dan a long list of issues with it,
+which I believe are all fixed now.
 
-This way if some userspace need exists the file can be read.  If some
-kernel access is required it's already within known structures.
---
-To unsubscribe from this list: send the line "unsubscribe linux-raid" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+But as using option 3. just worked from the time I integrated this and
+has stayed working. I've never seen a need to switch things back to 2. again
+and given that 2. requires all kind of trickery and is hard to get right,
+where as 3. is pretty easy to get right, and much less prone to break
+(regress) I think that staying with 3. is a good solution / decision.
+
+As for the whole were to store mdmon .pid and .sock files, my 2cents is
+that /dev is the only dir where a socket file (which cannot be moved
+cross filesystems) can be made in the initramfs and still be accessible
+from the real root, and other things like /lib/whythefuckputthisinslashlib/rw,
+can only be implemented by:
+1) adding a second tmpfs which stays living after the chroot to the real
+    root.
+2) symlinks which need to be both present on the real and the initramfs,
+    with the big problem being ensuring they are there on the read only
+    root fs from the initramds.
+
+Both of which is needlessly complicated and fragile. So as for as I'm concerned
+Fedora and the next RHEL will have these files under /dev. And if upstream
+does not want this, then we will just keep patching mdadm / mdmon to do this
+till the end of time. Note that /dev is already (ab)used in the same way
+for passing dhcp leases from the initramfs to the running system when / lives
+on a network device, and a few other state things which need to be passed
+between the initramfs and the real root.
+
+Pretty? No but effective and simple, and anytime you have this state passing
+problem the most likely solution you will end up with, because it is
+KISS and KISS is good.
+
+Regards,
+
+Hans
+
+
