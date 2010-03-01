@@ -1,31 +1,34 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] add readonly overlay support for dmsquash
-Date: Fri, 26 Feb 2010 21:23:26 +0100
-Message-ID: <20100226202326.GG8702@nb.net.home>
-References: <1267195469-32522-1-git-send-email-jboggs@redhat.com>
+From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+Subject: [PATCH] Fix boot with user suspend and no resume= kernel argument
+Date: Mon, 01 Mar 2010 21:10:26 +0300
+Message-ID: <20100301181026.16229.93268.stgit@cooker>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1267195469-32522-1-git-send-email-jboggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Joey Boggs <jboggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, Feb 26, 2010 at 09:44:29AM -0500, Joey Boggs wrote:
->      # set up the snapshot
-> -    echo 0 `blockdev --getsize $BASE_LOOPDEV` snapshot $BASE_LOOPDEV $OVERLAY_LOOPDEV p 8 | dmsetup create live-rw
-> +    echo 0 `blockdev --getsize $BASE_LOOPDEV` snapshot $BASE_LOOPDEV $OVERLAY_LOOPDEV p 8 | dmsetup create $readonly_overlay live-rw
-               ^^^^^^^^^^^^^^^^^
+Mandriva bug https://qa.mandriva.com/show_bug.cgi?id=57924. Check
+if dracut got resume= argument before calling /usr/sbin/resume
 
- Don't use --getsize, this option is deprecated and it's based
- on BLKGETSIZE ioctl that returns *32-bit* sector count (= 2TiB only).
+Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+
+---
+
+ modules.d/95uswsusp/resume-uswsusp.sh |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/modules.d/95uswsusp/resume-uswsusp.sh b/modules.d/95uswsusp/resume-uswsusp.sh
+index 9b18567..ce0e3d2 100755
+--- a/modules.d/95uswsusp/resume-uswsusp.sh
++++ b/modules.d/95uswsusp/resume-uswsusp.sh
+@@ -8,4 +8,6 @@ case "$splash" in
+     ;;
+ esac
  
- Please, use --getsz. For more details see blockdev(8) man page.
-
-    Karel
-
--- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+-/usr/sbin/resume $a_splash "$resume"
++if [ -n "$resume" ]; then
++    /usr/sbin/resume $a_splash "$resume"
++fi
