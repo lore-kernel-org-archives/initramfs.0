@@ -1,60 +1,43 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add support for installing required keyboard drivers
-Date: Thu, 04 Mar 2010 14:08:46 +0100
-Message-ID: <4B8FB0DE.4020603@redhat.com>
-References: <20100221200702.3353.3442.stgit@cooker>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] add readonly overlay support for dmsquash
+Date: Thu, 4 Mar 2010 15:16:33 +0100
+Message-ID: <20100304141633.GA18077@nb.net.home>
+References: <1267195469-32522-1-git-send-email-jboggs@redhat.com> <20100226202326.GG8702@nb.net.home> <4B8FB0A5.2090309@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100221200702.3353.3442.stgit@cooker>
+Content-Disposition: inline
+In-Reply-To: <4B8FB0A5.2090309-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tmb-4qZELD6Fgxhg9hUCZPvPmw@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Joey Boggs <jboggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 02/21/2010 09:07 PM, Andrey Borzenkov wrote:
-> Thomas Backlund reports that he had no USB keyboard in emergency shell.
-> I have verified it using Apple USB keyboard.
-> Add module to install required drivers, both for standard
-> i8042 and USB one. Patch is based on code from Mandriva mkinitrd.
+On Thu, Mar 04, 2010 at 02:07:49PM +0100, Harald Hoyer wrote:
+> On 02/26/2010 09:23 PM, Karel Zak wrote:
+>> On Fri, Feb 26, 2010 at 09:44:29AM -0500, Joey Boggs wrote:
+>>>       # set up the snapshot
+>>> -    echo 0 `blockdev --getsize $BASE_LOOPDEV` snapshot $BASE_LOOPDEV $OVERLAY_LOOPDEV p 8 | dmsetup create live-rw
+>>> +    echo 0 `blockdev --getsize $BASE_LOOPDEV` snapshot $BASE_LOOPDEV $OVERLAY_LOOPDEV p 8 | dmsetup create $readonly_overlay live-rw
+>>                 ^^^^^^^^^^^^^^^^^
+>>
+>>   Don't use --getsize, this option is deprecated and it's based
+>>   on BLKGETSIZE ioctl that returns *32-bit* sector count (= 2TiB only).
+>>
+>>   Please, use --getsz. For more details see blockdev(8) man page.
+   ^^^^^^^^^^^^^^^^^^^^^
+>>
+>>      Karel
+>>
 >
-> This patch allows usage of USB keyboard in emergency shell starting
-> with initqueue breakpoint. This is probably enough for most real
-> life cases; I do not see any easy way to enable optional loading
-> of needed modules before cmdline breakpoint; and for pre-udev or
-> pre-trigger cases user can pass rdloaddriver.
->
-> Signed-off-by: Andrey Borzenkov<arvidjaar-JGs/UdohzUI@public.gmane.org>
->
-> ---
->
->   modules.d/95keyboard/install |   12 ++++++++++++
->   1 files changed, 12 insertions(+), 0 deletions(-)
->   create mode 100755 modules.d/95keyboard/install
->
-> diff --git a/modules.d/95keyboard/install b/modules.d/95keyboard/install
-> new file mode 100755
-> index 0000000..14f26e3
-> --- /dev/null
-> +++ b/modules.d/95keyboard/install
-> @@ -0,0 +1,12 @@
-> +#!/bin/bash
-> +
-> +# Host dependencies are automatically handled by instmods
-> +
-> +# Standard PS/2 type keyboard; should we add also other keyboard
-> +# types (sunkbd, ...)?
-> +instmods atkbd i8042
-> +
-> +# USB HID keyboards. Are there more keyboards that has to be added?
-> +instmods ehci-hcd ohci-hcd uhci-hcd
-> +instmods usbhid
-> +instmods hid-apple
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> patched to use --getsize64
 
-pushed
+ That's wrong solution. The --getsize64 option returns size in bytes,
+ but you need size in 512-byte sectors. Use --getsz, read "man
+ blockdev" ;-)
+
+    Karel
+
+-- 
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
