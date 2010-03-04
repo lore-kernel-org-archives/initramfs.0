@@ -1,48 +1,60 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] udev: install distro specific firmware handler
-Date: Thu, 04 Mar 2010 14:08:08 +0100
-Message-ID: <4B8FB0B8.1070509@redhat.com>
-References: <1267195175-15554-1-git-send-email-philippe.seewer@bfh.ch>
+Subject: Re: [PATCH] Add support for installing required keyboard drivers
+Date: Thu, 04 Mar 2010 14:08:46 +0100
+Message-ID: <4B8FB0DE.4020603@redhat.com>
+References: <20100221200702.3353.3442.stgit@cooker>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1267195175-15554-1-git-send-email-philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+In-Reply-To: <20100221200702.3353.3442.stgit@cooker>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Philippe Seewer <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tmb-4qZELD6Fgxhg9hUCZPvPmw@public.gmane.org
 
-On 02/26/2010 03:39 PM, Philippe Seewer wrote:
-> Debian Unstable still calls its firmware handling script
-> 'firmware.agent' instead of 'firmware.sh'. This patch ensures that
-> either the .agent or the .sh gets installed.
+On 02/21/2010 09:07 PM, Andrey Borzenkov wrote:
+> Thomas Backlund reports that he had no USB keyboard in emergency shell.
+> I have verified it using Apple USB keyboard.
+> Add module to install required drivers, both for standard
+> i8042 and USB one. Patch is based on code from Mandriva mkinitrd.
+>
+> This patch allows usage of USB keyboard in emergency shell starting
+> with initqueue breakpoint. This is probably enough for most real
+> life cases; I do not see any easy way to enable optional loading
+> of needed modules before cmdline breakpoint; and for pre-udev or
+> pre-trigger cases user can pass rdloaddriver.
+>
+> Signed-off-by: Andrey Borzenkov<arvidjaar-JGs/UdohzUI@public.gmane.org>
+>
 > ---
->   modules.d/95udev-rules/install |    5 +++--
->   1 files changed, 3 insertions(+), 2 deletions(-)
 >
-> diff --git a/modules.d/95udev-rules/install b/modules.d/95udev-rules/install
-> index b903a41..287cc03 100755
-> --- a/modules.d/95udev-rules/install
-> +++ b/modules.d/95udev-rules/install
-> @@ -15,7 +15,9 @@ inst_rules "$moddir/01-ignore.rules"
+>   modules.d/95keyboard/install |   12 ++++++++++++
+>   1 files changed, 12 insertions(+), 0 deletions(-)
+>   create mode 100755 modules.d/95keyboard/install
 >
->   # for firmware loading
->   inst_rules 50-firmware.rules
-> -dracut_install /lib/udev/firmware.sh
-> +for i in firmware.sh firmware.agent hotplug.functions ; do
-> +    [ -e /lib/udev/$i ]&&  dracut_install /lib/udev/$i
-> +done
->   dracut_install cat uname
+> diff --git a/modules.d/95keyboard/install b/modules.d/95keyboard/install
+> new file mode 100755
+> index 0000000..14f26e3
+> --- /dev/null
+> +++ b/modules.d/95keyboard/install
+> @@ -0,0 +1,12 @@
+> +#!/bin/bash
+> +
+> +# Host dependencies are automatically handled by instmods
+> +
+> +# Standard PS/2 type keyboard; should we add also other keyboard
+> +# types (sunkbd, ...)?
+> +instmods atkbd i8042
+> +
+> +# USB HID keyboards. Are there more keyboards that has to be added?
+> +instmods ehci-hcd ohci-hcd uhci-hcd
+> +instmods usbhid
+> +instmods hid-apple
 >
->   if [ ! -x /lib/udev/vol_id ]; then
-> @@ -31,7 +33,6 @@ ata_id \
->   cdrom_id \
->   create_floppy_devices \
->   edd_id \
-> -firmware.sh \
->   fw_unit_symlinks.sh \
->   hid2hci \
->   path_id \
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 pushed
