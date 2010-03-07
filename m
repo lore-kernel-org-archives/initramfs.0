@@ -1,87 +1,45 @@
-From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-Subject: relative order of /etc/dracut.conf and /etc/dracut.conf.d
-Date: Sat, 6 Mar 2010 07:54:08 +0300
-Message-ID: <201003060754.08574.arvidjaar@mail.ru>
+From: Luca Berra <bluca-APJUtua8uzqonA0d6jMUrA@public.gmane.org>
+Subject: [PATCH] silence xen-detect detection
+Date: Sun, 7 Mar 2010 13:52:08 +0100
+Message-ID: <20100307125208.GA26671@maude.comedia.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1801179.3FKuL734I4";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=comedia.it; h=
+	user-agent:content-disposition:content-type:mime-version
+	:message-id:subject:from:date:received:x-virus-scanned; s=200808
+	; t=1267966328; bh=JNMNFrjkv8xErSjo0IJclD8QI2NkznYOKC7NSfVWMK4=;
+	 b=ihtgu+6+MatB73aF7ncBvexynC+PkKqbbRlqtWCLaMnES7Dy/04++3ZSAIIpv
+	uahPHGiPyaiFjJ+bsLXpItd0NybTrou5hhCaQvg7lJ77dJWjzaWYr78qh53IQ6t+
+	fq+eNkyuotTdIoRZHNM4sfbxOWdUNs9c2JFpnlU1zMxCG8=
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---nextPart1801179.3FKuL734I4
-Content-Type: text/plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Luca Berra <bluca-APJUtua8uzqonA0d6jMUrA@public.gmane.org>
+---
+  modules.d/60xen/check |    2 +-
+  1 files changed, 1 insertions(+), 1 deletions(-)
 
-Currently dracut.conf is sourced after dracut.conf.d. Is it intentional?=20
-
-I'd actually expect the opposite - dracut.conf used for distribution defaul=
-ts,=20
-dracut.conf.d for local system adjustments with command line options overru=
-ling=20
-them all.
-
-=2D-
-
-Subject: [PATCH] Source dracut.conf.d/* after dracut.conf
-=46rom: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-
-This provides the natural way to ship defalts in dracut.conf while
-allow local system customization in dracut.conf.d.
-
-Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-
-=2D--
-
- dracut |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/dracut b/dracut
-index b16e205..3f3c3e6 100755
-=2D-- a/dracut
-+++ b/dracut
-@@ -123,11 +123,15 @@ if [[ ! -f $conffile ]]; then
-     [[ $allowlocal ]] && conffile=3D"$dracutbasedir/dracut.conf"
- fi
-=20
-+# if we were not passed a config dir, try the default one
- if [[ ! -d $confdir ]]; then
-     [[ $allowlocal ]] || confdir=3D"/etc/dracut.conf.d"
-     [[ $allowlocal ]] && confdir=3D"$dracutbasedir/dracut.conf.d"
- fi
-=20
-+# source our config file
-+[[ -f $conffile ]] && . "$conffile"
-+
- # source our config dir
- if [ "$confdir" ] && [  -d "$confdir" ]; then
-     for f in "$confdir"/*.conf; do=20
-@@ -135,9 +139,6 @@ if [ "$confdir" ] && [  -d "$confdir" ]; then
-     done
- fi
-=20
-=2D# source our config file
-=2D[[ -f $conffile ]] && . "$conffile"
-=2D
- # these options override the stuff in the config file
- [[ $dracutmodules_l ]] && dracutmodules=3D$dracutmodules_l
- [[ $omit_dracutmodules_l ]] && omit_dracutmodules=3D$omit_dracutmodules_l
-
---nextPart1801179.3FKuL734I4
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iEYEABECAAYFAkuR3/AACgkQR6LMutpd94yHHQCgrjEc66U1NZYVLJGZfp7/2RJ7
-T3UAniok2Z6g/kXq86gWdkwdvtAw4bDT
-=bfow
------END PGP SIGNATURE-----
-
---nextPart1801179.3FKuL734I4--
+diff --git a/modules.d/60xen/check b/modules.d/60xen/check
+index 420cdc2..f155582 100755
+--- a/modules.d/60xen/check
++++ b/modules.d/60xen/check
+@@ -1,7 +1,7 @@
+  #!/bin/bash
+  
+  # No Xen-detect? Boo!!
+-XENDETECT=$(which xen-detect)
++XENDETECT=$(which xen-detect 2>/dev/null)
+  [ -z "$XENDETECT" ] && [ -d "/usr/lib/xen-default" ] && XENDETECT="/usr/lib/xen-default/bin/xen-detect"
+  [ -z "$XENDETECT" ] && exit 1
+  
+-- 
+Luca Berra -- bluca-APJUtua8uzqonA0d6jMUrA@public.gmane.org
+         Communication Media & Services S.r.l.
+  /"\
+  \ /     ASCII RIBBON CAMPAIGN
+   X        AGAINST HTML MAIL
+  / \
