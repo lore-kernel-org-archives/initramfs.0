@@ -1,35 +1,38 @@
-From: Mike Snitzer <snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [DRACUT PATCH] lvm_scan: use '--ignoremonitoring' rather than
- '--monitor n'
-Date: Wed, 10 Mar 2010 14:31:38 -0500
-Message-ID: <20100310193138.GA13399@redhat.com>
-References: <1268249058-23510-1-git-send-email-snitzer@redhat.com>
+From: Andrey Sapegin <andrey-/eMlXOy4en9AfugRpC6u6w@public.gmane.org>
+Subject: include ata into initrd
+Date: Thu, 11 Mar 2010 11:23:31 +0100
+Message-ID: <4B98C4A3.7010307@sapegin.org>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1268249058-23510-1-git-send-email-snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lvm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Mar 10 2010 at  2:24pm -0500,
-Mike Snitzer <snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+Dear ladies and gentlemen.
 
-> lvchange and vgchange '--monitor n' will not prevent lvm from
-> attempting to dlopen the libdevmapper-event library.
-> 
-> dracut git commit 47ab3b6c5e introduced the use of '--monitor n' but
-> '--ignoremonitoring' is needed now that the libdevmapper-event library
-> isn't copied into the initramfs (ever since 0fae59d6eb3)
+Can I ask You if you know how to solve my problem.
+I have an ExpressCard SSD in my laptop. And I installed Ubuntu 9.10 
+(kernel 2.6.31-14) on it. But after grub2 boots kernel, kernel is not 
+able to recognise my SSD (it's recognised by grub because I added 
+--disk-module=ata to grub-install).
+I have another copy of Ubuntu on my primary HDD and after booting kernel 
+from my primary HDD and mounting filesystem, it also mounts my SSD with:
+ata5.00: ATA-7: ExpressCard... (dmesg output).
 
-And just to be clear:
-'--monitor n' is "stop monitoring this (VG or LV)"
-'--ignoremonitoring' is "don't do any monitoring".
+So I think that I need to add ata drivers to initrd to be able to run 
+Ubuntu from SSD.
+Can You help me and write how to do this?
 
-We'll be fixing up lvm's vgchange and lvchange man pages so that they
-are more precise on what '--monitor n' means.
+Thank You in advance,
+Kind Regards,
 
-Mike
+-- 
+Andrey Sapegin,
+PhD Student,
+Universitaet Leipzig,
+Project manager,
+HTWK Leipzig (FH),
++4915778339304,
+andrey-/eMlXOy4en+bup2nOX2J7Q@public.gmane.org
