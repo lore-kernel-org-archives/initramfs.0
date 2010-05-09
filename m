@@ -1,7 +1,7 @@
 From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-Subject: [PATCH] Do not require .conf suffix for files in /etc/modprobe.d
-Date: Sun, 09 May 2010 22:24:04 +0400
-Message-ID: <20100509182404.3768.46609.stgit@cooker>
+Subject: [PATCH] Harden check for used modules in hostonly mode
+Date: Sun, 09 May 2010 22:23:58 +0400
+Message-ID: <20100509182358.3768.89142.stgit@cooker>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,46 +10,27 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Currently dracut will install only modprobe configuration files
-matching *.conf. module-init-tools itself does not have this restriction
-and uses blacklist for known pre-/suffixes instead. Some distributions
-(e.g. Mandriva) widely use files without .conf suffix. Let dracut
-accept the same set of files as module-init-tools will.
+Make sure that we do not accept module name which is substring of
+some other module name. This resulted in piix being mistakenly loaded
+together with ata_piix. It completely broke DVD access here.
 
 Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
 
 ---
 
- modules.d/90kernel-modules/install |   22 +++++++++++++++++++++-
- 1 files changed, 21 insertions(+), 1 deletions(-)
+ dracut-functions |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/modules.d/90kernel-modules/install b/modules.d/90kernel-modules/install
-index 2f19d0c..33438d5 100755
---- a/modules.d/90kernel-modules/install
-+++ b/modules.d/90kernel-modules/install
-@@ -1,4 +1,24 @@
- #!/bin/bash
- [ -f /etc/modprobe.conf ] && dracut_install /etc/modprobe.conf
--dracut_install $(find /etc/modprobe.d/ -type f -name '*.conf')
-+
-+# This matches blacklist used by module-init-tools
-+dracut_install $(find /etc/modprobe.d/ \
-+	-name '.*' -o \
-+	-name '~*' -o \
-+	-name '*.rpmsave' -o \
-+	-name '*.rpmorig' -o \
-+	-name '*.rpmnew' -o \
-+	-name '*.dpkg-old' -o \
-+	-name '*.dpkg-dist' -o \
-+	-name '*.dpkg-new' -o \
-+	-name '*.dpkg-bak' -o \
-+	-name '*.bak' -o \
-+	-name '*.orig' -o \
-+	-name '*.rej' -o \
-+	-name '*.YaST2save' -o \
-+	-name '*.-' -o \
-+	-name '*~' -o \
-+	-name '*,v' -o \
-+	-type f -print)
-+
- inst_hook cmdline 01 "$moddir/parse-kernel.sh"
+diff --git a/dracut-functions b/dracut-functions
+index fdcfb7e..ebf09c0 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -502,7 +502,7 @@ instmods() {
+ 	        [[ -f $initdir/$1 ]] && { shift; continue; }
+ 		# If we are building a host-specific initramfs and this
+ 		# module is not already loaded, move on to the next one.
+-		[[ $hostonly ]] && ! grep -q "${mod//-/_}" /proc/modules && \
++		[[ $hostonly ]] && ! grep -qe "\<${mod//-/_}\>" /proc/modules && \
+ 	        ! echo $add_drivers | grep -qe "\<${mod}\>" &&	{
+ 		    shift; continue; 
+ 		}
