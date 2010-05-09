@@ -1,36 +1,28 @@
-From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-Subject: [PATCH] Harden check for used modules in hostonly mode
-Date: Sun, 09 May 2010 22:23:58 +0400
-Message-ID: <20100509182358.3768.89142.stgit@cooker>
+From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+Subject: Re: [PATCH] Do not require .conf suffix for files in /etc/modprobe.d
+Date: Sun, 9 May 2010 21:05:40 +0200
+Message-ID: <h2kac3eb2511005091205wab35af61ib3eefefb7d5c1598@mail.gmail.com>
+References: <20100509182404.3768.46609.stgit@cooker>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20100509182404.3768.46609.stgit@cooker>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Make sure that we do not accept module name which is substring of
-some other module name. This resulted in piix being mistakenly loaded
-together with ata_piix. It completely broke DVD access here.
+On Sun, May 9, 2010 at 20:24, Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org> wrote:
+> Currently dracut will install only modprobe configuration files
+> matching *.conf. module-init-tools itself does not have this restriction
+> and uses blacklist for known pre-/suffixes instead. Some distributions
+> (e.g. Mandriva) widely use files without .conf suffix. Let dracut
+> accept the same set of files as module-init-tools will.
 
-Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+Module-init-tools plans to require that, for now it just prints an
+error for conf files without this suffix, that states that this will
+no longer work in a future version. Distros should better fix all
+these files instead.
 
----
-
- dracut-functions |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/dracut-functions b/dracut-functions
-index fdcfb7e..ebf09c0 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -502,7 +502,7 @@ instmods() {
- 	        [[ -f $initdir/$1 ]] && { shift; continue; }
- 		# If we are building a host-specific initramfs and this
- 		# module is not already loaded, move on to the next one.
--		[[ $hostonly ]] && ! grep -q "${mod//-/_}" /proc/modules && \
-+		[[ $hostonly ]] && ! grep -qe "\<${mod//-/_}\>" /proc/modules && \
- 	        ! echo $add_drivers | grep -qe "\<${mod}\>" &&	{
- 		    shift; continue; 
- 		}
+Kay
