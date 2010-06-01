@@ -1,65 +1,45 @@
-From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Subject: initramfs-tools 0.95 release
-Date: Sat, 29 May 2010 06:48:33 +0200
-Message-ID: <20100529044833.GC9869@baikonur.stro.at>
+From: "Karsten Forum" <forum-FsvK1yUvlemJOWFeQooTGSCwEArCW2h5@public.gmane.org>
+Subject: How to boot without initrd.img ?
+Date: Tue, 1 Jun 2010 13:32:47 +0200
+Message-ID: <dcc73894a8d1f0d8d194b5df83ab3921.squirrel@decotrain.homedns.org>
+Reply-To: forum-FsvK1yUvlemJOWFeQooTGSCwEArCW2h5@public.gmane.org
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7BIT
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
-Cc: kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-most notably a license change to GPL in order to ease collaboration
-with dracut. LZO compression and xHCI boot support may stick out for users.
-pxelinux BOOTIF saw fixes. thanks for the patches.
+Hello together,
 
-shortlog tells it all, mostly small bugfixes all over the place:
+i want to place my question here, because i didn't get an answer in "normal" user
+forums.
 
-Axel Beckert (1):
-      mkinitramfs.8: Add information about $TMPDIR environment variable
+My Problem: I want to copy a complete Linux installation from one PC to other PC's.
 
-Claus Herwig (1):
-      mkinitramfs: fix MODULES=dep on mylex raid devices (DAC960)
+In the past i could do that just by booting Knoppix from CD, making an tgz from the
+source partition and extract it on the destination partition.
+This works fine in Debian with Kernel 2.6.22. After the extract i could boot with
+some error messages and timeouts.
+Then i updated some config's in /etc and afterwards i could update the initrd.img.
 
-Michael Prokop (1):
-      Support booting from USB 3 xHCI-based controllers
+The PC's have the same mainboard and processor, but can differ in the harddisk and
+type of Nvidia graphic-card.
 
-Vagrant Cascadian (2):
-      configure_networking: pxelinux BOOTIF fixes
-      init: add BOOTIF bootarg
+Now i am switching to Kubuntu 10.04 with kernel 2.6.32 and i tried the same procedure.
+But i get no chance. The boot-process stuck early acessing the harddisk. The main
+poblem is that the source PC has a SATA disk and the destination PC an IDE disk.
+I tried different tricks to boot (without the initrd.img in grub) or update the
+initrd.img on the destination PC, but nothing works.
 
-bert schulze (2):
-      mkinitramfs: add LZO support
-      mkinitramfs: use -9 for lzop
+So my question is how can i boot the system without using the initrd.img ?
 
-maximilian attems (33):
-      update TODO list
-      hook-functions: refactor copy_exec
-      mkinitramfs: check only once for existing ldd
-      mkinitramfs: Use TMPDIR definition
-      mkinitramfs: guard against empty EXTRA_CONF
-      update-initramfs: Use nounset
-      mkinitramfs: Fix several unbound variables
-      mkinitramfs: On verbose indication what we rm
-      bug script: include sizes of generated initramfs
-      debian/script: add generated resume param to bug
-      init: fix hardcoded resume handling
-      hook-functions: manual_add_modules simplify
-      hook-functions: copy_modules_dir() small simplifications
-      mkinitramfs.8: Fix wrong sourcing in boot script
-      initramfs-tools.8: Mention /scritps/functions
-      initramfs-tools.8: cryptopts param gone
-      initramfs-tools.8: document BOOTIF variable
-      configure_networking(): work with empty DEVICE string
-      hook-functions: add hid-apple
-      Revert "mkinitramfs: only copy modprobe conf files"
-      initramfs-tools: change license to GPL
-      hook-functions: re-add hid-microsoft
-      Merge branch 'sid'
-      debian/copyright: add boilerplate to keep lintian happy.
-      hook-functions: Fix copy_modules_dir()
-      release 0.95
+It's possible to boot from CD on different hardware, but up to now i don't know how
+this is working?
+
+Or maybe somebody knows a better solution for my problem?
+
+Regards
+Karsten
 
