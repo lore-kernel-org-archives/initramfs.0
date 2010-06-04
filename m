@@ -1,152 +1,65 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/4] Do not worry at all about selinux stuff if we cannot find load_policy
-Date: Wed,  2 Jun 2010 07:07:56 -0500 (CDT)
-Message-ID: <d0ba9e0f511ab3e4b0cca6d3d0551ae7a881385f.1275480426.git.victor.lowther@gmail.com>
-References: <4b22ffbe9ef3f55ac4fad54bd58f9cf9fc345b22.1275480426.git.victor.lowther@gmail.com>
+From: Scott Olsen <olesen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: dmsquash-live-root + NFS?
+Date: Thu, 3 Jun 2010 18:35:16 -0700
+Message-ID: <AANLkTile6XogMyj-4ga8ftqbDIPUNRD8cjuBcWT1z8kj@mail.gmail.com>
+References: <AANLkTilxH61gB7Kx9EXP6rW--0Fhd5SKYQvFyd1miLXH@mail.gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4b22ffbe9ef3f55ac4fad54bd58f9cf9fc345b22.1275480426.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:received:in-reply-to
+         :references:date:message-id:subject:from:to:content-type
+         :content-transfer-encoding;
+        bh=lBeYbcsLk/FpqPJmsbua9eO68hPzStOrjw8bgR/i9fY=;
+        b=JGKx1v9vM7/bAQ6UhNN+OA6n7m92+bUkrT/LF5zNaPjs9oWrbI3uojhOK7iLc/NH1I
+         DWrsCI0BvgVzTmJoBaUZjb7gI2dWTtAeL7Ato8umW4I1+wTU122R4Ew/rXUKGH+Qv7tK
+         mHyQbWh7PxYhSLnr89Aim9CrtBkdUfO2u2h5o=
+In-Reply-To: <AANLkTilxH61gB7Kx9EXP6rW--0Fhd5SKYQvFyd1miLXH-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Forcing users to pass selinux=0 when operating on a system that does not and
-never has used selinux is really annoying.
----
- modules.d/99base/selinux-loadpolicy.sh |  124 +++++++++++++++----------------
- 1 files changed, 60 insertions(+), 64 deletions(-)
+=46irst of all, many thanks for all the work on Dracut. We're moving ou=
+r
+network clients over to Dracut from custom mkinitrd build environment,
+and wow, what an improvement.
 
-diff --git a/modules.d/99base/selinux-loadpolicy.sh b/modules.d/99base/selinux-loadpolicy.sh
-dissimilarity index 68%
-index 7db9f8c..5792410 100755
---- a/modules.d/99base/selinux-loadpolicy.sh
-+++ b/modules.d/99base/selinux-loadpolicy.sh
-@@ -1,64 +1,60 @@
--#!/bin/sh
--# FIXME: load selinux policy.  this should really be done after we switchroot 
--
--rd_load_policy()
--{
--    # If SELinux is disabled exit now 
--    getarg "selinux=0" > /dev/null && return 0
--
--    SELINUX="enforcing"
--    [ -e "$NEWROOT/etc/selinux/config" ] && . "$NEWROOT/etc/selinux/config"
--
--    # Check whether SELinux is in permissive mode
--    permissive=0
--    getarg "enforcing=0" > /dev/null 
--    if [ $? -eq 0 -o "$SELINUX" = "permissive" ]; then
--	permissive=1
--    fi
--
--    # Attempt to load SELinux Policy
--    if [ -x "$NEWROOT/usr/sbin/load_policy" -o -x "$NEWROOT/sbin/load_policy" ]; then
--	ret=0
--	info "Loading SELinux policy"
--	{
--            # load_policy does mount /proc and /selinux in 
--            # libselinux,selinux_init_load_policy()
--            if [ -x "$NEWROOT/sbin/load_policy" ]; then
--		chroot "$NEWROOT" /sbin/load_policy -i
--		ret=$?
--            else
--		chroot "$NEWROOT" /usr/sbin/load_policy -i
--		ret=$?
--            fi
--	} 2>&1 | vinfo
--
--	if [ "$SELINUX" = "disabled" ]; then
--	    return 0;
--	fi
--
--	if [ $ret -eq 0 -o $ret -eq 2 ]; then
--	    # If machine requires a relabel, force to permissive mode
--	    [ -e "$NEWROOT"/.autorelabel ] && ( echo 0 > "$NEWROOT"/selinux/enforce )
--            mount --bind /dev "$NEWROOT/dev"
--            chroot "$NEWROOT" /sbin/restorecon -R /dev
--	    return 0
--	fi
--
--	warn "Initial SELinux policy load failed."
--	if [ $ret -eq 3 -o $permissive -eq 0 ]; then
--	    warn "Machine in enforcing mode."
--	    warn "Not continuing"
--	    sleep 100d
--	    exit 1
--	fi
--	return 0
--    elif [ $permissive -eq 0 -a "$SELINUX" != "disabled" ]; then
--	warn "Machine in enforcing mode and cannot execute load_policy."
--	warn "To disable selinux, add selinux=0 to the kernel command line."
--	warn "Not continuing"
--	sleep 100d
--	exit 1
--    fi
--}
--
--rd_load_policy
-+#!/bin/sh
-+# FIXME: load selinux policy.  this should really be done after we switchroot
-+
-+rd_load_policy()
-+{
-+    # If SELinux is disabled exit now
-+    getarg "selinux=0" > /dev/null && return 0
-+    # if we cannot find load_policy, just return.
-+    [ -x "$NEWROOT/usr/sbin/load_policy" ] || \
-+	[ -x "$NEWROOT/sbin/load_policy" ] || \
-+	return 0
-+
-+    SELINUX="enforcing"
-+    [ -e "$NEWROOT/etc/selinux/config" ] && . "$NEWROOT/etc/selinux/config"
-+
-+    # Check whether SELinux is in permissive mode
-+    permissive=0
-+    getarg "enforcing=0" > /dev/null
-+    if [ $? -eq 0 -o "$SELINUX" = "permissive" ]; then
-+	permissive=1
-+    fi
-+
-+    # Attempt to load SELinux Policy
-+    ret=0
-+    info "Loading SELinux policy"
-+    {
-+	    # load_policy does mount /proc and /selinux in
-+	    # libselinux,selinux_init_load_policy()
-+	if [ -x "$NEWROOT/sbin/load_policy" ]; then
-+	    chroot "$NEWROOT" /sbin/load_policy -i
-+	    ret=$?
-+	else
-+	    chroot "$NEWROOT" /usr/sbin/load_policy -i
-+	    ret=$?
-+	fi
-+    } 2>&1 | vinfo
-+
-+    if [ "$SELINUX" = "disabled" ]; then
-+	return 0;
-+    fi
-+
-+    if [ $ret -eq 0 -o $ret -eq 2 ]; then
-+	    # If machine requires a relabel, force to permissive mode
-+	[ -e "$NEWROOT"/.autorelabel ] && ( echo 0 > "$NEWROOT"/selinux/enforce )
-+	mount --bind /dev "$NEWROOT/dev"
-+	chroot "$NEWROOT" /sbin/restorecon -R /dev
-+	return 0
-+    fi
-+
-+    warn "Initial SELinux policy load failed."
-+    if [ $ret -eq 3 -o $permissive -eq 0 ]; then
-+	warn "Machine in enforcing mode."
-+	warn "Not continuing"
-+	sleep 100d
-+	exit 1
-+    fi
-+    return 0
-+}
-+
-+rd_load_policy
--- 
-1.7.1
+What we are looking to do is: the exact execution path of
+dmsquash-live (with an ext3fs.img inside of squashfs) and copy to
+live_ram but with the source of the image being a NFS mount instead of
+a block device.
+
+We hacked it to work, but I want to know the proper way to put this
+into the dracut framework/architecture.
+
+What we have now is:
+
+- inside cmdline/parse-dmsquash-live, we set netroot to be the nfs serv=
+er
+
+- let everything proceed as normal
+
+- then at the end of /sbin/nfsroot we just call
+/sbin/dmsquash-live-root and everything works (after a few tweaks)
+since the NFS mount is already mounted on NEWROOT and live_dir points
+to the squashfs image.
+
+--
+
+Like I said, its up and working but is there a better way to implement
+this?=A0 any architecture pointers would be greatly appreciated!!
+
+Is there any bad effect of having the udev rules created by
+dmsquash-live-genrules run along with the netroot/nfsroot code run?
+
+We had to disable the initqueue check_finished test in init because
+init would break after the retry limit saying no root device found
+(it's there but does not pass the test).=A0 Is this a consequence of
+having both dmsquash-live and nfsroot?
+
+
+thanks
+
+Scott
