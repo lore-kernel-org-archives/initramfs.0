@@ -1,58 +1,63 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dmsquash-live-root + NFS?
-Date: Wed, 09 Jun 2010 10:36:20 +0200
-Message-ID: <4C0F5284.4030706@redhat.com>
-References: <AANLkTilxH61gB7Kx9EXP6rW--0Fhd5SKYQvFyd1miLXH@mail.gmail.com> <AANLkTile6XogMyj-4ga8ftqbDIPUNRD8cjuBcWT1z8kj@mail.gmail.com>
+From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 2/3] 95uswsusp: Gentoo path for 'resume' binary
+Date: Wed, 9 Jun 2010 10:38:36 +0200
+Message-ID: <20100609103836.6d14d542@etiriah.ds.pg.gda.pl>
+References: <20100609103605.50a6acec@etiriah.ds.pg.gda.pl>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/0mbN7qP_degYZ5wdRTp0.Mh"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <AANLkTile6XogMyj-4ga8ftqbDIPUNRD8cjuBcWT1z8kj-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20100609103605.50a6acec-YdJE6FOikKfe60hTmSeVGxfX6IwIUJvj@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Scott Olsen <olesen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/04/2010 03:35 AM, Scott Olsen wrote:
-> First of all, many thanks for all the work on Dracut. We're moving our
-> network clients over to Dracut from custom mkinitrd build environment,
-> and wow, what an improvement.
->
-> What we are looking to do is: the exact execution path of
-> dmsquash-live (with an ext3fs.img inside of squashfs) and copy to
-> live_ram but with the source of the image being a NFS mount instead of
-> a block device.
->
-> We hacked it to work, but I want to know the proper way to put this
-> into the dracut framework/architecture.
->
-> What we have now is:
->
-> - inside cmdline/parse-dmsquash-live, we set netroot to be the nfs server
->
-> - let everything proceed as normal
->
-> - then at the end of /sbin/nfsroot we just call
-> /sbin/dmsquash-live-root and everything works (after a few tweaks)
-> since the NFS mount is already mounted on NEWROOT and live_dir points
-> to the squashfs image.
->
-> --
->
-> Like I said, its up and working but is there a better way to implement
-> this?  any architecture pointers would be greatly appreciated!!
->
-> Is there any bad effect of having the udev rules created by
-> dmsquash-live-genrules run along with the netroot/nfsroot code run?
->
-> We had to disable the initqueue check_finished test in init because
-> init would break after the retry limit saying no root device found
-> (it's there but does not pass the test).  Is this a consequence of
-> having both dmsquash-live and nfsroot?
->
->
-> thanks
->
-> Scott
+--Sig_/0mbN7qP_degYZ5wdRTp0.Mh
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Care to show your modifications, so I can get a better feeling what you are doing?
+---
+ modules.d/95uswsusp/check   |    2 +-
+ modules.d/95uswsusp/install |    7 ++++++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/modules.d/95uswsusp/check b/modules.d/95uswsusp/check
+index ba95479..4b3f8fb 100755
+--- a/modules.d/95uswsusp/check
++++ b/modules.d/95uswsusp/check
+@@ -1,2 +1,2 @@
+ #!/bin/sh
+-[ -x /usr/sbin/resume ]
++[ -x /usr/sbin/resume ] || [ -x /usr/lib/suspend/resume ]
+diff --git a/modules.d/95uswsusp/install b/modules.d/95uswsusp/install
+index f8afe3a..6830763 100755
+--- a/modules.d/95uswsusp/install
++++ b/modules.d/95uswsusp/install
+@@ -1,5 +1,10 @@
+ #!/bin/bash
+-inst /usr/sbin/resume
++for bin in /usr/sbin/resume /usr/lib/suspend/resume
++do
++    [ -x "${bin}" ] && break=20
++done
++
++inst "${bin}" /usr/sbin/resume
+ [ -f /etc/suspend.conf ] && inst /etc/suspend.conf
+=20
+ inst_hook cmdline 10 "$moddir/parse-uswsusp.sh"
+--=20
+1.7.1
+
+--Sig_/0mbN7qP_degYZ5wdRTp0.Mh
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkwPUwwACgkQ+hU8EsKEdQ10qgCfdPxFQ6D5P8uCxSdwhWP9a7CS
+fdwAnRUDXoTbEFkqFpNHjpXyRc7ITjmo
+=fufG
+-----END PGP SIGNATURE-----
+
+--Sig_/0mbN7qP_degYZ5wdRTp0.Mh--
