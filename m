@@ -1,22 +1,26 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] Do not worry at all about selinux stuff if we cannot
- find load_policy
-Date: Wed, 09 Jun 2010 17:38:21 +0200
-Message-ID: <4C0FB56D.1060403@redhat.com>
-References: <4b22ffbe9ef3f55ac4fad54bd58f9cf9fc345b22.1275480426.git.victor.lowther@gmail.com> <d0ba9e0f511ab3e4b0cca6d3d0551ae7a881385f.1275480426.git.victor.lowther@gmail.com>
+Subject: Re: [PATCH 1/3] Support old version of module-init-tools
+Date: Wed, 09 Jun 2010 17:39:21 +0200
+Message-ID: <4C0FB5A9.9010501@redhat.com>
+References: <20100609103605.50a6acec@etiriah.ds.pg.gda.pl>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <d0ba9e0f511ab3e4b0cca6d3d0551ae7a881385f.1275480426.git.victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20100609103605.50a6acec-YdJE6FOikKfe60hTmSeVGxfX6IwIUJvj@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset="windows-1254"; format="flowed"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/02/2010 02:07 PM, Victor Lowther wrote:
-> Forcing users to pass selinux=0 when operating on a system that does not and
-> never has used selinux is really annoying.
-...
+On 06/09/2010 10:36 AM, Amadeusz =C5=BBo=C5=82nowski wrote:
+> modprobe included in version prior to 3.7 of module-init-tools doesn'=
+t
+> have -d | --dirname option which allows to give a prefix other than
+> '/' for kernel modules path. Dracut assumes existence of that
+> option and uses it even with default '/'. The patch passes -d option
+> only if it's different from default and also checks module-init-tools
+> version if user changes the prefix by --kmoddir Dracut option.
+> ---
 
-hmm, I moved selinux to a separate module and will think of another mechanism
+pushed
