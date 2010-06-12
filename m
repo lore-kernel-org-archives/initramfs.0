@@ -1,62 +1,89 @@
-From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: [PATCH] dracut, dracut-functions: better vercmp; credits go to
- V. Lowther
-Date: Fri, 11 Jun 2010 21:57:04 +0200
-Message-ID: <20100611215704.283c46c0@etiriah.ds.pg.gda.pl>
-References: <20100611211034.609135f8@etiriah.ds.pg.gda.pl>
-	<201006112023.01475.adam@spra.gg>
+From: "Min Jun,Xi" <xi.minjun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: One warning message when switching root to /sysroot (which is the 
+	mount point for NFS)
+Date: Sat, 12 Jun 2010 14:47:47 +0800
+Message-ID: <AANLkTimBgxVQ4C-dUBPVhG6BHNDQVpD2XFL8NmuhaDZB@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/ri7lpI.YJLR.p5m1.=Vf_sz"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <201006112023.01475.adam-2iSS7ArDF14@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:received:date:message-id
+         :subject:from:to:content-type;
+        bh=ErWV/LeVGsB6++tjgR8Ig3rgMDQtmZn1t8MhZCk1Bms=;
+        b=PsqXxqiMbqeemPM6dJBh2S5xPtn/3VKirL9K+WzalrY0OQ1rP7dpMVSV156OCWPifS
+         vruNQKy42az7BYBbze8LFB1VUdPO6DnP/1AOY0p+zkuFHSS0ZhFDtYHba4jaPqaA5QHi
+         zbH/4Z40P3YMDRNXyfy6zVh/roH2MZI1wvyb8=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Adam Spragg <adam-2iSS7ArDF14@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Sig_/ri7lpI.YJLR.p5m1.=Vf_sz
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Hi all,
 
-Adam Spragg <adam-2iSS7ArDF14@public.gmane.org>:
-> On Friday 11 Jun 2010 20:10:34 Amadeusz =C5=BBo=C5=82nowski wrote:
-> > diff --git a/dracut b/dracut
-> > index 139d0e0..3b1e7e8 100755
-> > --- a/dracut
-> > +++ b/dracut
-> > @@ -184,7 +184,7 @@ abs_outfile=3D$(readlink -f "$outfile") &&
-> > outfile=3D"$abs_outfile"
-> >=20
-> >  srcmods=3D"/lib/modules/$kernel/"
-	> >  [[ $drivers_dir ]] && {
-> > -    if verlt $(modprobe --version | cut -d' ' -f3) 3.7; then
-> > +    if vercmp $(modprobe --version | cut -d' ' -f3) lt 3.5; then
-> >          derror 'To use --kmoddir option module-init-tools >=3D 3.7 is
-> > required.' exit 1
-> >      fi
->=20
-> Which version? 3.7? Or 3.5
+I am using one NFS directory as the root file system; at first, I use
+yum with "--installroot=/tmp/rootimg" option to install all the
+necessary rpm packages into "/tmp/rootimg". Then, I added one simple
+dracut module into the rootimg (which only output some information
+indeed), and I run "chroot /tmp/rootimg dracut xxx" to generate the
+"initrd.gz" file.
 
-3.7. Thanks for being alert!
+I updated my kernel command lines like this:
+++++++++++++++++++++++++++++++++++
+#netboot rhel6-ppc64-compute
+timeout=5
+image=xcat/netboot/rhel6/ppc64/compute/kernel
+        label=xcat
+        initrd=xcat/netboot/rhel6/ppc64/compute/initrd.gz
+        append="root=nfs4:192.168.11.107:/tmp/rootimg:rw  ip=dhcp
+rdshell rdinfo rdinitdebug"
++++++++++++++++++++++++++++++++++++
 
+The diskless node can be booted, but with some error/warning messages
+during the scripts under /etc/init.d/ are being executed. You can see
+them from the following message.
 
-Cheers,
-Amadeusz =C5=BBo=C5=82nowski
+++++++++++++++++++++++++++++++++++++++++++++++++++
++ exec switch_root /sysroot /sbin/init
+mount: only root can do that (effective UID is -2)
+                Welcome to Red Hat Enterprise Linux Server
+                Press 'I' to enter interactive startup.
+Starting udev: [  OK  ]
+Setting hostname ca4dsls02:  [  OK  ]
+Setting up Logical Volume Management:   No volume groups found
+[  OK  ]
+Checking filesystems
+WARNING: couldn't open /etc/fstab: No such file or directory
+Checking all file systems.
+[  OK  ]
+mount: only root can do that (effective UID is -2)
+Mounting local filesystems:  mount: only root can do that (effective UID is -2)
+[FAILED]
+chgrp: changing group of `/var/run/utmp': Invalid argument
+                                                          chgrp:
+changing group of `/var/log/wtmp': Invalid argument
 
---=20
-PGP key: 1024D/C284750D
+                                             chown: changing ownership
+of `/tmp/.ICE-unix': Invalid argument
+ Enabling /etc/fstab swaps:  swapon: /etc/fstab: open failed: No such
+file or directory
 
---Sig_/ri7lpI.YJLR.p5m1.=Vf_sz
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+                [FAILED]
+Entering non-interactive startup
+Retrigger failed udev events[  OK  ]
+Starting sshd: /var/empty/sshd must be owned by root and not group or
+world-writable.
+[FAILED]
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.14 (GNU/Linux)
+So, here, I have several questions,
+1) why does "mount: only root can do that (effective UID is -2)" show
+here? what can I do to make it not show here?
 
-iEYEARECAAYFAkwSlRAACgkQ+hU8EsKEdQ2nNwCeIXZoSFm2ZtZt0f1bT0AHF3UA
-u/kAn3IMSNlaq3oHjLrQXV9Oz60dA4CH
-=2NRV
------END PGP SIGNATURE-----
+2) "/etc/fstab" is not there, should I create one before switching
+root to the NFS mountpoint?
 
---Sig_/ri7lpI.YJLR.p5m1.=Vf_sz--
+3) "chgrp" and "chown" fails here, should I prepare the directories
+myself before switching root?
+
+Thank you!
