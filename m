@@ -1,31 +1,41 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: One warning message when switching root to /sysroot (which is
- the 	mount point for NFS)
-Date: Thu, 17 Jun 2010 11:29:17 +0200
-Message-ID: <4C19EAED.5020104@redhat.com>
-References: <AANLkTimBgxVQ4C-dUBPVhG6BHNDQVpD2XFL8NmuhaDZB@mail.gmail.com> <AANLkTik38g1JnWlVZTTCRV2QNlQythULFrtHzu9E1tw5@mail.gmail.com>
+Subject: [ANNOUNCE] dracut 006 release
+Date: Thu, 17 Jun 2010 14:01:42 +0200
+Message-ID: <4C1A0EA6.7070601@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <AANLkTik38g1JnWlVZTTCRV2QNlQythULFrtHzu9E1tw5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "Min Jun,Xi" <xi.minjun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/12/2010 09:27 AM, Min Jun,Xi wrote:
-> I have found the reason for "mount: only root can do that (effective
-> UID is -2)",
-> The nfs server is NFSv4-powered, NFSv4 has a concept of a root of the
-> overall exported file system. The export point exported with fsid=0 is
-> used as this root. If we didn't specify "fsid=0" in the /etc/exports
-> file, when it is mounted by the NFS client, all the owner of the
-> overall exported file system will become "nfsnobody:nfsnobody".
-> Because of this, the owner of "/bin/mount" is changed to
-> "nfsnobody:nfsnobody" from "root:root". when "mount" is called, the
-> warning message is shown.
->
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-For RHEL6 you want at least dracut-004-18 to get NFS4 working.
-dracut-005-3 in Fedora 13 should work as well.
+The tarball can be found here:
+  http://sourceforge.net/projects/dracut/files/
+
+The development repository can be found here:
+  http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=summary
+
+dracut-006
+==========
+- fixed mdraid with IMSM
+- fixed dracut manpages
+- dmraid parse different error messages
+- add cdrom polling mechanism for slow cdroms
+- add module btrfs
+- add btrfsctl scan for btrfs multi-devices (raid)
+- teach dmsquash live-root to use rootflags
+- trigger udev with action=add
+- fixed add_drivers handling
+- add sr_mod
+- use pigz instead of gzip, if available
+- boot from LVM mirrors and snapshots
+- iscsi: add support for multiple netroot=iscsi:
+- Support old version of module-init-tools
+- got rid of rdnetdebug
+- fixed "ip=auto6"
+- dracut.conf: use "+=" as default for config variables
+- bugfixes
