@@ -1,8 +1,8 @@
 From: "Min Jun,Xi" <xi.minjun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: I added one dracut module into initial ramdisk, but it is not 
 	called
-Date: Thu, 17 Jun 2010 21:18:56 +0800
-Message-ID: <AANLkTikTadmNc9b2AOfjc1deunhmD-z9gwW_u3AV0dV2@mail.gmail.com>
+Date: Thu, 17 Jun 2010 21:38:26 +0800
+Message-ID: <AANLkTimI0Ej-NueQz5KcnM3WSRb5H2rZ0ng_SrqgwWfD@mail.gmail.com>
 References: <AANLkTilYnPkMWI5kff6veRazkdLuluOmIId14JMu3eWi@mail.gmail.com>
 	<4C1A1DC2.5050401@redhat.com>
 Mime-Version: 1.0
@@ -13,16 +13,21 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:mime-version:received:received:in-reply-to
          :references:date:message-id:subject:from:to:cc:content-type
          :content-transfer-encoding;
-        bh=x1dK2FG20mUVMp24ml3sjJ0ykXkUM37uT/97pTIYcKc=;
-        b=YcMkkEaHIBtt2mjk15rQ3fdWOleaS2meQLvgjiiqrIpyx+NVRdglG/BSm6zPJKwS1H
-         DPm8hK1kQ4WNC0qRQT8BcHTK+ukU0/qsJDG8tIa9Tj91cK5sg8ZbQJ+w99DgnTx0jcmH
-         XH8HfZYRSLyQ4xRndQCMwRFtAQRF8PmwaR6Xc=
+        bh=27t4hq8sMZIyDRFa9GSdbFtnUUQNoI7nBpVgvhARk4Q=;
+        b=SAPVDwj6Kkij2j/0w1JzM1jI8gtLBO/w/Df5B6RWn+hSJCz/NCjaJaP1pEwvH4UYWC
+         cXCm1HMZjOWzRnRJScsHY2po0OsCKxvc87QkVQ5l+gb42tiANwb8DnZ+0Ap1LASemY0k
+         eNba4Pn2/BV8TZhjCcjdt5fkEeQFmyOVmhUIY=
 In-Reply-To: <4C1A1DC2.5050401-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+I made the changes you mentioned, and have re-generated the initrd,
+and rebooted the node;
+
+I also run "dmesg|grep xcat", but I couldn't get anything.
 
 On Thu, Jun 17, 2010 at 9:06 PM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote=
 :
@@ -87,19 +92,7 @@ my
 > what's the output of:
 > $ lsinitrd <image file> | grep xcat
 >
-Only one line exists in the output:
-[root@ca4lpar01 tmp]# lsinitrd initrd.gz |grep xcat
--rwxr-xr-x   1 root     root          175 Jun 17 16:19 sbin/xcatroot
-
 > and please rename "premount" to something like "xcat-premount"
-I found in the "README.modules",
-/pre-mount/*.sh
-   scripts to run before the root filesystem is mounted
-   Network filesystems like NFS that do not use device files are an
-   exception. Root can be mounted already at this point.
-Does it mean that it won't be called because the root filesystem is
-mounted with NFS?
-
 >
 > then you can do in the dracut shell after booting with "rdinitdebug":
 >
