@@ -1,40 +1,31 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut, dracut-functions: better vercmp; credits go to
- V. Lowther
-Date: Thu, 17 Jun 2010 09:44:52 +0200
-Message-ID: <4C19D274.6020100@redhat.com>
-References: <20100611211034.609135f8@etiriah.ds.pg.gda.pl> <20100611214721.58062841@etiriah.ds.pg.gda.pl>
+Subject: Re: One warning message when switching root to /sysroot (which is
+ the 	mount point for NFS)
+Date: Thu, 17 Jun 2010 11:29:17 +0200
+Message-ID: <4C19EAED.5020104@redhat.com>
+References: <AANLkTimBgxVQ4C-dUBPVhG6BHNDQVpD2XFL8NmuhaDZB@mail.gmail.com> <AANLkTik38g1JnWlVZTTCRV2QNlQythULFrtHzu9E1tw5@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100611214721.58062841-YdJE6FOikKfe60hTmSeVGxfX6IwIUJvj@public.gmane.org>
+In-Reply-To: <AANLkTik38g1JnWlVZTTCRV2QNlQythULFrtHzu9E1tw5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: "Min Jun,Xi" <xi.minjun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/11/2010 09:47 PM, Amadeusz =C5=BBo=C5=82nowski wrote:
-> Left incorrect module-init-tools version in the patch, here's the fix=
-:
-> ---
->   dracut |    2 +-
->   1 files changed, 1 insertions(+), 1 deletions(-)
+On 06/12/2010 09:27 AM, Min Jun,Xi wrote:
+> I have found the reason for "mount: only root can do that (effective
+> UID is -2)",
+> The nfs server is NFSv4-powered, NFSv4 has a concept of a root of the
+> overall exported file system. The export point exported with fsid=0 is
+> used as this root. If we didn't specify "fsid=0" in the /etc/exports
+> file, when it is mounted by the NFS client, all the owner of the
+> overall exported file system will become "nfsnobody:nfsnobody".
+> Because of this, the owner of "/bin/mount" is changed to
+> "nfsnobody:nfsnobody" from "root:root". when "mount" is called, the
+> warning message is shown.
 >
-> diff --git a/dracut b/dracut
-> index 3b1e7e8..3be4989 100755
-> --- a/dracut
-> +++ b/dracut
-> @@ -184,7 +184,7 @@ abs_outfile=3D$(readlink -f "$outfile")&&  outfil=
-e=3D"$abs_outfile"
->
->   srcmods=3D"/lib/modules/$kernel/"
->   [[ $drivers_dir ]]&&  {
-> -    if vercmp $(modprobe --version | cut -d' ' -f3) lt 3.5; then
-> +    if vercmp $(modprobe --version | cut -d' ' -f3) lt 3.7; then
->           derror 'To use --kmoddir option module-init-tools>=3D 3.7 i=
-s required.'
->           exit 1
->       fi
 
-pushed
+For RHEL6 you want at least dracut-004-18 to get NFS4 working.
+dracut-005-3 in Fedora 13 should work as well.
