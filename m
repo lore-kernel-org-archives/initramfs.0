@@ -1,47 +1,47 @@
-From: Adam Spragg <adam-2iSS7ArDF14@public.gmane.org>
+From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: [PATCH] dracut: setup English locales for Dracut build script
-Date: Fri, 18 Jun 2010 14:28:08 +0100
-Message-ID: <201006181428.09276.adam@spra.gg>
+Date: Fri, 18 Jun 2010 15:30:44 +0200
+Message-ID: <20100618153044.6b3bd2a6@etiriah.ds.pg.gda.pl>
 References: <20100618133841.61845f0d@etiriah.ds.pg.gda.pl>
+	<AANLkTil85GmgtdZieaCwu93axSYZnlpVDpMX2kSRQiUQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/MfWf.TAZ/XMGNKfG4Qfk9qJ"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100618133841.61845f0d-YdJE6FOikKfe60hTmSeVGxfX6IwIUJvj@public.gmane.org>
+In-Reply-To: <AANLkTil85GmgtdZieaCwu93axSYZnlpVDpMX2kSRQiUQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: Text/Plain; charset="utf-8"
-To: Amadeusz =?utf-8?q?=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Friday 18 Jun 2010 12:38:41 Amadeusz =C5=BBo=C5=82nowski wrote:
-> Dracut rely upon programs' output like ldd's "not a dynamic executabl=
-e".
-> Assume user sets up Polish locales and then ldd prints
-> "nie jest dynamicznym programem wykonywalnym".  The patch prevents th=
-is.
-> ---
->  dracut |   15 +++++++++++++++
->  1 files changed, 15 insertions(+), 0 deletions(-)
->=20
-> diff --git a/dracut b/dracut
-> index 3be4989..1437625 100755
-> --- a/dracut
-> +++ b/dracut
-> @@ -107,6 +118,10 @@ done
->=20
->  PATH=3D/sbin:/bin:/usr/sbin:/usr/bin
->  export PATH
-> +# We rely upon programs' output like ldd's "not found", so we have t=
-o
-> +# set up English locales.
-> +change_locales en_US
-> +
->=20
->  [[ $debug ]] && {
->      export PS4=3D'${BASH_SOURCE}@${LINENO}(${FUNCNAME[0]}): ';
+--Sig_/MfWf.TAZ/XMGNKfG4Qfk9qJ
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-I don't have any en_US locales installed on my system. Not sure why a P=
-ole=20
-would either. You'd probably be better off with the "C" locale, IMHO.
+Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
+> Hmmm... The usual way to do this is to run the program in the C locale
+> by setting
+> LC_ALL=3DC
 
-Adam
+You mean we should prefix every call which output we rely or just setup:
+export LC_ALL=3DC in place I pointed?  Hm=E2=80=A6 to think about it the fi=
+rst
+option would be more elgant.
+
+
+--=20
+PGP key: 1024D/C284750D
+
+--Sig_/MfWf.TAZ/XMGNKfG4Qfk9qJ
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkwbdQQACgkQ+hU8EsKEdQ3e/gCg3azH2jFJSfOg/83bvtv0ac3R
+uzUAnjMMPIjQ4kgJ0pE1cT7CyHPWYtKK
+=6BN1
+-----END PGP SIGNATURE-----
+
+--Sig_/MfWf.TAZ/XMGNKfG4Qfk9qJ--
