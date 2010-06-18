@@ -1,107 +1,67 @@
-From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
-Subject: initramfs-tools 0.97 release
-Date: Fri, 18 Jun 2010 16:07:58 +0200
-Message-ID: <2010-06-18T16-04-16@devnull.michael-prokop.at>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] dracut: setup English locales for Dracut build script
+Date: Fri, 18 Jun 2010 18:56:24 +0200
+Message-ID: <4C1BA538.7010304@redhat.com>
+References: <20100618133841.61845f0d@etiriah.ds.pg.gda.pl>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="vTfKKTivj/mQoluA"
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20100618133841.61845f0d-YdJE6FOikKfe60hTmSeVGxfX6IwIUJvj@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org
-Cc: kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+On 06/18/2010 01:38 PM, Amadeusz =C5=BBo=C5=82nowski wrote:
+> Dracut rely upon programs' output like ldd's "not a dynamic executabl=
+e".
+> Assume user sets up Polish locales and then ldd prints
+> "nie jest dynamicznym programem wykonywalnym".  The patch prevents th=
+is.
+> ---
+>   dracut |   15 +++++++++++++++
+>   1 files changed, 15 insertions(+), 0 deletions(-)
+>
+> diff --git a/dracut b/dracut
+> index 3be4989..1437625 100755
+> --- a/dracut
+> +++ b/dracut
+> @@ -71,6 +71,17 @@ Creates initial ramdisk images for preloading modu=
+les
+>   "
+>   }
+>
+> +# Change locales and language leaving existing suffix (.utf8 or simi=
+lar).
+> +# $1 =3D language (e.g. en_US)
+> +change_locales() {
+> +    local lang=3D(${LANG/./ })
+> +    lang[0]=3D$1
+> +    lang=3D${lang[@]}
+> +    LANG=3D${lang/ /.}
+> +    LC_ALL=3D${LANG}
+> +    export LANG LC_ALL
+> +}
+> +
+>   while (($#>  0)); do
+>       case $1 in
+>   	-f|--force) force=3Dyes;;
+> @@ -107,6 +118,10 @@ done
+>
+>   PATH=3D/sbin:/bin:/usr/sbin:/usr/bin
+>   export PATH
+> +# We rely upon programs' output like ldd's "not found", so we have t=
+o
+> +# set up English locales.
+> +change_locales en_US
+> +
+>
+>   [[ $debug ]]&&  {
+>       export PS4=3D'${BASH_SOURCE}@${LINENO}(${FUNCNAME[0]}): ';
 
---vTfKKTivj/mQoluA
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hmm, we probably should prefix every call to an app, where we parse the=
+ output=20
+with LANG=3DC like this:
 
-Hi,
-
-we just uploaded and released initramfs-tools 0.97 to Debian/unstable.
-
-Most notably are bugfixes for mdstat parsing, hooks can abort build
-of initramfs, bash-completion for update-initramfs, some code
-cleanups and further bugfixes. Continous work for easier bug
-reporting together with a lsinitramfs script.
-
-We've a new document titled "Maintainer documentation for
-initramfs-tools" in our docs, which documents our workflow, how to
-contribute patches, test,.... - it's available online at:
-
-  http://git.debian.org/?p=kernel/initramfs-tools.git;a=blob_plain;f=docs/maintainer-notes.html;hb=HEAD
-
-Thanks to Colin Watson for merging in Ubuntu previous 0.96.1 and
-providing patches.
-
-regards,
--mika-
-
-shortlog has the details:
-
-Colin Watson (1):
-      initramfs-tools: work around 'find -printf %Y' bug
-
-Ferenc Wagner (1):
-      scripts/nfs: cleanup retry logic
-
-Martin Michlmayr (2):
-      Produce an error when root cannot be determined with MODULES=dep
-      hook-functions/init/scripts/local: add support for ubifs.
-
-Michael Prokop (25):
-      Fix bug number in changelog (#584520 -> #549680) for upload of 0.96.1.
-      hook-functions/mkinitramfs/update-initramfs: consequently output error messages to stderr
-      init: display warning message if devtmpfs could not be mounted.
-      code cleanup: drop trailing whitespaces.
-      code cleanup: consequently replace spaces in indentions with tabs to unify coding stile
-      code cleanup: consequently use "W:" for warnings.
-      add bash-completion for update-initramfs
-      hook-functions: replace awk calls with sed in dep_add_modules()
-      debian/script: append /proc/mdstat (iff present) to bugreports
-      scripts/functions: allow hooks to abort build
-      hook-functions: do not install ubi module by default via auto_add_modules()
-      initial version of maintainer-notes.html
-      maintainer-notes.html: fix git-dch commandline.
-      move maintainer-notes.html to docs/ and install as /usr/share/doc/initramfs-tools/maintainer-notes.html
-      maintainer-notes.html: extend contribution section, rewrap + fix git-dch/git-buildpackage commandline
-      lsinitramfs: be more defensive against cmdline options
-      scripts/functions: fix usage of test for script execution
-      scripts/functions: fix another sh -n usage and fix typo
-      hook-functions: install virtio_pci module if /sys/bus/virtio is present and using modules=dep
-      docs/maintainer-notes: valid XHTML 1.0 Strict document, add section "Build snapshot version", add license note, minor formating cleanups + improvements
-      slightly improve manpage lsinitramfs.8
-      Releasing version 0.97.
-
-maximilian attems (16):
-      script: Add update-initramfs.conf to bug report
-      update-initramfs: Fix another unbound variable
-      get_fstype: reference blkid in comment
-      pre_mountroot(): reduce timeout to 30 seconds
-      scripts/functions: On panic change to tty1 if chvt around
-      mkinitramfs: No point in hardcoding busybox path
-      Add lsinitramfs to initramfs-tools
-      lsinitramfs: set errexit and nounset
-      lsinitramfs: allow to pass several filenames
-      mkinitramfs: check syntax of boot and hook scripts
-      scripts/functions: beautify a bit reduce_satisfied()
-      maintainer doc: use git commands without the dash
-      nfsmount: more small cleanups
-      lsinitramfs: use getopt for -l option
-      mkinitramfs, lsinitramfs: Better error message for non-GNU getopt
-
---vTfKKTivj/mQoluA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iD8DBQFMG32+2N9T+zficugRAnp7AKCBVhC61a5JKDZM4pKtq3Xkbwa8WwCffOO0
-+oOOp7VqDfiU+W1vfilBWzI=
-=WO+8
------END PGP SIGNATURE-----
-
---vTfKKTivj/mQoluA--
+LANG=3DC ldd $file | grep -q "not found"
