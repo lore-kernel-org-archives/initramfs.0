@@ -1,18 +1,32 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] Generic I18N module - install script
-Date: Tue, 22 Jun 2010 11:42:04 +0200
-Message-ID: <4C20856C.2040407@redhat.com>
-References: <20100620185919.19b9c83a@etiriah.ds.pg.gda.pl> <4C2080D8.6040400@redhat.com>
+From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: dracut ip= parameter and static IP configuration
+Date: Wed, 23 Jun 2010 17:40:41 +0200
+Message-ID: <4C222AF9.1040208@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4C2080D8.6040400-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Radek Vykydal <rvykydal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 06/22/2010 11:22 AM, Harald Hoyer wrote:
-> Hmm, what about varnames with a "-" ? You might want to use "@".
+Hi Harald et all,
 
-forget it.. no "-" allowed in varnames anyway :)
+The dracut man page says:
+
+        ip=<client-IP>:[<server-id>]:<gateway-IP>:<netmask>:<clienthostname>
+        :<interface>:{none|off}
+               explicit  network  configuration.  If  you want do define a IPv6
+               address, put it in brackets (e.g. [2001:DB8::1]).  This  parame-
+               ter can be specified multiple times.
+
+Which suggests that static ipv6 configuration is supported, but what to do
+with the prefix versus netmask ? ipv6 addresses do not use netmasks but instead
+always use the prefix notation, for example:
+
+2001:aaaa::3/64
+
+Regards,
+
+Hans
