@@ -1,32 +1,18 @@
-From: Hans de Goede <hdegoede-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: dracut ip= parameter and static IP configuration
-Date: Wed, 23 Jun 2010 17:40:41 +0200
-Message-ID: <4C222AF9.1040208@redhat.com>
+From: Dave Stone <fsck1234-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: dracut modules
+Date: Thu, 24 Jun 2010 12:38:50 +0000 (UTC)
+Message-ID: <loom.20100624T143213-57@post.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Radek Vykydal <rvykydal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Harald et all,
+Hi everyone.  Are there any documents describing how to add new modules 
+to /usr/share/dracut/modules.d?  I have looked at what is available with RHEL6 
+Beta 1 version.  I would need to insert my own drivers before lvm.
+Thanks in advance for your help.
 
-The dracut man page says:
-
-        ip=<client-IP>:[<server-id>]:<gateway-IP>:<netmask>:<clienthostname>
-        :<interface>:{none|off}
-               explicit  network  configuration.  If  you want do define a IPv6
-               address, put it in brackets (e.g. [2001:DB8::1]).  This  parame-
-               ter can be specified multiple times.
-
-Which suggests that static ipv6 configuration is supported, but what to do
-with the prefix versus netmask ? ipv6 addresses do not use netmasks but instead
-always use the prefix notation, for example:
-
-2001:aaaa::3/64
-
-Regards,
-
-Hans
+-Dave
