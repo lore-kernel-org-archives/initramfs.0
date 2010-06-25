@@ -1,25 +1,35 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut modules
-Date: Fri, 25 Jun 2010 15:58:23 +0200
-Message-ID: <4C24B5FF.7040803@redhat.com>
-References: <loom.20100624T143213-57@post.gmane.org> <4C24911F.4010503@redhat.com> <loom.20100625T153101-235@post.gmane.org>
+From: Dave Stone <fsck1234-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: Re: I added one dracut module into initial ramdisk, but it is not =?utf-8?b?CWNhbGxlZA==?=
+Date: Fri, 25 Jun 2010 19:27:31 +0000 (UTC)
+Message-ID: <loom.20100625T212536-159@post.gmane.org>
+References: <AANLkTilYnPkMWI5kff6veRazkdLuluOmIId14JMu3eWi@mail.gmail.com> <4C1A1DC2.5050401@redhat.com> <AANLkTimI0Ej-NueQz5KcnM3WSRb5H2rZ0ng_SrqgwWfD@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <loom.20100625T153101-235-eS7Uydv5nfjZ+VzJOa5vwg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Dave Stone <fsck1234-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/25/2010 03:53 PM, Dave Stone wrote:
-> One other question when using rdloaddriver=<drivername>  at what stage of boot
-> process does this driver gets loaded?
+Min Jun,Xi <xi.minjun@...> writes:
 
-In the beginning, before udev is started.
+> 
+> I made the changes you mentioned, and have re-generated the initrd,
+> and rebooted the node;
+> 
+> I also run "dmesg|grep xcat", but I couldn't get anything.
+> 
 
->
-> Regards,
-> -Dave
->
+Hi Min,
+
+I'm new to dracut as well.  But here is a couple of things that might help you.
+1. Make sure "check" and "install" and other scripts are executable
+2. Dracut has -v --debug output options which can be redirected to a file.  
+Then you can look for problems that might have prevented dracut to include 
+your module.
+
+Regards,
+
+-Dave 
+
+Pruned....
