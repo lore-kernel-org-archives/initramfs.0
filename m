@@ -1,49 +1,81 @@
-From: Steffen Maier <maier-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Failed to use read-only NFS as the root filesystem
-Date: Mon, 05 Jul 2010 11:23:20 +0200
-Message-ID: <4C31A488.2030608@linux.vnet.ibm.com>
-References: <AANLkTimW2-WTf1oqheGOQgfIHcUVpFOEakpnAO8aiQGf@mail.gmail.com> <1278263760.4311.59.camel@obelisk.thedillows.org>
+From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: Re: [PATCH 3/3] dracut-functions: find_rule a bit smarter
+Date: Mon, 5 Jul 2010 11:24:07 +0200
+Message-ID: <20100705112407.26026f40@etiriah>
+References: <20100705090647.30b3c2bc@etiriah>
+	<20100705090847.4a2bcc7e@etiriah>
+	<20100705091220.670f00f7@etiriah>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/czzM/Wt_aSFBPQlb0YTuIV/"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1278263760.4311.59.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
+In-Reply-To: <20100705091220.670f00f7@etiriah>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Cc: "Min Jun,Xi" <xi.minjun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07/04/2010 07:16 PM, David Dillow wrote:
-> On Mon, 2010-07-05 at 00:48 +0800, Min Jun,Xi wrote:
->> Hi All,
->> there's one problem here.
->> I tried to set one read-only NFS directory as the root filesystem, b=
-ut
->> there're several problems, and lead to one situation that the root
->> filesystem is remounted using read-write option.
->=20
->> Is there any option or flag which can be used to disable it? I think
->> the developers from redhat should know about it.
->=20
-> Search /etc/rc.d/rc.sysinit for /etc/sysconfig/readonly-root. I don't
-> know if it is well documented or not. You can also use "readonlyroot"=
- on
-> the command line I think, but using the file lets you set more option=
-s.
-> Expect more issues related to this, the last time I looked at it, it
-> took some tweaking to make work well.
+--Sig_/czzM/Wt_aSFBPQlb0YTuIV/
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Even thought it focuses on a specific use case on s390x, the following
-document for readonly root-fs on RHEL 5.3 might help you with some more
-background information:
-http://www.linuxvm.org/Present/misc/ro-root-RH5.pdf
+Matches rules filename if it's specified without prefix number.
+---
+ dracut-functions |   25 +++++++++++++++++++++++--
+ 1 files changed, 23 insertions(+), 2 deletions(-)
 
-Steffen
+diff --git a/dracut-functions b/dracut-functions
+index be6b2e9..1f2528e 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -319,11 +319,32 @@ inst_symlink() {
+     inst "$realsrc" && ln -s "$realsrc" "$target"
+ }
+=20
+-# find a udev rule in the usual places.
++# find a udev rule in the usual places and try to be smart (just a bit).
++# See example:
++#   find_rule default.rules
++#   find_rule 50-default.rules
++# All of them will return: /lib/udev/rules.d/50-udev-default.rules
++# If there are few matching files, error message is printed.
+ find_rule() {
++    local rule t
++
+     [[ -f $1 ]] && { echo "$1"; return 0; }
+     for r in . /lib/udev/rules.d /etc/udev/rules.d $dracutbasedir/rules.d;=
+ do
+-	[[ -f $r/$1 ]] && { echo "$r/$1"; return 0; }
++        if ls $r/*$1 &>/dev/null; then
++            if [[ -f $r/$1 ]]; then
++                echo "$r/$1"
++                return 0
++            else
++                rule=3D$(ls "$r"/??"-$1" 2>/dev/null)
++                t=3D($rule)
++                if (( ${#t[@]} > 1 )); then
++                    derror "Ambigous rules filename.  Matches: ${t[@]}"
++                elif [[ -f "$rule" ]]; then
++                    echo $rule
++                    return 0
++                fi
++            fi
++        fi
+     done
+     return 1
+ }
+--=20
+1.7.1
 
-Linux on System z Development
+--Sig_/czzM/Wt_aSFBPQlb0YTuIV/
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-IBM Deutschland Research & Development GmbH
-Vorsitzender des Aufsichtsrats: Martin Jetter
-Gesch=C3=A4ftsf=C3=BChrung: Dirk Wittkopp
-Sitz der Gesellschaft: B=C3=B6blingen
-Registergericht: Amtsgericht Stuttgart, HRB 243294
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkwxpLcACgkQ+hU8EsKEdQ1yKACffs2Un2FhmuFy+aVYO/jc2JLR
+J3sAoMGLIWJAtJc2tDXciKoFCPQnSXT0
+=JoqK
+-----END PGP SIGNATURE-----
+
+--Sig_/czzM/Wt_aSFBPQlb0YTuIV/--
