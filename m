@@ -1,81 +1,59 @@
 From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: [PATCH 3/3] dracut-functions: find_rule a bit smarter
-Date: Mon, 5 Jul 2010 11:24:07 +0200
-Message-ID: <20100705112407.26026f40@etiriah>
-References: <20100705090647.30b3c2bc@etiriah>
-	<20100705090847.4a2bcc7e@etiriah>
-	<20100705091220.670f00f7@etiriah>
+Subject: [PATCH] dracut-functions: cosmetic changes to inst_rules
+Date: Mon, 5 Jul 2010 11:25:21 +0200
+Message-ID: <20100705112521.37ec8c65@etiriah>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/czzM/Wt_aSFBPQlb0YTuIV/"; protocol="application/pgp-signature"
+ boundary="Sig_/HAN/Jwm9M1hDg_ZQ2Nq46W6"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100705091220.670f00f7@etiriah>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Sig_/czzM/Wt_aSFBPQlb0YTuIV/
+--Sig_/HAN/Jwm9M1hDg_ZQ2Nq46W6
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-Matches rules filename if it's specified without prefix number.
 ---
- dracut-functions |   25 +++++++++++++++++++++++--
- 1 files changed, 23 insertions(+), 2 deletions(-)
+ dracut-functions |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/dracut-functions b/dracut-functions
-index be6b2e9..1f2528e 100755
+index 0caf0d6..be6b2e9 100755
 --- a/dracut-functions
 +++ b/dracut-functions
-@@ -319,11 +319,32 @@ inst_symlink() {
-     inst "$realsrc" && ln -s "$realsrc" "$target"
+@@ -331,13 +331,14 @@ find_rule() {
+ # udev rules always get installed in the same place, so
+ # create a function to install them to make life simpler.
+ inst_rules() {=20
+-    local target=3D/etc/udev/rules.d
++    local target=3D/etc/udev/rules.d rule found
++
+     inst_dir "/lib/udev/rules.d"
+     inst_dir "$target"
+     for rule in "$@"; do=20
+-	rule1=3D$(find_rule "$rule") && \
+-	    inst_simple "$rule1" "$target/${rule1##*/}" \
+-	    || dinfo "Skipping udev rule: $rule"
++        found=3D$(find_rule "$rule") && \
++            inst_simple "$found" "$target/${found##*/}" \
++            || dinfo "Skipping udev rule: $rule"
+     done
  }
 =20
--# find a udev rule in the usual places.
-+# find a udev rule in the usual places and try to be smart (just a bit).
-+# See example:
-+#   find_rule default.rules
-+#   find_rule 50-default.rules
-+# All of them will return: /lib/udev/rules.d/50-udev-default.rules
-+# If there are few matching files, error message is printed.
- find_rule() {
-+    local rule t
-+
-     [[ -f $1 ]] && { echo "$1"; return 0; }
-     for r in . /lib/udev/rules.d /etc/udev/rules.d $dracutbasedir/rules.d;=
- do
--	[[ -f $r/$1 ]] && { echo "$r/$1"; return 0; }
-+        if ls $r/*$1 &>/dev/null; then
-+            if [[ -f $r/$1 ]]; then
-+                echo "$r/$1"
-+                return 0
-+            else
-+                rule=3D$(ls "$r"/??"-$1" 2>/dev/null)
-+                t=3D($rule)
-+                if (( ${#t[@]} > 1 )); then
-+                    derror "Ambigous rules filename.  Matches: ${t[@]}"
-+                elif [[ -f "$rule" ]]; then
-+                    echo $rule
-+                    return 0
-+                fi
-+            fi
-+        fi
-     done
-     return 1
- }
 --=20
 1.7.1
 
---Sig_/czzM/Wt_aSFBPQlb0YTuIV/
+--Sig_/HAN/Jwm9M1hDg_ZQ2Nq46W6
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.14 (GNU/Linux)
 
-iEYEARECAAYFAkwxpLcACgkQ+hU8EsKEdQ1yKACffs2Un2FhmuFy+aVYO/jc2JLR
-J3sAoMGLIWJAtJc2tDXciKoFCPQnSXT0
-=JoqK
+iEYEARECAAYFAkwxpQEACgkQ+hU8EsKEdQ1J5wCfd8VUQQTu+MxYK5TcC7ZndQTx
+RYwAnic00/8GNfgW8g21bRNS2ri0bxbn
+=9v8W
 -----END PGP SIGNATURE-----
 
---Sig_/czzM/Wt_aSFBPQlb0YTuIV/--
+--Sig_/HAN/Jwm9M1hDg_ZQ2Nq46W6--
