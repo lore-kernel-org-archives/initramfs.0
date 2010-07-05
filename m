@@ -1,30 +1,60 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
-Subject: Re: Failed to use read-only NFS as the root filesystem
-Date: Sun, 04 Jul 2010 13:16:00 -0400
-Message-ID: <1278263760.4311.59.camel@obelisk.thedillows.org>
-References: <AANLkTimW2-WTf1oqheGOQgfIHcUVpFOEakpnAO8aiQGf@mail.gmail.com>
+From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 1/3] dracut: info which module is sourced; updated dracut
+ usage
+Date: Mon, 5 Jul 2010 09:06:47 +0200
+Message-ID: <20100705090647.30b3c2bc@etiriah>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/FCrwR+i+ynDFK.EF6.eP4c8"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <AANLkTimW2-WTf1oqheGOQgfIHcUVpFOEakpnAO8aiQGf-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: "Min Jun,Xi" <xi.minjun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 2010-07-05 at 00:48 +0800, Min Jun,Xi wrote:
-> Hi All,
-> there's one problem here.
-> I tried to set one read-only NFS directory as the root filesystem, but
-> there're several problems, and lead to one situation that the root
-> filesystem is remounted using read-write option.
+--Sig_/FCrwR+i+ynDFK.EF6.eP4c8
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> Is there any option or flag which can be used to disable it? I think
-> the developers from redhat should know about it.
+Added description for --confdir.
+---
+ dracut |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-Search /etc/rc.d/rc.sysinit for /etc/sysconfig/readonly-root. I don't
-know if it is well documented or not. You can also use "readonlyroot" on
-the command line I think, but using the file lets you set more options.
-Expect more issues related to this, the last time I looked at it, it
-took some tweaking to make work well.
+diff --git a/dracut b/dracut
+index 3be4989..6b590f5 100755
+--- a/dracut
++++ b/dracut
+@@ -57,6 +57,8 @@ Creates initial ramdisk images for preloading modules
+   -v, --verbose         Verbose output during the build process
+   -c, --conf [FILE]     Specify configuration file to use.
+                          Default: /etc/dracut.conf
++  --confdir [DIR]       Specify configuration directory to use *.conf file=
+s from.
++                         Default: /etc/dracut.conf.d
+   -l, --local           Local mode. Use modules from the current working
+                          directory instead of the system-wide installed in
+                          /usr/share/dracut/modules.d.
+@@ -243,6 +245,7 @@ check_modules
+ for moddir in "$dracutbasedir/modules.d"/[0-9][0-9]*; do
+     mod=3D${moddir##*/}; mod=3D${mod#[0-9][0-9]}
+     if strstr "$mods_to_load" " $mod "; then
++	dinfo "*** Sourcing module $mod"
+ 	if [[ $kernel_only =3D yes ]]; then
+ 	    [[ -x $moddir/installkernel ]] && . "$moddir/installkernel"
+ 	else
+--=20
+1.7.1
+
+--Sig_/FCrwR+i+ynDFK.EF6.eP4c8
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkwxhIcACgkQ+hU8EsKEdQ2ZagCgw6mdKFiHvEWCuSl6ZK8WmuaJ
+/ukAn0UWK99h73bUinzFpul4Mz9T+f9p
+=LiKy
+-----END PGP SIGNATURE-----
+
+--Sig_/FCrwR+i+ynDFK.EF6.eP4c8--
