@@ -1,69 +1,81 @@
-From: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: [PATCH 3/3] dracut-functions: find_rule a bit smarter
-Date: Mon, 05 Jul 2010 09:53:57 -0500
-Message-ID: <1278341637.4056.17.camel@localhost.localdomain>
+Date: Wed, 7 Jul 2010 11:19:46 +0200
+Message-ID: <20100707111946.568b4775@etiriah>
 References: <20100705090647.30b3c2bc@etiriah>
-	 <20100705090847.4a2bcc7e@etiriah> <20100705091220.670f00f7@etiriah>
-	 <20100705112407.26026f40@etiriah>
+	<20100705090847.4a2bcc7e@etiriah>
+	<20100705091220.670f00f7@etiriah>
+	<20100705112407.26026f40@etiriah>
+	<1278341637.4056.17.camel@localhost.localdomain>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/K/KB21E8Z5aqlSkPKOHGclF"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:received:subject:from:to:cc
-         :in-reply-to:references:content-type:content-transfer-encoding:date
-         :message-id:mime-version:x-mailer;
-        bh=mnDyls4tGOetwClqlzlJJCofZEBOKprIOu2G008Zqgo=;
-        b=AhuUUYonS+ttxaNPhTFvvKY5HO5KNfooQntVVsSFfN9vlrdfSzMHMK/paXfbIYfHnQ
-         aUN/Xs1kSXTwRAJgd+VyBYXSjTcyCpuvQrv5GfhDrUjnlniIVKq7Y5iO0ws3ploK5ZqZ
-         4fEGqswxZpDIywojrNnFb+C2u2RCIl2MAu3II=
-In-Reply-To: <20100705112407.26026f40@etiriah>
+In-Reply-To: <1278341637.4056.17.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Amadeusz =?UTF-8?Q?=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 2010-07-05 at 11:24 +0200, Amadeusz =C5=BBo=C5=82nowski wrote:
-> Matches rules filename if it's specified without prefix number.
-> ---
->  dracut-functions |   25 +++++++++++++++++++++++--
->  1 files changed, 23 insertions(+), 2 deletions(-)
->=20
-> diff --git a/dracut-functions b/dracut-functions
-> index be6b2e9..1f2528e 100755
-> --- a/dracut-functions
-> +++ b/dracut-functions
-> @@ -319,11 +319,32 @@ inst_symlink() {
->      inst "$realsrc" && ln -s "$realsrc" "$target"
->  }
-> =20
-> -# find a udev rule in the usual places.
-> +# find a udev rule in the usual places and try to be smart (just a b=
-it).
-> +# See example:
-> +#   find_rule default.rules
-> +#   find_rule 50-default.rules
-> +# All of them will return: /lib/udev/rules.d/50-udev-default.rules
-> +# If there are few matching files, error message is printed.
->  find_rule() {
-> +    local rule t
-> +
->      [[ -f $1 ]] && { echo "$1"; return 0; }
->      for r in . /lib/udev/rules.d /etc/udev/rules.d $dracutbasedir/ru=
-les.d; do
-# Parsing the output of ls can lead to strange and subtle bugs.
-# Use globbing and parameter expansion instead, and go with the first
-# matching file.
-	local f
-	for f in "$r/$1" "$r/${1%%-*}-udev-%{1##*-}" "$r/"*"$1"; do
-		[[ -f $f ]] || continue
-		echo "$f"
-		return 0
->      done
->      return 1
->  }
+--Sig_/K/KB21E8Z5aqlSkPKOHGclF
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+Victor Lowther <victor.lowther-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
+> # Parsing the output of ls can lead to strange and subtle bugs.
+> # Use globbing and parameter expansion instead, and go with the first
+> # matching file.
+> 	local f
+> 	for f in "$r/$1" "$r/${1%%-*}-udev-%{1##*-}" "$r/"*"$1"; do
+> 		[[ -f $f ]] || continue
+> 		echo "$f"
+> 		return 0
+
+
+Thank you for advice!  I've modified function to the following form:
+
+# Final efect the same as previous, but in addition detects ambiguousness
+# among multiple directories.  If it's not desired uncomment the line with
+# "break" statement.
+find_rule() {
+    local rd f files=3D()
+
+    [[ -f $1 ]] && { echo "$1"; return 0; }
+
+    for rd in . /lib/udev/rules.d /etc/udev/rules.d $dracutbasedir/rules.d;=
+ do
+        for f in "$rd/$1" "$rd"/*-"$1"
+        do
+            [[ -f $f ]] || continue
+            [[ ${f##*/} =3D~ [0-9][0-9]-.*\.rules ]] || continue
+            files+=3D($f)
+        done
+        # (( ${#files[@]} >=3D 1 )) && break
+    done
+
+    (( ${#files[@]} < 1 )) && return 1
+    (( ${#files[@]} > 1 )) && {
+        derror "Ambigous rules filename.  Matches: ${files[@]}"
+        return 1
+    }
+
+    echo "$files"
+}
+
 
 --=20
-Victor Lowther
-LPIC2 UCP RHCE=20
+PGP key: 1024D/C284750D
+
+--Sig_/K/KB21E8Z5aqlSkPKOHGclF
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.14 (GNU/Linux)
+
+iEYEARECAAYFAkw0RrIACgkQ+hU8EsKEdQ0FBgCgprK1JNIakCzW/zEzc4tG3l7+
+zZUAoKNWWRcZRIMqp8aXVuEJNfwVUsCt
+=e5bH
+-----END PGP SIGNATURE-----
+
+--Sig_/K/KB21E8Z5aqlSkPKOHGclF--
