@@ -1,82 +1,62 @@
-From: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: patches
-Date: Mon, 26 Jul 2010 09:58:44 +0200
-Message-ID: <201007260958.44928.maarten.vanraes@gmail.com>
+From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 1/2] 10i18n: exit if console already initialized
+Date: Mon, 26 Jul 2010 10:15:40 +0200
+Message-ID: <20100726101540.37af47d8@aidecoe.name>
 Mime-Version: 1.0
-Content-Type: Multipart/Mixed;
-  boundary="Boundary-00=_0AUTMsvFLI5J3eF"
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/k3KD5uoXBtmCeMV1tIv3NV0"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:received:to:subject:from:date
-         :mime-version:content-type:message-id;
-        bh=XJM17/AkQNk+dAJk6GLgSEZW5ixTO1AC9buJMYI9oy4=;
-        b=nuPUvghvnoKVwFUHmfw+KB3xJJi43JA8/5m8CCAiBKso1P3Be/dEVmZJ0H+liRZ80Y
-         mRtzaPa5+pXSZJhW/kfVkTDLC3ojaMppKlJ/DR+6oyqSJTbmpUgsfWQjEQ9g4OylnjOG
-         bHfgvD7NO4Chola/aUOyIHKR+BR5f8cK0js14=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Boundary-00=_0AUTMsvFLI5J3eF
-Content-Type: text/plain;
-  charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-
-Hi,
-
-another small patch.
-
-Kind regards,
-
-Maarten Vanraes
-
---Boundary-00=_0AUTMsvFLI5J3eF
-Content-Type: text/x-patch;
-  charset="UTF-8";
-  name="0004-not-remove-unloaded-modules.patch"
+--Sig_/k3KD5uoXBtmCeMV1tIv3NV0
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
-	filename="0004-not-remove-unloaded-modules.patch"
 
-=46rom 4ef6f01f12874dde73025e890b012d443b355766 Mon Sep 17 00:00:00 2001
-=46rom: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Mon, 26 Jul 2010 09:49:06 +0200
-Subject: [PATCH 4/4] not remove unloaded modules
 
-Currently unloaded kernel modules can't be removed, because this would
-break kernel module renames or newer modules for certain hardware, this
-also has problems for chrooted installs.
+---
+ modules.d/10i18n/console_init |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-Signed-off-by: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-=2D--
- dracut-functions |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
-
-diff --git a/dracut-functions b/dracut-functions
-index be6b2e9..47a958d 100755
-=2D-- a/dracut-functions
-+++ b/dracut-functions
-@@ -607,10 +607,13 @@ instmods() {
- 	        [[ -f $initdir/$1 ]] && { shift; continue; }
- 		# If we are building a host-specific initramfs and this
- 		# module is not already loaded, move on to the next one.
-=2D		[[ $hostonly ]] && ! grep -q "${mod//-/_}" /proc/modules && \
-=2D	        ! echo $add_drivers | grep -qe "\<${mod}\>" &&	{
-=2D		    shift; continue;=20
-=2D		}
-+		# NOTE: This is not desirable, if a new kernel has a renamed
-+		# module or it has a new module with better support, that module
-+		# won't be used here.
-+		#[[ $hostonly ]] && ! grep -q "${mod//-/_}" /proc/modules && \
-+	        #! echo $add_drivers | grep -qe "\<${mod}\>" &&	{
-+		#    shift; continue;=20
-+		#}
+diff --git a/modules.d/10i18n/console_init b/modules.d/10i18n/console_init
+index fa74595..0d4fa8f 100755
+--- a/modules.d/10i18n/console_init
++++ b/modules.d/10i18n/console_init
+@@ -63,12 +63,15 @@ dev_open() {
 =20
- 		# We use '-d' option in modprobe only if modules prefix path
- 		# differs from default '/'.  This allows us to use Dracut with
-=2D-=20
-1.6.4.4
+=20
+ dev=3D/dev/${1#/dev/}
++devname=3D${dev#/dev/}
+=20
+ [ -c "${dev}" ] || {
+     echo "Usage: $0 device" >&2
+     exit 1
+ }
+=20
++[ -e /tmp/console_init.${devname} ] && exit 0
++
+ dev_open ${dev}
+=20
+ for fd in 6 7; do
+@@ -85,3 +88,4 @@ set_font ${dev}
+ set_keymap
+=20
+ dev_close
++>/tmp/console_init.${devname}
+--=20
+1.7.1.1
 
+--Sig_/k3KD5uoXBtmCeMV1tIv3NV0
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
---Boundary-00=_0AUTMsvFLI5J3eF--
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.15 (GNU/Linux)
+
+iEYEARECAAYFAkxNRCwACgkQ+hU8EsKEdQ1Z9ACgu5AbA32uP3yAd/AuoKhzabAa
+NxoAoJP6a5kRleZ+MdafvCOX76vRdKn1
+=qOV1
+-----END PGP SIGNATURE-----
+
+--Sig_/k3KD5uoXBtmCeMV1tIv3NV0--
