@@ -1,76 +1,82 @@
 From: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: patches
-Date: Mon, 26 Jul 2010 09:42:33 +0200
-Message-ID: <201007260942.33176.maarten.vanraes@gmail.com>
-References: <201007140205.35944.maarten.vanraes@gmail.com> <4C46DAF1.1090603@redhat.com> <201007211718.28574.maarten.vanraes@gmail.com>
+Subject: patches
+Date: Mon, 26 Jul 2010 09:58:44 +0200
+Message-ID: <201007260958.44928.maarten.vanraes@gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: Multipart/Mixed;
+  boundary="Boundary-00=_0AUTMsvFLI5J3eF"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:received:from:to:subject:date
-         :user-agent:cc:references:in-reply-to:mime-version:content-type
-         :content-transfer-encoding:message-id;
-        bh=ELq5cIE7hgFijK/3AhBes7TnSjMj/8rRg3nenh9DwYA=;
-        b=NXI+n1+0G2pO7kB4/Ree5IJXV6KeJKFPeADmeAqie2IyC3OKBNJmIOIetLl5/s46Yx
-         5T+BbeRVmUfqG5eKrqL3HnxKpuhllf4BLGH1qGySYr0xO3oGCy48yW8s7g0MY/LOozAe
-         VMEH4Alk3VuQhLIvxLO69O+UN0I9hM+PZ5dIY=
-In-Reply-To: <201007211718.28574.maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+        h=domainkey-signature:received:received:received:to:subject:from:date
+         :mime-version:content-type:message-id;
+        bh=XJM17/AkQNk+dAJk6GLgSEZW5ixTO1AC9buJMYI9oy4=;
+        b=nuPUvghvnoKVwFUHmfw+KB3xJJi43JA8/5m8CCAiBKso1P3Be/dEVmZJ0H+liRZ80Y
+         mRtzaPa5+pXSZJhW/kfVkTDLC3ojaMppKlJ/DR+6oyqSJTbmpUgsfWQjEQ9g4OylnjOG
+         bHfgvD7NO4Chola/aUOyIHKR+BR5f8cK0js14=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: Text/Plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Op woensdag 21 juli 2010 17:18:28 schreef Maarten Vanraes:
-> Op woensdag 21 juli 2010 13:33:05 schreef Harald Hoyer:
-> > On 07/14/2010 02:05 AM, Maarten Vanraes wrote:
-> > > Hi,
-> > >
-> > > Here are some patches, some that were used as patches in the mandriva
-> > > builds, and a first one from me, to fix nfs hostonly on chrooted
-> > > installs.
-> > >
-> > > Kind regards,
-> > >
-> > > Maarten Vanraes
-> >
-> > -[ "$1" = "-h" ] && ! egrep -q '/ nfs[34 ]' /proc/mounts && exit 1
-> > +[ "$1" = "-h" ] && ! egrep -q '\s/\s+nfs[34]?\s' /etc/fstab && exit 1
-> >
-> > Hmm, I think "hostonly" should be really "hostonly", so the check is
-> > valid.
-> >
-> > You can always force the addition of nfs, if you are building a special
-> >  image for an NFS client. Or just boot with the generic (non-hostonly)
-> > one, and build the hostonly one on the client.
-> 
-> i see what you mean, but i beg to differ.
-> 
-> this thing is not really about nfs, it's about building an initrd on a
->  chroot.
-> 
-> if you're building initrd on a chroot, it's always a hostonly, in fact,
->  only distros ship generic initrds. and even that's not always true.
-> 
-> this fix has no consequences whatsoever in any case, except that it checks
-> fstab instead of /proc/mounts. which means if you adjust your fstab,
->  because you're going to run it elsewhere.
-> 
-> I was planning on checking everywhere and trying to reduce the dependencies
->  on /proc and /sys, IF it works the same everywhere without any
->  consequences (just like this here).
-> 
-> Also, if you look at it; not having / mounted as an nfs WILL disable the
->  use of this module entirely and thus all the root=nfs stuff will fail.
-> 
-> What do you think?
-> 
+--Boundary-00=_0AUTMsvFLI5J3eF
+Content-Type: text/plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 
-imo,
+Hi,
 
-Either we get hostonly to work for this, or we need a separate chroot option 
-to make this work.
+another small patch.
 
-We can fiddle all we want, but in effect the purpose of this is to have an easy 
-way to generate an initrd.
+Kind regards,
+
+Maarten Vanraes
+
+--Boundary-00=_0AUTMsvFLI5J3eF
+Content-Type: text/x-patch;
+  charset="UTF-8";
+  name="0004-not-remove-unloaded-modules.patch"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+	filename="0004-not-remove-unloaded-modules.patch"
+
+=46rom 4ef6f01f12874dde73025e890b012d443b355766 Mon Sep 17 00:00:00 2001
+=46rom: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Date: Mon, 26 Jul 2010 09:49:06 +0200
+Subject: [PATCH 4/4] not remove unloaded modules
+
+Currently unloaded kernel modules can't be removed, because this would
+break kernel module renames or newer modules for certain hardware, this
+also has problems for chrooted installs.
+
+Signed-off-by: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+=2D--
+ dracut-functions |   11 +++++++----
+ 1 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/dracut-functions b/dracut-functions
+index be6b2e9..47a958d 100755
+=2D-- a/dracut-functions
++++ b/dracut-functions
+@@ -607,10 +607,13 @@ instmods() {
+ 	        [[ -f $initdir/$1 ]] && { shift; continue; }
+ 		# If we are building a host-specific initramfs and this
+ 		# module is not already loaded, move on to the next one.
+=2D		[[ $hostonly ]] && ! grep -q "${mod//-/_}" /proc/modules && \
+=2D	        ! echo $add_drivers | grep -qe "\<${mod}\>" &&	{
+=2D		    shift; continue;=20
+=2D		}
++		# NOTE: This is not desirable, if a new kernel has a renamed
++		# module or it has a new module with better support, that module
++		# won't be used here.
++		#[[ $hostonly ]] && ! grep -q "${mod//-/_}" /proc/modules && \
++	        #! echo $add_drivers | grep -qe "\<${mod}\>" &&	{
++		#    shift; continue;=20
++		#}
+=20
+ 		# We use '-d' option in modprobe only if modules prefix path
+ 		# differs from default '/'.  This allows us to use Dracut with
+=2D-=20
+1.6.4.4
+
+
+--Boundary-00=_0AUTMsvFLI5J3eF--
