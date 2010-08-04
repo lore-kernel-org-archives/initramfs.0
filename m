@@ -1,49 +1,47 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] 10i18n: exit if console already initialized
-Date: Wed, 04 Aug 2010 18:31:46 +0200
-Message-ID: <4C5995F2.3000708@redhat.com>
-References: <20100726101540.37af47d8@aidecoe.name>
+Subject: Re: [PATCH] Harden check for used modules in hostonly mode
+Date: Wed, 04 Aug 2010 18:31:58 +0200
+Message-ID: <4C5995FE.2010009@redhat.com>
+References: <20100509182358.3768.89142.stgit@cooker>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100726101540.37af47d8-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <20100509182358.3768.89142.stgit@cooker>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 pushed
 
-On 07/26/2010 10:15 AM, Amadeusz =C5=BBo=C5=82nowski wrote:
+On 05/09/2010 08:23 PM, Andrey Borzenkov wrote:
+> Make sure that we do not accept module name which is substring of
+> some other module name. This resulted in piix being mistakenly loaded
+> together with ata_piix. It completely broke DVD access here.
+>
+> Signed-off-by: Andrey Borzenkov<arvidjaar-JGs/UdohzUI@public.gmane.org>
 >
 > ---
->   modules.d/10i18n/console_init |    4 ++++
->   1 files changed, 4 insertions(+), 0 deletions(-)
 >
-> diff --git a/modules.d/10i18n/console_init b/modules.d/10i18n/console=
-_init
-> index fa74595..0d4fa8f 100755
-> --- a/modules.d/10i18n/console_init
-> +++ b/modules.d/10i18n/console_init
-> @@ -63,12 +63,15 @@ dev_open() {
+>   dracut-functions |    2 +-
+>   1 files changed, 1 insertions(+), 1 deletions(-)
 >
+> diff --git a/dracut-functions b/dracut-functions
+> index fdcfb7e..ebf09c0 100755
+> --- a/dracut-functions
+> +++ b/dracut-functions
+> @@ -502,7 +502,7 @@ instmods() {
+>   	        [[ -f $initdir/$1 ]]&&  { shift; continue; }
+>   		# If we are building a host-specific initramfs and this
+>   		# module is not already loaded, move on to the next one.
+> -		[[ $hostonly ]]&&  ! grep -q "${mod//-/_}" /proc/modules&&  \
+> +		[[ $hostonly ]]&&  ! grep -qe "\<${mod//-/_}\>" /proc/modules&&  \
+>   	        ! echo $add_drivers | grep -qe "\<${mod}\>"&&	{
+>   		    shift; continue;
+>   		}
 >
->   dev=3D/dev/${1#/dev/}
-> +devname=3D${dev#/dev/}
->
->   [ -c "${dev}" ] || {
->       echo "Usage: $0 device">&2
->       exit 1
->   }
->
-> +[ -e /tmp/console_init.${devname} ]&&  exit 0
-> +
->   dev_open ${dev}
->
->   for fd in 6 7; do
-> @@ -85,3 +88,4 @@ set_font ${dev}
->   set_keymap
->
->   dev_close
-> +>/tmp/console_init.${devname}
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
