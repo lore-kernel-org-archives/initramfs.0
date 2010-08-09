@@ -1,16 +1,18 @@
 From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH] add module gensplash
-Date: Mon, 9 Aug 2010 12:18:31 +0200
-Message-ID: <20100809121831.5e8bdbc1@aidecoe.name>
+Subject: Re: [PATCH] add module gensplash
+Date: Mon, 9 Aug 2010 12:44:05 +0200
+Message-ID: <20100809124405.7fa853d5@aidecoe.name>
+References: <20100809121831.5e8bdbc1@aidecoe.name>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/c_rAPjlh_UStLlu13+CP9jR"; protocol="application/pgp-signature"
+ boundary="Sig_/dgUIRtXiFpNq5QEmwUQSIXz"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20100809121831.5e8bdbc1-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Sig_/c_rAPjlh_UStLlu13+CP9jR
+--Sig_/dgUIRtXiFpNq5QEmwUQSIXz
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
@@ -144,7 +146,7 @@ index 0000000..f1b0d31
 +fi
 diff --git a/modules.d/50gensplash/install b/modules.d/50gensplash/install
 new file mode 100755
-index 0000000..774ad1d
+index 0000000..1ad2c95
 --- /dev/null
 +++ b/modules.d/50gensplash/install
 @@ -0,0 +1,63 @@
@@ -197,7 +199,7 @@ args.
 +
 +dinfo "Installing Gentoo Splash (using the ${SPLASH_THEME} theme)"
 +
-+cd "${initdir}"
++pushd "${initdir}" >/dev/null
 +mv dev dev.old
 +call_splash_geninitramfs "${initdir}" ${opts} ${SPLASH_THEME} || {
 +    derror "Could not build splash"
@@ -205,7 +207,7 @@ args.
 +}
 +rm -rf dev
 +mv dev.old dev
-+cd - >/dev/null
++popd >/dev/null
 +
 +dracut_install chvt
 +inst /usr/share/splashutils/initrd.splash /lib/gensplash-lib.sh
@@ -215,16 +217,16 @@ args.
 --=20
 1.7.2
 
---Sig_/c_rAPjlh_UStLlu13+CP9jR
+--Sig_/dgUIRtXiFpNq5QEmwUQSIXz
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.16 (GNU/Linux)
 
-iEYEARECAAYFAkxf1fcACgkQ+hU8EsKEdQ13xACgnPauRHtX3swLsaeJxiO5pQ9n
-xWYAnR4aeH/u+RonSu7jdA4zmbtfbGEb
-=KcTt
+iEYEARECAAYFAkxf2/UACgkQ+hU8EsKEdQ29YgCg19k08VgQY58kD1FTE+E+nkUt
+AfoAoKnL8WLkvoTb04IAptV69NIS52r6
+=7ZaV
 -----END PGP SIGNATURE-----
 
---Sig_/c_rAPjlh_UStLlu13+CP9jR--
+--Sig_/dgUIRtXiFpNq5QEmwUQSIXz--
