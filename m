@@ -1,81 +1,70 @@
 From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] 60xen: use 'hash' instead of 'type'
-Date: Wed, 18 Aug 2010 17:31:03 +0200
-Message-ID: <20100818173103.27a444da@aidecoe.name>
-References: <20100818172944.3244c1e0@aidecoe.name>
+Subject: [PATCH 1/2] dracut: lib and usr/lib dirs detection
+Date: Wed, 18 Aug 2010 20:06:44 +0200
+Message-ID: <20100818200644.4e1e79de@aidecoe.name>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/1Y13ghjxr1YwB75lKNfhMIK"; protocol="application/pgp-signature"
+ boundary="Sig_/+ks1CR/9CbaxvbF2SZdTpKO"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100818172944.3244c1e0-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Sig_/1Y13ghjxr1YwB75lKNfhMIK
+--Sig_/+ks1CR/9CbaxvbF2SZdTpKO
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-
+First we check if $libdir and $usrlibdir vars are already set in config
+file. If not we perform simple detect. Vars are exported - to be useful
+in module/check scripts.
 ---
- modules.d/60xen/check   |    9 +++++----
- modules.d/60xen/install |    7 +++----
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ dracut |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
 
-diff --git a/modules.d/60xen/check b/modules.d/60xen/check
-index 49d5435..6b9cabe 100755
---- a/modules.d/60xen/check
-+++ b/modules.d/60xen/check
-@@ -1,14 +1,15 @@
- #!/bin/bash
+diff --git a/dracut b/dracut
+index a50e14a..86855c9 100755
+--- a/dracut
++++ b/dracut
+@@ -186,6 +186,17 @@ fi
+ dracutfunctions=3D$dracutbasedir/dracut-functions
+ export dracutfunctions
 =20
- # No Xen-detect? Boo!!
--XENDETECT=3D$(type -P xen-detect)
--[ -z "$XENDETECT" ] && [ -d "/usr/lib/xen-default" ] && XENDETECT=3D"/usr/=
-lib/xen-default/bin/xen-detect"
--[ -z "$XENDETECT" ] && exit 1
-+if ! hash xen-detect 2>/dev/null; then
-+    [[ -d /usr/lib/xen-default ]] && \
-+        hash -p /usr/lib/xen-default/bin/xen-detect xen-detect || exit 1
-+fi
++# Detect lib paths
++[[ $libdir ]] || for libdir in /lib64 /lib; do
++    [[ -d $libdir ]] && break
++done || {
++    derror 'No lib directory?!!!'
++    exit 1
++}
++[[ $usrlibdir ]] || for usrlibdir in /usr/lib64 /usr/lib; do
++    [[ -d $usrlibdir ]] && break
++done || dwarning 'No usr/lib directory!'
++
+ # This is kinda legacy -- eventually it should go away.
+ case $dracutmodules in
+     ""|auto) dracutmodules=3D"all" ;;
+@@ -240,7 +251,7 @@ chmod 755 "$initdir"
+ export initdir hookdirs dracutbasedir dracutmodules drivers \
+     fw_dir drivers_dir debug beverbose no_kernel kernel_only \
+     add_drivers mdadmconf lvmconf filesystems ignore_kmodules \
+-    use_fstab
++    use_fstab libdir usrlibdir
 =20
- . $dracutfunctions
- [[ $debug ]] && set -x
-=20
- # Yes, we are under Xen PV env.
--$XENDETECT | egrep -q -v 'PV' || exit 0
-+xen-detect | grep -q -v PV || exit 0
-=20
- exit 1
-diff --git a/modules.d/60xen/install b/modules.d/60xen/install
-index 22f5329..6ae0060 100755
---- a/modules.d/60xen/install
-+++ b/modules.d/60xen/install
-@@ -1,6 +1,5 @@
- #!/bin/bash
--XENDETECT=3D$(type -P xen-detect)
--[ -z "$XENDETECT" ] && [ -d "/usr/lib/xen-default" ] && XENDETECT=3D"/usr/=
-lib/xen-default/bin/xen-detect"
--inst $XENDETECT /sbin/xen-detect
-+hash xen-detect 2>/dev/null || \
-+    hash -p /usr/lib/xen-default/bin/xen-detect xen-detect
-+inst "$(hash -t xen-detect)" /sbin/xen-detect
- inst_hook pre-udev 40 "$moddir/xen-pre-udev.sh"
--
+ if [[ $kernel_only !=3D yes ]]; then
+     # Create some directory structure first
 --=20
 1.7.2
 
---Sig_/1Y13ghjxr1YwB75lKNfhMIK
+--Sig_/+ks1CR/9CbaxvbF2SZdTpKO
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.16 (GNU/Linux)
 
-iEYEARECAAYFAkxr/LcACgkQ+hU8EsKEdQ3NzwCgzyEBpWktqSJkidqGKARu2X0e
-7TkAoOQuV2dfxgZKEJxTGqIP03EfUgss
-=VDU7
+iEYEARECAAYFAkxsITQACgkQ+hU8EsKEdQ1WsQCfc3SZ7KX9EhMT814Ru2sjBIk3
+Ri0AoOOUUJHze3vu9MjJCw+BL3UU6Cmo
+=DBWr
 -----END PGP SIGNATURE-----
 
---Sig_/1Y13ghjxr1YwB75lKNfhMIK--
+--Sig_/+ks1CR/9CbaxvbF2SZdTpKO--
