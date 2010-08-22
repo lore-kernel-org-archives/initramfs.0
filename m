@@ -1,273 +1,183 @@
-From: Amadeusz =?UTF-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] use $libdir and $usrlibdir instead of individual detect
- with ldd
-Date: Wed, 18 Aug 2010 20:11:29 +0200
-Message-ID: <20100818201129.486a0c43@aidecoe.name>
-References: <20100818200644.4e1e79de@aidecoe.name>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/7_DVBMSfEeDE6kXehkn=hD2"; protocol="application/pgp-signature"
+From: Matt Smith <shadowfax-KK0ffGbhmjU@public.gmane.org>
+Subject: [PATCH] Merged cryptroot-ask.sh from plymouth to crypt module.
+Date: Sat, 21 Aug 2010 18:59:10 -0600
+Message-ID: <1282438750-22161-1-git-send-email-shadowfax@gmx.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20100818200644.4e1e79de-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Sig_/7_DVBMSfEeDE6kXehkn=hD2
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+First, it's duplicate code.
 
----
- modules.d/01fips/install                      |   24 ++++++++-------------=
----
- modules.d/40network/install                   |   15 +++++----------
- modules.d/50plymouth/plymouth-populate-initrd |   13 ++++---------
- modules.d/90dmraid/install                    |   11 ++---------
- modules.d/90lvm/install                       |   11 ++---------
- modules.d/90multipath/install                 |   10 +---------
- modules.d/95nfs/install                       |   14 +++++---------
- modules.d/95udev-rules/install                |    8 +++-----
- 8 files changed, 30 insertions(+), 76 deletions(-)
+Second, it did not allow those who had plymouth installed to use other
+methods, like the new usb key file. When building the initram,
+it would install the plymouth cryptroot-ask script, and not
+the crypt module one.
 
-diff --git a/modules.d/01fips/install b/modules.d/01fips/install
-index 53f54de..f74ea6a 100755
---- a/modules.d/01fips/install
-+++ b/modules.d/01fips/install
-@@ -3,21 +3,13 @@
- inst_hook pre-trigger 01 "$moddir/fips.sh"
- dracut_install sha512hmac rmmod insmod mount uname umount
-=20
--libdir=3D"lib"
--if ldd $(find_binary sha512hmac) |grep -q /lib64/; then
--    libdir=3D"lib64"
+Added these new items to crypt module's cryptroot-ask.sh:
+  - 'unset' for used variables
+  - udevsettle
+
+The non-plymouth cryptsetup prompt was using $1 instead of $device.
+Changed prompt number from 1 to 5, as this is much nicer.
+I believe plymouth already does infinite prompts.
+
+Also added unset for usb key. Just saw it didn't unset its vars.
+---
+ modules.d/50plymouth/cryptroot-ask.sh |   76 ---------------------------------
+ modules.d/50plymouth/install          |    3 +-
+ modules.d/90crypt/cryptroot-ask.sh    |   36 +++++++++++++--
+ 3 files changed, 32 insertions(+), 83 deletions(-)
+ delete mode 100755 modules.d/50plymouth/cryptroot-ask.sh
+
+diff --git a/modules.d/50plymouth/cryptroot-ask.sh b/modules.d/50plymouth/cryptroot-ask.sh
+deleted file mode 100755
+index d1c4770..0000000
+--- a/modules.d/50plymouth/cryptroot-ask.sh
++++ /dev/null
+@@ -1,76 +0,0 @@
+-#!/bin/sh
+-
+-# do not ask, if we already have root
+-[ -f /sysroot/proc ] && exit 0
+-
+-# check if destination already exists
+-[ -b /dev/mapper/$2 ] && exit 0
+-
+-# we already asked for this device
+-[ -f /tmp/cryptroot-asked-$2 ] && exit 0
+-
+-# load dm_crypt if it is not already loaded
+-[ -d /sys/module/dm_crypt ] || modprobe dm_crypt
+-
+-. /lib/dracut-lib.sh
+-
+-# default luksname - luks-UUID
+-luksname=$2
+-
+-# if device name is /dev/dm-X, convert to /dev/mapper/name
+-if [ "${1##/dev/dm-}" != "$1" ]; then
+-    device="/dev/mapper/$(dmsetup info -c --noheadings -o name "$1")"
+-else
+-    device="$1"
 -fi
 -
--if [ -e /usr/$libdir/libsoftokn3.so ]; then
--    dracut_install \
--        /usr/$libdir/libsoftokn3.so /usr/$libdir/libsoftokn3.chk \
--        /usr/$libdir/libfreebl3.so /usr/$libdir/libfreebl3.chk=20
--else
--    dracut_install \
--        /$libdir/libsoftokn3.so /$libdir/libsoftokn3.chk \
--        /$libdir/libfreebl3.so /$libdir/libfreebl3.chk=20
+-if [ -f /etc/crypttab ] && ! getarg rd_NO_CRYPTTAB; then
+-    while read name dev rest; do
+-	# ignore blank lines and comments
+-	if [ -z "$name" -o "${name#\#}" != "$name" ]; then
+-	    continue
+-	fi
+-
+-	# UUID used in crypttab
+-	if [ "${dev%%=*}" = "UUID" ]; then
+-	    if [ "luks-${dev##UUID=}" = "$2" ]; then
+-		luksname="$name"
+-		break
+-	    fi
+-	
+-	# path used in crypttab
+-	else
+-	    cdev=$(readlink -f $dev)
+-	    mdev=$(readlink -f $device)
+-	    if [ "$cdev" = "$mdev" ]; then
+-		luksname="$name"
+-		break
+-	    fi
+-	fi
+-    done < /etc/crypttab
+-    unset name dev rest
 -fi
 -
--dracut_install /usr/$libdir/hmaccalc/sha512hmac.hmac
-+for dir in "$usrlibdir" "$libdir"; do
-+    [[ -e $dir/libsoftokn3.so ]] && \
-+        dracut_install $dir/libsoftokn3.so $dir/libsoftokn3.chk \
-+            $dir/libfreebl3.so $dir/libfreebl3.chk && \
-+                break
-+done
-+
-+dracut_install $usrlibdir/hmaccalc/sha512hmac.hmac
-=20
- # vim:ts=3D8:sw=3D4:sts=3D4:et
-diff --git a/modules.d/40network/install b/modules.d/40network/install
-index 398d4e4..c809ece 100755
---- a/modules.d/40network/install
-+++ b/modules.d/40network/install
-@@ -12,17 +12,12 @@ inst_hook cmdline 98 "$moddir/parse-bridge.sh"
- inst_hook cmdline 99 "$moddir/parse-ifname.sh"
- inst_hook pre-pivot 10 "$moddir/kill-dhclient.sh"
-=20
--if ldd $(which sh) | grep -q lib64; then
--    LIBDIR=3D"/lib64"
--else
--    LIBDIR=3D"/lib"
+-prompt="Password [$device ($luksname)]:" 
+-if [ ${#luksname} -gt 8 ]; then
+-    sluksname=${sluksname##luks-}
+-    sluksname=${luksname%%${luksname##????????}}
+-    prompt="Password for $device ($sluksname...)"
 -fi
-+arch=3D$(uname -m)
-=20
--ARCH=3D$(uname -m)
 -
--for dir in /usr/$LIBDIR/tls/$ARCH/ /usr/$LIBDIR/tls/ /usr/$LIBDIR/$ARCH/ /=
-usr/$LIBDIR/ /$LIBDIR/; do
--    for i in $(ls $dir/libnss_dns.so.* $dir/libnss_mdns4_minimal.so.* 2>/d=
-ev/null); do
--	dracut_install $i
-+for dir in "$usrlibdir/tls/$arch" "$usrlibdir/tls" "$usrlibdir/$arch" \
-+        "$usrlibdir" "$libdir"; do
-+    for i in "$dir"/libnss_dns.so.* "$dir"/libnss_mdns4_minimal.so.*; do
-+        dracut_install "$i"
-     done
- done
-=20
-diff --git a/modules.d/50plymouth/plymouth-populate-initrd b/modules.d/50pl=
-ymouth/plymouth-populate-initrd
-index effb0f9..aa3d8fa 100755
---- a/modules.d/50plymouth/plymouth-populate-initrd
-+++ b/modules.d/50plymouth/plymouth-populate-initrd
-@@ -1,9 +1,4 @@
- #!/bin/bash
--if ldd /sbin/plymouthd |grep -q lib64; then
--    LIBDIR=3D"/usr/lib64"
--else
--    LIBDIR=3D"/usr/lib"
--fi
- PLYMOUTH_LOGO_FILE=3D"/usr/share/pixmaps/system-logo-white.png"
- PLYMOUTH_THEME=3D$(plymouth-set-default-theme)
-=20
-@@ -15,8 +10,8 @@ dracut_install /bin/plymouth \
- mkdir -p "${initdir}/usr/share/plymouth"
-=20
- if [[ $hostonly ]]; then=20
--    dracut_install "${LIBDIR}/plymouth/text.so" \
--	"${LIBDIR}/plymouth/details.so" \
-+    dracut_install "${usrlibdir}/plymouth/text.so" \
-+	"${usrlibdir}/plymouth/details.so" \
- 	"/usr/share/plymouth/themes/details/details.plymouth" \
- 	"/usr/share/plymouth/themes/text/text.plymouth" \
-=20
-@@ -31,7 +26,7 @@ if [[ $hostonly ]]; then
- 	inst /usr/share/plymouth/themes/default.plymouth
-         # Install plugin for this theme
- 	PLYMOUTH_PLUGIN=3D$(grep "^ModuleName=3D" /usr/share/plymouth/themes/defa=
-ult.plymouth | while read a b c; do echo $b; done;)
--	inst ${LIBDIR}/plymouth/${PLYMOUTH_PLUGIN}.so
-+	inst "${usrlibdir}/plymouth/${PLYMOUTH_PLUGIN}.so"
-     fi
+-# flock against other interactive activities
+-{ flock -s 9; 
+-    /bin/plymouth ask-for-password \
+-	--prompt "$prompt" \
+-	--command="/sbin/cryptsetup luksOpen -T1 $device $luksname"
+-} 9>/.console.lock
+-
+-unset ask device luksname
+-
+-# mark device as asked
+->> /tmp/cryptroot-asked-$2
+-
+-udevsettle
+-
+-exit 0
+-# vim:ts=8:sw=4:sts=4:et
+diff --git a/modules.d/50plymouth/install b/modules.d/50plymouth/install
+index 86d8efd..ba5ef89 100755
+--- a/modules.d/50plymouth/install
++++ b/modules.d/50plymouth/install
+@@ -12,5 +12,4 @@ fi
+ inst_hook pre-pivot 90 "$moddir"/plymouth-newroot.sh
+ inst_hook pre-trigger 10 "$moddir"/plymouth-pretrigger.sh
+ inst_hook emergency 50 "$moddir"/plymouth-emergency.sh
+-inst "$moddir"/cryptroot-ask.sh /sbin/cryptroot-ask
+-inst readlink
+\ No newline at end of file
++inst readlink
+diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
+index 8bed056..efec56c 100755
+--- a/modules.d/90crypt/cryptroot-ask.sh
++++ b/modules.d/90crypt/cryptroot-ask.sh
+@@ -117,16 +117,42 @@ if [ -n "$keydev_uuid" ]; then
+     cryptsetup -d "$mntp/$keypath" luksOpen "$device" "$luksname"
+     umount "$mntp"
+     rmdir -p "$mntp" 2>/dev/null
++    unset mntp keypath keydev_uuid
  else
-     for x in /usr/share/plymouth/themes/{text,details}/* ; do
-@@ -40,7 +35,7 @@ else
- 	mkdir -p "${initdir}/$THEME_DIR"
-         dracut_install "$x"
-     done
--    for x in ${LIBDIR}/plymouth/{text,details}.so ; do
-+    for x in "${usrlibdir}"/plymouth/{text,details}.so ; do
-         [[ -f "$x" ]] || continue
-         [[ "$x" !=3D "${x%%/label.so}" ]] && continue
-         dracut_install "$x"
-diff --git a/modules.d/90dmraid/install b/modules.d/90dmraid/install
-index a016e4d..90bf62c 100755
---- a/modules.d/90dmraid/install
-+++ b/modules.d/90dmraid/install
-@@ -3,17 +3,10 @@ dracut_install dmraid partx kpartx
-=20
- inst  dmeventd
-=20
--if ldd $(which dmraid) | grep -q lib64; then
--    LIBDIR=3D"/lib64"
--else
--    LIBDIR=3D"/lib"
--fi
--
--for i in $(ls /{usr,}/$LIBDIR/libdmraid-events*.so 2>/dev/null); do
--    dracut_install $i
-+for i in {"$libdir","$usrlibdir"}/libdmraid-events*.so; do
-+    dracut_install "$i"
- done
-=20
--
- inst_rules 10-dm.rules 13-dm-disk.rules 95-dm-notify.rules=20
-=20
- inst "$moddir/dmraid.sh" /sbin/dmraid_scan
-diff --git a/modules.d/90lvm/install b/modules.d/90lvm/install
-index 3e20866..0e19c7d 100755
---- a/modules.d/90lvm/install
-+++ b/modules.d/90lvm/install
-@@ -17,13 +17,6 @@ inst_rules 10-dm.rules 13-dm-disk.rules 95-dm-notify.rul=
-es 11-dm-lvm.rules
- inst "$moddir/lvm_scan.sh" /sbin/lvm_scan
- inst_hook cmdline 30 "$moddir/parse-lvm.sh"
-=20
--
--if ldd $(which lvm) | grep -q lib64; then
--    LIBDIR=3D"/lib64"
--else
--    LIBDIR=3D"/lib"
--fi
--
--for i in $(ls /{usr,}/$LIBDIR/libdevmapper-event-lvm*.so 2>/dev/null); do
--    dracut_install $i
-+for i in {"$libdir","$usrlibdir"}/libdevmapper-event-lvm*.so; do
-+    dracut_install "$i"
- done
-diff --git a/modules.d/90multipath/install b/modules.d/90multipath/install
-index ed2d698..d42e411 100755
---- a/modules.d/90multipath/install
-+++ b/modules.d/90multipath/install
-@@ -1,11 +1,5 @@
- #!/bin/bash
-=20
--if ldd $(which multipath) 2>/dev/null |grep -q lib64; then
--    LIBDIR=3D"/lib64"
--else
--    LIBDIR=3D"/lib"
--fi
--
- for f in  \
-     /sbin/dmsetup \
-     /sbin/kpartx \
-@@ -17,12 +11,10 @@ for f in  \
-     /etc/xdrdevices.conf \
-     /etc/multipath.conf \
-     /etc/multipath/wwids \
--    $(ls $LIBDIR/libmultipath* $LIBDIR/multipath/* 2>/dev/null) \
--    	;do
-+    "$libdir"/libmultipath* "$libdir"/multipath/*; do
-     [ -e "$f" ] && inst "$f"
- done
-=20
- inst_hook pre-trigger 02 "$moddir/multipathd.sh"
- inst_hook pre-pivot   02 "$moddir/multipathd-stop.sh"
- inst_rules 40-multipath.rules
--
-diff --git a/modules.d/95nfs/install b/modules.d/95nfs/install
-index 5d3c535..c54552a 100755
---- a/modules.d/95nfs/install
-+++ b/modules.d/95nfs/install
-@@ -9,15 +9,11 @@ dracut_install /etc/nsswitch.conf /etc/rpc /etc/protocols
- dracut_install rpc.idmapd /etc/idmapd.conf
- dracut_install sed
-=20
--if ldd $(which rpc.idmapd) |grep -q lib64; then
--    LIBDIR=3D"/lib64"
--else
--    LIBDIR=3D"/lib"
--fi
--
--dracut_install $(ls {/usr,}$LIBDIR/libnfsidmap_nsswitch.so* 2>/dev/null )
--dracut_install $(ls {/usr,}$LIBDIR/libnfsidmap/*.so 2>/dev/null )
--dracut_install $(ls {/usr,}$LIBDIR/libnfsidmap*.so* 2>/dev/null )
-+for i in {"$libdir","$usrlibdir"}/libnfsidmap_nsswitch.so* \
-+        {"$libdir","$usrlibdir"}/libnfsidmap/*.so \
-+        {"$libdir","$usrlibdir"}/libnfsidmap*.so*; do
-+    dracut_install "$i"
-+done
-=20
- nsslibs=3D$(sed -e '/^#/d' -e 's/^.*://' -e 's/\[NOTFOUND=3Dreturn\]//' /e=
-tc/nsswitch.conf \
-               |  tr -s '[:space:]' '\n' | sort -u | tr -s '[:space:]' '|')
-diff --git a/modules.d/95udev-rules/install b/modules.d/95udev-rules/install
-index e89acb5..d57dd8d 100755
---- a/modules.d/95udev-rules/install
-+++ b/modules.d/95udev-rules/install
-@@ -48,8 +48,6 @@ done
-=20
- [ -f /etc/arch-release ] && inst "$moddir/load-modules.sh" /lib/udev/load-=
-modules.sh
-=20
--if ldd $(find_binary udevd) |grep -q /lib64/; then
--    dracut_install /lib64/libnss_files*
--else
--    dracut_install /lib/libnss_files*
--fi
-+for i in {"$libdir","$usrlibdir"}/libnss_files*; do
-+    dracut_install "$i"
-+done
---=20
-1.7.2
-
---Sig_/7_DVBMSfEeDE6kXehkn=hD2
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.16 (GNU/Linux)
-
-iEYEARECAAYFAkxsIlEACgkQ+hU8EsKEdQ2hDQCcCOTH9r0OS5g0UcsJhGccV+Yf
-fEMAoJYxZ+rZUfGuOjE9HmR6dCkuy9a/
-=Hzrt
------END PGP SIGNATURE-----
-
---Sig_/7_DVBMSfEeDE6kXehkn=hD2--
+-    # flock against other interactive activities
+-    { flock -s 9;
+-        echo -n "$device ($luksname) is password protected"
+-        cryptsetup luksOpen -T1 $1 $luksname
+-    } 9>/.console.lock
++    # Prompt for password with plymouth, if installed.
++    # Should we check if plymouthd is running?
++    if [ -x /bin/plymouth ]; then
++        prompt="Password [$device ($luksname)]:" 
++        if [ ${#luksname} -gt 8 ]; then
++            sluksname=${sluksname##luks-}
++            sluksname=${luksname%%${luksname##????????}}
++            prompt="Password for $device ($sluksname...)"
++        fi
++        
++	# flock against other interactive activities
++        { flock -s 9; 
++            /bin/plymouth ask-for-password \
++	        --prompt "$prompt" \
++	        --command="/sbin/cryptsetup luksOpen -T1 $device $luksname"
++        } 9>/.console.lock
++	
++	unset sluksname prompt
++	
++    else
++        # flock against other interactive activities
++        { flock -s 9;
++             echo "$device ($luksname) is password protected"
++             cryptsetup luksOpen -T5 $device $luksname
++        } 9>/.console.lock
++    fi
+ fi
+ 
++unset device luksname
++
+ # mark device as asked
+ >> /tmp/cryptroot-asked-$2
+ 
++udevsettle
++
+ exit 0
+ # vim:ts=8:sw=4:sts=4:et
+-- 
+1.7.2.1
