@@ -1,47 +1,60 @@
-From: Daniel Podolsky <onokonem-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: liveusb support
-Date: Tue, 7 Sep 2010 02:48:37 +0400
-Message-ID: <AANLkTinxxQNpgHMSeDKr+hbUpECKJbTMyjBRYVnshAsm@mail.gmail.com>
+From: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
+Subject: [PATCH] 98syslog: try to dynamically check for rsyslog moddir
+Date: Wed, 08 Sep 2010 18:52:13 +0400
+Message-ID: <20100908145213.31091.74875.stgit@cooker>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:received:date:message-id
-         :subject:from:to:content-type;
-        bh=E6G7VJi3xtmOFnIfVNy4/fU6OwL7pamnXsjjbrSsxkw=;
-        b=MdX9qurXY8om9AL1FAGW222slS7ngwhqosS7grnM5+mqnsBSGGJNJqSDi/4Q5TZBZM
-         GomzTc7ZZGUZHLRc1Cyrs18eA1g3yj3PBPyTn8VvVmsZuw4VHH4En2zL5RpWdM+q6q7Z
-         4dWCmQY/fCJqP/HcRYcs67prGOIlBI2w/4yao=
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=mail.ru; s=mail;
+	h=Content-Transfer-Encoding:Content-Type:MIME-Version:Message-ID:Date:Cc:From:To:Subject; bh=QX54AsZ3xChqDnXTVSqRHJBllz73uLRp0bDtcaNbEkQ=;
+	b=1RwZx2F/NpCrZYRPJwzX5RmV4K0q0LAVqLNDLAIA2XswzjicRumVnE88LjeydJ5KRqz/AcUJidXCCxNakAdw1kRBqWIliExVzuEO7h/3MDXPL5Fo3ztsaoeIqE5tACjF;
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: rsyslog-4gKAAF5ltrKNkp5+ER1W/AC/G2K4zDHf@public.gmane.org, tpg-4qZELD6Fgxhg9hUCZPvPmw@public.gmane.org
 
-HI!
+Thomas pointed out that default module path may not be correct
+(Mandriva installs modules under architecture dependent path).
+Unfortunately rsyslog does not seem to offer any way to query for
+default configuration values. Here is rather hack - try to load
+non-existing module and fetch path from error message.
 
-My name is Daniel Podolsky and this is my first mail to this list.
+Example of error message from version 4.6.4:
 
-I'm using dracut (as part of fedora12) in my own server-on-usb-stick project.
+rsyslogd: could not load module '/lib64/rsyslog/_No_sUcH_MOduLe.so', dlopen: /lib64/rsyslog/_No_sUcH_MOduLe.so: cannot open shared object file: No such file or directory
 
-I would like to allow users to create bootable flash drive from
-Windows, so I've decided to use FAT32 formatted flash and syslinux.
-Root filesystem should be mounted from an image file placed on flash.
+Signed-off-by: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
 
-I did not find a way to implement this idea with current dracut. Even
-"root=live:..." did not help as I do not want to use rw overlay but
-mount fs directly from image.
+---
 
-So I've added the desired functionality myself.
+ modules.d/98syslog/install |   17 ++++++++++++++++-
+ 1 files changed, 16 insertions(+), 1 deletions(-)
 
-The questions I have:
-
-1) I suppose simple mount of rootfs image is not supported by dracut
-at the moment. Am I right?
-2) If yes can I contribute my simple modifications to the project? No
-one existing file modified, 5 new (one module) added.
-
-Thank you.
-
-With best regards,
-Daniel Podolsky
+diff --git a/modules.d/98syslog/install b/modules.d/98syslog/install
+index 1fd1b6f..e3d02bf 100755
+--- a/modules.d/98syslog/install
++++ b/modules.d/98syslog/install
+@@ -1,6 +1,21 @@
+ #!/bin/sh
+ if type -P rsyslogd >/dev/null; then
+-	installs="rsyslogd /lib/rsyslog/lmnet.so /lib/rsyslog/imklog.so /lib/rsyslog/imuxsock.so"
++	# module path can be changed during build and currently rsyslog
++	# does not provide any means to query for it. Use hack - try to
++	# load non-existent module and look at error message
++	R_CONF=/tmp/dracut.rsyslog.conf.$$
++	R_ERR=/tmp/dracut.rsyslog.err.$$
++	R_MODDIR=
++	echo '$ModLoad _No_sUcH_MOduLe' > $R_CONF
++	if [ -s $R_CONF ]; then
++		rsyslogd -N 1 -f $R_CONF 2> $R_ERR > /dev/null
++		R_MODDIR=$(grep ' could not load module .*_No_sUcH_MOduLe' $R_ERR)
++		R_MODDIR=${R_MODDIR#*could not load module \'}
++		R_MODDIR=${R_MODDIR%\', *}
++		R_MODDIR=${R_MODDIR%/*}
++	fi
++	[ -n "$R_MODDIR" ] || R_MODDIR=/lib/rsyslog
++	installs="rsyslogd $R_MODDIR/lmnet.so $R_MODDIR/imklog.so $R_MODDIR/imuxsock.so"
+ elif type -P syslogd >/dev/null; then
+     installs="syslogd"
+ elif type -P syslog-ng >/dev/null; then
