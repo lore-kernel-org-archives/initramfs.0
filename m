@@ -1,7 +1,7 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Peter Jones <pjones-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] 98syslog: try to dynamically check for rsyslog moddir
-Date: Fri, 10 Sep 2010 16:39:32 +0200
-Message-ID: <4C8A4324.3000707@redhat.com>
+Date: Fri, 10 Sep 2010 11:15:29 -0400
+Message-ID: <4C8A4B91.20905@redhat.com>
 References: <E1Ou4kw-0005pA-00.arvidjaar-mail-ru@smtp11.mail.ru>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
@@ -9,11 +9,11 @@ Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <E1Ou4kw-0005pA-00.arvidjaar-mail-ru-eJLJSXF0gEtsdVUOrk1QfQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
+Content-Type: text/plain; charset="iso-8859-1"
 To: Andrey Borzenkov <arvidjaar-JGs/UdohzUI@public.gmane.org>
-Cc: =?ISO-8859-2?Q?Tomasz_Pawe=B3_Gajc?= <phenomenal-5tc4TXWwyLM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rsyslog-4gKAAF5ltrKNkp5+ER1W/AC/G2K4zDHf@public.gmane.org, tpg-4qZELD6Fgxhg9hUCZPvPmw@public.gmane.org
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, =?ISO-8859-2?Q?Tomasz_Pawe=B3_G?= =?ISO-8859-2?Q?ajc?= <phenomenal-5tc4TXWwyLM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rsyslog-4gKAAF5ltrKNkp5+ER1W/AC/G2K4zDHf@public.gmane.org, tpg-4qZELD6Fgxhg9hUCZPvPmw@public.gmane.org
 
-On 09/10/2010 04:33 PM, Andrey Borzenkov wrote:
+On 09/10/2010 10:33 AM, Andrey Borzenkov wrote:
 > On Friday 10 of September 2010 15:48:22 Harald Hoyer wrote:
 >> On 09/08/2010 06:48 PM, Tomasz Pawe=B3 Gajc wrote:
 >>> Dnia 2010-09-08, o godz. 18:52:13
@@ -79,9 +79,18 @@ On 09/10/2010 04:33 PM, Andrey Borzenkov wrote:
 >>> Indeed this patch is more precise than my simplified one ;)
 >>
 >> ugly hack :-/ plus you want mktemp to prevent attacks..
->
+>=20
 > Just to make sure - it was NAK? :)
 
-NAK without mktemp... with mktemp, I am willing to accept the hackiness=
- for the=20
-sake of portability :)
+Is there some reason to do something this complex instead of simply rep=
+lacing
+/lib/rsyslog/ with /lib*/rsyslog/ on that one line?
+
+--=20
+        Peter
+
+Computers don't make errors.  What they do, they do on purpose.
+		-- Dale
+
+01234567890123456789012345678901234567890123456789012345678901234567890=
+123456789
