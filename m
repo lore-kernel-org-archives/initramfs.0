@@ -1,7 +1,7 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 Subject: Re: Omit in /etc/dracut.conf is too strong
-Date: Tue, 14 Sep 2010 13:39:47 +0200
-Message-ID: <4C8F5F03.4070006@redhat.com>
+Date: Tue, 14 Sep 2010 14:14:32 +0200
+Message-ID: <4C8F6728.1060403@bfh.ch>
 References: <AANLkTiksQ=j+2466KRjcPyogX5_iO35VFmshiHoS6GEW@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -11,9 +11,9 @@ Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 13.09.2010 18:43, Daniel Drake wrote:
+On 09/13/2010 06:43 PM, Daniel Drake wrote:
 > Hi,
 >
 > I'm working on using a beefy build-machine to build the initramfs for
@@ -46,7 +46,10 @@ On 13.09.2010 18:43, Daniel Drake wrote:
 > Workaround for now:
 > dracut -o ' ' --force -m 'dash olpc-activation rootfs-block terminfo
 > udev-rules base' .....
->
-> Daniel
 
-Hmm, true... care to write a patch? :)
+Why don't you just use a olpc specific dracut.conf? like
+
+dracut -c /etc/dracut-olpc.conf ...
+
+Regards,
+Philippe
