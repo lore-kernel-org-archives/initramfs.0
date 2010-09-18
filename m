@@ -1,55 +1,30 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: Omit in /etc/dracut.conf is too strong
-Date: Tue, 14 Sep 2010 14:14:32 +0200
-Message-ID: <4C8F6728.1060403@bfh.ch>
-References: <AANLkTiksQ=j+2466KRjcPyogX5_iO35VFmshiHoS6GEW@mail.gmail.com>
+From: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
+Subject: Boot problem in dracut in FC12 and FC13
+Date: Sat, 18 Sep 2010 09:16:03 +0200 (CEST)
+Message-ID: <alpine.LFD.2.01.1009180913120.11644@bbs.intern>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <AANLkTiksQ=j+2466KRjcPyogX5_iO35VFmshiHoS6GEW-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: TEXT/PLAIN; format="flowed"; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 09/13/2010 06:43 PM, Daniel Drake wrote:
-> Hi,
->
-> I'm working on using a beefy build-machine to build the initramfs for
-> the OLPC XO laptop (an embedded platform, in some respects).
-> Specifically, I'm doing the initramfs build in the same RPM build
-> process as the kernel. This will mean that it's not necessary to have
-> dracut (and its many dependencies) installed on the laptops
-> themselves.
->
-> The initramfs for the XO laptops is funky and includes some strange
-> stuff. It is also not possible to boot an OLPC XO initramfs on a
-> "regular PC".
->
-> So, on the build system, I install the dracut modules and exclude them
-> in /etc/dracut.conf (this way, when upgrading the kernel on the build
-> system, the OLPC-specific modules wont slip into the initramfs for the
-> build system).
->
-> Then from the build system for the XO kernel, I run:
-> dracut --force -m 'dash olpc-activation rootfs-block terminfo
-> udev-rules base' .....
->
-> However, because olpc-activation is excluded in /etc/dracut.conf, it
-> doesn't get included in the initramfs.
->
-> I think in this case it makes sense for olpc-activation to be included
-> given that I specifically requested it in a module list on the command
-> line.
->
-> Workaround for now:
-> dracut -o ' ' --force -m 'dash olpc-activation rootfs-block terminfo
-> udev-rules base' .....
+Hello,
 
-Why don't you just use a olpc specific dracut.conf? like
+In my system configuration with RAID + LUKS + LVM kernel doesn't boot.
 
-dracut -c /etc/dracut-olpc.conf ...
+I've already reported the bug about 3 weeks ago but no response yet:
+https://bugzilla.redhat.com/show_bug.cgi?id=629056
 
-Regards,
-Philippe
+Can you please fix it ASAP since I can't boot the new kernel. If you need 
+further assistance => no problem => I'm experienced in tracking down 
+problems.
+
+Thnx.
+
+Ciao,
+Gerhard
+
+--
+http://www.wiesinger.com/
