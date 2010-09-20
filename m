@@ -1,30 +1,28 @@
-From: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
-Subject: Boot problem in dracut in FC12 and FC13
-Date: Sat, 18 Sep 2010 09:16:03 +0200 (CEST)
-Message-ID: <alpine.LFD.2.01.1009180913120.11644@bbs.intern>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: dracut manual
+Date: Mon, 20 Sep 2010 15:30:00 +0200
+Message-ID: <4C9761D8.3080503@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; format="flowed"; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello,
+Hi dracut developers and users,
 
-In my system configuration with RAID + LUKS + LVM kernel doesn't boot.
+I started to write a dracut user and developer manual, and follow the
+"release early and often" mantra. Here is what I have for now:
 
-I've already reported the bug about 3 weeks ago but no response yet:
-https://bugzilla.redhat.com/show_bug.cgi?id=629056
+http://people.redhat.com/harald/dracut.html
 
-Can you please fix it ASAP since I can't boot the new kernel. If you need 
-further assistance => no problem => I'm experienced in tracking down 
-problems.
+source is here:
 
-Thnx.
+http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=blob;f=dracut.xml
 
-Ciao,
-Gerhard
+So, if you want to have more documentation about a specific topic, send
+me text (docbook formatted or free form), git patches, or just point me
+to the topic.
 
---
-http://www.wiesinger.com/
+Harald
