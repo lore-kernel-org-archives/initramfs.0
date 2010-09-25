@@ -1,28 +1,58 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: dracut manual
-Date: Mon, 20 Sep 2010 15:30:00 +0200
-Message-ID: <4C9761D8.3080503@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] 99base/init: honor env. vars provided by kernel (PATH, HOME and TERM)
+Date: Sun, 26 Sep 2010 00:06:54 +0200
+Message-ID: <4c9e7524.9804cc0a.3175.65a0@mx.google.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: 
 
-Hi dracut developers and users,
+Let take a look at Linux sources, /usr/src/linux-2.6.35/init/main.c:
 
-I started to write a dracut user and developer manual, and follow the
-"release early and often" mantra. Here is what I have for now:
+  204: char * envp_init[MAX_INIT_ENVS+2] = { "HOME=/", "TERM=linux", NULL, };
 
-http://people.redhat.com/harald/dracut.html
+  857: run_init_process("/sbin/init");
 
-source is here:
+  817: static void run_init_process(char *init_filename)
+  818: {
+  819:        argv_init[0] = init_filename;
+  820:        kernel_execve(init_filename, argv_init, envp_init);
+  821: }
 
-http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=blob;f=dracut.xml
+As we can see HOME=/ and TERM=linux are provided for init and this might be
+expected on some systems (Gentoo comes to my mind, here ;-)).  That's why we
+should give to init the same set of env. vars as Linux kernel does.
+---
+ modules.d/99base/init |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-So, if you want to have more documentation about a specific topic, send
-me text (docbook formatted or free form), git patches, or just point me
-to the topic.
-
-Harald
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index 5a02ade..dc0a0df 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -59,8 +59,8 @@ emergency_shell()
+     fi
+ }
+ 
++OLD_PATH="$PATH"
+ export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+-export TERM=linux
+ NEWROOT="/sysroot"
+ 
+ trap "emergency_shell Signal caught!" 0
+@@ -327,8 +327,8 @@ info "Switching root"
+ wait_for_loginit
+ 
+ umask $OLD_UMASK
+-unset HOME
+-unset TERM
++export PATH="$OLD_PATH"
++
+ exec switch_root "$NEWROOT" "$INIT" $initargs || {
+     echo "Something went very badly wrong in the initramfs.  Please "
+     echo "file a bug against dracut."
+-- 
+1.7.3
