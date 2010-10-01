@@ -1,106 +1,67 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] 90crypt: key on rem. device enhancements
-Date: Fri, 1 Oct 2010 01:28:09 +0200
-Message-ID: <20100930232719.GC6389@nb.net.home>
-References: <4c9e7c0d.d39ccc0a.676a.684a@mx.google.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] 99base/init: honor env. vars provided by kernel (PATH,
+ HOME and TERM)
+Date: Fri, 01 Oct 2010 11:39:02 +0200
+Message-ID: <4CA5AC36.8080907@redhat.com>
+References: <4c9e7524.9804cc0a.3175.65a0@mx.google.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4c9e7c0d.d39ccc0a.676a.684a-ATjtLOhZ0NVl57MIdRCFDg@public.gmane.org>
+In-Reply-To: <4c9e7524.9804cc0a.3175.65a0-ATjtLOhZ0NVl57MIdRCFDg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Amadeusz =?utf-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Fri, Sep 24, 2010 at 11:18:07PM +0200, Amadeusz =C5=BBo=C5=82nowski =
-wrote:
-> +# Evaluate command for every given device.  Every single device must=
- be
-> +# specified either by path, by label prefixed with 'LABEL=3D' or UUI=
-D prefixed
-> +# with 'UUID=3D'.  UUIDs are processed by 'foreach_uuid_until'.  Lis=
-t elements'
-> +# order is preserved.
-> +#
-> +# foreach_dev_until command devices
-> +#
-> +# command - command to be evaluated
-> +# devices - list of devices separated by space
-> +#
-> +# The function returns after *first successful evaluation* of the gi=
-ven command
-> +# with status 0.  If evaluation fails for every device, function ret=
-urns with
-> +# status 1.
-> +#
-> +# Example:
-> +# foreach_dev_until "echo \$___; false" "/dev/sda1 LABEL=3Dboot UUID=
-=3D123a"
-> +foreach_dev_until() {
-> +    local cmd=3D"$1"; shift; local devs_list=3D"$*"
-> +    local dev; local ___
+On 09/26/2010 12:06 AM, Amadeusz =C5=BBo=C5=82nowski wrote:
+> Let take a look at Linux sources, /usr/src/linux-2.6.35/init/main.c:
+>
+>    204: char * envp_init[MAX_INIT_ENVS+2] =3D { "HOME=3D/", "TERM=3Dl=
+inux", NULL, };
+>
+>    857: run_init_process("/sbin/init");
+>
+>    817: static void run_init_process(char *init_filename)
+>    818: {
+>    819:        argv_init[0] =3D init_filename;
+>    820:        kernel_execve(init_filename, argv_init, envp_init);
+>    821: }
+>
+> As we can see HOME=3D/ and TERM=3Dlinux are provided for init and thi=
+s might be
+> expected on some systems (Gentoo comes to my mind, here ;-)).  That's=
+ why we
+> should give to init the same set of env. vars as Linux kernel does.
+> ---
+>   modules.d/99base/init |    6 +++---
+>   1 files changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/modules.d/99base/init b/modules.d/99base/init
+> index 5a02ade..dc0a0df 100755
+> --- a/modules.d/99base/init
+> +++ b/modules.d/99base/init
+> @@ -59,8 +59,8 @@ emergency_shell()
+>       fi
+>   }
+>
+> +OLD_PATH=3D"$PATH"
+>   export PATH=3D/sbin:/bin:/usr/sbin:/usr/bin
+> -export TERM=3Dlinux
+>   NEWROOT=3D"/sysroot"
+>
+>   trap "emergency_shell Signal caught!" 0
+> @@ -327,8 +327,8 @@ info "Switching root"
+>   wait_for_loginit
+>
+>   umask $OLD_UMASK
+> -unset HOME
+> -unset TERM
+> +export PATH=3D"$OLD_PATH"
 > +
-> +    [ -n "${cmd}" ] || return 1
-> +
-> +    if [ -n "${devs_list}" ]; then
-> +        for dev in ${devs_list}; do
-> +            if strstarts "${dev}" 'UUID=3D'; then
-> +                foreach_uuid_until -p 'UUID=3D' "${cmd}" "${dev#UUID=
-=3D*}" && \
-> +                        return 0
-> +            else
-> +                [ -e "${dev}" ] || [ -e "/dev/disk/by-label/${dev#LA=
-BEL=3D}" ] \
+>   exec switch_root "$NEWROOT" "$INIT" $initargs || {
+>       echo "Something went very badly wrong in the initramfs.  Please=
+ "
+>       echo "file a bug against dracut."
 
- hmm.. how does it work with blank or non-ascii chars in LABELs?
-
- ...
-
-> +# It's a wrapper around 'mount' command.  In addition to 'mount' you=
- can specify
-> +# device name like "UUID=3D01234567-89ab-cdef-0123-4567890abcde" and
-> +# "LABEL=3Dfun_label".  'do_mount' mounts device as read-only for de=
-fault.  To
-> +# mount as writable pass '-w' option.  'mount_point' argument is req=
-uired.
-> +#
-> +# do_mount [options] dev mount_point
-> +#
-> +# Extra options:
-> +#   -q    Suppress any output.
-> +#
-> +# Example:
-> +# do_mount -q -w LABEL=3Dblah /mnt/disk
-> +do_mount() {
-> +    local args; local quiet
-> +
-> +    while [ $# -gt 2 ]; do
-> +        case $1 in
-> +            -q) quiet=3D'2>/dev/null >/dev/null' ;;
-> +            -v) quiet=3D''; args=3D"${args} $1" ;;
-> +            *) args=3D"${args} $1" ;;
-> +        esac
-> +        shift
-> +    done
-> +
-> +    local dev_name=3D"$1"; local dev=3D"${dev_name#*=3D}"; local mou=
-nt_point=3D"$2"
-> +
-> +    case ${dev_name} in
-> +        -*) die 'do_mount - wrong usage!' ;;
-> +        UUID=3D*) args=3D"${args} -U" ;;
-> +        LABEL=3D*) args=3D"${args} -L" ;;
-
- mount(8) supports LABEL=3D and UUID=3D tags, for example
-=20
-    mount LABEL=3Dboot /mnt/test
-=20
- so, you does not need to convert these tags to -L or -U options.
-
-    Karel
-
---=20
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
- http://karelzak.blogspot.com
+pushed
