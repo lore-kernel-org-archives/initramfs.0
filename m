@@ -1,8 +1,10 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 1/2] 99base/dracut-lib.sh: 7 new functions & 1 modified
-Date: Mon,  4 Oct 2010 00:44:45 +0200
-Message-ID: <1286145886-16322-1-git-send-email-aidecoe@aidecoe.name>
+Subject: [PATCH 2/2] 90crypt: rem. key-media - support for labels and normal dev names
+Date: Mon,  4 Oct 2010 00:44:46 +0200
+Message-ID: <1286145886-16322-2-git-send-email-aidecoe@aidecoe.name>
+References: <1286145886-16322-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1286145886-16322-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -10,200 +12,216 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-str_starts, str_replace
-chr - decimal value to character
-funiq - print new unique file name
-mkuniqdir - create and print new unique dir
-enc_nonprn_white - encode non-printable and white chars to '\xHH'
-foreach_dev_until - evaluates command for every given device
+90crypt: scan for devices several times instead of just once
 
-modified:
-foreach_uuid_until - use $___ as a place holder
+The patch introduces support for labels and normal dev names for
+removable media storing key for LUKS.  Previously only UUID was
+possible.  rd_LUKS_KEYDEV_UUID changes to rd_LUKS_KEYDEV which takes dev
+names as in /etc/fstab (e.g.: rd_LUKS_KEYDEV=LABEL=boot).
+
+It also fixes problem with devices not discovered on time by retrying
+(for default 3 times with incrementing sleep period) the scan.
+
+probe_keydev informs now which device it checks.
+
+Moreover code (the rem. dev. part) is refactorized.
 ---
- modules.d/99base/dracut-lib.sh |  142 ++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 135 insertions(+), 7 deletions(-)
+ dracut.kernel.7.xml                |   13 ++--
+ modules.d/90crypt/cryptroot-ask.sh |  108 +++++++++++++++++++++++-------------
+ modules.d/90crypt/install          |    1 +
+ 3 files changed, 77 insertions(+), 45 deletions(-)
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index 627d2c5..e8a7850 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -6,6 +6,35 @@ strstr() {
-     [ "${1#*$2*}" != "$1" ]
- }
- 
-+# returns OK if $1 contains $2 at the beginning
-+str_starts() {
-+    [ "${1#$2*}" != "$1" ]
-+}
-+
-+# converts decimal value to its ASCII character representation
-+# <http://mywiki.wooledge.org/BashFAQ/071>
-+chr() {
-+    printf \\$(($1/64*100+$1%64/8*10+$1%8))
-+} 
-+
-+# replaces all occurrences of 'search' in 'str' with 'replacement'
-+#
-+# str_replace str search replacement
-+#
-+# example:
-+# str_replace '  one two  three  ' ' ' '_'
-+str_replace() {
-+    local in="$1"; local s="$2"; local r="$3"
-+    local out=''
-+
-+    while strstr "${in}" "$s"; do
-+        chop="${in%%$s*}"
-+        out="${out}${chop# }$r"
-+        in="${in#*$s}"
-+    done
-+    echo "${out}${in}"
-+}
-+
- getarg() {
-     set +x 
-     local o line val
-@@ -283,35 +312,134 @@ ip_to_var() {
-     esac
- }
- 
--# Evaluate command for UUIDs either given as arguments for this function or all
-+# Prints unique path for potential file inside specified directory.  It consists
-+# of specified directory, prefix and number at the end which is incremented
-+# until non-existing file is found.
-+# 
-+# funiq dir prefix
-+#
-+# example:
-+# # ls /mnt
-+# cdrom0 cdrom1
-+#
-+# # funiq /mnt cdrom
-+# /mnt/cdrom2
-+funiq() {
-+    local dir="$1"; local prefix="$2"
-+    local i=0
-+
-+    [ -d "${dir}" ] || return 1
-+
-+    while [ -e "${dir}/${prefix}$i" ]; do
-+        i=$(($i+1)) || return 1
-+    done
-+
-+    echo "${dir}/${prefix}$i"
-+}
-+
-+# Creates unique directory and prints its path.  It's using funiq to generate
-+# path.
-+#
-+# mkuniqdir subdir new_dir_name
-+mkuniqdir() {
-+    local dir="$1"; local prefix="$2"
-+    local retdir
-+
-+    retdir=$(funiq "${dir}" "${prefix}") || return 1
-+    until mkdir "${retdir}" 2>/dev/null; do
-+        retdir=$(funiq "${dir}" "${prefix}") || return 1
-+    done
-+
-+    echo "${retdir}"
-+}
-+
-+# Encodes non-printable characters and spaces in a string to their hexadecimal
-+# values prefixed with '\x'.
-+#
-+# enc_nonprn_white str
-+enc_nonprn_white() {
-+    local str="$1"; local i=1
-+
-+    while [ $i -le 32 ]; do
-+        str="$(str_replace "${str}" "$(chr $i)" \\x$(printf '%02x' $i))"
-+        i=$(($i+1))
-+    done
-+
-+    echo "${str}"
-+}
-+
-+# Evaluates command for UUIDs either given as arguments for this function or all
- # listed in /dev/disk/by-uuid.  UUIDs doesn't have to be fully specified.  If
--# beginning is given it is expanded to all matching UUIDs.  To pass full UUID
--# to your command use '${full_uuid}'.  Remember to escape '$'!
-+# beginning is given it is expanded to all matching UUIDs.  To pass full UUID to
-+# your command use '$___' as a place holder.  Remember to escape '$'!
-+#
-+# foreach_uuid_until [ -p prefix ] command UUIDs
+diff --git a/dracut.kernel.7.xml b/dracut.kernel.7.xml
+index 0dc1ce8..8c0ae6c 100644
+--- a/dracut.kernel.7.xml
++++ b/dracut.kernel.7.xml
+@@ -324,25 +324,24 @@ This parameter can be specified multiple times.</para>
+       </variablelist>
+     </refsect2>
+     <refsect2>
+-      <title>crypt LUKS - experimental removable keys support</title>
+-      <para>works only when plymouth module is not included</para>
++      <title>crypt LUKS - keys on removable device</title>
+       <variablelist>
+         <varlistentry>
+           <term>
+             <envar>rd_LUKS_KEYPATH=</envar>
+-            <replaceable>&lt;path to keyfile&gt;</replaceable>
++            <replaceable>&lt;path&gt;</replaceable>
+           </term>
+           <listitem>
+-            <para>path to keyfile inside remove device filesystem</para>
++            <para>Path to keyfile inside removable device filesystem. May be specified multiple times - all paths will be checked.</para>
+           </listitem>
+         </varlistentry>
+         <varlistentry>
+           <term>
+-            <envar>rd_LUKS_KEYDEV_UUID=</envar>
+-            <replaceable>&lt;rem. device uuid&gt;</replaceable>
++            <envar>rd_LUKS_KEYDEV=</envar>
++            <replaceable>&lt;device&gt;</replaceable>
+           </term>
+           <listitem>
+-            <para>UUID of removalbe device storing keyfile; UUID doesn&apos;t have to be exact just like for <envar>rd_LUKS_UUID</envar></para>
++            <para>Device storing keyfile.  It might be normal path (/dev/sdc1) or label (LABEL="Linux boot") or UUID.  UUID doesn't have to be exact just like for <envar>rd_LUKS_UUID</envar>.  <envar>rd_LUKS_KEYDEV</envar> isn't required.  If not specified all devices accessible by UUID will be probed for keys listed in <envar>rd_LUKS_KEYPATH</envar>s.</para>
+           </listitem>
+         </varlistentry>
+       </variablelist>
+diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
+index 45b5fe7..75f4bbc 100755
+--- a/modules.d/90crypt/cryptroot-ask.sh
++++ b/modules.d/90crypt/cryptroot-ask.sh
+@@ -57,54 +57,87 @@ fi
+ # Search key on external devices
  #
--# $1 = command to be evaluated
--# $2 = list of UUIDs separated by space
-+# prefix - string to put just before $___
-+# command - command to be evaluated
-+# UUIDs - list of UUIDs separated by space
- #
- # The function returns after *first successful evaluation* of the given command
- # with status 0.  If evaluation fails for every UUID function returns with
- # status 1.
- #
- # Example:
--# foreach_uuid_until "mount -U \${full_uuid} /mnt; echo OK; umount /mnt" \
-+# foreach_uuid_until "mount -U \$___ /mnt; echo OK; umount /mnt" \
- #       "01234 f512 a235567f-12a3-c123-a1b1-01234567abcb"
- foreach_uuid_until() (
-     cd /dev/disk/by-uuid
  
-+    [ "$1" = -p ] && local prefix="$2" && shift 2
-     local cmd="$1"; shift; local uuids_list="$*"
--    local uuid; local full_uuid
-+    local uuid; local full_uuid; local ___
+-# Try to mount device specified by UUID and probe for existence of any of
+-# the paths.  On success return 0 and print "<uuid> <first-existing-path>",
+-# otherwise return 1.
+-# Function leaves mount point created.
++# Try to mount specified device (by path, by UUID or by label) and probe for
++# existence of any of the paths.  On success return 0 and print
++# "<device>\t<first-existing-path>", otherwise return 1.
++#
++# probe_keydev LABEL="LUKS keys" /test.key /keys/test.key
+ probe_keydev() {
+-    local uuid="$1"; shift; local keypaths="$*"
+-    local ret=1; local mount_point=/mnt/keydev
++    local dev="$1"; shift
++    local ret=1; local mount_point=$(mkuniqdir /mnt keydev)
+     local path
  
-     [ -n "${cmd}" ] || return 1
+-    [ -n "${uuid}" -a -n "${keypaths}" ] || return 1
+-    [ -d ${mount_point} ] || mkdir -p "${mount_point}" || return 1
++    [ -n "${dev}" -a -n "$*" ] || return 1
++    [ -d "${mount_point}" ] || die 'Mount point does not exist!'
  
-     for uuid in ${uuids_list:-*}; do
-         for full_uuid in ${uuid}*; do
-             [ -e "${full_uuid}" ] || continue
-+            ___="${prefix}${full_uuid}"
-             eval ${cmd} && return 0
+-    if mount -r -U "${uuid}" "${mount_point}" 2>/dev/null >/dev/null; then
+-        for path in ${keypaths}; do
++    info "cryptroot-ask: Probing ${dev}..."
++    if mount -r "${dev}" "${mount_point}" >/dev/null 2>&1; then
++        for path in "$@"; do
+             if [ -f "${mount_point}/${path}" ]; then
+-                echo "${uuid} ${path}"
++                echo "${dev}	${path}"
+                 ret=0
+                 break
+             fi
          done
-     done
++
++        umount "${mount_point}"
+     fi
  
-     return 1
- )
-+
-+# Evaluates command for every given device.  Every single device must be
-+# specified either by path, by label prefixed with 'LABEL=' or UUID prefixed
-+# with 'UUID='.  UUIDs are processed by 'foreach_uuid_until'.  List elements'
-+# order is preserved.
+-    umount "${mount_point}" 2>/dev/null >/dev/null
++    rmdir "${mount_point}"
+ 
+     return ${ret}
+ }
+ 
+-keypaths="$(getargs rd_LUKS_KEYPATH)"
+-unset keydev_uuid keypath
+-
+-if [ -n "$keypaths" ]; then
+-    keydev_uuids="$(getargs rd_LUKS_KEYDEV_UUID)"
+-    [ -n "$keydev_uuids" ] || {
+-        warn 'No UUID of device storing LUKS key specified.'
+-        warn 'It is recommended to set rd_LUKS_KEYDEV_UUID.'
+-        warn 'Performing scan of *all* devices accessible by UUID...'
+-    }
+-    tmp=$(foreach_uuid_until "probe_keydev \$full_uuid $keypaths" \
+-        $keydev_uuids) && {
+-        keydev_uuid="${tmp%% *}"
+-        keypath="${tmp#* }"
+-    } || {
+-        warn "Key for $device not found."
+-    }
+-    unset tmp keydev_uuids
+-fi
++# Search LUKS key for encrypted device.
 +#
-+# foreach_dev_until command device1 device2 ...
++# func. args:
++#   $1 = encrypted device
++#   $2 = tries (optional; default is 3)
 +#
-+# The function returns after *first successful evaluation* of the given command
-+# with status 0.  If evaluation fails for every device, function returns with
-+# status 1.
++# kernel cmdline args:
++#   rd_LUKS_KEYPATH
++#   rd_LUKS_KEYDEV
 +#
-+# Example:
-+# foreach_dev_until "echo \$___; false" /dev/sda1 "LABEL=Linux boot" "UUID=123a"
-+foreach_dev_until() {
-+    local cmd="$1"; shift
-+    local dev; local ___
++# returns 0 if search succeeded
++# returns 1 if search failed
++# returns 2 if search skipped (when rd_LUKS_KEYPATH not specified)
++search_key_for() {
++    local device="$1"; local tries="$2"
++    local keypaths="$(getargs rd_LUKS_KEYPATH)"; local keydevs
 +
-+    [ -n "${cmd}" ] || return 1
++    if [ -n "$keypaths" ]; then
++        keydevs="$(getargs rd_LUKS_KEYDEV)"
++        [ -n "$keydevs" ] || {
++            warn 'No device storing LUKS key specified.'
++            warn 'It is recommended to set rd_LUKS_KEYDEV (best by UUID).'
++            warn 'Performing scan of *all* devices accessible by UUID...'
++        }
 +
-+    if [ -n "$*" ]; then
-+        for dev; do
-+            if str_starts "${dev}" 'UUID='; then
-+                foreach_uuid_until -p 'UUID=' "${cmd}" "${dev#UUID=*}" && \
-+                        return 0
-+            else
-+                [ -e "${dev}" ] || [ -e "/dev/disk/by-label/$(enc_nonprn_white\
-+                        "${dev#LABEL=}")" ] || continue
-+                ___="${dev}"
-+                eval ${cmd} && return 0
-+            fi
++        { [ -z "$2" ] || [ $2 -lt 1 ]; } && tries=3
++        local i=0
++        while [ $i -lt 3 ]; do
++            sleep $i
++            # following outputs "$keydev\t$keypath" (on success only)
++            foreach_dev_until "probe_keydev \$___ $keypaths" $keydevs && \
++                    return 0
++            warn "Key for $device not found.  Trying again..."
++            i=$(($i+1))
 +        done
-+    else
-+        foreach_uuid_until -p 'UUID=' "${cmd}" && return 0
++
++        return 1
 +    fi
 +
-+    return 1
++    return 2
 +}
++
++mkdir -p /mnt
++
++tmp=$(search_key_for $device) && {
++    keydev="${tmp%%	*}"
++    keypath="${tmp#*	}"
++}
++unset tmp
+ 
+-unset keypaths
+ 
+ #
+ # Open LUKS device
+@@ -112,14 +145,13 @@ unset keypaths
+ 
+ info "luksOpen $device $luksname"
+ 
+-if [ -n "$keydev_uuid" ]; then
+-    mntp=/mnt/keydev
+-    mkdir -p "$mntp"
+-    mount -r -U "$keydev_uuid" "$mntp"
++if [ -n "$keydev" ]; then
++    mntp=$(mkuniqdir /mnt keydev)
++    mount -r "$keydev" "$mntp" || die 'Mounting rem. dev. failed!'
+     cryptsetup -d "$mntp/$keypath" luksOpen "$device" "$luksname"
+     umount "$mntp"
+-    rmdir -p "$mntp" 2>/dev/null
+-    unset mntp keypath keydev_uuid
++    rmdir "$mntp"
++    unset mntp keypath keydev
+ else
+     # Prompt for password with plymouth, if installed.
+     # Should we check if plymouthd is running?
+diff --git a/modules.d/90crypt/install b/modules.d/90crypt/install
+index a518bc3..e4dfa47 100755
+--- a/modules.d/90crypt/install
++++ b/modules.d/90crypt/install
+@@ -2,6 +2,7 @@
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ inst cryptsetup 
++inst rmdir
+ inst "$moddir"/cryptroot-ask.sh /sbin/cryptroot-ask
+ inst_hook cmdline 30 "$moddir/parse-crypt.sh"
+ inst_hook pre-pivot 30 "$moddir/crypt-cleanup.sh"
 -- 
 1.7.3
