@@ -1,227 +1,4247 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] 90crypt: rem. key-media - support for labels and normal dev names
-Date: Mon,  4 Oct 2010 00:44:46 +0200
-Message-ID: <1286145886-16322-2-git-send-email-aidecoe@aidecoe.name>
-References: <1286145886-16322-1-git-send-email-aidecoe@aidecoe.name>
+From: daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org
+Subject: NFS root with Dracut not calling nfsroot script
+Date: Mon, 04 Oct 2010 15:22:52 +1100
+Message-ID: <20101004152252.15833xc2gkzz1mdc@webmail.zoltak.com>
+References: <20101002062617.5730102kmedzh6uo@webmail.zoltak.com>
+Mime-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="=_3vhmhslf8pkw"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1286145886-16322-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <20101002062617.5730102kmedzh6uo-2RFepEojUI3Y3UUic/vCjNBPR1lH4CV8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-90crypt: scan for devices several times instead of just once
+This message is in MIME format.
 
-The patch introduces support for labels and normal dev names for
-removable media storing key for LUKS.  Previously only UUID was
-possible.  rd_LUKS_KEYDEV_UUID changes to rd_LUKS_KEYDEV which takes dev
-names as in /etc/fstab (e.g.: rd_LUKS_KEYDEV=LABEL=boot).
+--=_3vhmhslf8pkw
+Content-Type: text/plain;
+ charset=ISO-8859-1;
+ DelSp="Yes";
+ format="flowed"
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
 
-It also fixes problem with devices not discovered on time by retrying
-(for default 3 times with incrementing sleep period) the scan.
+I've been trying to PXE boot using Dracut with an NFS root.
 
-probe_keydev informs now which device it checks.
+I've been able to boot the node via PXE, get an IP address on eth0 but  
+it always fails to mount the root device. I have it set to drop into  
+the shell and at this point if I do:
 
-Moreover code (the rem. dev. part) is refactorized.
----
- dracut.kernel.7.xml                |   13 ++--
- modules.d/90crypt/cryptroot-ask.sh |  108 +++++++++++++++++++++++-------------
- modules.d/90crypt/install          |    1 +
- 3 files changed, 77 insertions(+), 45 deletions(-)
+mount.nfs xxx.xxx.xxx.xxx:/vol/blah /sysroot -o nolock # it works i.e.  
+I can mount the NFS.
 
-diff --git a/dracut.kernel.7.xml b/dracut.kernel.7.xml
-index 0dc1ce8..8c0ae6c 100644
---- a/dracut.kernel.7.xml
-+++ b/dracut.kernel.7.xml
-@@ -324,25 +324,24 @@ This parameter can be specified multiple times.</para>
-       </variablelist>
-     </refsect2>
-     <refsect2>
--      <title>crypt LUKS - experimental removable keys support</title>
--      <para>works only when plymouth module is not included</para>
-+      <title>crypt LUKS - keys on removable device</title>
-       <variablelist>
-         <varlistentry>
-           <term>
-             <envar>rd_LUKS_KEYPATH=</envar>
--            <replaceable>&lt;path to keyfile&gt;</replaceable>
-+            <replaceable>&lt;path&gt;</replaceable>
-           </term>
-           <listitem>
--            <para>path to keyfile inside remove device filesystem</para>
-+            <para>Path to keyfile inside removable device filesystem. May be specified multiple times - all paths will be checked.</para>
-           </listitem>
-         </varlistentry>
-         <varlistentry>
-           <term>
--            <envar>rd_LUKS_KEYDEV_UUID=</envar>
--            <replaceable>&lt;rem. device uuid&gt;</replaceable>
-+            <envar>rd_LUKS_KEYDEV=</envar>
-+            <replaceable>&lt;device&gt;</replaceable>
-           </term>
-           <listitem>
--            <para>UUID of removalbe device storing keyfile; UUID doesn&apos;t have to be exact just like for <envar>rd_LUKS_UUID</envar></para>
-+            <para>Device storing keyfile.  It might be normal path (/dev/sdc1) or label (LABEL="Linux boot") or UUID.  UUID doesn't have to be exact just like for <envar>rd_LUKS_UUID</envar>.  <envar>rd_LUKS_KEYDEV</envar> isn't required.  If not specified all devices accessible by UUID will be probed for keys listed in <envar>rd_LUKS_KEYPATH</envar>s.</para>
-           </listitem>
-         </varlistentry>
-       </variablelist>
-diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
-index 45b5fe7..75f4bbc 100755
---- a/modules.d/90crypt/cryptroot-ask.sh
-+++ b/modules.d/90crypt/cryptroot-ask.sh
-@@ -57,54 +57,87 @@ fi
- # Search key on external devices
- #
- 
--# Try to mount device specified by UUID and probe for existence of any of
--# the paths.  On success return 0 and print "<uuid> <first-existing-path>",
--# otherwise return 1.
--# Function leaves mount point created.
-+# Try to mount specified device (by path, by UUID or by label) and probe for
-+# existence of any of the paths.  On success return 0 and print
-+# "<device>\t<first-existing-path>", otherwise return 1.
-+#
-+# probe_keydev LABEL="LUKS keys" /test.key /keys/test.key
- probe_keydev() {
--    local uuid="$1"; shift; local keypaths="$*"
--    local ret=1; local mount_point=/mnt/keydev
-+    local dev="$1"; shift
-+    local ret=1; local mount_point=$(mkuniqdir /mnt keydev)
-     local path
- 
--    [ -n "${uuid}" -a -n "${keypaths}" ] || return 1
--    [ -d ${mount_point} ] || mkdir -p "${mount_point}" || return 1
-+    [ -n "${dev}" -a -n "$*" ] || return 1
-+    [ -d "${mount_point}" ] || die 'Mount point does not exist!'
- 
--    if mount -r -U "${uuid}" "${mount_point}" 2>/dev/null >/dev/null; then
--        for path in ${keypaths}; do
-+    info "cryptroot-ask: Probing ${dev}..."
-+    if mount -r "${dev}" "${mount_point}" >/dev/null 2>&1; then
-+        for path in "$@"; do
-             if [ -f "${mount_point}/${path}" ]; then
--                echo "${uuid} ${path}"
-+                echo "${dev}	${path}"
-                 ret=0
-                 break
-             fi
-         done
-+
-+        umount "${mount_point}"
-     fi
- 
--    umount "${mount_point}" 2>/dev/null >/dev/null
-+    rmdir "${mount_point}"
- 
-     return ${ret}
- }
- 
--keypaths="$(getargs rd_LUKS_KEYPATH)"
--unset keydev_uuid keypath
--
--if [ -n "$keypaths" ]; then
--    keydev_uuids="$(getargs rd_LUKS_KEYDEV_UUID)"
--    [ -n "$keydev_uuids" ] || {
--        warn 'No UUID of device storing LUKS key specified.'
--        warn 'It is recommended to set rd_LUKS_KEYDEV_UUID.'
--        warn 'Performing scan of *all* devices accessible by UUID...'
--    }
--    tmp=$(foreach_uuid_until "probe_keydev \$full_uuid $keypaths" \
--        $keydev_uuids) && {
--        keydev_uuid="${tmp%% *}"
--        keypath="${tmp#* }"
--    } || {
--        warn "Key for $device not found."
--    }
--    unset tmp keydev_uuids
--fi
-+# Search LUKS key for encrypted device.
-+#
-+# func. args:
-+#   $1 = encrypted device
-+#   $2 = tries (optional; default is 3)
-+#
-+# kernel cmdline args:
-+#   rd_LUKS_KEYPATH
-+#   rd_LUKS_KEYDEV
-+#
-+# returns 0 if search succeeded
-+# returns 1 if search failed
-+# returns 2 if search skipped (when rd_LUKS_KEYPATH not specified)
-+search_key_for() {
-+    local device="$1"; local tries="$2"
-+    local keypaths="$(getargs rd_LUKS_KEYPATH)"; local keydevs
-+
-+    if [ -n "$keypaths" ]; then
-+        keydevs="$(getargs rd_LUKS_KEYDEV)"
-+        [ -n "$keydevs" ] || {
-+            warn 'No device storing LUKS key specified.'
-+            warn 'It is recommended to set rd_LUKS_KEYDEV (best by UUID).'
-+            warn 'Performing scan of *all* devices accessible by UUID...'
-+        }
-+
-+        { [ -z "$2" ] || [ $2 -lt 1 ]; } && tries=3
-+        local i=0
-+        while [ $i -lt 3 ]; do
-+            sleep $i
-+            # following outputs "$keydev\t$keypath" (on success only)
-+            foreach_dev_until "probe_keydev \$___ $keypaths" $keydevs && \
-+                    return 0
-+            warn "Key for $device not found.  Trying again..."
-+            i=$(($i+1))
-+        done
-+
-+        return 1
-+    fi
-+
-+    return 2
-+}
-+
-+mkdir -p /mnt
-+
-+tmp=$(search_key_for $device) && {
-+    keydev="${tmp%%	*}"
-+    keypath="${tmp#*	}"
-+}
-+unset tmp
- 
--unset keypaths
- 
- #
- # Open LUKS device
-@@ -112,14 +145,13 @@ unset keypaths
- 
- info "luksOpen $device $luksname"
- 
--if [ -n "$keydev_uuid" ]; then
--    mntp=/mnt/keydev
--    mkdir -p "$mntp"
--    mount -r -U "$keydev_uuid" "$mntp"
-+if [ -n "$keydev" ]; then
-+    mntp=$(mkuniqdir /mnt keydev)
-+    mount -r "$keydev" "$mntp" || die 'Mounting rem. dev. failed!'
-     cryptsetup -d "$mntp/$keypath" luksOpen "$device" "$luksname"
-     umount "$mntp"
--    rmdir -p "$mntp" 2>/dev/null
--    unset mntp keypath keydev_uuid
-+    rmdir "$mntp"
-+    unset mntp keypath keydev
- else
-     # Prompt for password with plymouth, if installed.
-     # Should we check if plymouthd is running?
-diff --git a/modules.d/90crypt/install b/modules.d/90crypt/install
-index a518bc3..e4dfa47 100755
---- a/modules.d/90crypt/install
-+++ b/modules.d/90crypt/install
-@@ -2,6 +2,7 @@
- # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
- # ex: ts=8 sw=4 sts=4 et filetype=sh
- inst cryptsetup 
-+inst rmdir
- inst "$moddir"/cryptroot-ask.sh /sbin/cryptroot-ask
- inst_hook cmdline 30 "$moddir/parse-crypt.sh"
- inst_hook pre-pivot 30 "$moddir/crypt-cleanup.sh"
--- 
-1.7.3
+I've tried various methods in specifying the root via the kernel cmd  
+param's and also in the DHCP config with no luck in getting it to  
+mount and pivot.
+
+Here is the pxeboot.cfg file:
+
+
+# NFS server for OS image (imageroot) is at address 10.197.170.5
+PROMPT 1
+TIMEOUT 10
+DEFAULT 1
+DISPLAY messages
+LABEL 1
+         KERNEL vmlinuz-2.6.34-gentoo-r1
+         APPEND rw bootdev=eth0 ip=eth0:dhcp  
+root=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw initrd=initrd-2.6.34-gentoo-r1-dracut  
+rdshell
+
+
+
+Am I missing something preventing the NFS booting? Maybe missing  
+something in the Kernel?
+
+It appears the nfsroot script is never called. If I manually call it  
+from the recovery shell the nfs root is mounted to /sysroot.
+
+The init.log is attached.
+
+Thanks in advance.
+
+
+--=_3vhmhslf8pkw
+Content-Type: text/x-log;
+ charset=UTF-8;
+ name="init.log"
+Content-Disposition: attachment;
+ filename="init.log"
+Content-Transfer-Encoding: 7bit
+
++ mkdir /dev/shm
++ mkdir /dev/pts
++ mount -t devpts -o gid=5,mode=620 devpts /dev/pts
++ mount -t tmpfs tmpfs /dev/shm
++ mkdir -m 0755 /dev/.udev
++ mkdir -m 0755 /dev/.udev/rules.d
++ udevadm --version
++ UDEVVERSION=151
++ source_conf /etc/conf.d
++ local f
++ [ /etc/conf.d ]
++ [ -d //etc/conf.d ]
++ return
++ getarg rdbreak=cmdline
++ set +x
++ return 1
++ source_all cmdline
++ local f
++ [ cmdline ]
++ [ -d /cmdline ]
++ [ -e /cmdline/01parse-kernel.sh ]
++ . /cmdline/01parse-kernel.sh
++ getargs rdloaddriver=
++ set +x
++ return 1
++ [ -e /cmdline/10parse-resume.sh ]
++ . /cmdline/10parse-resume.sh
++ getarg resume=
++ set +x
++ return 1
++ resume=
++ unset resume
++ [ -e /cmdline/10parse-root-opts.sh ]
++ . /cmdline/10parse-root-opts.sh
++ getarg root=
++ set +x
++ return 0
++ root=10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
++ getarg rootflags=
++ set +x
++ return 1
++ rflags=
++ getarg rw
++ set +x
++ return 0
++ rflags=rw
++ getarg rootfstype=
++ set +x
++ return 1
++ fstype=
++ [ -z  ]
++ fstype=auto
++ [ -e /cmdline/20parse-blacklist.sh ]
++ . /cmdline/20parse-blacklist.sh
++ getargs rdblacklist=
++ set +x
++ return 1
++ [ -e /cmdline/20parse-i18n.sh ]
++ . /cmdline/20parse-i18n.sh
++ mkdir -p /etc/sysconfig
++ inst_key_val KEYMAP /etc/sysconfig/keyboard
++ local value
++ getarg KEYMAP
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val EXT_KEYMAPS /etc/sysconfig/keyboard
++ local value
++ getarg EXT_KEYMAPS
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val UNICODE /etc/sysconfig/i18n
++ local value
++ getarg UNICODE
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val SYSFONT /etc/sysconfig/i18n
++ local value
++ getarg SYSFONT
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val CONTRANS /etc/sysconfig/i18n
++ local value
++ getarg CONTRANS
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val UNIMAP /etc/sysconfig/i18n
++ local value
++ getarg UNIMAP
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val LANG /etc/sysconfig/i18n
++ local value
++ getarg LANG
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ inst_key_val LC_ALL /etc/sysconfig/i18n
++ local value
++ getarg LC_ALL
++ set +x
++ return 1
++ value=
++ [ -n  ]
++ [ -f /etc/sysconfig/i18n ]
++ [ -e /cmdline/30parse-crypt.sh ]
++ . /cmdline/30parse-crypt.sh
++ getarg rd_NO_LUKS
++ set +x
++ return 1
++ echo SUBSYSTEM!="block", GOTO="luks_end"
++ echo ACTION!="add|change", GOTO="luks_end"
++ getargs rd_LUKS_UUID
++ set +x
++ return 1
++ LUKS=
++ unset settled
++ getargs rd_LUKS_KEYPATH
++ set +x
++ return 1
++ [ -n  ]
++ [ -n  ]
++ echo ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="/sbin/initqueue --unique --onetime --name cryptroot-ask-%k /sbin/cryptroot-ask $env{DEVNAME} luks-$env{ID_FS_UUID}"
++ echo LABEL="luks_end"
++ [ -e /cmdline/90parse-nfsroot.sh ]
++ . /cmdline/90parse-nfsroot.sh
++ . /lib/dracut-lib.sh
++ setdebug
++ [ -z yes ]
++ [ yes = yes ]
++ set -x
++ [ -n  ]
++ [ -z 10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw ]
++ [ -z  ]
++ getarg netroot=
++ set +x
++ return 1
++ netroot=
++ [ -z  ]
++ getarg nfsroot=
++ set +x
++ return 1
++ nfsroot=
++ [ -n  ]
++ netroot=10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
++ [ -n  ]
++ netroot=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
++ getarg rd_NFS_DOMAIN
++ set +x
++ return 1
++ nfsdomain=
++ nfsroot_to_var nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
++ local arg=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw:
++ nfs=nfs
++ arg=10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw:
++ strstr 10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw: :/*
++ [ vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw: != 10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw: ]
++ server=10.197.170.5
++ arg=/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw:
++ path=/vol/filerboot/linux/images/live-mon-test
++ options=:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw:
++ options=fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw:
++ options=fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
++ [ -n  ]
++ [ /vol/filerboot/linux/images/live-mon-test != /vol/filerboot/linux/images/live-mon-test ]
++ [ /vol/filerboot/linux/images/live-mon-test = error ]
++ fstype=nfs
++ incol2 /proc/filesystems nfs
++ local dummy check
++ local file=/proc/filesystems
++ local str=nfs
++ [ -z /proc/filesystems ]
++ [ -z nfs ]
++ read dummy check restofline
++ [ sysfs = nfs ]
++ read dummy check restofline
++ [ rootfs = nfs ]
++ read dummy check restofline
++ [ bdev = nfs ]
++ read dummy check restofline
++ [ proc = nfs ]
++ read dummy check restofline
++ [ cgroup = nfs ]
++ read dummy check restofline
++ [ cpuset = nfs ]
++ read dummy check restofline
++ [ tmpfs = nfs ]
++ read dummy check restofline
++ [ sockfs = nfs ]
++ read dummy check restofline
++ [ pipefs = nfs ]
++ read dummy check restofline
++ [ anon_inodefs = nfs ]
++ read dummy check restofline
++ [ rpc_pipefs = nfs ]
++ read dummy check restofline
++ [ configfs = nfs ]
++ read dummy check restofline
++ [ devpts = nfs ]
++ read dummy check restofline
++ [  = nfs ]
++ read dummy check restofline
++ [  = nfs ]
++ read dummy check restofline
++ [  = nfs ]
++ read dummy check restofline
++ [  = nfs ]
++ read dummy check restofline
++ [ ramfs = nfs ]
++ read dummy check restofline
++ [  = nfs ]
++ read dummy check restofline
++ [  = nfs ]
++ read dummy check restofline
++ [ nfs = nfs ]
++ return 0
++ netroot=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
++ [ -z 10.197.170.5 ]
++ rootok=1
++ root=nfs
++ echo [ -e $NEWROOT/proc ]
++ [ -e /cmdline/91dhcp-root.sh ]
++ . /cmdline/91dhcp-root.sh
++ [ -n 1 ]
++ return
++ [ -e /cmdline/95parse-block.sh ]
++ . /cmdline/95parse-block.sh
++ [ -e /cmdline/98parse-bridge.sh ]
++ . /cmdline/98parse-bridge.sh
++ [ -n  ]
++ getarg bridge=
++ set +x
++ return 1
++ unset bridgename ethname
++ getarg bridge
++ set +x
++ return 1
++ [ -e /cmdline/99parse-ifname.sh ]
++ . /cmdline/99parse-ifname.sh
++ getarg ifname=
++ set +x
++ return 1
++ return
++ [ -e /cmdline/99parse-ip-opts.sh ]
++ . /cmdline/99parse-ip-opts.sh
++ . /lib/dracut-lib.sh
++ setdebug
++ [ -z yes ]
++ [ yes = yes ]
++ set -x
++ getarg ip=
++ set +x
++ return 0
++ [ -z nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw ]
++ getarg ip=
++ set +x
++ return 0
++ getarg BOOTIF=
++ set +x
++ return 1
++ getarg BOOTIF
++ set +x
++ return 1
++ [ -n  ]
++ [ -n nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw ]
++ getarg ip=
++ set +x
++ return 0
++ [ -z dhcp ]
++ [ -z  ]
++ local count=0
++ getargs ip=
++ set +x
++ return 0
++ count=1
++ [ 1 -gt 1 ]
++ [ -n  ]
++ getargs ip=
++ set +x
++ return 0
++ ip_to_var dhcp
++ local v=dhcp:
++ local i
++ set --
++ [ -n dhcp: ]
++ [ dhcp: != dhcp: ]
++ set -- dhcp
++ v=
++ [ -n  ]
++ unset ip srv gw mask hostname dev autoconf
++ autoconf=dhcp
++ [ -n  ]
++ [ -z dhcp ]
++ [ -n  ]
++ [ -n  ]
++ [ -n  ]
++ [ -z  ]
++ [ -n  ]
++ [ -n  ]
++ [ -n  ]
++ [ -n  ]
++ [ -n  ]
++ [ -n  ]
++ [ -n  ]
++ [ -z nfs ]
++ [ -z 1 ]
++ echo root='nfs'
++ echo rflags='rw'
++ echo fstype='nfs'
++ echo netroot='nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw'
++ echo NEWROOT='/sysroot'
++ getarg rdbreak=pre-udev
++ set +x
++ return 1
++ source_all pre-udev
++ local f
++ [ pre-udev ]
++ [ -d /pre-udev ]
++ [ -e /pre-udev/30block-genrules.sh ]
++ . /pre-udev/30block-genrules.sh
++ [ nfs = block ]
++ [ -e /pre-udev/30dm-pre-udev.sh ]
++ . /pre-udev/30dm-pre-udev.sh
++ cat /proc/misc
++ strstr  60 network_throughput
+61 network_latency
+62 cpu_dma_latency
+1 psaux
+231 snapshot
+227 mcelog
+63 vga_arbiter device-mapper
++ [  60 network_throughput
+61 network_latency
+62 cpu_dma_latency
+1 psaux
+231 snapshot
+227 mcelog
+63 vga_arbiter !=  60 network_throughput
+61 network_latency
+62 cpu_dma_latency
+1 psaux
+231 snapshot
+227 mcelog
+63 vga_arbiter ]
++ modprobe dm_mod
++ [ -e /pre-udev/30resume-genrules.sh ]
++ . /pre-udev/30resume-genrules.sh
++ [ -n  ]
++ getarg noresume
++ set +x
++ return 1
++ echo SUBSYSTEM=="block", ACTION=="add|change", ENV{ID_FS_TYPE}=="suspend|swsuspend|swsupend",  RUN+="/bin/sh -c 'echo %M:%m > /sys/power/resume'"
++ [ -e /pre-udev/50ifname-genrules.sh ]
++ . /pre-udev/50ifname-genrules.sh
++ getarg ifname=
++ set +x
++ return 1
++ return
++ [ -e /pre-udev/60net-genrules.sh ]
++ . /pre-udev/60net-genrules.sh
++ [ -z nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw ]
++ [ -e /tmp/bridge.info ]
++ getarg BOOTIF=
++ set +x
++ return 1
++ BOOTIF=
++ [ -n  ]
++ [ -n  ]
++ printf ACTION=="add", SUBSYSTEM=="net", RUN+="/sbin/ifup $env{INTERFACE}"n
++ udevd --daemon --resolve-names=never
++ UDEV_LOG_PRIO_ARG=--log-priority
++ UDEV_QUEUE_EMPTY=udevadm settle --timeout=0
++ [ 151 -lt 140 ]
++ getarg rdudevinfo
++ set +x
++ return 1
++ getarg rdudevdebug
++ set +x
++ return 1
++ getarg rdbreak=pre-trigger
++ set +x
++ return 1
++ source_all pre-trigger
++ local f
++ [ pre-trigger ]
++ [ -d /pre-trigger ]
++ return
++ udevadm trigger --action=add
+ifup.lo.781 + . /lib/dracut-lib.sh
+ifup.eth0.783 + . /lib/dracut-lib.shifup.lo.781 +
+setdebug
+ifup.lo.781 + [ -z yes ]
+ifup.lo.781 + [ yes = yes ]
+ifup.lo.781 + set -x
+ifup.lo.781 + [ -z loifup.eth0.783 + setdebug
+ifup.eth0.783 + [ -z yes ] ]
+ifup.lo.781 + netif=lo
+ifup.lo.781 + [ -e /tmp/bridge.info ]
+
+ifup.lo.781 + ifup.eth0.783 + [ yes[ -f = /tmp/net.lo.up yes ] ]
+
+ifup.eth0.783 + ifup.lo.781 + set -x[ -f /tmp/root.info ]
+
+ifup.lo.781 + . /tmp/root.info
+ifup.lo.781 + root=nfs
+ifup.lo.781 + rflags=rw
+ifup.lo.781 + fstype=nfs
+ifup.lo.781 + netroot=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
+ifup.lo.781 + NEWROOT=/sysroot
+ifup.lo.781 + [ -z nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw ]
+ifup.lo.781 + [ lo = lo ]
+ifup.lo.781 + ip link set lo up
+ifup.eth0.783 + [ -z eth0 ]
+ifup.eth0.783 + netif=eth0
+ifup.eth0.783 + [ -e /tmp/bridge.info ]
+ifup.eth0.783 + [ -f /tmp/net.eth0.up ]
+ifup.eth0.783 + [ -f /tmp/root.info ]
+ifup.eth0.783 + . /tmp/root.info
+ifup.eth0.783 + root=nfs
+ifup.eth0.783 + rflags=rw
+ifup.eth0.783 + fstype=nfs
+ifup.eth0.783 + netroot=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw
+ifup.eth0.783 + NEWROOT=/sysroot
+ifup.eth0.783 + [ -z nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,nolock,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw ]
+ifup.eth0.783 + [ eth0 = lo ]
+ifup.eth0.783 + [ eth0 =  ]
+ifup.eth0.783 + ifup.lo.781 + ip addrgetarg add 127.0.0.1/8 ip dev lo
+
+ifup.eth0.783 + set +x
+ifup.eth0.783 + return 0
+ifup.eth0.783 + ip=dhcp
+ifup.eth0.783 + [ -z dhcp ]
+ifup.eth0.783 + getargs ip=
+ifup.eth0.783 + set +x
+RTNETLINK answers: File exists
+ifup.eth0.783 + ifup.lo.781 + return
+0
+ifup.lo.781 + exit 0
+ifup.eth0.783 + ip_to_var dhcp
+ifup.eth0.783 + local v=dhcp:
+ifup.eth0.783 + local i
+ifup.eth0.783 + set --
+ifup.eth0.783 + [ -n dhcp: ]
+ifup.eth0.783 + [ dhcp: != dhcp: ]
+ifup.eth0.783 + set -- dhcp
+ifup.eth0.783 + v=
+ifup.eth0.783 + [ -n  ]
+ifup.eth0.783 + unset ip srv gw mask hostname dev autoconf
+ifup.eth0.783 + autoconf=dhcp
+ifup.eth0.783 + [ -n  ]
+ifup.eth0.783 + eval [ "$ip" ] && echo ip="$ip"
+ifup.eth0.783 + [  ]
+ifup.eth0.783 + eval [ "$srv" ] && echo srv="$srv"
+ifup.eth0.783 + [  ]
+ifup.eth0.783 + eval [ "$gw" ] && echo gw="$gw"
+ifup.eth0.783 + [  ]
+ifup.eth0.783 + eval [ "$mask" ] && echo mask="$mask"
+ifup.eth0.783 + [  ]
+ifup.eth0.783 + eval [ "$hostname" ] && echo hostname="$hostname"
+ifup.eth0.783 + [  ]
+ifup.eth0.783 + do_dhcp -4
+ifup.eth0.783 + echo Starting dhcp for interface eth0
+Starting dhcp for interface eth0
+ifup.eth0.783 + dhclient -4 -1 -q -cf /etc/dhclient.conf -pf /tmp/dhclient.eth0.pid -lf /tmp/dhclient.eth0.lease eth0
+Internet Systems Consortium DHCP Client V3.1.2p1-Gentoo
+Copyright 2004-2009 Internet Systems Consortium.
+All rights reserved.
+For info, please visit http://www.isc.org/sw/dhcp/
+Usage: dhclient [-1dqrx] [-nw] [-p <port>] [-s server]
+[-cf config-file] [-lf lease-file][-pf pid-file] [-e VAR=val]
+[-sf script-file] [interface]
+
+If you did not get this software from ftp.isc.org, please
+get the latest from ftp.isc.org and install that before
+requesting help.
+
+If you did get this software from ftp.isc.org and have not
+yet read the README, please read it before requesting help.
+If you intend to request help from the dhcp-server-2cKsPvgpMDY@public.gmane.org
+mailing list, please read the section on the README about
+submitting bug reports and requests for help.
+
+Please do not under any circumstances send requests for
+help directly to the authors of this software - please
+send them to the appropriate mailing list as described in
+the README file.
+
+exiting.
+ifup.eth0.783 + echo dhcp failed
+dhcp failed
+ifup.eth0.783 + break
+ifup.eth0.783 + exit 0
++ getarg rdbreak=initqueue
++ set +x
++ return 1
++ getarg rd_retry=
++ set +x
++ return 1
++ RDRETRY=
++ RDRETRY=20
++ RDRETRY=40
++ i=0
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=1
++ [ 1 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=2
++ [ 2 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=3
++ [ 3 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=4
++ [ 4 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=5
++ [ 5 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=6
++ [ 6 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=7
++ [ 7 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=8
++ [ 8 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=9
++ [ 9 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=10
++ [ 10 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=11
++ [ 11 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=12
++ [ 12 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=13
++ [ 13 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=14
++ [ 14 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=15
++ [ 15 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=16
++ [ 16 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=17
++ [ 17 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=18
++ [ 18 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=19
++ [ 19 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=20
++ [ 20 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=21
++ [ 21 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=22
++ [ 22 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=23
++ [ 23 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=24
++ [ 24 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=25
++ [ 25 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=26
++ [ 26 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=27
++ [ 27 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=28
++ [ 28 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=29
++ [ 29 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=30
++ [ 30 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=31
++ [ 31 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=32
++ [ 32 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=33
++ [ 33 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=34
++ [ 34 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=35
++ [ 35 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=36
++ [ 36 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=37
++ [ 37 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=38
++ [ 38 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=39
++ [ 39 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=40
++ [ 40 -gt 40 ]
++ :
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ udevsettle
++ [ -z 151 ]
++ [ 151 -ge 143 ]
++ udevadm settle --exit-if-exists=/initqueue/work
++ check_finished
++ local f
++ [ -e /initqueue-finished/nfsroot.sh ]
++ . /initqueue-finished/nfsroot.sh
++ [ -e /sysroot/proc ]
++ return 1
++ [ -f /initqueue/work ]
++ [ -e /initqueue/*.sh ]
++ break
++ udevadm settle --timeout=0
++ modprobe scsi_wait_scan
++ rmmod scsi_wait_scan
++ udevadm settle --timeout=0
++ [ -e /initqueue-settled/*.sh ]
++ break
++ udevadm settle --timeout=0
++ sleep 0.5
++ [ -e /sys/block/sr0 ]
++ udevadm info --query=env --path=/block/sr0
++ strstr UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ID_CDROM_MEDIA
++ [ UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 != UDEV_LOG=3
+DEVPATH=/block/sr0
+MAJOR=11
+MINOR=0
+DEVNAME=/dev/sr0
+DEVTYPE=disk
+PHYSDEVPATH=/devices/pci0000:00/0000:00:1d.7/usb4/4-1/4-1.2/4-1.2:1.0/host0/target0:0:0/0:0:0:0
+PHYSDEVBUS=scsi
+PHYSDEVDRIVER=sr
+SUBSYSTEM=block
+ID_SCSI=1
+ID_VENDOR=Dell
+ID_VENDOR_ENC=Dellx20x20x20x20
+ID_MODEL=Virtual_CDROM
+ID_MODEL_ENC=Virtualx20x20CDROMx20x20
+ID_REVISION=123
+ID_TYPE=cd
+ID_BUS=scsi
+DEVLINKS=/dev/block/11:0 /dev/scd0 ]
++ echo change
++ i=41
++ [ 41 -gt 40 ]
++ flock -s 9
++ emergency_shell No root device found
++ [ No root device found = -n ]
++ _rdshell_name=dracut
++ wait_for_loginit
++ getarg rdinitdebug
++ set +x
++ return 0
++ set +x
+
+--=_3vhmhslf8pkw--
