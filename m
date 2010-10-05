@@ -1,35 +1,38 @@
 From: daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org
-Subject: Dracut NFS root rw before pivot but ro after pivot
-Date: Tue, 05 Oct 2010 12:42:50 +1100
-Message-ID: <20101005124250.12811x7b1hr8g23k@webmail.zoltak.com>
+Subject: Re: Dracut NFS root rw before pivot but ro after pivot
+Date: Tue, 05 Oct 2010 16:52:45 +1100
+Message-ID: <20101005165245.12962kslvxq6cmyo@webmail.zoltak.com>
+References: <20101005124250.12811x7b1hr8g23k@webmail.zoltak.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20101005124250.12811x7b1hr8g23k-2RFepEojUI3Y3UUic/vCjNBPR1lH4CV8@public.gmane.org>
 Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; delsp="Yes"; format="flowed"
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi Guys,
+Quoting daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org:
 
-I can boot an NFS root however when Dracut pivots the NFS becomes read-only.
+> Does anyone have any suggestions on the possible cause?
 
-The pxelinux.cfg files:
+I've been doing some more investigating and found the following during boot:
 
-APPEND bootdev=eth1 ip=dhcp  
-root=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw initrd=initrd-2.6.34-gentoo-r1-dracut  
-rw
+[snip]
+Remounting root filesystem read/write ...
+mount.nfs: rpc.statd is not running but is required for remote locking.
+mount.nfs: Either use '-o nolock' to keep locks local, or start statd
 
-When I set rdbreak=pre-pivot and I issue a mount command the /sysroot  
-is mounted with rw and I can touch a file on the nfs.
+Root filesystem cannot be mounted read/write
+[/snip]
 
-Something happens after the pivot occurs and the volume be no longer  
-writable as I get permission denied errors as services start-up.
+I'm running Gentoo. Just wondering if dracut is meant to start  
+rpc.statd before Gentoo does?
 
-Does anyone have any suggestions on the possible cause?
+I've set rpc.statd to start however I think it needs to start prior to  
+the Root filesystem mounting.
+
+Suggestions would be much appreciated.
 
 Thanks
-
-
-
