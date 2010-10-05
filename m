@@ -1,33 +1,35 @@
 From: daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org
-Subject: Re: NFS root with Dracut not calling nfsroot script
-Date: Tue, 05 Oct 2010 10:56:57 +1100
-Message-ID: <20101005105657.11522adk3xakzt1c@webmail.zoltak.com>
-References: <20101002062617.5730102kmedzh6uo@webmail.zoltak.com>
- <20101004152252.15833xc2gkzz1mdc@webmail.zoltak.com>
- <4CA9998F.7060701@redhat.com>
- <20101004222036.53485185m6mhh11c@webmail.zoltak.com>
- <20101004222420.11791ue5kephey5c@webmail.zoltak.com>
- <4CA9BC07.3090008@bfh.ch>
+Subject: Dracut NFS root rw before pivot but ro after pivot
+Date: Tue, 05 Oct 2010 12:42:50 +1100
+Message-ID: <20101005124250.12811x7b1hr8g23k@webmail.zoltak.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4CA9BC07.3090008-omB+W0Dpw2o@public.gmane.org>
 Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; delsp="Yes"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Quoting Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
->
-> Would you mind trying with the older dhclient and removing the '-4'  
-> option? Might help seeing where/what the problem is.
+Hi Guys,
 
-Harald and your suggestion worked! I down graded to dhclient 3.1.2 and  
-removed the -4 from the dracut scripts and BINGO! Worked first go!
+I can boot an NFS root however when Dracut pivots the NFS becomes read-only.
 
-Going back to the issue with dhclient 4.1.0 the error indicated the  
-address was already assigned. I wounder if dracut needs to un-assign  
-the PXE assigned address from the interface before calling dhclient?
+The pxelinux.cfg files:
+
+APPEND bootdev=eth1 ip=dhcp  
+root=nfs:10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,nfsvers=3,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nointr,actimeo=3600,tcp,noacl,rw initrd=initrd-2.6.34-gentoo-r1-dracut  
+rw
+
+When I set rdbreak=pre-pivot and I issue a mount command the /sysroot  
+is mounted with rw and I can touch a file on the nfs.
+
+Something happens after the pivot occurs and the volume be no longer  
+writable as I get permission denied errors as services start-up.
+
+Does anyone have any suggestions on the possible cause?
+
+Thanks
+
+
 
