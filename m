@@ -1,27 +1,29 @@
-From: daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org
-Subject: Re: Dracut NFS root rw before pivot but ro after pivot
-Date: Tue, 05 Oct 2010 17:48:17 +1100
-Message-ID: <20101005174817.98833aq1pzqn2cds@webmail.zoltak.com>
-References: <20101005124250.12811x7b1hr8g23k@webmail.zoltak.com>
- <20101005165245.12962kslvxq6cmyo@webmail.zoltak.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Better error handling
+Date: Wed, 06 Oct 2010 13:39:56 +0200
+Message-ID: <4CAC600C.7040309@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20101005165245.12962kslvxq6cmyo-2RFepEojUI3Y3UUic/vCjNBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; delsp="Yes"; format="flowed"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+While talking to David Zeuthen, he mentioned that our current error handling is 
+not very user friendly and I agree.
 
-> Quoting daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org:
-> I'm running Gentoo. Just wondering if dracut is meant to start  
-> rpc.statd before Gentoo does?
->
-> I've set rpc.statd to start however I think it needs to start prior  
-> to the Root filesystem mounting.
+Presenting the user the message "Boot has failed, sleeping forever." does not 
+really help.
 
-I have determine the NFS mount is rw until udev runs!
+Instead of displaying the message, we could:
 
-Does anyone know how to debug this?
+- turn "rdshell" into "rd.no_shell" and drop to a shell by default.
+   Admins with security concerns will lock grub with a password, and can add
+   the "rd.no_shell" parameter.
+
+- add simple tools to present the user a list of mountable partitions, assemble 
+lvms, md, dmraid and mount network devices.
+
+
+What do you think?
