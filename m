@@ -1,43 +1,61 @@
 From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH] base: don't bother with rmmod/modprobe links for module-less initramfs
-Date: Sun, 10 Oct 2010 12:01:05 +0100 (BST)
-Message-ID: <20101010110105.827009D401B@zog.reactivated.net>
+Subject: Re: [PATCH] base: don't bother with rmmod/modprobe links for
+ module-less initramfs
+Date: Sun, 10 Oct 2010 18:17:59 +0100
+Message-ID: <AANLkTinVg6GGv+wNUAbj7-coYcV5W8ww_xzLt-cebjg1@mail.gmail.com>
+References: <20101010110105.827009D401B@zog.reactivated.net>
+	<1286712502-sup-7547@etiriah>
+Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:sender:received
+         :in-reply-to:references:date:x-google-sender-auth:message-id:subject
+         :from:to:cc:content-type:content-transfer-encoding;
+        bh=bs2TzoXVFPVJS2qAKVMHzRzhuG5sS4xyFMIkFPWGJPQ=;
+        b=dU37FI3Zee+xBles05fOJ9voQRo1W4qkA75c3kMyMKlTb8Kywlpvxa06gUYEMO67pU
+         XOjeDOWaRwbDfLQoehBLhgkGUdhBLyJFOzk0YJ05JZi8dSfVhcFqYST+mtwdVwFvPwY7
+         0p86H3DvMngYlCl3HE0+ImjSXeye9cGYpEils=
+In-Reply-To: <1286712502-sup-7547@etiriah>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+To: =?ISO-8859-2?Q?Amadeusz_=AFo=B3nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-/bin/true is 23kb, bigger than rmmod itself!
+2010/10/10 Amadeusz =C5=BBo=C5=82nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>:
+> Excerpts from Daniel Drake's message of Sun Oct 10 13:01:05 +0200 201=
+0:
+>> /bin/true is 23kb, bigger than rmmod itself!
+>
+> Yes, I know=E2=80=A6 =C2=A0It was supposed to be temporary workaround=
+ only=E2=80=A6 :-)
 
-And a module-less initramfs runs just fine without rmmod and modprobe.
----
- modules.d/99base/install |    6 +-----
- 1 files changed, 1 insertions(+), 5 deletions(-)
+What's the longer term solution?
 
-I'm also not clear on why --ignore-kernel-modules exists as a separate
-argument; I would think that the functionality of --ignore-kernel-modules
-falls nicely into the scope of --no-kernel
+> Hm=E2=80=A6 you're right to some extent. =C2=A0udev seems not to comp=
+lain about
+> missing modprobe. =C2=A0Although there are few usages of modprobe in =
+some
+> Dracut modules.
 
-diff --git a/modules.d/99base/install b/modules.d/99base/install
-index 6fac851..1655eb2 100755
---- a/modules.d/99base/install
-+++ b/modules.d/99base/install
-@@ -3,11 +3,7 @@
- 
- dracut_install mount mknod mkdir pidof sleep chroot sed ls flock cp mv dmesg \
-     rm ln mkfifo less 
--if [[ ${ignore_kmodules} = yes ]]; then
--    inst /bin/true
--    ln -s /bin/true "${initdir}"/sbin/modprobe
--    ln -s /bin/true "${initdir}"/sbin/rmmod
--else
-+if [[ ${ignore_kmodules} != yes ]]; then
-     dracut_install modprobe rmmod
- fi
- if [ ! -e "${initdir}/bin/sh" ]; then
--- 
-1.7.2.3
+We could add an early hook (which only gets installed in the
+ignore-kernel-modules case) which defines modprobe as a shell
+function:
+
+modprobe()
+{
+    return 0
+}
+
+Actually, this should be even simpler:
+
+alias modprobe=3Dtrue
+
+(in this case, true is used an inbuilt shell command -- not the one in
+/bin, which we won't need or use)
+
+What do you think?
+
+Daniel
