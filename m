@@ -1,61 +1,89 @@
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] base: don't bother with rmmod/modprobe links for
- module-less initramfs
-Date: Sun, 10 Oct 2010 18:17:59 +0100
-Message-ID: <AANLkTinVg6GGv+wNUAbj7-coYcV5W8ww_xzLt-cebjg1@mail.gmail.com>
-References: <20101010110105.827009D401B@zog.reactivated.net>
-	<1286712502-sup-7547@etiriah>
+From: daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org
+Subject: Dracut NFS root DHCP timeouts
+Date: Mon, 11 Oct 2010 13:37:18 +1100
+Message-ID: <20101011133718.205549hmcnjzr3a8@webmail.zoltak.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:sender:received
-         :in-reply-to:references:date:x-google-sender-auth:message-id:subject
-         :from:to:cc:content-type:content-transfer-encoding;
-        bh=bs2TzoXVFPVJS2qAKVMHzRzhuG5sS4xyFMIkFPWGJPQ=;
-        b=dU37FI3Zee+xBles05fOJ9voQRo1W4qkA75c3kMyMKlTb8Kywlpvxa06gUYEMO67pU
-         XOjeDOWaRwbDfLQoehBLhgkGUdhBLyJFOzk0YJ05JZi8dSfVhcFqYST+mtwdVwFvPwY7
-         0p86H3DvMngYlCl3HE0+ImjSXeye9cGYpEils=
-In-Reply-To: <1286712502-sup-7547@etiriah>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: =?ISO-8859-2?Q?Amadeusz_=AFo=B3nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; delsp="Yes"; format="flowed"
+To: "nitramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-2010/10/10 Amadeusz =C5=BBo=C5=82nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>:
-> Excerpts from Daniel Drake's message of Sun Oct 10 13:01:05 +0200 201=
-0:
->> /bin/true is 23kb, bigger than rmmod itself!
->
-> Yes, I know=E2=80=A6 =C2=A0It was supposed to be temporary workaround=
- only=E2=80=A6 :-)
+Hi Guys,
 
-What's the longer term solution?
+I'm getting their with my Dracut setup however I'm having a weird DHCP issue.
 
-> Hm=E2=80=A6 you're right to some extent. =C2=A0udev seems not to comp=
-lain about
-> missing modprobe. =C2=A0Although there are few usages of modprobe in =
-some
-> Dracut modules.
+I can't get DHCP 4.0.1 or 4.1.0 working with Gentoo and Dracut 007.
 
-We could add an early hook (which only gets installed in the
-ignore-kernel-modules case) which defines modprobe as a shell
-function:
+I've downgraded to DHCP 3.1.2p1 and removed the -4 flag from the  
+Dracut scripts.
 
-modprobe()
-{
-    return 0
-}
+The PXEBoot line is:
+APPEND bootdev=eth1 ip:eth0:off ip=eth1:dhcp  
+root=10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nfsvers=3,nointr,actimeo=3600,noacl,rw,tcp,sec=sys initrd=initrd-2.6.34-gentoo-r1-dracut  
+rw
 
-Actually, this should be even simpler:
+While the server boots and the interfaces initializers I see:
+Sending DHCP requets .....timed out
 
-alias modprobe=3Dtrue
+The following happens 2-3 times
 
-(in this case, true is used an inbuilt shell command -- not the one in
-/bin, which we won't need or use)
+The DHCP server logs report..
 
-What do you think?
+Attempt 1:
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:4e  
+via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:50  
+via eth1: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:4e  
+via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:50  
+via eth1: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:4e  
+via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:50  
+via eth1: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:4e  
+via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 201.0.0.0 (180.0.0.0) from 00:19:b9:eb:3d:50  
+via eth1: ignored (not authoritative).
 
-Daniel
+Attempts 2:
+dhcpd: DHCPREQUEST for 255.255.255.255 (180.0.0.0) from  
+00:19:b9:eb:3d:4e via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 255.255.255.255 (180.0.0.0) from  
+00:19:b9:eb:3d:50 via eth1: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 255.255.255.255 (180.0.0.0) from  
+00:19:b9:eb:3d:4e via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 255.255.255.255 (180.0.0.0) from  
+00:19:b9:eb:3d:50 via eth1: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 255.255.255.255 (180.0.0.0) from  
+00:19:b9:eb:3d:4e via 10.197.220.241: ignored (not authoritative).
+dhcpd: DHCPREQUEST for 255.255.255.255 (180.0.0.0) from  
+00:19:b9:eb:3d:50 via eth1: ignored (not authoritative).
+
+Just before the pivot DHCP runs again and all works. The DHCP server reports:
+
+dhcpd: DHCPDISCOVER from 00:19:b9:eb:3d:50 via eth1
+dhcpd: DHCPOFFER on 10.197.170.30 to 00:19:b9:eb:3d:50 via eth1
+dhcpd: Dynamic and static leases present for 10.197.170.30.
+dhcpd: Remove host declaration san.n15-pizza1-3 or remove 10.197.170.30
+dhcpd: from the dynamic address pool for 10.197.170.0/24
+dhcpd: DHCPREQUEST for 10.197.170.30 (10.197.170.42) from  
+00:19:b9:eb:3d:50 via eth1
+dhcpd: DHCPACK on 10.197.170.30 to 00:19:b9:eb:3d:50 via eth1
+
+Gentoo boots and all seems to be ok except for a weird issue where the  
+resolv.conf is not updated correctly.
+
+
+Any ideas on what the causing the initial DHCP timeouts? It makes the  
+boot process take a lot longer!
+
+
+Thanks
+
+
+
