@@ -1,35 +1,28 @@
-From: daniel-2N1FInP7wozQT0dZR+AlfA@public.gmane.org
-Subject: Re: Dracut NFS root DHCP timeouts
-Date: Tue, 12 Oct 2010 09:59:07 +1100
-Message-ID: <20101012095907.67957er3t0oyr2bk@webmail.zoltak.com>
-References: <20101011133718.205549hmcnjzr3a8@webmail.zoltak.com>
- <4CB30231.80803@bfh.ch>
- <20101012094412.14125sp7tc6dj7r4@webmail.zoltak.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] 90crypt: rem. key-media - support for labels and
+ normal dev names
+Date: Tue, 12 Oct 2010 18:37:52 +0200
+Message-ID: <4CB48EE0.8050101@redhat.com>
+References: <1286145886-16322-1-git-send-email-aidecoe@aidecoe.name> <1286145886-16322-2-git-send-email-aidecoe@aidecoe.name>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20101012094412.14125sp7tc6dj7r4-2RFepEojUI3Y3UUic/vCjNBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1286145886-16322-2-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; delsp="Yes"; format="flowed"
-To: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, "<initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+On 10/04/2010 12:44 AM, Amadeusz =C5=BBo=C5=82nowski wrote:
+> 90crypt: scan for devices several times instead of just once
 
-> Quoting Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
++        while [ $i -lt 3 ]; do
++            sleep $i
 
->> BTW: If you are using a recent pxelinux, why don't you try  
->> IPAPPEND=3 and remove all ip-options from dracut? (See
+I would make that more dynamic.. we have udev..
 
-I tried IPAPPEND=2 and everything works correctly. The initial DHCP  
-requests do not occur and then prior to pivot it gets the address on  
-the boot interface and boots!
+/sbin/cryptroot-ask could install itsself again in the initqueue like=20
+parse-crypt.sh does, if the rd_LUKS_KEYDEV is not there yet.
 
-So the pxelinux.cfg looks like:
-
-                 IPAPPEND 2 # initially tried 3 without success
-                 APPEND  
-root=10.197.170.5:/vol/filerboot/linux/images/live-mon-test:fg,timeo=600,retrans=2,rsize=32768,wsize=32768,hard,nfsvers=3,nointr,actimeo=3600,noacl,rw,tcp,sec=sys initrd=initrd-2.6.34-gentoo-r1-dracut  
-rw
-
-
+What do you think?
