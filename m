@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] [PATCH] Bonding support for dracut
-Date: Mon, 18 Oct 2010 15:59:19 +0200
-Message-ID: <4CBC52B7.3020101@redhat.com>
+Date: Mon, 18 Oct 2010 16:15:08 +0200
+Message-ID: <4CBC566C.9080407@redhat.com>
 References: <4CBC37E7.9010904@hoster-ok.com> <4CBC4661.3020100@redhat.com> <4CBC504A.7020002@hoster-ok.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -37,4 +37,8 @@ On 10/18/2010 03:48 PM, Vladislav Bogdanov wrote:
 >
 > This should be it.
 
-Thanks!!
+pushed
+...
+
+
+http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=96fb9c8dd708dfbab9cf6515d9a450abb060e623
