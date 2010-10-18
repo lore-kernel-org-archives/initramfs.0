@@ -1,93 +1,60 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] [PATCH] Bonding support for dracut
-Date: Mon, 18 Oct 2010 16:41:00 +0200
-Message-ID: <4CBC5C7C.4000504@redhat.com>
-References: <4CBC37E7.9010904@hoster-ok.com> <4CBC4661.3020100@redhat.com> <4CBC504A.7020002@hoster-ok.com> <4CBC566C.9080407@redhat.com> <4CBC5A48.1010304@hoster-ok.com>
+From: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
+Subject: Implementation path question for live root with nfs state mount
+Date: Mon, 18 Oct 2010 18:15:27 +0300
+Message-ID: <4CBC648F.7060706@hoster-ok.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4CBC5A48.1010304-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10/18/2010 04:31 PM, Vladislav Bogdanov wrote:
-> 18.10.2010 17:15, Harald Hoyer wrote:
->> On 10/18/2010 03:48 PM, Vladislav Bogdanov wrote:
->>> 18.10.2010 16:06, Harald Hoyer wrote:
->>>> On 10/18/2010 02:04 PM, Vladislav Bogdanov wrote:
->>>>> Hi all,
->>>>>
->>>>> I attach patch for bonding support in dracut.
->>>>> It is against 005 (developed on fedora 13 version).
->>>>> No documentation yet.
->>>>> (partially) Tested to work correctly with bond0 alone and bridge on top
->>>>> of bond0.
->>>>>
->>>>> Comments are welcome,
->>>>>
->>>>> Best,
->>>>> Vladislav
->>>>
->>>> Please patch against the git version...
->>>>
->>>> $ git clone git://dracut.git.sourceforge.net/gitroot/dracut/dracut
->>>>
->>>> http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut
->>>
->>> This should be it.
->>
->> pushed
->> ...
->>
->>
->> http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=96fb9c8dd708dfbab9cf6515d9a450abb060e623
->
-> Ahmmm....
-> So quick :)
-> I was ready for a long discussion :)
->
-> Some notes:
->
-> There is no documentation yet :( and it should not be forgotten to add
-> it. I generally hate to edit XML by hands. Could someone who operates
-> some magic XML tools do it?
+Hi all,
 
-Nice, free, open source xml editor:
+I need to add support to dracut for live (squashfs) root with a "state"
+saved on nfs server.
 
-http://www.syntext.com/products/serna-free/
+I imagine following use case -
+* initramfs includes ext3 filesystem wrapped into squashfs (like
+ovirt-node-image has)
+* that filesystem is used as a live root (initramfs is pulled from TFTP)
+* kernel cmdline has CLIENTSTATE variable set to address of NFS mount.
+Then rc.sysinit will mount $CLIENTSTATE/$HOSTNAME (as a last resort
+case) and will use it as a STATE_MOUNT.
 
->
-> Also both original patch (against 005) and commit message has a typo (in
-> head comments):
-> bond=bond0:eth0,eth1:balance-rr
-> should be really
-> bond=bond0:eth0,eth1:mode=balance-rr
->
-> Patch against git has this corrected (together with one more typo -
-> s/DEVICE/netif/)
+Thus, we have read-only root in RAM and all state files mounted from
+NFS. So server can operate totally diskless (opposed to ovirt-node which
+has to be set-up on a local disk or iSCSI target, both of which seem to
+be an overkill if one has 16+ servers). An adding new servers to a pool
+requires only correct DHCP server settings, nothing more (probably some
+files on a nfs server too, but that's another story).
 
-Hmm, I took dracut-bonding-support.patch and not 
-dracut-005-bonding-support.patch... but I might have copied the commit message 
-from the wrong patch.
+What I need from dracut is to set up networking and pass ifcfg's to a
+system via /dev/.initramfs. But then I need to some-how "simulate"
+networked root because otherwise there is no chance to bring network up.
 
->
-> Or even better third clause (options) should be omitted from that line:
-> it remained from a revision where I had mode as a separate clause.
-> Current version leaves all options defaulting to bonding.ko (and
-> balance-rr is its default mode btw).
->
-> One more is a mode of parse-bond.sh which should be 0755 (for consistency?).
+STATE_MOUNT is mounted very early, no system networking is set up yet,
+only what initramfs provided. And my idea is to setup bond+bridge so it
+could be very tricky to make initscripts do it on a read-only root
+(shared between systems) in a right way anyways - I prefer to specify
+what interface is what by its macaddr, but this seems to be impossible
+if I boot multiple systems from one image.
 
-Already done :)
-http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=57a49c67275c8ec6b3d85dc70433ffc15aec47e4
+I assume it could be possible to achieve what I need with a little
+"hack" - introduce new netroot handler - f.e. 'nfs-state' or 'live-nfs'
+or whatever else (this is btw the biggest problem - to find proper name)
+and try to pass "netroot=nfs-state root=live:blablabla
+CLIENTSTATE=xxx.yyy.zzz.www:/mnt" via cmdline.
 
->
-> And last, this should be tested thoroughly. I only did limited testing -
-> not all use cases, especially not with default values. It seems to be
-> correct, but I'm not 100% sure.
->
-> Best,
-> Vladislav
+If this fail (f.e. if netroot is over-riden somewhere) I'll probably
+need to patch all networking code to make it run not only if netroot is
+set but also if both "root=live" and "CLIENTSTATE" are set. I generally
+do not like this way very much, so I'm asking for help with this.
+
+Could someone comment please?
+Any thoughts are welcome.
+
+Best,
+Vladislav
+
