@@ -1,60 +1,38 @@
-From: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
-Subject: Implementation path question for live root with nfs state mount
-Date: Mon, 18 Oct 2010 18:15:27 +0300
-Message-ID: <4CBC648F.7060706@hoster-ok.com>
+From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: Re: [PATCH] 90crypt: keys on external devices support
+Date: Tue, 19 Oct 2010 14:54:48 +0100
+Message-ID: <4CBDA328.40401@googlemail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlemail.com; s=gamma;
+        h=domainkey-signature:received:received:message-id
+         :disposition-notification-to:date:from:user-agent:mime-version:to
+         :subject:content-type:content-transfer-encoding;
+        bh=c+DszhNoRICFLMYKL7PHoL00XIBMCdE0q85Ip7uHV+o=;
+        b=dook+mRR7mhP0yX5LkmwtsVEAtHbX4DMvjBOClLMm1jamZR2/tvLeC9eTKVHlbHdqz
+         Fl/ivbfyUD7madHQXA9Hc4n7s/ZrQph6t+0hRbGJzKVxPDD4IHVaH0pBXJevBdVL4nCN
+         1ey2/s/0uKWOuhVsmG16IDo160GRRjZW2Yw+E=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi all,
+I am currently trying to modify dracut (I am on up-to-date FC13 x86_64) 
+so that it enables me to use my smartcard token to unlock (and use) a 
+boot partition. As a secondary task I would then try and automate a 
+similar process (through the smartcard event manager - pkcs11_eventmgr) 
+when the card is inserted to automatically ask for pin and unlock LUKS 
+partitions.
 
-I need to add support to dracut for live (squashfs) root with a "state"
-saved on nfs server.
+That was the reason I have stumbled across this patch - 
+http://www.spinics.net/lists/linux-initramfs/msg01402.html and the 
+subsequent response that it has been included in the repository for 
+dracut. That was a couple of months ago.
 
-I imagine following use case -
-* initramfs includes ext3 filesystem wrapped into squashfs (like
-ovirt-node-image has)
-* that filesystem is used as a live root (initramfs is pulled from TFTP)
-* kernel cmdline has CLIENTSTATE variable set to address of NFS mount.
-Then rc.sysinit will mount $CLIENTSTATE/$HOSTNAME (as a last resort
-case) and will use it as a STATE_MOUNT.
-
-Thus, we have read-only root in RAM and all state files mounted from
-NFS. So server can operate totally diskless (opposed to ovirt-node which
-has to be set-up on a local disk or iSCSI target, both of which seem to
-be an overkill if one has 16+ servers). An adding new servers to a pool
-requires only correct DHCP server settings, nothing more (probably some
-files on a nfs server too, but that's another story).
-
-What I need from dracut is to set up networking and pass ifcfg's to a
-system via /dev/.initramfs. But then I need to some-how "simulate"
-networked root because otherwise there is no chance to bring network up.
-
-STATE_MOUNT is mounted very early, no system networking is set up yet,
-only what initramfs provided. And my idea is to setup bond+bridge so it
-could be very tricky to make initscripts do it on a read-only root
-(shared between systems) in a right way anyways - I prefer to specify
-what interface is what by its macaddr, but this seems to be impossible
-if I boot multiple systems from one image.
-
-I assume it could be possible to achieve what I need with a little
-"hack" - introduce new netroot handler - f.e. 'nfs-state' or 'live-nfs'
-or whatever else (this is btw the biggest problem - to find proper name)
-and try to pass "netroot=nfs-state root=live:blablabla
-CLIENTSTATE=xxx.yyy.zzz.www:/mnt" via cmdline.
-
-If this fail (f.e. if netroot is over-riden somewhere) I'll probably
-need to patch all networking code to make it run not only if netroot is
-set but also if both "root=live" and "CLIENTSTATE" are set. I generally
-do not like this way very much, so I'm asking for help with this.
-
-Could someone comment please?
-Any thoughts are welcome.
-
-Best,
-Vladislav
-
+Could you tell me whether this feature is already implemented in 
+FC13/FC14 repositories and if not what are the plans? I am also 
+interested to see whether there are plans (or, indeed attempted 
+implementations) to introduce smartcard support to LUKS partitions (boot 
+or not)? Many thanks
