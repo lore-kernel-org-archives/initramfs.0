@@ -1,49 +1,63 @@
-From: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
-Subject: Re: [RFC] [PATCH] Bonding support for dracut
-Date: Tue, 19 Oct 2010 16:54:29 +0300
-Message-ID: <4CBDA315.2070603@hoster-ok.com>
-References: <4CBC37E7.9010904@hoster-ok.com> <4CBC4661.3020100@redhat.com> <4CBC504A.7020002@hoster-ok.com> <4CBC566C.9080407@redhat.com> <4CBC5A48.1010304@hoster-ok.com> <4CBC5C7C.4000504@redhat.com>
+From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: Re: [PATCH] 90crypt: keys on external devices support
+Date: Tue, 19 Oct 2010 16:19:30 +0200
+Message-ID: <1287497223-sup-3606@etiriah>
+References: <4CBDA328.40401@googlemail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------070908000800080007000300"
+Content-Type: multipart/signed; micalg="pgp-sha1"; boundary="=-1287497970-672790-27599-7033-4-="; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4CBC5C7C.4000504-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-reply-to: <4CBDA328.40401-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This is a multi-part message in MIME format.
---------------070908000800080007000300
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
 
-Hi,
+--=-1287497970-672790-27599-7033-4-=
+Content-Type: text/plain; charset="utf8"
+Content-Transfer-Encoding: base64
 
-copy-paste typo fix is attached
+RXhjZXJwdHMgZnJvbSBNciBEYXNoIEZvdXIncyBtZXNzYWdlIG9mIFR1ZSBPY3QgMTkgMTU6NTQ6
+NDggKzAyMDAgMjAxMDoKPiBJIGFtIGN1cnJlbnRseSB0cnlpbmcgdG8gbW9kaWZ5IGRyYWN1dCAo
+SSBhbSBvbiB1cC10by1kYXRlIEZDMTMKPiB4ODZfNjQpIHNvIHRoYXQgaXQgZW5hYmxlcyBtZSB0
+byB1c2UgbXkgc21hcnRjYXJkIHRva2VuIHRvIHVubG9jayAoYW5kCj4gdXNlKSBhIGJvb3QgcGFy
+dGl0aW9uLiBBcyBhIHNlY29uZGFyeSB0YXNrIEkgd291bGQgdGhlbiB0cnkgYW5kCj4gYXV0b21h
+dGUgYSBzaW1pbGFyIHByb2Nlc3MgKHRocm91Z2ggdGhlIHNtYXJ0Y2FyZCBldmVudCBtYW5hZ2Vy
+IC0KPiBwa2NzMTFfZXZlbnRtZ3IpIHdoZW4gdGhlIGNhcmQgaXMgaW5zZXJ0ZWQgdG8gYXV0b21h
+dGljYWxseSBhc2sgZm9yCj4gcGluIGFuZCB1bmxvY2sgTFVLUyBwYXJ0aXRpb25zLgo+IAo+IFRo
+YXQgd2FzIHRoZSByZWFzb24gSSBoYXZlIHN0dW1ibGVkIGFjcm9zcyB0aGlzIHBhdGNoIC0KPiBo
+dHRwOi8vd3d3LnNwaW5pY3MubmV0L2xpc3RzL2xpbnV4LWluaXRyYW1mcy9tc2cwMTQwMi5odG1s
+IGFuZCB0aGUKPiBzdWJzZXF1ZW50IHJlc3BvbnNlIHRoYXQgaXQgaGFzIGJlZW4gaW5jbHVkZWQg
+aW4gdGhlIHJlcG9zaXRvcnkgZm9yCj4gZHJhY3V0LiBUaGF0IHdhcyBhIGNvdXBsZSBvZiBtb250
+aHMgYWdvLgo+Cj4gQ291bGQgeW91IHRlbGwgbWUgd2hldGhlciB0aGlzIGZlYXR1cmUgaXMgYWxy
+ZWFkeSBpbXBsZW1lbnRlZCBpbgo+IEZDMTMvRkMxNCByZXBvc2l0b3JpZXMgYW5kIGlmIG5vdCB3
+aGF0IGFyZSB0aGUgcGxhbnM/CgpFeHBlcmltZW50YWwgc3VwcG9ydCBpcyBpbiBEcmFjdXQgMDA3
+LiAgSW4gZnV0dXJlIDAwOCBpdCB3aWxsIGJlIGV2ZW4KYmV0dGVyIChzZWUgbXkgbGF0ZXN0IHBh
+dGNoZXMpLiAgVGhlcmUgYXJlIHNvbWUgaW1wcm92ZW1lbnRzIEknbSB3b3JraW5nCm9uLiAgQWx0
+aG91Z2ggSSdtIG5vdCBzdXJlIHdoaWNoIHZlcnNpb24gRmVkb3JhIHN1cHBvcnRzLCB3aWxsIHN1
+cHBvcnQKYW5kIHdoZW4uCgoKPiBJIGFtIGFsc28gaW50ZXJlc3RlZCB0byBzZWUgd2hldGhlciB0
+aGVyZSBhcmUgcGxhbnMgKG9yLCBpbmRlZWQKPiBhdHRlbXB0ZWQgaW1wbGVtZW50YXRpb25zKSB0
+byBpbnRyb2R1Y2Ugc21hcnRjYXJkIHN1cHBvcnQgdG8gTFVLUwo+IHBhcnRpdGlvbnMgKGJvb3Qg
+b3Igbm90KT8gTWFueSB0aGFua3MKCkkgaGF2ZW4ndCBwbGFubmVkIHRoYXQgYW5kIGhhdmVuJ3Qg
+aGVhcmQgb2YgYW55Ym9keSBwbGFubmluZyB0aGF0LCBidXQKaWYgSSB3b3VsZCBoYXZlIHN1Y2gg
+YSBnYWRnZXQgSSdkIHByb2JhYmx5IGJlIGhhcHB5IHRvIGltcGxlbWVudCBzdXBwb3J0CmZvciBp
+dCBzb29uIG9yIGxhdGVyLgotLSAKQW1hZGV1c3ogxbtvxYJub3dza2kKClBHUCBrZXkgZnByOiBD
+NzAwIENFREUgMEMxOCAyMTJFIDQ5REEgIDQ2NTMgRjAxMyA0NTMxIEUxREIgRkFCNQo=
 
-Best,
-Vladislav
+--=-1287497970-672790-27599-7033-4-=
+Content-Disposition: attachment; filename="signature.asc"
+Content-Type: application/pgp-signature; name="signature.asc"
 
---------------070908000800080007000300
-Content-Type: text/x-patch;
- name="dracut-bonding-fix.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="dracut-bonding-fix.patch"
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.16 (GNU/Linux)
 
-diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
-index 968d9f0..45fcde2 100755
---- a/modules.d/45ifcfg/write-ifcfg.sh
-+++ b/modules.d/45ifcfg/write-ifcfg.sh
-@@ -50,7 +50,7 @@ for netif in $IFACES ; do
-     } > /tmp/ifcfg/ifcfg-$netif
- 
-     # bridge needs different things written to ifcfg
--    if [ -z "$bridge" ] && if [ -z "$bond" ]; then
-+    if [ -z "$bridge" ] && [ -z "$bond" ]; then
-         # standard interface
-         {
-             echo "HWADDR=$(cat /sys/class/net/$netif/address)"
+iQEcBAEBAgAGBQJMvajyAAoJEPATRTHh2/q1onwIAIbGOcyi8LkC8677hKQ7MNii
+y70KJe3KuSkMf+ODtDHOF5WszeGayQ3ACtjz8BCcTNRAUP39DcSOFnD7Ct2Txuwg
+BFinq+GD+P6R+S9XnT/DfuZSW7R0EpVLdgBfklo+cu6YHDwNtyIUOYP6s7hBqczn
+PnAIe0LCAEuP+Mp7wGl2cdoLqrpSf8qzS+dtk0AMSpnRJsWwCVEM0SU+zCGBjh2t
+r59ppBCJhGSNy7SpqLg/tlB7ExyhpF8dYCsyxT18C009J1kaQOAqtAbYDeeLIqlc
+lz+V30TeJ3RwR0yM7XwXbt/JEVg87a4CrwbIZV1y4IwImRoMJKXWRjraEzy34Rg=
+=Owlq
+-----END PGP SIGNATURE-----
 
---------------070908000800080007000300--
+--=-1287497970-672790-27599-7033-4-=--
