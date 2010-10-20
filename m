@@ -1,95 +1,126 @@
-From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Subject: Re: [PATCH] 90crypt: keys on external devices support
-Date: Wed, 20 Oct 2010 16:25:37 +0200
-Message-ID: <1287583979-sup-416@etiriah>
-References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <1287580112-sup-97@etiriah> <4CBEF768.90908@googlemail.com>
+Date: Wed, 20 Oct 2010 15:44:31 +0100
+Message-ID: <4CBF004F.9070201@googlemail.com>
+References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <4CBE44D3.6070000@googlemail.com> <1287580805-sup-6517@etiriah>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha1"; boundary="=-1287584737-515641-27599-6438-8-="; protocol="application/pgp-signature"
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <4CBEF768.90908-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlemail.com; s=gamma;
+        h=domainkey-signature:received:received:message-id
+         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
+         :subject:references:in-reply-to:content-type
+         :content-transfer-encoding;
+        bh=yxG3cuicHiNmN68HpODflc+NmMZb+JIBLjcu0910/LQ=;
+        b=VZWhh8tVcwvtJU1IT6dPX/EnGmXgKwP93khUIK/hybJ3PJU4x4adzcw8aR/DW2z3YI
+         9RRTDVAwNDvS1fCdl4ldWWMhxXdCydP365ormVTW77usGVmEwSXuJfvTO7QN/6kUIK7n
+         qRgvKqRJfWSrM5upBDmY9wehInsvBoK4oItI4=
+In-Reply-To: <1287580805-sup-6517@etiriah>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Content-Type: text/plain; charset="windows-1252"; format="flowed"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 
---=-1287584737-515641-27599-6438-8-=
-Content-Type: text/plain; charset="utf8"
-Content-Transfer-Encoding: base64
+> '-I' option are for user to include single files.  If you'd like to
+> merge files into initramfs with its dependencies, you use '*inst*'
+> family functions.  See 'dracut-functions' file.
+>  =20
+Thanks, I'll have a good look.
 
-WW91J3JlIGZhc3QhIDotKQoKCkV4Y2VycHRzIGZyb20gTXIgRGFzaCBGb3VyJ3MgbWVzc2FnZSBv
-ZiBXZWQgT2N0IDIwIDE2OjA2OjMyICswMjAwIDIwMTA6Cj4gPiBOZXh0IHRoaW5nIGlzIGdpdmUg
-cG9zc2liaWxpdHkgdG8gcHV0IGtleXMgaW5zaWRlIGluaXRyYW1mcy4KPiA+ICAgCj4gSSBkb24n
-dCB0aGluayB0aGlzIGlzIHN1Y2ggYSBnb29kIGlkZWEgYXMgaGF2aW5nIHRoZSBjcnlwdG8ga2V5
-cwo+IHJlc2lkZSBpbiB0aGUgc2FtZSBwbGFjZSBhcyB0aGUga2VybmVsIHdvdWxkIGNvbXBsZXRl
-bHkgZGVmZWF0cyB0aGUKPiBwdXJwb3NlIG9mIHVzaW5nIGNyeXB0byBkZXZpY2VzLgoKSXQgZG9l
-cyBub3QuICBZb3UgY2FuIGhhdmUga2VybmVsIGFuZCBpbml0cmFtZnMgb24gcmVtb3ZhYmxlIG1l
-ZGlhLiAgWW91CmhhdmUgdGhpcyBtZWRpYSBzZWN1cmUgYW5kIGRvbid0IG5lZWQgc2VwYXJhdGUg
-bWVkaWEgZm9yIGtleXMuICBJdCdzCmV2ZW4gbW9yZSBzZWN1cmUgdGhhbiBoYXZpbmcga2VybmVs
-IGFuZCBpbml0cmFtZnMgb24gaGFyZGRyaXZlIGJlY2F1c2UKaXQgcHJvdGVjdHMgeW91IGZyb20g
-Y2FzZSB3aGVuIHNvbWVvbmUgcmVwbGFjZXMgeW91ciBpbml0cmFtZnMgdG8gc3RvbGUKdGhlIGtl
-eSAoZS5nLiBzZW5kcyB0byBzb21lIHJlbW90ZSBtYWNoaW5lKS4KCkFuZCBvZiBjb3Vyc2Uga2V5
-cyBpbnNpZGUgaW5pdHJhbWZzIHdpbGwgYmUgb3B0aW9uYWwgZXh0cmEgc29sdXRpb24uCgoKPiA+
-IElmIHlvdSdkIGxpa2UgdG8gd3JpdGUgc3VwcG9ydCBmb3Igc21hcnRjYXJkLCBJJ2QgYmUgZ2xh
-ZCB0byBzZWUgaXQKPiA+IGFzIGEgc2VwYXJhdGUgbW9kdWxlLiAgRG9uJ3QgaGVzaXRhdGUgdG8g
-cG9zdCB5b3VyIHByb2dyZXNzIG9uIG1sCj4gPiBmb3Igb3VyIHJldmlldy4KPiA+ICAgCj4gSSBh
-bSBub3Qgc3VyZSBpdCB3b3VsZCBiZSBhcyBhIHNlcGFyYXRlIG1vZHVsZSB0aG91Z2ggKG1heSBi
-ZSwgYXQgYQo+IGxhdGVyIHN0YWdlKSAtIGZvciBub3cgSSdsbCB0cnkgdG8gdXNlIHRoZSBleGlz
-dGluZyBtb2R1bGUvZnJhbWV3b3JrCj4gaW4gcGxhY2UgYW5kIGV4dGVuZCBpdHMgZnVuY3Rpb25h
-bGl0eSwgaGVuY2Ugd2h5IEkgcG9zdGVkIHNvbWUgb2YgbXkKPiBpZGVhcyBsYXRlIGxhc3Qgbmln
-aHQgdG8gY2FudmFzcyBhbiBvcGluaW9uIC0gZnJvbSB3aGF0IEkgY2FuIGdhdGhlciwKPiBhcyB5
-b3UgYW5kIEhhcmFsZCBhcmUgdGhlIHR3byBtYWluIGNvbnRyaWJ1dG9ycyB0byB0aGUgY3J5cHRv
-IHNpZGUgb2YKPiBkcmFjdXQgaXQgaXMgZ29vZCB0byBrbm93IHdoYXQgeW91IHRoaW5rPwo+IAo+
-IFRoZSB3YXkgSSBzZWUgaXQgc2ltcGxpZnlpbmcgdGhlIHZhcmlvdXMga2VybmVsIHBhcmFtZXRl
-cnMKPiAocGFydGljdWxhcmx5IHRob3NlIGRlc2lnbmVkIHRvIGRlYWwgd2l0aCBsdWtzLXJlbGF0
-ZWQgcGFydGl0aW9ucykgaXMKPiB0aGUgd2F5IGZvcndhcmQuCj4gCj4gVGhlIG9uZSBpc3N1ZSBJ
-IGFtIGZhY2luZyByaWdodCBub3cgYmVmb3JlIEkgY2FuIGV2ZW4gYmVnaW4gY29kaW5nCj4gc21h
-cnRjYXJkIHN1cHBvcnQgaW4gZHJhY3V0IGlzIHRoYXQgSSBhbSBub3QgYXQgYWxsIGNsZWFyIGhv
-dyBpdCBkZWFscwo+IHdpdGggdGhlIHZhcmlvdXMgZGVwZW5kZW5jaWVzIHdoZW4gSSBhc2sgYSBw
-cm9ncmFtIHRvIGJlIGluc3RhbGxlZAo+ICh1c2luZyB0aGUgJy1JJyBvcHRpb24pIGFzICdwa2Nz
-MTEtdG9vbCcgZm9yIGV4YW1wbGUsIHdvdWxkIG5lZWQgYXQKPiBsZWFzdCAyIG1vcmUgZXhlY3V0
-YWJsZXMgYXZhaWxhYmxlICh3aXRoIGhhbGYtYS1kb3plbiBvdGhlciAua28KPiBsaWJyYXJ5IGZp
-bGVzKSBhbmQgYXQgbGVhc3QgdHdvIGNvbmZpZ3VyYXRpb24gZmlsZXMgcHJlc2VudCBhbmQKPiBh
-dmFpbGFibGUgYXQgdGhlIHRpbWUgb2YgZXhlY3V0aW9uLgo+IAo+IFRoZSBjb25maWd1cmF0aW9u
-IGZpbGVzIHByZXNlbnQgYW5vdGhlciBjaGFsbGVuZ2UgaW4gaXRzZWxmIC0gbW9zdAo+IChkZWZh
-dWx0KSBzZXR0aW5ncyB3b3JrIGluIGFib3V0IDkwJSBvZiBhbGwgY2FzZXMsIGJ1dCBmb3IgdGhl
-IHJlc3QKPiB0aGVzZSBzZXR0aW5ncyBoYXZlIHRvIGJlIGNoYW5nZWQgKGNhcmQgcmVhZGVyIHR5
-cGVzLCB2YXJpb3VzCj4gYXR0cmlidXRlcyBzZXQgZXRjKSBhbmQgZm9yIHRoYXQgdGhlcmUgYXJl
-IHR3byBvcHRpb25zOiBlaXRoZXIgMSkKPiBjcmVhdGUgaW5pdHJkIGltYWdlIHdoaWNoIGlzIHRh
-aWxvcmVkIHRvIGEgc3BlY2lmaWMgY29uZmlndXJhdGlvbiAoYW5kCj4gdGhlcmVmb3JlIHRoZXNl
-IGNvbmZpZ3VyYXRpb24gZmlsZXMgYXJlIGVtYmVkZGVkLCBzbyB0byBzcGVhaywgaW50bwo+IHRo
-ZSBpbml0cmQgaW1hZ2UgaXRzZWxmKTsgb3IgMikgdGFrZSB0aGVzZSBjb25maWd1cmF0aW9uIGZp
-bGVzIG91dCBvZgo+IHRoZSBpbml0cmQgYWx0b2dldGhlciBhbmQgbWFrZSB0aGVtIGF2YWlsYWJs
-ZSBpbiB0aGUgL2Jvb3QKPiBkaXJlY3RvcnkvcGFydGl0aW9uIChpbiAvYm9vdC9kcmFjdXQgZm9y
-IGV4YW1wbGUhKSB3aGVuIGRyYWN1dCBpcwo+IGluc3RhbnRpYXRlZCAoaGVuY2Ugd2h5IEkgYXNr
-ZWQgaW4gbXkgcHJldmlvdXMgcG9zdCBkb2VzIGRyYWN1dCBoYXZlCj4gYXQgbGVhc3QgJ3JlYWQn
-IGFjY2VzcyB0byB0aGF0IGRpcmVjdG9yeS9wYXJ0aXRpb24pPwoKSSBob3BlIEkndmUgYW5zd2Vy
-ZWQgdG8geW91ciBjb25jZXJucyBhYm92ZSBpbiBwcmV2aW91cyBlLW1haWwuCgoKPiBPbmUgb3Ro
-ZXIgdGhpbmcgSSBmb3Jnb3QgdG8gbWVudGlvbiBpbiBteSBsYXN0IHBvc3QgdGhhdCB3aXRoIHRo
-ZQo+IHByb3Bvc2VkIHBhcmFtZXRlciBjaGFuZ2VzIHRoZXJlIGlzIGEgdGhpcmQgcG9zc2libGUg
-c2NlbmFyaW8gd2l0aCB0aGUKPiBwYXNzd29yZCBhdXRoZW50aWNhdGlvbiwgaW4gd2hpY2ggY2Fz
-ZSwgdGhlIGZvcm1hdCBvZiB0aGUgcGFyYW1ldGVyIGluCj4gdGhlIGtlcm5lbCB3b3VsZCBzaW1w
-bHkgYmU6Cj4gCj4gYykgcmQubHVrcy48bHVrc191dWlkPls9XQoKWW91IGRvbid0IGhhdmUgdG8g
-c3BlY2lmeSBhbnl0aGluZyBmb3IgcGFzc3dvcmQgc2NlbmFyaW8uIHJvb3Q9PGRldj4gaXMKanVz
-dCBlbm91Z2guICBIYXZlIHlvdSB0cmllZCB1c2luZyBjcnlwdCBtb2R1bGU/Ci0tIApBbWFkZXVz
-eiDFu2/Fgm5vd3NraQoKUEdQIGtleSBmcHI6IEM3MDAgQ0VERSAwQzE4IDIxMkUgNDlEQSAgNDY1
-MyBGMDEzIDQ1MzEgRTFEQiBGQUI1Cg==
 
---=-1287584737-515641-27599-6438-8-=
-Content-Disposition: attachment; filename="signature.asc"
-Content-Type: application/pgp-signature; name="signature.asc"
+> First of all rd_LUKS_KEYDEV_UUID will be changed to 'rd.luks.keydev' =
+and
+> allow to specify devices by filename in /dev, LABEL or UUID.
+>
+> It's done a bit more flexible.  You can specify 'rd_LUKS_KEYDEV_UUID'
+> (later 'rd.luks.keydev') and 'rd_LUKS_KEYPATH' (later 'rd.luks.keypat=
+h')
+> several times.  For every 'rd.luks.keydev' ALL 'rd.luks'keypaths' are
+> checked.  I know that such approach have some flaws.  I'll consider y=
+our
+> proposition (quoted below) for specifying that.
+>
+> [...]
+>   rd.luks.key=3D<key_path>:<key_dev>:<luks_dev>
+>
+> Why this order?  <key_path> is always required (obvious).  <key_dev>
+> doesn't have to be required, because it's easy to perform search for
+> device (and it's done know, it works pretty well, at least with my
+> latest not yet accepted patch which needs more improvement :-)).  The
+> last is optional too.  Forcing user to write down all UUID-s is not
+> ethical. ;-)  It should be automated as far as it makes sense.
+>  =20
+Bugger, I forgot about drive labels :-\
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.16 (GNU/Linux)
+In which case using separate rd.luks=3D<luks_dev> (for password=20
+identification), rd.luks.key for external dev/key authentication and=20
+rd.luks.token for token authentication makes sense. I would reverse the=
+=20
+order though.
 
-iQEcBAEBAgAGBQJMvvvhAAoJEPATRTHh2/q13RcIAIw81P9hTXxe99HWmXGsgPLQ
-hUSeVLJmLQ5f3cwEObyvsImO/NZmWOnzgq/lQ9PbGpZYonnexOUIMIlP/YcIbS3n
-8SOdGADcLaT4xcdnYLOO9md1Fw5PGKY27FBdfXvgaFfqy+myuzYBtXAEw2xQhSuB
-SBjM4c4s6FiMerDiI33RqtklvA2MNzxvcY4/qk8puwUUEBWX+o6CFNMFw6l0fxZu
-lEOdzRgIWkpN5RF3zRjtPFtyjq6l1tq6nxGsJBpvEqaxp7A0XU+f/+hrN3w5H4nd
-9xTZ8lbCpdfjTb1YHp4M+z99vKTB47gfZ+GwjxLlZkgAUgcT+OyH4mVQ5xZad+M=
-=ZQXW
------END PGP SIGNATURE-----
+The way I see it if you reverse the order to be=20
+<luks_dev>:<key_dev>:<fs>:<key_path> (don't forget the file system,=20
+otherwise how would you know how to mount it to read the key - you may=20
+'assume' that it is either ext2/3, but it might be something else - HFS=
+,=20
+ReifeiserFS etc.) it makes it more consistent with the Fedora's own=20
+Kickstart options (see http://fedoraproject.org/wiki/Anaconda/Kickstart=
+=20
+- scroll further until you find 'ks=3D').
 
---=-1287584737-515641-27599-6438-8-=--
+
+> Examples:
+>   rd.luks.key=3D/some/file.key:LABEL=3Dcool_keys:UUID=3D00aabc
+>   rd.luks.key=3D/some/file.key::UUID=3D00aabc
+>   rd.luks.key=3D/some/file.key:LABEL=3Dcool_keys
+>   rd.luks.key=3D/some/file.key
+>
+> And probably I'll introduce this scheme in patches I'm improving
+> recently.  Does it satisfy you? :-)  And for token it would be:
+>
+>   rd.luks.token=3D=E2=80=A6
+>
+> Might be?
+>  =20
+I'll be happy if you reverse the order and add a file system type as=20
+well - it makes it more consistent with the Fedora Kickstart format,=20
+otherwise is a bit confusing.
+
+
+
+>> I've looked through the dependencies and the package scripts though
+>> there are, among other things, udev rules and config files, which
+>> could complicate matters. Following this I have another query: Does
+>> dracut have (at least read) access to the /boot partition where the
+>> initramfs image is?
+>>    =20
+>
+> No, no.  You don't need access to /boot.  You put everything in
+> initramfs using installation functions provided by 'dracut-functions'=
+=2E
+> See 'install' and 'check' scripts in some module's directory.
+>  =20
+
+That could spell trouble as for just running pkcs11-tool that requires =
+2=20
+configuration files which reflect the specific token type and various=20
+parameters. Although 90% of all cases fall into the 'default' mode=20
+scenario there are the rest 10% which do not and have to be properly=20
+catered for.
+
+The parameters and attributes in these files are complex and cannot be=20
+specified in the kernel command line in grub.conf. If these 2=20
+configuration files are embedded into initrd they cannot be changed,=20
+which means that initrd has to be custom-built for each client=20
+configuration which makes this whole exercise largely impractical.
+
+The other possible scenario, as I already mentioned, is to use=20
+configuration files which are outside initrd (separate device or locate=
+d=20
+in /boot are two possible alternatives)
+
+One other query related to this: if I want to use crypttab for my root=20
+(/) partition how is that handled by dracut?
