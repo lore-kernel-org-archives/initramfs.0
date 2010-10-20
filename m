@@ -1,161 +1,88 @@
-From: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
-Subject: [PATCH] add fake root support
-Date: Tue, 19 Oct 2010 17:49:43 +0300
-Message-ID: <4CBDB007.4090802@hoster-ok.com>
+From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: Re: [PATCH] 90crypt: keys on external devices support
+Date: Wed, 20 Oct 2010 02:24:35 +0100
+Message-ID: <4CBE44D3.6070000@googlemail.com>
+References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------020902060703020806080207"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlemail.com; s=gamma;
+        h=domainkey-signature:received:received:message-id
+         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
+         :subject:references:in-reply-to:content-type
+         :content-transfer-encoding;
+        bh=wiiIfVB4qspfM6scypfcp7i6AK3u/qiGYtYiGqJNA0E=;
+        b=W/L5Z3UDfEIbQ1SYobp3aedmJINYwpGJ2Xt4NK7C+5K9M0hVRwhPH36tntxtZs3ZHl
+         iiFKfuALZ6bIuw+0hjUe2Qgu0i7kQqbqh66DwrrFglNzlXp8xvQdlftYaXGFeeplUJVR
+         rKJuu/72FJM8koghKYj3zXktdUMbL7elbTA7Y=
+In-Reply-To: <4CBDAC3D.7050906-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This is a multi-part message in MIME format.
---------------020902060703020806080207
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+OK, I've had a bit of time to look through the available dracut docs and 
+have a couple of queries and a few ideas (below):
 
-Hi,
+1. 'dracut -I' option 'installs' the files specified, but does it 
+install all dependencies? For e.g. if I want to install 
+'/usr/bin/pkcs11-tool' does it install all other libraries/files on 
+which this program depends (i do not mean just .ko files!)?
 
-Attached is a patch for "fake" root functionality,
-I'm (mostly) duplicating issue's description from my previous e-mail
-(for commit message if this is to be pushed):
+2. Currently the proposed rd_LUKS_KEYPATH and rd_LUKS_KEYDEV_UUID allow 
+me to specify key path and device to look for the key with which to open 
+the LUKS-encrypted drive/partition. If I want to open another LUKS disk 
+with a different key located in a different path/file how is this 
+handled? By specifying another pair of rd_LUKS_KEYDEV_UUID and 
+rd_LUKS_KEYPATH?
 
-===============
-fakeroot use case -
-* initramfs includes ext3 filesystem wrapped into squashfs (like
-ovirt-node-image has)
-* that filesystem is used as a live root (initramfs is pulled from TFTP)
-* kernel cmdline has CLIENTSTATE variable set to address of NFS mount.
-Then rc.sysinit will mount $CLIENTSTATE/$HOSTNAME (as a last resort
-case) and will use it as a STATE_MOUNT.
+3. Following from 2 above: if smartcard module/enhancements are going to 
+be implemented then there is a possibility that there may be a conflict 
+(for example if I want to open drive A with keypath/file and drive B 
+with a token - how does dracut know which is which?).
 
-Thus, we have read-only root in RAM and all state files mounted from
-NFS. So server can operate totally diskless (opposed to ovirt-node which
-has to be set-up on a local disk or iSCSI target, both of which seem to
-be an overkill if one has 16+ servers). An adding new servers to a pool
-requires only correct DHCP server settings, nothing more (probably some
-files on a nfs server too, but that's another story).
+So, I have an idea: instead of using rd_LUKS_UUID, rd_LUKS_KEYDEV_UUID & 
+rd_LUKS_KEYPATH (and possibly also rd_LUKS_TOKEN for reading keys from 
+tokens) why can't we have one unified and much simpler format:
 
-What we need from dracut is to set up networking and pass ifcfg's to a
-system via /dev/.initramfs (for DHCP). But then we need to some-how
-"simulate" networked root because otherwise there is no chance to bring
-network up.
+  a) for LUKS-encrypted drives (file/path keys): 
+rd.luks.<luks_uuid>=<keypath_uuid>:<fs>:<path>
 
-To achieve this we could pass "netroot=fake root=live:blablabla
-CLIENTSTATE=xxx.yyy.zzz.www:/mnt" via kernel's cmdline.
-==============
+For example 
+rd.luks.def0269e-424b-4752-acf3-1077bf96ad2c=3de247f3-5de4-4a44-afc5-1fe179750cf7:ext3:/crypto/key_file 
+opens LUKS drive with UUID=def0269e-424b-4752-acf3-1077bf96ad2c, using 
+key drive UUID 3de247f3-5de4-4a44-afc5-1fe179750cf7, mounting ext3 file 
+system and looking for file /crypto/key_file.
 
-Best,
-Vladislav
+  b) for LUKS-encrypted drives (using token keys): 
+rd.luks.<luks_uuid>=<reader_id>:<slot_id>:<token_id>:<token_status>
 
---------------020902060703020806080207
-Content-Type: text/x-patch;
- name="dracut-fakeroot.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="dracut-fakeroot.patch"
+For example rd.luks.def0269e-424b-4752-acf3-1077bf96ad2c=0:0:12:private 
+opens LUKS drive with UUID=def0269e-424b-4752-acf3-1077bf96ad2c, reading 
+key token using reader=0, slot=0 and looking for token data stored with 
+application_id=12, where:
+     - reader_id: reader ID to use (not mandatory - if omitted the 
+'default' reader is used);
+     - slot_id: slot ID to look for when reading the token (it could 
+also be omitted in which case the first available slot will be used);
+     - token_id: the (application) ID of the token as stored in the 
+smartcard;
+     - token_status: 'public' if the token is stored in the smartcard as 
+'public' (i.e. no PIN login required - similar to the key path scenario 
+above); or 'private' if the key token is stored as a private token and 
+smartcard PIN is required to read the token data;
 
-diff --git a/modules.d/95fakeroot/check b/modules.d/95fakeroot/check
-new file mode 100755
-index 0000000..1829b66
---- /dev/null
-+++ b/modules.d/95fakeroot/check
-@@ -0,0 +1,8 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+# We depend on network modules being loaded
-+[ "$1" = "-d" ] && echo network
-+
-+exit 0
-diff --git a/modules.d/95fakeroot/fakeroot b/modules.d/95fakeroot/fakeroot
-new file mode 100755
-index 0000000..caae40c
---- /dev/null
-+++ b/modules.d/95fakeroot/fakeroot
-@@ -0,0 +1,41 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+#
-+
-+. /lib/dracut-lib.sh
-+
-+PATH=$PATH:/sbin:/usr/sbin
-+
-+# Huh? Empty $1?
-+[ -z "$1" ] && exit 1
-+
-+# Huh? Empty $2?
-+[ -z "$2" ] && exit 1
-+
-+# Huh? Empty $3? This isn't really necessary, since NEWROOT isn't 
-+# used here. But let's be consistent
-+[ -z "$3" ] && exit 1
-+
-+netif="$1"
-+root="$2"
-+
-+# This is for NFS RW state partition, just set a variable
-+[ -z "$CLIENTSTATE" ] && CLIENTSTATE=$(getarg CLIENTSTATE=)
-+
-+echo
-+echo "****"
-+echo "** Allowing network to start without real networked root."
-+echo "** This makes possible to use readonly root with nfs-mounted RW state partition."
-+echo "** Real root will be mounted from $root."
-+echo "** Network interface $netif will be passed to a real system."
-+if [ -n "$CLIENTSTATE" ] ;then
-+    echo "** RW state partition will be mounted by a real system from $CLIENTSTATE."
-+else
-+    echo "** Warning: nothing is passed in CLIENTSTATE variable."
-+fi
-+echo
-+echo "****"
-+echo
-+
-+exit 0
-diff --git a/modules.d/95fakeroot/install b/modules.d/95fakeroot/install
-new file mode 100755
-index 0000000..79abdf7
---- /dev/null
-+++ b/modules.d/95fakeroot/install
-@@ -0,0 +1,5 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+inst_hook cmdline 90 "$moddir/parse-fakeroot.sh"
-+inst "$moddir/fakeroot" "/sbin/fakeroot"
-diff --git a/modules.d/95fakeroot/parse-fakeroot.sh b/modules.d/95fakeroot/parse-fakeroot.sh
-new file mode 100755
-index 0000000..9d22dd2
---- /dev/null
-+++ b/modules.d/95fakeroot/parse-fakeroot.sh
-@@ -0,0 +1,23 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+#
-+# Format:
-+#       netroot=fake root=*
-+#
-+# both netroot=fake and root= should be set
-+#
-+# Note: this differs from other netroot handlers which usually replace netroot's value with
-+# what root is set too.
-+#
-+
-+# This script is sourced, so root should be set. But let's be paranoid
-+[ -z "$root" ] && root=$(getarg root=)
-+[ -z "$netroot" ] && netroot=$(getarg netroot=)
-+
-+if [ "${netroot%%:*}" = "fake" ] ; then
-+    if [ -z "$root" ] ; then
-+        echo "Warning: both root and netroot should be set for a 'fake' netroot"
-+    fi
-+fi
-+
+What do you think?
 
---------------020902060703020806080207--
+My main concern is handling of all dependencies when installing the core 
+programs, which are going to do the 'dirty work': pkcs15-tool and 
+pkcs11-tool (possibly pkcs15-init also, though this program may have to 
+be used in extremely rare circumstances, if at all).
+
+I've looked through the dependencies and the package scripts though 
+there are, among other things, udev rules and config files, which could 
+complicate matters. Following this I have another query: Does dracut 
+have (at least read) access to the /boot partition where the initramfs 
+image is?
