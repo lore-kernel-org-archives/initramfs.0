@@ -1,78 +1,126 @@
-From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: [PATCH] 90crypt: keys on external devices support
-Date: Wed, 20 Oct 2010 15:06:32 +0100
-Message-ID: <4CBEF768.90908@googlemail.com>
-References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <1287580112-sup-97@etiriah>
+Date: Wed, 20 Oct 2010 16:12:27 +0200
+Message-ID: <1287580805-sup-6517@etiriah>
+References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <4CBE44D3.6070000@googlemail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg="pgp-sha1"; boundary="=-1287583947-484740-27599-2127-7-="; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id
-         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
-         :subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=MitVPIxV0a4E7zTwQg7nVgZIpuNOCmlR/1W5o7cy7vc=;
-        b=TS3uwnjscjdpnQ9Xo8Aio66iV0zECst8h6I+I1sQEsJjNAen4y5BdbURpTCpCrkT9E
-         /GTOAgV+qDx7mWJbeRxHchKffTU9a0AV93rAfEUriD7koyJtJQUbeNh6poe7mF3g3nEz
-         enVo4NfRFuSGb9CLpbcF1DsyLjPTr5TN2rtRY=
-In-Reply-To: <1287580112-sup-97@etiriah>
+In-reply-to: <4CBE44D3.6070000-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 
-> Next thing is give possibility to put keys inside initramfs.
->   
-I don't think this is such a good idea as having the crypto keys reside 
-in the same place as the kernel would completely defeats the purpose of 
-using crypto devices.
+--=-1287583947-484740-27599-2127-7-=
+Content-Type: text/plain; charset="utf8"
+Content-Transfer-Encoding: base64
 
+RXhjZXJwdHMgZnJvbSBNciBEYXNoIEZvdXIncyBtZXNzYWdlIG9mIFdlZCBPY3QgMjAgMDM6MjQ6
+MzUgKzAyMDAgMjAxMDoKPiAxLiAnZHJhY3V0IC1JJyBvcHRpb24gJ2luc3RhbGxzJyB0aGUgZmls
+ZXMgc3BlY2lmaWVkLCBidXQgZG9lcyBpdAo+IGluc3RhbGwgYWxsIGRlcGVuZGVuY2llcz8gRm9y
+IGUuZy4gaWYgSSB3YW50IHRvIGluc3RhbGwKPiAnL3Vzci9iaW4vcGtjczExLXRvb2wnIGRvZXMg
+aXQgaW5zdGFsbCBhbGwgb3RoZXIgbGlicmFyaWVzL2ZpbGVzIG9uCj4gd2hpY2ggdGhpcyBwcm9n
+cmFtIGRlcGVuZHMgKGkgZG8gbm90IG1lYW4ganVzdCAua28gZmlsZXMhKT8KCictSScgb3B0aW9u
+IGFyZSBmb3IgdXNlciB0byBpbmNsdWRlIHNpbmdsZSBmaWxlcy4gIElmIHlvdSdkIGxpa2UgdG8K
+bWVyZ2UgZmlsZXMgaW50byBpbml0cmFtZnMgd2l0aCBpdHMgZGVwZW5kZW5jaWVzLCB5b3UgdXNl
+ICcqaW5zdConCmZhbWlseSBmdW5jdGlvbnMuICBTZWUgJ2RyYWN1dC1mdW5jdGlvbnMnIGZpbGUu
+CgoKPiAyLiBDdXJyZW50bHkgdGhlIHByb3Bvc2VkIHJkX0xVS1NfS0VZUEFUSCBhbmQgcmRfTFVL
+U19LRVlERVZfVVVJRAo+IGFsbG93IG1lIHRvIHNwZWNpZnkga2V5IHBhdGggYW5kIGRldmljZSB0
+byBsb29rIGZvciB0aGUga2V5IHdpdGggd2hpY2gKPiB0byBvcGVuIHRoZSBMVUtTLWVuY3J5cHRl
+ZCBkcml2ZS9wYXJ0aXRpb24uIElmIEkgd2FudCB0byBvcGVuIGFub3RoZXIKPiBMVUtTIGRpc2sg
+d2l0aCBhIGRpZmZlcmVudCBrZXkgbG9jYXRlZCBpbiBhIGRpZmZlcmVudCBwYXRoL2ZpbGUgaG93
+IGlzCj4gdGhpcyBoYW5kbGVkPyBCeSBzcGVjaWZ5aW5nIGFub3RoZXIgcGFpciBvZiByZF9MVUtT
+X0tFWURFVl9VVUlEIGFuZAo+IHJkX0xVS1NfS0VZUEFUSD8KCkZpcnN0IG9mIGFsbCByZF9MVUtT
+X0tFWURFVl9VVUlEIHdpbGwgYmUgY2hhbmdlZCB0byAncmQubHVrcy5rZXlkZXYnIGFuZAphbGxv
+dyB0byBzcGVjaWZ5IGRldmljZXMgYnkgZmlsZW5hbWUgaW4gL2RldiwgTEFCRUwgb3IgVVVJRC4K
+Ckl0J3MgZG9uZSBhIGJpdCBtb3JlIGZsZXhpYmxlLiAgWW91IGNhbiBzcGVjaWZ5ICdyZF9MVUtT
+X0tFWURFVl9VVUlEJwoobGF0ZXIgJ3JkLmx1a3Mua2V5ZGV2JykgYW5kICdyZF9MVUtTX0tFWVBB
+VEgnIChsYXRlciAncmQubHVrcy5rZXlwYXRoJykKc2V2ZXJhbCB0aW1lcy4gIEZvciBldmVyeSAn
+cmQubHVrcy5rZXlkZXYnIEFMTCAncmQubHVrcydrZXlwYXRocycgYXJlCmNoZWNrZWQuICBJIGtu
+b3cgdGhhdCBzdWNoIGFwcHJvYWNoIGhhdmUgc29tZSBmbGF3cy4gIEknbGwgY29uc2lkZXIgeW91
+cgpwcm9wb3NpdGlvbiAocXVvdGVkIGJlbG93KSBmb3Igc3BlY2lmeWluZyB0aGF0LgoKCj4gMy4g
+Rm9sbG93aW5nIGZyb20gMiBhYm92ZTogaWYgc21hcnRjYXJkIG1vZHVsZS9lbmhhbmNlbWVudHMg
+YXJlIGdvaW5nCj4gdG8gYmUgaW1wbGVtZW50ZWQgdGhlbiB0aGVyZSBpcyBhIHBvc3NpYmlsaXR5
+IHRoYXQgdGhlcmUgbWF5IGJlIGEKPiBjb25mbGljdCAoZm9yIGV4YW1wbGUgaWYgSSB3YW50IHRv
+IG9wZW4gZHJpdmUgQSB3aXRoIGtleXBhdGgvZmlsZSBhbmQKPiBkcml2ZSBCIHdpdGggYSB0b2tl
+biAtIGhvdyBkb2VzIGRyYWN1dCBrbm93IHdoaWNoIGlzIHdoaWNoPykuCj4KPiBTbywgSSBoYXZl
+IGFuIGlkZWE6IGluc3RlYWQgb2YgdXNpbmcgcmRfTFVLU19VVUlELCByZF9MVUtTX0tFWURFVl9V
+VUlECj4gJiByZF9MVUtTX0tFWVBBVEggKGFuZCBwb3NzaWJseSBhbHNvIHJkX0xVS1NfVE9LRU4g
+Zm9yIHJlYWRpbmcga2V5cwo+IGZyb20gdG9rZW5zKSB3aHkgY2FuJ3Qgd2UgaGF2ZSBvbmUgdW5p
+ZmllZCBhbmQgbXVjaCBzaW1wbGVyIGZvcm1hdDoKPgo+ICAgYSkgZm9yIExVS1MtZW5jcnlwdGVk
+IGRyaXZlcyAoZmlsZS9wYXRoIGtleXMpOgo+ICAgcmQubHVrcy48bHVrc191dWlkPj08a2V5cGF0
+aF91dWlkPjo8ZnM+OjxwYXRoPgo+Cj4gRm9yIGV4YW1wbGUKPiByZC5sdWtzLmRlZjAyNjllLTQy
+NGItNDc1Mi1hY2YzLTEwNzdiZjk2YWQyYz0zZGUyNDdmMy01ZGU0LTRhNDQtYWZjNS0xZmUxNzk3
+NTBjZjc6ZXh0MzovY3J5cHRvL2tleV9maWxlCj4gb3BlbnMgTFVLUyBkcml2ZSB3aXRoIFVVSUQ9
+ZGVmMDI2OWUtNDI0Yi00NzUyLWFjZjMtMTA3N2JmOTZhZDJjLCB1c2luZwo+IGtleSBkcml2ZSBV
+VUlEIDNkZTI0N2YzLTVkZTQtNGE0NC1hZmM1LTFmZTE3OTc1MGNmNywgbW91bnRpbmcgZXh0Mwo+
+IGZpbGUgc3lzdGVtIGFuZCBsb29raW5nIGZvciBmaWxlIC9jcnlwdG8va2V5X2ZpbGUuCj4KPiAg
+IGIpIGZvciBMVUtTLWVuY3J5cHRlZCBkcml2ZXMgKHVzaW5nIHRva2VuIGtleXMpOgo+ICAgcmQu
+bHVrcy48bHVrc191dWlkPj08cmVhZGVyX2lkPjo8c2xvdF9pZD46PHRva2VuX2lkPjo8dG9rZW5f
+c3RhdHVzPgo+Cj4gRm9yIGV4YW1wbGUKPiByZC5sdWtzLmRlZjAyNjllLTQyNGItNDc1Mi1hY2Yz
+LTEwNzdiZjk2YWQyYz0wOjA6MTI6cHJpdmF0ZSBvcGVucyBMVUtTCj4gZHJpdmUgd2l0aCBVVUlE
+PWRlZjAyNjllLTQyNGItNDc1Mi1hY2YzLTEwNzdiZjk2YWQyYywgcmVhZGluZyBrZXkKPiB0b2tl
+biB1c2luZyByZWFkZXI9MCwgc2xvdD0wIGFuZCBsb29raW5nIGZvciB0b2tlbiBkYXRhIHN0b3Jl
+ZCB3aXRoCj4gYXBwbGljYXRpb25faWQ9MTIsIHdoZXJlOiAtIHJlYWRlcl9pZDogcmVhZGVyIElE
+IHRvIHVzZSAobm90IG1hbmRhdG9yeQo+IC0gaWYgb21pdHRlZCB0aGUgJ2RlZmF1bHQnIHJlYWRl
+ciBpcyB1c2VkKTsgLSBzbG90X2lkOiBzbG90IElEIHRvIGxvb2sKPiBmb3Igd2hlbiByZWFkaW5n
+IHRoZSB0b2tlbiAoaXQgY291bGQgYWxzbyBiZSBvbWl0dGVkIGluIHdoaWNoIGNhc2UgdGhlCj4g
+Zmlyc3QgYXZhaWxhYmxlIHNsb3Qgd2lsbCBiZSB1c2VkKTsgLSB0b2tlbl9pZDogdGhlIChhcHBs
+aWNhdGlvbikgSUQKPiBvZiB0aGUgdG9rZW4gYXMgc3RvcmVkIGluIHRoZSBzbWFydGNhcmQ7IC0g
+dG9rZW5fc3RhdHVzOiAncHVibGljJyBpZgo+IHRoZSB0b2tlbiBpcyBzdG9yZWQgaW4gdGhlIHNt
+YXJ0Y2FyZCBhcyAncHVibGljJyAoaS5lLiBubyBQSU4gbG9naW4KPiByZXF1aXJlZCAtIHNpbWls
+YXIgdG8gdGhlIGtleSBwYXRoIHNjZW5hcmlvIGFib3ZlKTsgb3IgJ3ByaXZhdGUnIGlmCj4gdGhl
+IGtleSB0b2tlbiBpcyBzdG9yZWQgYXMgYSBwcml2YXRlIHRva2VuIGFuZCBzbWFydGNhcmQgUElO
+IGlzCj4gcmVxdWlyZWQgdG8gcmVhZCB0aGUgdG9rZW4gZGF0YTsKPgo+IFdoYXQgZG8geW91IHRo
+aW5rPwoKICByZC5sdWtzLmtleT08a2V5X3BhdGg+OjxrZXlfZGV2Pjo8bHVrc19kZXY+CgpXaHkg
+dGhpcyBvcmRlcj8gIDxrZXlfcGF0aD4gaXMgYWx3YXlzIHJlcXVpcmVkIChvYnZpb3VzKS4gIDxr
+ZXlfZGV2Pgpkb2Vzbid0IGhhdmUgdG8gYmUgcmVxdWlyZWQsIGJlY2F1c2UgaXQncyBlYXN5IHRv
+IHBlcmZvcm0gc2VhcmNoIGZvcgpkZXZpY2UgKGFuZCBpdCdzIGRvbmUga25vdywgaXQgd29ya3Mg
+cHJldHR5IHdlbGwsIGF0IGxlYXN0IHdpdGggbXkKbGF0ZXN0IG5vdCB5ZXQgYWNjZXB0ZWQgcGF0
+Y2ggd2hpY2ggbmVlZHMgbW9yZSBpbXByb3ZlbWVudCA6LSkpLiAgVGhlCmxhc3QgaXMgb3B0aW9u
+YWwgdG9vLiAgRm9yY2luZyB1c2VyIHRvIHdyaXRlIGRvd24gYWxsIFVVSUQtcyBpcyBub3QKZXRo
+aWNhbC4gOy0pICBJdCBzaG91bGQgYmUgYXV0b21hdGVkIGFzIGZhciBhcyBpdCBtYWtlcyBzZW5z
+ZS4KCkV4YW1wbGVzOgogIHJkLmx1a3Mua2V5PS9zb21lL2ZpbGUua2V5OkxBQkVMPWNvb2xfa2V5
+czpVVUlEPTAwYWFiYwogIHJkLmx1a3Mua2V5PS9zb21lL2ZpbGUua2V5OjpVVUlEPTAwYWFiYwog
+IHJkLmx1a3Mua2V5PS9zb21lL2ZpbGUua2V5OkxBQkVMPWNvb2xfa2V5cwogIHJkLmx1a3Mua2V5
+PS9zb21lL2ZpbGUua2V5CgpBbmQgcHJvYmFibHkgSSdsbCBpbnRyb2R1Y2UgdGhpcyBzY2hlbWUg
+aW4gcGF0Y2hlcyBJJ20gaW1wcm92aW5nCnJlY2VudGx5LiAgRG9lcyBpdCBzYXRpc2Z5IHlvdT8g
+Oi0pICBBbmQgZm9yIHRva2VuIGl0IHdvdWxkIGJlOgoKICByZC5sdWtzLnRva2VuPeKApgoKTWln
+aHQgYmU/CgoKPiBNeSBtYWluIGNvbmNlcm4gaXMgaGFuZGxpbmcgb2YgYWxsIGRlcGVuZGVuY2ll
+cyB3aGVuIGluc3RhbGxpbmcgdGhlCj4gY29yZSBwcm9ncmFtcywgd2hpY2ggYXJlIGdvaW5nIHRv
+IGRvIHRoZSAnZGlydHkgd29yayc6IHBrY3MxNS10b29sIGFuZAo+IHBrY3MxMS10b29sIChwb3Nz
+aWJseSBwa2NzMTUtaW5pdCBhbHNvLCB0aG91Z2ggdGhpcyBwcm9ncmFtIG1heSBoYXZlCj4gdG8g
+YmUgdXNlZCBpbiBleHRyZW1lbHkgcmFyZSBjaXJjdW1zdGFuY2VzLCBpZiBhdCBhbGwpLgoKJ2lu
+c3QqJyBmdW5jdGlvbnMgZmFtaWx5IGFzIEkgbWVudGlvbmVkIGluIHByZXZpb3VzIGUtbWFpbC4K
+Cgo+IEkndmUgbG9va2VkIHRocm91Z2ggdGhlIGRlcGVuZGVuY2llcyBhbmQgdGhlIHBhY2thZ2Ug
+c2NyaXB0cyB0aG91Z2gKPiB0aGVyZSBhcmUsIGFtb25nIG90aGVyIHRoaW5ncywgdWRldiBydWxl
+cyBhbmQgY29uZmlnIGZpbGVzLCB3aGljaAo+IGNvdWxkIGNvbXBsaWNhdGUgbWF0dGVycy4gRm9s
+bG93aW5nIHRoaXMgSSBoYXZlIGFub3RoZXIgcXVlcnk6IERvZXMKPiBkcmFjdXQgaGF2ZSAoYXQg
+bGVhc3QgcmVhZCkgYWNjZXNzIHRvIHRoZSAvYm9vdCBwYXJ0aXRpb24gd2hlcmUgdGhlCj4gaW5p
+dHJhbWZzIGltYWdlIGlzPwoKTm8sIG5vLiAgWW91IGRvbid0IG5lZWQgYWNjZXNzIHRvIC9ib290
+LiAgWW91IHB1dCBldmVyeXRoaW5nIGluCmluaXRyYW1mcyB1c2luZyBpbnN0YWxsYXRpb24gZnVu
+Y3Rpb25zIHByb3ZpZGVkIGJ5ICdkcmFjdXQtZnVuY3Rpb25zJy4KU2VlICdpbnN0YWxsJyBhbmQg
+J2NoZWNrJyBzY3JpcHRzIGluIHNvbWUgbW9kdWxlJ3MgZGlyZWN0b3J5LgotLSAKQW1hZGV1c3og
+xbtvxYJub3dza2kKClBHUCBrZXkgZnByOiBDNzAwIENFREUgMEMxOCAyMTJFIDQ5REEgIDQ2NTMg
+RjAxMyA0NTMxIEUxREIgRkFCNQo=
 
-> If you'd like to write support for smartcard, I'd be glad to see it as
-> a separate module.  Don't hesitate to post your progress on ml for our
-> review.
->   
-I am not sure it would be as a separate module though (may be, at a 
-later stage) - for now I'll try to use the existing module/framework in 
-place and extend its functionality, hence why I posted some of my ideas 
-late last night to canvass an opinion - from what I can gather, as you 
-and Harald are the two main contributors to the crypto side of dracut it 
-is good to know what you think?
+--=-1287583947-484740-27599-2127-7-=
+Content-Disposition: attachment; filename="signature.asc"
+Content-Type: application/pgp-signature; name="signature.asc"
 
-The way I see it simplifying the various kernel parameters (particularly 
-those designed to deal with luks-related partitions) is the way forward.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.16 (GNU/Linux)
 
-The one issue I am facing right now before I can even begin coding 
-smartcard support in dracut is that I am not at all clear how it deals 
-with the various dependencies when I ask a program to be installed 
-(using the '-I' option) as 'pkcs11-tool' for example, would need at 
-least 2 more executables available (with half-a-dozen other .ko library 
-files) and at least two configuration files present and available at the 
-time of execution.
+iQEcBAEBAgAGBQJMvvjLAAoJEPATRTHh2/q13l0H/ilaWdAZeLV8C21pHxxD6iMT
+39U5X8wT2tFRnjlc5tpRHv+7VOt63Fd11gTphQrtbrQzwYIjB5/CZDUgW4B0lFqJ
+BGEJy/oaQCWTf8vkkZAbhXr0bbilO09e9YNugqc64UyK2IfL71IcA95HiqmJFfHI
+5BryFHX19w1EhEM9dDZkvZFNOeR1wbrLOohHz9pOYxNL5t8U2pBY2k/GI4Zva7z2
+2PKdiBcO7Ij7IWiz45HDYVxbmXphrN/eBYdpx8Y6nWZRbXu/VkLgrVvYUMT2SQHd
+LSef8FKH3AtOGECaEGa4rp68hPJYE043bgOXFp+b0JDjbvIxWctQl9z6rMLzP3w=
+=Fmm4
+-----END PGP SIGNATURE-----
 
-The configuration files present another challenge in itself - most 
-(default) settings work in about 90% of all cases, but for the rest 
-these settings have to be changed (card reader types, various attributes 
-set etc) and for that there are two options: either 1) create initrd 
-image which is tailored to a specific configuration (and therefore these 
-configuration files are embedded, so to speak, into the initrd image 
-itself); or 2) take these configuration files out of the initrd 
-altogether and make them available in the /boot directory/partition (in 
-/boot/dracut for example!) when dracut is instantiated (hence why I 
-asked in my previous post does dracut have at least 'read' access to 
-that directory/partition)?
-
-One other thing I forgot to mention in my last post that with the 
-proposed parameter changes there is a third possible scenario with the 
-password authentication, in which case, the format of the parameter in 
-the kernel would simply be:
-
-c) rd.luks.<luks_uuid>[=]
-
-The equal sign (=) would not be mandatory and may not be specified. For 
-example 'rd.luks.def0269e-424b-4752-acf3-1077bf96ad2c' will opens LUKS 
-drive with UUID=def0269e-424b-4752-acf3-1077bf96ad2c after asking for a 
-password at the console (as is the case now).
+--=-1287583947-484740-27599-2127-7-=--
