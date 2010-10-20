@@ -1,64 +1,95 @@
-From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: [PATCH] 90crypt: keys on external devices support
-Date: Wed, 20 Oct 2010 15:48:19 +0100
-Message-ID: <4CBF0133.2070709@googlemail.com>
-References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <1287580112-sup-97@etiriah> <4CBEF768.90908@googlemail.com> <1287583979-sup-416@etiriah>
+Date: Wed, 20 Oct 2010 17:17:22 +0200
+Message-ID: <1287586242-sup-9146@etiriah>
+References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <4CBE44D3.6070000@googlemail.com> <1287580805-sup-6517@etiriah> <4CBF004F.9070201@googlemail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg="pgp-sha1"; boundary="=-1287587842-227913-27599-3137-9-="; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id
-         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
-         :subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=Q8UYD7pmXEtiiLIv9F2FZILAOpXuJPpDwU6v4M2dGYs=;
-        b=NbSc2YVFMM9HzL3/4PyOf7nXtZSiJZWrnE8ZS6Oup2ZrgVFkN8dhVyb6pskBrlKQbS
-         7x9JiulRE8rDmD8ol4oVxa4FLgE2+r0lDZNqGKjQQgyP95cIMQePV3ESV6eyqYvbCXD+
-         4AHao8GSn+eGDJh9F2UbUKw1Sp1yLOzb3YmAs=
-In-Reply-To: <1287583979-sup-416@etiriah>
+In-reply-to: <4CBF004F.9070201-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 
->> I don't think this is such a good idea as having the crypto keys
->> reside in the same place as the kernel would completely defeats the
->> purpose of using crypto devices.
->>     
->
-> It does not.  You can have kernel and initramfs on removable media.  You
-> have this media secure and don't need separate media for keys.  It's
-> even more secure than having kernel and initramfs on harddrive because
-> it protects you from case when someone replaces your initramfs to stole
-> the key (e.g. sends to some remote machine).
->
-> And of course keys inside initramfs will be optional extra solution.
->   
-Good point - I haven't thought of that, it makes sense then.
+--=-1287587842-227913-27599-3137-9-=
+Content-Type: text/plain; charset="utf8"
+Content-Transfer-Encoding: base64
 
+RXhjZXJwdHMgZnJvbSBNciBEYXNoIEZvdXIncyBtZXNzYWdlIG9mIFdlZCBPY3QgMjAgMTY6NDQ6
+MzEgKzAyMDAgMjAxMDoKPiA+IEV4YW1wbGVzOgo+ID4gICByZC5sdWtzLmtleT0vc29tZS9maWxl
+LmtleTpMQUJFTD1jb29sX2tleXM6VVVJRD0wMGFhYmMKPiA+ICAgcmQubHVrcy5rZXk9L3NvbWUv
+ZmlsZS5rZXk6OlVVSUQ9MDBhYWJjCj4gPiAgIHJkLmx1a3Mua2V5PS9zb21lL2ZpbGUua2V5OkxB
+QkVMPWNvb2xfa2V5cwo+ID4gICByZC5sdWtzLmtleT0vc29tZS9maWxlLmtleQo+ID4KPiA+IEFu
+ZCBwcm9iYWJseSBJJ2xsIGludHJvZHVjZSB0aGlzIHNjaGVtZSBpbiBwYXRjaGVzIEknbSBpbXBy
+b3ZpbmcKPiA+IHJlY2VudGx5LiAgRG9lcyBpdCBzYXRpc2Z5IHlvdT8gOi0pICBBbmQgZm9yIHRv
+a2VuIGl0IHdvdWxkIGJlOgo+ID4KPiA+ICAgcmQubHVrcy50b2tlbj3igKYKPiA+Cj4gPiBNaWdo
+dCBiZT8KPiA+ICAgCj4gSSdsbCBiZSBoYXBweSBpZiB5b3UgcmV2ZXJzZSB0aGUgb3JkZXIgYW5k
+IGFkZCBhIGZpbGUgc3lzdGVtIHR5cGUgYXMKPiB3ZWxsIC0gaXQgbWFrZXMgaXQgbW9yZSBjb25z
+aXN0ZW50IHdpdGggdGhlIEZlZG9yYSBLaWNrc3RhcnQgZm9ybWF0LAo+IG90aGVyd2lzZSBpcyBh
+IGJpdCBjb25mdXNpbmcuCgoicmQubHVrcy5rZXk9Ojovc29tZS9maWxlLmtleSIgaXMgbXVjaCBt
+b3JlIGNvbmZ1c2luZy4gIEkgYmV0IHRoYXQgc29tZQp1c2VyIHdpbGwgY3Vyc2UgdXMgd2hlbiBo
+ZSBmb3JnZXQgYWJvdXQgZG91YmxlIGNvbG9uLiAgSSB0aGluayB0aGF0CnJlcXVpcmVkIHBhcmFt
+ZXRlcnMgc2hvdWxkIGJlIGZpcnN0IGFuZCBsZXNzIHVzZWZ1bCBsYXN0LiAgSXQncyBhbGwKRHJh
+Y3V0IHdvbmRlciB0aGF0IGl0IGRvZXNuJ3QgcmVxdWlyZSBtYW55IHBhcmFtZXRlcnMuCgpXaGVu
+IHlvdSdyZSBtb3VudGluZyBkZXZpY2UgYXJlIHlvdSBhbHdheXMgc3BlY2lmeWluZyAiLXQgZnNf
+dHlwZSI/IDotKQpEaXNrIGlzIG1vdW50ZWQgcmVhZG9ubHksIHNvIGV2ZW4gaWYgbW91bnQgcGVy
+Zm9ybXMgd3JvbmcgZ3Vlc3MsIG5vdGhpbmcKYmFkIGhhcHBlbnMuICBUaGlzIGlzIHJhcmUgY2Fz
+ZS4gIEFsdGhvdWdoIG1heWJlIHdlIGNhbiBhZGQgaXTigKYgOi0pIFRoZW4KaXQgd291bGQgYmU6
+CgogIHJkLmx1a3Mua2V5PTxrZXlfcGF0aD46PGtleV9kZXY+OjxrZXlfZGV2X2ZzPjo8bHVrc19k
+ZXY+CgoKPiA+PiBJJ3ZlIGxvb2tlZCB0aHJvdWdoIHRoZSBkZXBlbmRlbmNpZXMgYW5kIHRoZSBw
+YWNrYWdlIHNjcmlwdHMgdGhvdWdoCj4gPj4gdGhlcmUgYXJlLCBhbW9uZyBvdGhlciB0aGluZ3Ms
+IHVkZXYgcnVsZXMgYW5kIGNvbmZpZyBmaWxlcywgd2hpY2gKPiA+PiBjb3VsZCBjb21wbGljYXRl
+IG1hdHRlcnMuIEZvbGxvd2luZyB0aGlzIEkgaGF2ZSBhbm90aGVyIHF1ZXJ5OiBEb2VzCj4gPj4g
+ZHJhY3V0IGhhdmUgKGF0IGxlYXN0IHJlYWQpIGFjY2VzcyB0byB0aGUgL2Jvb3QgcGFydGl0aW9u
+IHdoZXJlIHRoZQo+ID4+IGluaXRyYW1mcyBpbWFnZSBpcz8KPiA+PiAgICAgCj4gPgo+ID4gTm8s
+IG5vLiAgWW91IGRvbid0IG5lZWQgYWNjZXNzIHRvIC9ib290LiAgWW91IHB1dCBldmVyeXRoaW5n
+IGluCj4gPiBpbml0cmFtZnMgdXNpbmcgaW5zdGFsbGF0aW9uIGZ1bmN0aW9ucyBwcm92aWRlZCBi
+eQo+ID4gJ2RyYWN1dC1mdW5jdGlvbnMnLiAgU2VlICdpbnN0YWxsJyBhbmQgJ2NoZWNrJyBzY3Jp
+cHRzIGluIHNvbWUKPiA+IG1vZHVsZSdzIGRpcmVjdG9yeS4KPiA+ICAgCj4gCj4gVGhhdCBjb3Vs
+ZCBzcGVsbCB0cm91YmxlIGFzIGZvciBqdXN0IHJ1bm5pbmcgcGtjczExLXRvb2wgdGhhdCByZXF1
+aXJlcwo+IDIgY29uZmlndXJhdGlvbiBmaWxlcyB3aGljaCByZWZsZWN0IHRoZSBzcGVjaWZpYyB0
+b2tlbiB0eXBlIGFuZAo+IHZhcmlvdXMgcGFyYW1ldGVycy4gQWx0aG91Z2ggOTAlIG9mIGFsbCBj
+YXNlcyBmYWxsIGludG8gdGhlICdkZWZhdWx0Jwo+IG1vZGUgc2NlbmFyaW8gdGhlcmUgYXJlIHRo
+ZSByZXN0IDEwJSB3aGljaCBkbyBub3QgYW5kIGhhdmUgdG8gYmUKPiBwcm9wZXJseSBjYXRlcmVk
+IGZvci4KPiAKPiBUaGUgcGFyYW1ldGVycyBhbmQgYXR0cmlidXRlcyBpbiB0aGVzZSBmaWxlcyBh
+cmUgY29tcGxleCBhbmQgY2Fubm90IGJlCj4gc3BlY2lmaWVkIGluIHRoZSBrZXJuZWwgY29tbWFu
+ZCBsaW5lIGluIGdydWIuY29uZi4gSWYgdGhlc2UgMgo+IGNvbmZpZ3VyYXRpb24gZmlsZXMgYXJl
+IGVtYmVkZGVkIGludG8gaW5pdHJkIHRoZXkgY2Fubm90IGJlIGNoYW5nZWQsCj4gd2hpY2ggbWVh
+bnMgdGhhdCBpbml0cmQgaGFzIHRvIGJlIGN1c3RvbS1idWlsdCBmb3IgZWFjaCBjbGllbnQKPiBj
+b25maWd1cmF0aW9uIHdoaWNoIG1ha2VzIHRoaXMgd2hvbGUgZXhlcmNpc2UgbGFyZ2VseSBpbXBy
+YWN0aWNhbC4KPiAKPiBUaGUgb3RoZXIgcG9zc2libGUgc2NlbmFyaW8sIGFzIEkgYWxyZWFkeSBt
+ZW50aW9uZWQsIGlzIHRvIHVzZQo+IGNvbmZpZ3VyYXRpb24gZmlsZXMgd2hpY2ggYXJlIG91dHNp
+ZGUgaW5pdHJkIChzZXBhcmF0ZSBkZXZpY2Ugb3IKPiBsb2NhdGVkIGluIC9ib290IGFyZSB0d28g
+cG9zc2libGUgYWx0ZXJuYXRpdmVzKQoKTWF5YmUgMTAlIGNhbiBlbWJlZCB0aGUgZmlsZT8gOi0p
+ICBXZWxsIHlvdSBtYXliZSBjYW4gc3BlY2lmeSBhZGRpdGlvbmFsCmNvbmZpZyBzYW1lIHdheSBh
+cyBrZXkgZm9yIGx1a3MgaXMgc3BlY2lmaWVkLiAgTWF5YmUgaXQgd291bGQgbWFrZSBzZW5zZQp0
+byBoYXZlIHN1Y2ggYSBnZW5lcmFsIGZlYXR1cmUgdG8gZ3JhYiBmaWxlcyBkdXJpbmcgcnVudGlt
+ZSBmcm9tCnJlbW92YWJsZSBkZXZpY2VzPwoKQnV0IHdvdWxkIGJlIGNvb2wgaWYgeW91IGdldCBp
+ZGVhIGhvdyB0byBkbyBpdCB3aXRob3V0IGV4dHJhIGNvbmZpZ3MKZnJvbSBvdXRzaWRlLiAgTWF5
+YmUgaXQncyBwb3NzaWJsZSB0byBwZXJmb3JtIHNvbWUgc2V0dGluZ3MgZ3Vlc3NlcyBvbgpydW4t
+dGltZT8KCgo+IE9uZSBvdGhlciBxdWVyeSByZWxhdGVkIHRvIHRoaXM6IGlmIEkgd2FudCB0byB1
+c2UgY3J5cHR0YWIgZm9yIG15IHJvb3QKPiAoLykgcGFydGl0aW9uIGhvdyBpcyB0aGF0IGhhbmRs
+ZWQgYnkgZHJhY3V0PwoKUGFzc3dvcmQgc3VwcG9ydCBvbmx5IGZvciBub3csIGJ1dCBJJ20gZ29u
+bmEgZXh0ZW5kZWQgaXQuCi0tIApBbWFkZXVzeiDFu2/Fgm5vd3NraQoKUEdQIGtleSBmcHI6IEM3
+MDAgQ0VERSAwQzE4IDIxMkUgNDlEQSAgNDY1MyBGMDEzIDQ1MzEgRTFEQiBGQUI1Cg==
 
-> I hope I've answered to your concerns above in previous e-mail.
->   
-I did a reply - there are 2 configuration files in order to run/read 
-tokens and these configuration files should be easily tailored to each 
-user's settings without the need to rebuilt initrd.
+--=-1287587842-227913-27599-3137-9-=
+Content-Disposition: attachment; filename="signature.asc"
+Content-Type: application/pgp-signature; name="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.16 (GNU/Linux)
 
+iQEcBAEBAgAGBQJMvwgCAAoJEPATRTHh2/q1kyEH/im++HW410bCv8LnPc1UAxB9
+k7q6jDhTsa+Lf0O/8hi2Y2QB9Plda7UjlQctzlx6pxR7+0i7VCD/aar5emglT4Bm
+XzSE93xeXtFlJ3UrnJcJCTmcG0wHWa0mgGDt9K3Qk8eQiRicCysliPPNPmkljpVv
+mmv3teaRUmu9ukgbcsV8VQUFHz+GyEsaRsvM2kNpDeR7yS7YFOtbWBoH4N8ZbWY0
+CDRnsOZnHl5ux4kJxCjVOFCW9tTGSUSxiA6DBvAgwjq5gmhUjR7CKKmN1WKGYdMw
+uTYJvjOMVKbFgBv0CfxD3dxYDJNkej8iGYIQmus1QAQG/tAg78HTzwQKPm3VrYs=
+=DNi6
+-----END PGP SIGNATURE-----
 
->> One other thing I forgot to mention in my last post that with the
->> proposed parameter changes there is a third possible scenario with the
->> password authentication, in which case, the format of the parameter in
->> the kernel would simply be:
->>
->> c) rd.luks.<luks_uuid>[=]
->>     
->
-> You don't have to specify anything for password scenario. root=<dev> is
-> just enough.  Have you tried using crypt module?
->   
-I am using dracut-006 (I think - the last which comes out of FC13 
-repository) and currently I have to specify rd_LUKS_UUID=luks-<UUID> in 
-order to make it work, which is not very convenient.
+--=-1287587842-227913-27599-3137-9-=--
