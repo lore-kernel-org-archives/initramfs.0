@@ -1,88 +1,77 @@
-From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: [PATCH] 90crypt: keys on external devices support
-Date: Wed, 20 Oct 2010 02:24:35 +0100
-Message-ID: <4CBE44D3.6070000@googlemail.com>
+Date: Wed, 20 Oct 2010 15:19:33 +0200
+Message-ID: <1287580112-sup-97@etiriah>
 References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg="pgp-sha1"; boundary="=-1287580773-379515-27599-8076-6-="; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id
-         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
-         :subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=wiiIfVB4qspfM6scypfcp7i6AK3u/qiGYtYiGqJNA0E=;
-        b=W/L5Z3UDfEIbQ1SYobp3aedmJINYwpGJ2Xt4NK7C+5K9M0hVRwhPH36tntxtZs3ZHl
-         iiFKfuALZ6bIuw+0hjUe2Qgu0i7kQqbqh66DwrrFglNzlXp8xvQdlftYaXGFeeplUJVR
-         rKJuu/72FJM8koghKYj3zXktdUMbL7elbTA7Y=
-In-Reply-To: <4CBDAC3D.7050906-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+In-reply-to: <4CBDAC3D.7050906-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-OK, I've had a bit of time to look through the available dracut docs and 
-have a couple of queries and a few ideas (below):
 
-1. 'dracut -I' option 'installs' the files specified, but does it 
-install all dependencies? For e.g. if I want to install 
-'/usr/bin/pkcs11-tool' does it install all other libraries/files on 
-which this program depends (i do not mean just .ko files!)?
+--=-1287580773-379515-27599-8076-6-=
+Content-Type: text/plain; charset="utf8"
+Content-Transfer-Encoding: base64
 
-2. Currently the proposed rd_LUKS_KEYPATH and rd_LUKS_KEYDEV_UUID allow 
-me to specify key path and device to look for the key with which to open 
-the LUKS-encrypted drive/partition. If I want to open another LUKS disk 
-with a different key located in a different path/file how is this 
-handled? By specifying another pair of rd_LUKS_KEYDEV_UUID and 
-rd_LUKS_KEYPATH?
+RXhjZXJwdHMgZnJvbSBNciBEYXNoIEZvdXIncyBtZXNzYWdlIG9mIFR1ZSBPY3QgMTkgMTY6MzM6
+MzMgKzAyMDAgMjAxMDoKPiBHbGFkIHRvIHNlZSB0aGVyZSBpcyBwcm9ncmVzcyBtYWRlLiBXaGF0
+IGFyZSB0aGUgcGxhbnM/IEFzIEkgcG9pbnRlZAo+IG91dCBJIGFtIGN1cnJlbnRseSBpbnRlcmVz
+dGVkIGluIG1ha2luZyBkcmFjdXQgd29yayB3aXRoIGV4dGVybmFsIGtleQo+IGZpbGVzIGFuZCB0
+b2tlbnMgKHRoZSBsYXR0ZXIgaXMgYSBtdWNoLXByZXNzaW5nIG5lZWQgb24gbXkgYXMgSSBhbQo+
+IGdvaW5nIHRvIHJlbHkgb24gaXQgaGVhdmlseSEpLgoKSW1wcm92ZSBwYXJ0IHJlc3BvbnNpYmxl
+IGZvciBnZXR0aW5nIGtleXMgZnJvbSByZW1vdmFibGUgbWVkaWEuICBOb3cKaXQncyBkb25lIHN5
+bmNocm9ub3VzbHkgYW5kIGl0IGltcGxpZXMgc29tZSBpc3N1ZXMuICBJJ20gZ29ubmEgY29ycmVj
+dAppdCB0byB1c2UgdWRldiBzb29uLgoKTmV4dCB0aGluZyBpcyBnaXZlIHBvc3NpYmlsaXR5IHRv
+IHB1dCBrZXlzIGluc2lkZSBpbml0cmFtZnMuCgpMYXRlciBmdXR1cmUgaXMgc3VwcG9ydCBmb3Ig
+Y3J5cHRvIHJlbGF0ZWQgdGhpbmdzIHdoaWNoIHdpbGwgZ2V0IGludG8gbXkKaGFuZHMsIHNpbmNl
+IEknbSBqdXN0IGEgc3R1ZGVudCByaWdodCBub3cuIDotKQoKCj4gPj4gSSBhbSBhbHNvIGludGVy
+ZXN0ZWQgdG8gc2VlIHdoZXRoZXIgdGhlcmUgYXJlIHBsYW5zIChvciwgaW5kZWVkCj4gPj4gYXR0
+ZW1wdGVkIGltcGxlbWVudGF0aW9ucykgdG8gaW50cm9kdWNlIHNtYXJ0Y2FyZCBzdXBwb3J0IHRv
+IExVS1MKPiA+PiBwYXJ0aXRpb25zIChib290IG9yIG5vdCk/IE1hbnkgdGhhbmtzCj4gPj4KPiA+
+Cj4gPiBJIGhhdmVuJ3QgcGxhbm5lZCB0aGF0IGFuZCBoYXZlbid0IGhlYXJkIG9mIGFueWJvZHkg
+cGxhbm5pbmcgdGhhdCwKPiA+IGJ1dCBpZiBJIHdvdWxkIGhhdmUgc3VjaCBhIGdhZGdldCBJJ2Qg
+cHJvYmFibHkgYmUgaGFwcHkgdG8gaW1wbGVtZW50Cj4gPiBzdXBwb3J0IGZvciBpdCBzb29uIG9y
+IGxhdGVyLgo+ID4KPiBJIGFtIHN0aWxsIGluIGEgbGVhcm5pbmcgY3VydmUgYXMgZmFyIGFzIGRy
+YWN1dCBpcyBjb25jZXJuZWQgLSBoZW5jZQo+IHdoeSBJIHdhcyBnbGFkIHdoZW4gSSBmb3VuZCB5
+b3VyIHBhdGNoIGFzIEkgaW50ZW5kIHRvIHVzZSBpdCBhcyBhCj4gdGVtcGxhdGUgdG8gaW1wbGVt
+ZW50IHRva2VuIHN1cHBvcnQuCj4KPiBJdCB3b24ndCBiZSBlYXN5IGFzIHRoZXJlIGFyZSBkZXBl
+bmRlbmNpZXMgb24gKGF0IGxlYXN0KSAzIHBhY2thZ2VzLAo+IGJ1dCBpZiBJIGZpbmFsbHkgbWFu
+YWdlIHRvIG92ZXJjb21lIHRoZXNlIHRoZSAnbG9naW4nIGlzIHZlcnkgc2ltaWxhcgo+IHRvIHRo
+ZSAncGFzc3dvcmQnIGF1dGhlbnRpY2F0aW9uIGN1cnJlbnRseSBwcmVzZW50IC0gb25jZSB0aGUg
+cGFzc3dvcmQKPiAoUElOIHRva2VuIGluIHRoaXMgY2FzZSkgaXMgY2FwdHVyZWQgdGhlbiB0aGVy
+ZSBpcyBhIHByb2dyYW0KPiAocGtjczExLXRvb2wgYW5kL29yIHBrY3MxNS10b29sKSB3aGljaCBy
+ZWFkcyB0aGUgcmVsZXZhbnQga2V5IGRhdGEgYW5kCj4gd2hpY2ggdGhlbiBjb3VsZCBwcmVzZW50
+IGl0IHRvIGx1a3NPcGVuIChhcyBhIHBpcGUsIGkuZS4gJ2NhdCBrZXlkYXRhCj4gfCBjcnlwdHNl
+dHVwIGx1a3NPcGVuIC0ta2V5LWZpbGU9LScpIHdpdGhvdXQgZnVydGhlciBuZWVkIGZvciBpbnB1
+dAo+IGZyb20gdGhlIHVzZXIuCj4KPiBJIGhhdmUgJ21hbnVhbGx5JyBkb25lIHRoaXMgKHZpYSBj
+b21tYW5kIGxpbmUgc2hlbGwgc2NyaXB0KSBhbmQgaXQKPiB3b3JrcyB3aXRob3V0IGEgcHJvYmxl
+bSwgc28gb25jZSBJIGdldCB0byBncmlwcyB3aXRoIGRyYWN1dCBhbmQgZmluZAo+IG91dCBob3cg
+dG8gaW5zdGFsbCBkZXBlbmRhbmNpZXMvcGFja2FnZXMgaW4gdGhlIGluaXRyYW1mcyBpbWFnZSB0
+aGVuCj4gaXQgd29uJ3QgYmUgZGlmZmljdWx0LgoKSWYgeW91J2QgbGlrZSB0byB3cml0ZSBzdXBw
+b3J0IGZvciBzbWFydGNhcmQsIEknZCBiZSBnbGFkIHRvIHNlZSBpdCBhcwphIHNlcGFyYXRlIG1v
+ZHVsZS4gIERvbid0IGhlc2l0YXRlIHRvIHBvc3QgeW91ciBwcm9ncmVzcyBvbiBtbCBmb3Igb3Vy
+CnJldmlldy4KLS0gCkFtYWRldXN6IMW7b8WCbm93c2tpCgpQR1Aga2V5IGZwcjogQzcwMCBDRURF
+IDBDMTggMjEyRSA0OURBICA0NjUzIEYwMTMgNDUzMSBFMURCIEZBQjUK
 
-3. Following from 2 above: if smartcard module/enhancements are going to 
-be implemented then there is a possibility that there may be a conflict 
-(for example if I want to open drive A with keypath/file and drive B 
-with a token - how does dracut know which is which?).
+--=-1287580773-379515-27599-8076-6-=
+Content-Disposition: attachment; filename="signature.asc"
+Content-Type: application/pgp-signature; name="signature.asc"
 
-So, I have an idea: instead of using rd_LUKS_UUID, rd_LUKS_KEYDEV_UUID & 
-rd_LUKS_KEYPATH (and possibly also rd_LUKS_TOKEN for reading keys from 
-tokens) why can't we have one unified and much simpler format:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.16 (GNU/Linux)
 
-  a) for LUKS-encrypted drives (file/path keys): 
-rd.luks.<luks_uuid>=<keypath_uuid>:<fs>:<path>
+iQEcBAEBAgAGBQJMvuxlAAoJEPATRTHh2/q1IXIIAICioWdtXSvT9LciINLJOPnV
+oZNjbIAtXv/Varqsh5viPuZqw9sSGOKWsEq6i8izXFB4Fe2grlcxIZAFW0M0nf5n
+tAMzidspwmmbDqAj8OVhN0ezD93OEUIz/jcOYxae45mQeMtcDOYcJjA9jjms2gwd
+9bVKTNiF1+dvUFb9Btjmyn1+ANK9MWyY4zC3vvwMYjhtfiPO7niE4dk3hVxI1ijm
+mKCUDi0Phsu2Qd6Dav03veDphS2hDNvhnMrVTZN2fAT1XKTjRRi7E378X9TqLcON
+6+HzfrBT/9z5lzr7Z7D+VFUUPKqnKHgqwEk0/6JKZqaKr+nsl7XFGZ2SMMqsP+o=
+=q9Dg
+-----END PGP SIGNATURE-----
 
-For example 
-rd.luks.def0269e-424b-4752-acf3-1077bf96ad2c=3de247f3-5de4-4a44-afc5-1fe179750cf7:ext3:/crypto/key_file 
-opens LUKS drive with UUID=def0269e-424b-4752-acf3-1077bf96ad2c, using 
-key drive UUID 3de247f3-5de4-4a44-afc5-1fe179750cf7, mounting ext3 file 
-system and looking for file /crypto/key_file.
-
-  b) for LUKS-encrypted drives (using token keys): 
-rd.luks.<luks_uuid>=<reader_id>:<slot_id>:<token_id>:<token_status>
-
-For example rd.luks.def0269e-424b-4752-acf3-1077bf96ad2c=0:0:12:private 
-opens LUKS drive with UUID=def0269e-424b-4752-acf3-1077bf96ad2c, reading 
-key token using reader=0, slot=0 and looking for token data stored with 
-application_id=12, where:
-     - reader_id: reader ID to use (not mandatory - if omitted the 
-'default' reader is used);
-     - slot_id: slot ID to look for when reading the token (it could 
-also be omitted in which case the first available slot will be used);
-     - token_id: the (application) ID of the token as stored in the 
-smartcard;
-     - token_status: 'public' if the token is stored in the smartcard as 
-'public' (i.e. no PIN login required - similar to the key path scenario 
-above); or 'private' if the key token is stored as a private token and 
-smartcard PIN is required to read the token data;
-
-What do you think?
-
-My main concern is handling of all dependencies when installing the core 
-programs, which are going to do the 'dirty work': pkcs15-tool and 
-pkcs11-tool (possibly pkcs15-init also, though this program may have to 
-be used in extremely rare circumstances, if at all).
-
-I've looked through the dependencies and the package scripts though 
-there are, among other things, udev rules and config files, which could 
-complicate matters. Following this I have another query: Does dracut 
-have (at least read) access to the /boot partition where the initramfs 
-image is?
+--=-1287580773-379515-27599-8076-6-=--
