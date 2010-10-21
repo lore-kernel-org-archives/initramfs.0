@@ -1,39 +1,38 @@
-From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] 90crypt: keys on external devices support
-Date: Wed, 20 Oct 2010 16:39:00 +0100
-Message-ID: <4CBF0D14.3090803@googlemail.com>
-References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <1287580112-sup-97@etiriah> <4CBEF768.90908@googlemail.com> <1287583979-sup-416@etiriah> <4CBF0133.2070709@googlemail.com> <1287587924-sup-2572@etiriah>
+Date: Thu, 21 Oct 2010 15:29:16 +0200
+Message-ID: <20101021132916.GC22186@nb.net.home>
+References: <4CBDA328.40401@googlemail.com> <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <4CBE44D3.6070000@googlemail.com> <1287580805-sup-6517@etiriah> <4CBF004F.9070201@googlemail.com> <1287586242-sup-9146@etiriah>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id
-         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
-         :subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=fn6I9ZiW8LSPRIb5vawTJ34rUQpf0TnsElvoV65//YA=;
-        b=XYAoCmaQtyjQALNuLaswbzzJFBVZnEeTXUyQjd1pjDy+i06hfgVHtknfRcwyCBCQJ0
-         v1/et9O0rik5FeZEE8WpkMAKarkbeGNUCVd1CruqrZqIbavsG2yFaBRWqQ21O2v0os13
-         bbOvlm84w8fWB7BGoLO5ehe37wWEg0sSNZV/c=
-In-Reply-To: <1287587924-sup-2572@etiriah>
+Content-Disposition: inline
+In-Reply-To: <1287586242-sup-9146@etiriah>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="utf-8"
+To: Amadeusz =?utf-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+On Wed, Oct 20, 2010 at 05:17:22PM +0200, Amadeusz =C5=BBo=C5=82nowski =
+wrote:
+> When you're mounting device are you always specifying "-t fs_type"? :=
+-)
+> Disk is mounted readonly, so even if mount performs wrong guess, noth=
+ing
+> bad happens.  This is rare case.  Although maybe we can add it=E2=80=A6=
+ :-) Then
+> it would be:
+>=20
+>   rd.luks.key=3D<key_path>:<key_dev>:<key_dev_fs>:<luks_dev>
 
-> You're like a machine. ;-)
->   
-My friends call me T1000 8-)
+ The LABEL and UUID are always stored in filesystem specific
+ superblock (or root directory) on the device. It means that your
+ system has to be able to detect FS type before it's able to read
+ LABEL/UUID from the device.  The <key_dev_fs> is unnecessary.
 
+    Karel
 
-> Much have changed in dracut-007, a bit changed in git repo, and more
-> will change soon, so track and use git/repo. :-)  You might be
-> interested in my current work <http://github.com/aidecoe/dracut> where
-> things go first before reaching Harald's official Dracut repo:
->
->   git://dracut.git.sourceforge.net/gitroot/dracut/dracut
->   
-Thanks for the links - I'll have a good look when I get home tonight.
+--=20
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+ http://karelzak.blogspot.com
