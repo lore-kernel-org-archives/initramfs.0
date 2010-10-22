@@ -1,49 +1,41 @@
-From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: dracut
-Date: Fri, 22 Oct 2010 19:13:07 +0200
-Message-ID: <1287767293-sup-7579@etiriah>
-References: <4CBDA328.40401@googlemail.com> <4CC17713.4030504@googlemail.com>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] 90crypt: keys on external devices support
+Date: Fri, 22 Oct 2010 20:34:57 +0200
+Message-ID: <20101022183457.GB1730@nb.net.home>
+References: <1287497223-sup-3606@etiriah> <4CBDAC3D.7050906@googlemail.com> <4CBE44D3.6070000@googlemail.com> <1287580805-sup-6517@etiriah> <4CBF004F.9070201@googlemail.com> <1287586242-sup-9146@etiriah> <20101021132916.GC22186@nb.net.home> <4CC0462E.20507@googlemail.com> <20101021151802.GD22186@nb.net.home> <4CC060B3.3050508@googlemail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha256"; boundary="=-1287767587-198953-16039-7785-6-="; protocol="application/pgp-signature"
-Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <4CC17713.4030504-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4CC060B3.3050508-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Amadeusz =?utf-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+On Thu, Oct 21, 2010 at 04:48:03PM +0100, Mr Dash Four wrote:
+>>> I think specifying the target file system is important because by 
+>>> just  executing 'mount' without indicating the target file system 
+>>> when I have,  for example, HFS or HPFS mount just won't happen.
+>>>     
+>>
+>> Why? My mount(8) is able to detect HFS or HPFS.
+>>   
+> I have no such luck when trying to mount my (Macbook Pro) laptop  
+> partition, nor when I try to mount my OS/2 Warp (v3.01) server disk  
+> drive, hence why I always specify the target file system - then it works  
+> every time.
 
---=-1287767587-198953-16039-7785-6-=
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+ Hmm.. I'd like to fix this problem. Please, send me 1MiB from the beginning
+ of the device(s).
 
-Excerpts from Mr Dash Four's message of Fri Oct 22 13:35:47 +0200 2010:
-> Is it possible to build dracut for system/architecture which is =
+    # dd if=<dev> of=file.img bs=1MiB count=1
 
-> different from the host on which dracut is run?
+ Thanks.
 
-Architecture? - No.  Different system configuration? - Yes.  See
-"--hostonly" option description in dracut(8) manual.
---
-Amadeusz =C5=BBo=C5=82nowski
+    Karel
 
-PGP key fpr: C700 CEDE 0C18 212E 49DA  4653 F013 4531 E1DB FAB5
-
---=-1287767587-198953-16039-7785-6-=
-Content-Disposition: attachment; filename="signature.asc"
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.16 (GNU/Linux)
-
-iQEcBAEBCAAGBQJMwcYjAAoJEPATRTHh2/q1bRYH/0ZmUIIGaCWX7M5Bp/AMUAhJ
-HPclWxbXNZjeSGgCbVMmfrTwX85ZumkPqv4yfOzlZd2QPSd4A6YVmQbRy9HIOp9c
-gf/fMPiwbF5Np6RFqWWejDBs0PEvSZ0bTxLVmFYuutVcBl5SedrCA+ulgnGjrsPU
-mQM45wa2R+HfWo4O0NhxlHOnIcYA6HB3xx6pEj/C2N63RqPqpLDcwLFB3M7mc0UO
-9dk0sCrJz074rwi95V1CEao3JL4SNAI8BYAnAkOxkyc3ru1FY3SFYwQAG7o10Ix9
-tVSvIfACCCpEX9ERK0bHgowBde132GG9GRjBBPU1cfa/AKOMva7Fi4UzaB9nhDg=
-=f5wm
------END PGP SIGNATURE-----
-
---=-1287767587-198953-16039-7785-6-=--
+-- 
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+ http://karelzak.blogspot.com
