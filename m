@@ -1,43 +1,56 @@
-From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: crypt-cleanup.sh question
-Date: Wed, 27 Oct 2010 15:16:05 +0100
-Message-ID: <4CC83425.2010706@googlemail.com>
-References: <4CC6C571.8010406@googlemail.com> <4CC6E7C1.1050703@googlemail.com> <4CC7F15C.7090600@redhat.com> <4CC815E4.4060705@googlemail.com> <4CC82448.80403@redhat.com> <4CC82652.3090500@googlemail.com> <4CC82B0B.30208@redhat.com>
+Date: Wed, 27 Oct 2010 16:27:52 +0200
+Message-ID: <1288189588-sup-7996@etiriah>
+References: <4CC6C571.8010406@googlemail.com> <4CC6E7C1.1050703@googlemail.com> <4CC7F15C.7090600@redhat.com> <4CC815E4.4060705@googlemail.com> <4CC82448.80403@redhat.com> <4CC82652.3090500@googlemail.com> <4CC82B0B.30208@redhat.com> <4CC83425.2010706@googlemail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg="pgp-sha256"; boundary="=-1288189672-964432-4988-19-3-="; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id
-         :disposition-notification-to:date:from:user-agent:mime-version:to:cc
-         :subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=5VDQWyRm9C5Ann5K8UlU6IVpYdJfvq04pV4jlfKqFds=;
-        b=O2Zy/wiqCTrA7ZHl6tY0hucVR5TSE+DXpwJF66a0FH/fTge0Ts5E8/ctnDbUx6lETI
-         OmeHe9Ad+e7aF0KCMa1SDGgTw+OeKxNrw+uuuspT+b/GWFju2tvAADg9RAsYJ/PST6iO
-         tPkfOM8LcUkStwOnlkYZlzrRzsgg2qBenH37g=
-In-Reply-To: <4CC82B0B.30208-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-reply-to: <4CC83425.2010706-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
 
->> On a side note: I thought rd_LUKS_UUID, rd_LUKS_KEYPATH, 
->> rd_LUKS_KEYDEV and
->> rd_NO_LUKS are sort of 'deprecated' in favour of the new rd.luks.* 
->> format - is
->> that not the case?
->
-> yes, they will be.
-When is this planned?
+--=-1288189672-964432-4988-19-3-=
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
->> Another query - is there any particular reason why all rd_LUKS_UUID 
->> need to be
->> mapped to luks-UUID? I'd rather be able to choose a more meaningful 
->> name than
->> the 'standard' luks-UUID - just a thought.
->
-> hmm, yes/no... I like meaningful symlinks :)
-OK, how about "luks-<meaningful_name>" then? ;-)
+Excerpts from Mr Dash Four's message of Wed Oct 27 16:16:05 +0200 2010:
+> =
+
+> >> On a side note: I thought rd_LUKS_UUID, rd_LUKS_KEYPATH, =
+
+> >> rd_LUKS_KEYDEV and
+> >> rd_NO_LUKS are sort of 'deprecated' in favour of the new rd.luks.* =
+
+> >> format - is
+> >> that not the case?
+> >
+> > yes, they will be.
+> When is this planned?
+
+I'm improving my patch at the moment, so I hope - soon. :-)
+--
+Amadeusz =C5=BBo=C5=82nowski
+
+PGP key fpr: C700 CEDE 0C18 212E 49DA  4653 F013 4531 E1DB FAB5
+
+--=-1288189672-964432-4988-19-3-=
+Content-Disposition: attachment; filename="signature.asc"
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.16 (GNU/Linux)
+
+iQEcBAEBCAAGBQJMyDboAAoJEPATRTHh2/q1mYgH/j1TDeSDmcPXPSQCMuZrdhtq
+LcnKLXWFO0J6hVkbFsGlSKvb8QIPDYr5BTSox+f2JPQuZHoanLXLV46rA+uIevIw
+OtOKQrvV1TTecRyJgiXiAVv/MT3xaGreMkXQsbexLsQ9Ln+1kDJf7bkEKJBx8HYh
+NoGrwg9xvLS8h0mLvHbWTuY+IGWnZ066EQcefdka4FMNRjuc3unyI4z/qt4vd0YW
+OOClsheBkNxdt5PpLt+qhfUzaEuVuSddVUPYdJAxptJDFPjvUEpsBqBmCfGx9oGn
+YNd4POVS1OtVpwAXs2N/+yPmTSqbqfZWH6AdKwXmD1N1GyFCMDUp71un4uFdza0=
+=OeB5
+-----END PGP SIGNATURE-----
+
+--=-1288189672-964432-4988-19-3-=--
