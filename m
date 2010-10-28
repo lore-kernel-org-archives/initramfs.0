@@ -1,23 +1,24 @@
-From: Mr Dash Four <mr.dash.four-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
-Subject: initqueue command line parameters
-Date: Wed, 27 Oct 2010 20:46:27 +0100
-Message-ID: <4CC88193.8050104@googlemail.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: One more fix (was Re: [RFC] [PATCH] Bonding support for dracut)
+Date: Thu, 28 Oct 2010 17:14:02 +0200
+Message-ID: <4CC9933A.2040704@redhat.com>
+References: <4CBC37E7.9010904@hoster-ok.com> <4CBC4661.3020100@redhat.com> <4CBC504A.7020002@hoster-ok.com> <4CBC566C.9080407@redhat.com> <4CBC5A48.1010304@hoster-ok.com> <4CBC5C7C.4000504@redhat.com> <4CBDA315.2070603@hoster-ok.com> <4CBDAFE5.3020102@hoster-ok.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=gamma;
-        h=domainkey-signature:received:received:message-id
-         :disposition-notification-to:date:from:user-agent:mime-version:to
-         :subject:content-type:content-transfer-encoding;
-        bh=70s5JhmLX8gUlM+nVDKqoGF5IYlrJ34oI/p86Zt96lc=;
-        b=wv25wp64OBdFLgfm0oZnnOTJ1v2UbqeEbHGaLtPpCxvbp9iB2tIW4EPBeSVh79yjJs
-         UHjaBsLpqwGwWQg7coNLCQbukRqmbZMVoTtZjt6mUeyXZ+yfRmcOIErf05WNikDDdt/8
-         lzaP70w7MA1ZWu5CwyvZoRtBc+sL6cJhslrO8=
+In-Reply-To: <4CBDAFE5.3020102-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Is there a guide or a help file on what these are? Apart from one 
-'--onetime' description (pun intended) I couldn't find anything...
+On 10/19/2010 04:49 PM, Vladislav Bogdanov wrote:
+> Hi,
+>
+> one more patch with fixes is attached.
+>
+> Best,
+> Vladislav
+
+pushed
