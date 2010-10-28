@@ -1,42 +1,55 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Steffen Maier <maier-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: New rd.* namespace for dracut-008
-Date: Thu, 28 Oct 2010 17:53:22 +0200
-Message-ID: <4CC99C72.3010101@redhat.com>
-References: <4CC99414.5060607@redhat.com> <20101028154604.GA32323@vostochny.stro.at>
+Date: Thu, 28 Oct 2010 18:55:42 +0200
+Message-ID: <4CC9AB0E.2040604@linux.vnet.ibm.com>
+References: <4CC99414.5060607@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20101028154604.GA32323-VJknIhvjf2Ov8OlOgJ4AIV6hYfS7NtTn@public.gmane.org>
+In-Reply-To: <4CC99414.5060607-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10/28/2010 05:46 PM, maximilian attems wrote:
-> On Thu, Oct 28, 2010 at 05:17:40PM +0200, Harald Hoyer wrote:
->> I cleaned up the kernel command line parameters and moved them to the
->> rd.* namespace. The deprecated options are supported until dracut-010 and
->> will be removed afterwards.
->>
->
-> hmm as initramfs-tools hasn't cleaned up it's namespace yet,
-> this is a good point to jump in ask more details:
->
-> * what does rd stand for?
+Harald, thanks for the update.
+Just one quick question below.
 
-"rd" was chosen because we already have "rdinit=" as a kernel parameter
+On 10/28/2010 05:17 PM, Harald Hoyer wrote:
+> I cleaned up the kernel command line parameters and moved them to the
+> rd.* namespace. The deprecated options are supported until dracut-010
+> and will be removed afterwards.
+>
+> Here is a list of options, which were used in dracut prior to
+> version 008, and their new replacement.
 
->
-> * is it envisaged to be used by other tools
->    (or should initramfs-tools use it.break)?
+> rd_CCW
+> rd.ccw
 
-Hm, if we can define common kernel command line parameters, that would make the 
-user's life easier.
+> rd_DASD_MOD
+> rd.dasd_mod.dasd
 
+Is this a typo?
+I'm wondering why the new one is not just "rd.dasd_mod".
+Having a .dasd suffix is not necessary and users might mix it up with=20
+rd.dasd which has both syntax and semamtics differently.
+
+> rd_DASD
+> rd.dasd
+
+> rd_NO_ZFCPCONF
+> rd.zfcp.conf=3D0
 >
-> I'd appreciated more info on the background of this move as
-> it can't be painless.
->
-> thanks.
->
+> rd_ZFCP
+> rd.zfcp
+
+Steffen
+
+Linux on System z Development
+
+IBM Deutschland Research & Development GmbH
+Vorsitzender des Aufsichtsrats: Martin Jetter
+Gesch=E4ftsf=FChrung: Dirk Wittkopp
+Sitz der Gesellschaft: B=F6blingen
+Registergericht: Amtsgericht Stuttgart, HRB 243294
