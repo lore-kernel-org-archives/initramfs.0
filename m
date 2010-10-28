@@ -1,38 +1,295 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] network: don't die if gateway is down and root server
- is local
-Date: Thu, 28 Oct 2010 17:14:27 +0200
-Message-ID: <4CC99353.8040105@redhat.com>
-References: <4CAEF060.8030701@draigBrady.com> <4CAF1D02.6060701@bfh.ch> <4CAF23BA.4010605@draigBrady.com> <4CAF27EF.80301@bfh.ch> <4CAF367D.7030707@draigBrady.com> <4CB84390.5060203@draigBrady.com> <4CB85A73.6010902@redhat.com> <4CB85F31.5010207@draigBrady.com>
+Subject: New rd.* namespace for dracut-008
+Date: Thu, 28 Oct 2010 17:17:40 +0200
+Message-ID: <4CC99414.5060607@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4CB85F31.5010207-V8g9lnOeT5ydJdNcDFJN0w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: =?UTF-8?B?UMOhZHJhaWcgQnJhZHk=?= <P@draigBrady.com>
-Cc: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10/15/2010 04:03 PM, P=C3=A1draig Brady wrote:
-> On 15/10/10 14:43, Harald Hoyer wrote:
->>
->> please use [ -n "$var" ]
->>
->
-> Done, and added a couple of comments.
->
-> cheers,
-> P=C3=A1draig.
->
->  From 3030d23e31f3975c0c44207b0faae0792d5cc9b0 Mon Sep 17 00:00:00 20=
-01
-> From: =3D?utf-8?q?P=3DC3=3DA1draig=3D20Brady?=3D<P@draigBrady.com>
-> Date: Fri, 15 Oct 2010 12:58:31 +0100
-> Subject: [PATCH] network: don't die if gateway is down and root serve=
-r is local
->
-> * modules.d/40network/netroot: Don't arping the gateway
-> if we don't need to
+I cleaned up the kernel command line parameters and moved them to the rd.* 
+namespace. The deprecated options are supported until dracut-010 and will be 
+removed afterwards.
 
-pushed
+   Here is a list of options, which were used in dracut prior to
+
+        version 008, and their new replacement.
+
+
+
+        rdbreak
+
+            rd.break
+
+
+
+        rd_CCW
+
+            rd.ccw
+
+
+
+        rdcopystate
+
+            rd.copystate
+
+
+
+        rd_DASD_MOD
+
+            rd.dasd_mod.dasd
+
+
+
+        rd_DASD
+
+            rd.dasd
+
+
+
+        rdinitdebug rdnetdebug
+
+            rd.debug
+
+
+
+        rd_NO_DM
+
+            rd.dm=0
+
+
+
+        rd_DM_UUID
+
+            rd.dm.uuid
+
+
+
+        rdblacklist
+
+            rd.driver.blacklist
+
+
+
+        rdinsmodpost
+
+            rd.driver.post
+
+
+
+        rdloaddriver
+
+            rd.driver.pre
+
+
+
+        rd_NO_FSTAB
+
+            rd.fstab=0
+
+
+
+        rdinfo
+
+            rd.info
+
+
+
+        check
+
+            rd.live.check
+
+
+
+        rdlivedebug
+
+            rd.live.debug
+
+
+
+        live_dir
+
+            rd.live.dir
+
+
+
+        liveimg
+
+            rd.live.image
+
+
+
+        overlay
+
+            rd.live.overlay
+
+
+
+        readonly_overlay
+
+            rd.live.overlay.readonly
+
+
+
+        reset_overlay
+
+            rd.live.overlay.reset
+
+
+
+        live_ram
+
+            rd.live.ram
+
+
+
+        rd_NO_CRYPTTAB
+
+            rd.luks.crypttab=0
+
+
+
+        rd_LUKS_KEYDEV_UUID
+
+            rd.luks.keydev.uuid
+
+
+
+        rd_LUKS_KEYPATH
+
+            rd.luks.keypath
+
+
+
+        rd_NO_LUKS
+
+            rd.luks=0
+
+
+
+        rd_LUKS_UUID
+
+            rd.luks.uuid
+
+
+
+        rd_LUKS_UUID
+
+            rd.luks.uuid
+
+
+
+        rd_NO_LVMCONF
+
+            rd.lvm.conf
+
+
+
+        rd_LVM_LV
+
+            rd.lvm.lv
+
+
+
+        rd_NO_LVM
+
+            rd.lvm=0
+
+
+
+        rd_LVM_SNAPSHOT
+
+            rd.lvm.snapshot
+
+
+
+        rd_LVM_SNAPSIZE
+
+            rd.lvm.snapsize
+
+
+
+        rd_LVM_VG
+
+            rd.lvm.vg
+
+
+
+        rd_NO_MDADMCONF
+
+            rd.md.conf=0
+
+
+
+        rd_NO_MDIMSM
+
+            rd.md.imsm=0
+
+
+
+        rd_NO_MD
+
+            rd.md=0
+
+
+
+        rd_MD_UUID
+
+            rd.md.uuid
+
+
+
+        rd_NFS_DOMAIN
+
+            rd.nfs.domain
+
+
+
+        rd_NO_PLYMOUTH
+
+            rd.plymouth=0
+
+
+
+        rd_retry
+
+            rd.retry
+
+
+
+        rdshell
+
+            rd.shell
+
+
+
+        rd_NO_SPLASH
+
+            rd.splash
+
+
+
+        rdudevdebug
+
+            rd.udev.debug
+
+
+
+        rdudevinfo
+
+            rd.udev.info
+
+
+
+        rd_NO_ZFCPCONF
+
+            rd.zfcp.conf=0
+
+
+
+        rd_ZFCP
+
+            rd.zfcp
