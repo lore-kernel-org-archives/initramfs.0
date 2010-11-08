@@ -1,36 +1,33 @@
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH] Allow fstab-based remount to be controlled by modules
-Date: Mon,  8 Nov 2010 19:41:28 +0000 (GMT)
-Message-ID: <20101108194128.EBFEB9D401B@zog.reactivated.net>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: Re: Debian/Ubuntu patches
+Date: Mon, 8 Nov 2010 21:27:53 +0000
+Message-ID: <20101108212753.GL19612@vostochny.stro.at>
+References: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-OLPC would like to be able to disable this behaviour through
-a custom dracut module. Add a "no_fstab_remount" flag which can be
-set by modules that want to disable this functionality.
+On Mon, Nov 08, 2010 at 07:50:59PM +0100, Jon Ander Hernandez wrote:
+> Hello,
+> 
+> I post the patches as I promised :-)
+> 
+> - When a new kernel is installed or uninstalled dracut based initramfs
+> is not automatically created/deleted. Ubuntu's kernel package's post
+> script executes update-initramfs directly, and the update-initramfs
+> trigger is never fired.
+> Another solution is to install a postinst and a postrm script under
+> /etc/kernel/{postrm.d,prerm.d}.
+> 
+> http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_kernel_prerm_postinst.diff
 
-(Background: having the correct rootfs info in /etc/fstab is a bit of a
- challenge for OLPC, because this info is not known at build time.)
----
- modules.d/95rootfs-block/mount-root.sh |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+please send such patches inside of an email, aboves is pointless.
 
-diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-index ff64209..7602731 100755
---- a/modules.d/95rootfs-block/mount-root.sh
-+++ b/modules.d/95rootfs-block/mount-root.sh
-@@ -73,6 +73,7 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
-     rootopts=
-     if getargbool 1 rd.fstab -n rd_NO_FSTAB \
-         && ! getarg rootflags \
-+        && [ -z "$no_fstab_remount" ] \
-         && [ -f "$NEWROOT/etc/fstab" ] \
-         && ! [ -L "$NEWROOT/etc/fstab" ]; then
-         # if $NEWROOT/etc/fstab contains special mount options for 
--- 
-1.7.3.2
+thanks.
