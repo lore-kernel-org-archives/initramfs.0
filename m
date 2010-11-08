@@ -1,57 +1,46 @@
-From: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v2] 95rootfs-block: fix missing root when label contains slash
-Date: Sun,  7 Nov 2010 00:46:53 +0300
-Message-ID: <1289080013-3525-1-git-send-email-arvidjaar@gmail.com>
-References: <1288963916-3609-1-git-send-email-arvidjaar@gmail.com>
+From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Live module for root=nfs using Aufs
+Date: Mon, 8 Nov 2010 01:43:58 +0100
+Message-ID: <AANLkTi=7coxwNNu22um=qO7Tz18QZj_N7h3=G5ABnjqV@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:received:received:from:to:subject:date
-         :message-id:x-mailer:in-reply-to:references:to;
-        bh=oCKaY7Y+7iIrmXTPjrHrVyCLWUxBfSZx6O9I8O9oteE=;
-        b=nVDNvG0kDyF71XX4v5AHTZqJHjM3l4CJwiKJrhniLuwIKQDyoEclKSEI7guMC5glqw
-         MXhWlum7gSsGPzDWsyOR8tByNehIIscVdVWuHQEPInb9N3Vf3PtIyceMCXY6aGTrDDzN
-         7Uuh1MfRCmQT3KuXIZi+Sfz4YfaJNB08lWOdg=
-In-Reply-To: <1288963916-3609-1-git-send-email-arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+        h=domainkey-signature:mime-version:received:received:date:message-id
+         :subject:from:to:content-type;
+        bh=jV6Zj7qLfn3C1lAEYsG3YRriPMmbwtCLl6X3TtPHyyA=;
+        b=SLK/PbBq+jRZ5E8Ibn2FNIoS4F2SaXWp8t2i4pvkLUnmskmnr+FAWpBPN/cof0dwCD
+         f+0z13qvw0F8brOEGJzWDkeDsPWHRzazNDpKmtuPmLkCAhSuTZfScTtxSdymPYwAmrUx
+         qlr3TzHxFLnZD7aV08/Qh5RX5lbdtagdQqJvU=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-It is not clearly documented, but apparently fsck
-(or, probably, getmntent) is using backslash as
-escape character.
+Hello,
 
-Label containing slash is converted to \x2f but '\'
-is eaten by fsck later. Escape '\' before writing
-into fstab.
+We are currently developing a tool for creating simple beowulf
+clusters, and we decided to use Dracut instead of initramfs-tools on
+Debian. We found Dracut to be very well designed.
 
-v2:
-- fix sed expression
-- use printf instead of echo because echo eats '\' as well
+We have developed a very simple module, which allows us to have a
+writable overlay over a read-only exported nfs4 using aufs :
 
-Signed-off-by: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/union_mount_with_aufs.diff
 
----
- modules.d/95rootfs-block/mount-root.sh |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+Well, it is so general that also allows to get a writable overlay over
+any root mounted by Dracut.
 
-diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-index ff64209..9065bed 100755
---- a/modules.d/95rootfs-block/mount-root.sh
-+++ b/modules.d/95rootfs-block/mount-root.sh
-@@ -106,7 +106,9 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
-             done
-     fi
- 
--    echo ${root#block:} "$NEWROOT" "$rootfs" ${rflags},${rootopts} 1 1 > /etc/fstab
-+    # backslashes are treated as escape character in fstab
-+    esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
-+    printf "%s $NEWROOT $rootfs ${rflags},${rootopts} 1 1\n" "$esc_root" > /etc/fstab
- 
-     if [ -z "$fastboot" -a "$READONLY" != "yes" ]; then
-         info "Checking filesystems"
--- 
-tg: (1c29003..) upstream/rootdev (depends on: master)
+I've seen that you are changing Dracut's parameter's namespace, and I
+would like to know if this kind of "live" use case could fit in them
+somehow, because it seems that the actual live namespace implies the
+classic live cd-rom use case.
+
+We also have several patches for make Dracut 007's network work on
+Ubuntu Maverick. Should I open a bug on Debian's bugzilla or should
+they be reviewed on this list instead?
+
+Cheers,
+
+Jon Ander
