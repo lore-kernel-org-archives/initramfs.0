@@ -1,42 +1,58 @@
-From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Live module for root=nfs using Aufs
-Date: Mon, 8 Nov 2010 20:03:27 +0100
-Message-ID: <AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY@mail.gmail.com>
-References: <AANLkTi=7coxwNNu22um=qO7Tz18QZj_N7h3=G5ABnjqV@mail.gmail.com>
-	<4CD7B293.8050809@bfh.ch>
-Mime-Version: 1.0
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] Add busybox shell replacements module
+Date: Mon,  8 Nov 2010 19:49:33 +0000 (GMT)
+Message-ID: <20101108194933.89BE19D401B@zog.reactivated.net>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:received:in-reply-to
-         :references:date:message-id:subject:from:to:cc:content-type;
-        bh=A8pjRauSPPDO52OOAmcPwA1eE3ZqBHY1oiMfIkUIf0c=;
-        b=FK6xuHvAoFjza+KmlqQCgTctRNO3EPQL6vNddd7x0uVbzEctGdj8iTm0QPzPoRV6dO
-         5fY/XRtO97I0VT6uSkszuDKc0z16R8O9q1lIbvZXdn0Tq4Af8IIhiHh5VSU/7u97/Gnt
-         1AK5KUm8pSZIa1wixrDiQopml48e1MUM35Dts=
-In-Reply-To: <4CD7B293.8050809-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-2010/11/8 Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
+On the OLPC XO-1, there is a noticable delay during boot while the
+initramfs is loaded from disk and uncompressed, so we have an interest
+in making it small. We are also pushed for disk space.
 
-> I just had a quick look over the patch and in itself it looks ok. Although
-> I'm not sure if having the aufs at this stage is necessary. What if you just
-> mount it later inside the rootfs? (Background: I'm using aufs overlays for
-> our read only nfs-roots, and I just put the necessary aufs mounts inside
-> fstab)
+Using busybox instead of all the regular tools saves a lot of space.
+I have not tried every module but the basics are working with busybox's
+replacements. Our initramfs is now down to 1.9mb.
+---
+ modules.d/05busybox/check   |    2 ++
+ modules.d/05busybox/install |   16 ++++++++++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+ create mode 100755 modules.d/05busybox/check
+ create mode 100755 modules.d/05busybox/install
 
-I have to say that I haven't thought about it before.... It is really
-a good idea, and is probably better than have a specific module. :-)
-
-But something that worries me, is if the init process will cause
-problems, since we will be mounting a new root over the old one once
-we have processes which have previously opened files on the old /.
-
-Regards,
-
-Jon Ander.
+diff --git a/modules.d/05busybox/check b/modules.d/05busybox/check
+new file mode 100755
+index 0000000..06bd986
+--- /dev/null
++++ b/modules.d/05busybox/check
+@@ -0,0 +1,2 @@
++#!/bin/bash
++exit 0
+diff --git a/modules.d/05busybox/install b/modules.d/05busybox/install
+new file mode 100755
+index 0000000..5252d03
+--- /dev/null
++++ b/modules.d/05busybox/install
+@@ -0,0 +1,16 @@
++#!/bin/bash
++
++inst busybox /sbin/busybox
++
++# List of shell programs that we use in other official dracut modules, that
++# must be supported by the busybox installed on the host system
++progs="echo grep usleep [ rmmod insmod mount uname umount setfont kbd_mode stty gzip bzip2 chvt readlink blkid dd losetup tr sed seq ps more cat rm free ping netstat vi ping6 fsck ip hostname basename mknod mkdir pidof sleep chroot ls cp mv dmesg mkfifo less ln modprobe"
++
++# FIXME: switch_root should be in the above list, but busybox version hangs
++# (using busybox-1.15.1-7.fc14.i686 at the time of writing)
++
++for i in $progs; do
++	path=$(find_binary "$i")
++	ln -s /sbin/busybox "$initdir/$path"
++done
++
+-- 
+1.7.3.2
