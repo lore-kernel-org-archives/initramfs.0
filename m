@@ -1,73 +1,42 @@
 From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Debian/Ubuntu patches
-Date: Mon, 8 Nov 2010 19:50:59 +0100
-Message-ID: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com>
+Subject: Re: Live module for root=nfs using Aufs
+Date: Mon, 8 Nov 2010 20:03:27 +0100
+Message-ID: <AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY@mail.gmail.com>
+References: <AANLkTi=7coxwNNu22um=qO7Tz18QZj_N7h3=G5ABnjqV@mail.gmail.com>
+	<4CD7B293.8050809@bfh.ch>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:received:date:message-id
-         :subject:from:to:content-type;
-        bh=djCkRCkQO0l5wnkqh9yqlA1Bb9uIMsnYsI/ald3LEwU=;
-        b=BoOEBsCEKTG4IYEAEDQg1Oc2gVux7/lLrHL7HZt/IxGsMPw/d00vbbPfAWn5W8xp04
-         kNL+k28qRwra7XAINRDy276DU/h48NUE6Ekczfq1wEt8+xdfUOzP0kEpuKBN8JY4MzqI
-         oJseoqeatEfdPHgX9Vk/8pqESBB5PIXSD+0bo=
+        h=domainkey-signature:mime-version:received:received:in-reply-to
+         :references:date:message-id:subject:from:to:cc:content-type;
+        bh=A8pjRauSPPDO52OOAmcPwA1eE3ZqBHY1oiMfIkUIf0c=;
+        b=FK6xuHvAoFjza+KmlqQCgTctRNO3EPQL6vNddd7x0uVbzEctGdj8iTm0QPzPoRV6dO
+         5fY/XRtO97I0VT6uSkszuDKc0z16R8O9q1lIbvZXdn0Tq4Af8IIhiHh5VSU/7u97/Gnt
+         1AK5KUm8pSZIa1wixrDiQopml48e1MUM35Dts=
+In-Reply-To: <4CD7B293.8050809-omB+W0Dpw2o@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-Hello,
+2010/11/8 Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
 
-I post the patches as I promised :-)
+> I just had a quick look over the patch and in itself it looks ok. Although
+> I'm not sure if having the aufs at this stage is necessary. What if you just
+> mount it later inside the rootfs? (Background: I'm using aufs overlays for
+> our read only nfs-roots, and I just put the necessary aufs mounts inside
+> fstab)
 
-- When a new kernel is installed or uninstalled dracut based initramfs
-is not automatically created/deleted. Ubuntu's kernel package's post
-script executes update-initramfs directly, and the update-initramfs
-trigger is never fired.
-Another solution is to install a postinst and a postrm script under
-/etc/kernel/{postrm.d,prerm.d}.
+I have to say that I haven't thought about it before.... It is really
+a good idea, and is probably better than have a specific module. :-)
 
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_kernel_prerm_postinst.diff
+But something that worries me, is if the init process will cause
+problems, since we will be mounting a new root over the old one once
+we have processes which have previously opened files on the old /.
 
-
-- Postinst script can be executed when installing first time dracut,
-or when we are upgrading Dracut. Check if it should create a new
-initramfs or if it should upgrade it.
-
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_postinst.diff
-
-
-- Add xsltproc and docbook-xsl as dependencies to the source package,
-since they are required for building the man files.
-
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_control.diff
-
-
-- Create the man files when building the package.
-
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_rules.diff
-
-
-- rpc.idmapd requires rpc_pipefs to be mounted. On Fedora when the
-sunrpc module is loaded, modprobe mounts the rpc_pipefs, while this is
-not the case on Debian/Ubuntu.
-
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/nfsroot_mount_rpc_pipefs.diff
-
-
-
-I imagine that these should be version specific patches :
-
-- Ubuntu Maverick ships dhclient 3, which doesn't support the "-4" flag.
-
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_fix_dhclient_3.diff
-
-- Ubuntu's Maverick arping seems to be broken (a least for me).
-
-http://kestrelhpc.svn.sourceforge.net/viewvc/kestrelhpc/Kestrelhpc/Src/dracut/debian_fix_remove_arping.diff
-
-Cheers,
+Regards,
 
 Jon Ander.
