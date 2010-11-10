@@ -1,77 +1,62 @@
-From: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
-Subject: Re: [PATCH] add fake root support
-Date: Wed, 10 Nov 2010 16:54:41 +0200
-Message-ID: <4CDAB231.80903@hoster-ok.com>
-References: <4CBDB007.4090802@hoster-ok.com> <4CCECBB0.3030609@hoster-ok.com> <4CDAAA70.1070302@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Add busybox shell replacements module
+Date: Wed, 10 Nov 2010 15:50:31 +0100
+Message-ID: <4CDAB137.6020204@redhat.com>
+References: <20101108194933.89BE19D401B@zog.reactivated.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4CDAAA70.1070302-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20101108194933.89BE19D401B-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-10.11.2010 16:21, Harald Hoyer wrote:
-> On 11/01/2010 03:16 PM, Vladislav Bogdanov wrote:
->> 19.10.2010 17:49, Vladislav Bogdanov wrote:
->>> Attached is a patch for "fake" root functionality,
->>> I'm (mostly) duplicating issue's description from my previous e-mail
->>> (for commit message if this is to be pushed):
->>>
->>
->> Sorry for being annoying, but... Any comments?
->>
->> Best,
->> Vladislav
->>
-> 
-> I like it, but I don't like the parameters...
-> 
-> Maybe we can express it like this:
-> 
-> netroot=fake:xxx.yyy.zzz.www:/mnt root=live:blablabla
+On 11/08/2010 08:49 PM, Daniel Drake wrote:
+> On the OLPC XO-1, there is a noticable delay during boot while the
+> initramfs is loaded from disk and uncompressed, so we have an interest
+> in making it small. We are also pushed for disk space.
+>
+> Using busybox instead of all the regular tools saves a lot of space.
+> I have not tried every module but the basics are working with busybox's
+> replacements. Our initramfs is now down to 1.9mb.
+> ---
+>   modules.d/05busybox/check   |    2 ++
+>   modules.d/05busybox/install |   16 ++++++++++++++++
+>   2 files changed, 18 insertions(+), 0 deletions(-)
+>   create mode 100755 modules.d/05busybox/check
+>   create mode 100755 modules.d/05busybox/install
+>
+> diff --git a/modules.d/05busybox/check b/modules.d/05busybox/check
+> new file mode 100755
+> index 0000000..06bd986
+> --- /dev/null
+> +++ b/modules.d/05busybox/check
+> @@ -0,0 +1,2 @@
+> +#!/bin/bash
+> +exit 0
+> diff --git a/modules.d/05busybox/install b/modules.d/05busybox/install
+> new file mode 100755
+> index 0000000..5252d03
+> --- /dev/null
+> +++ b/modules.d/05busybox/install
+> @@ -0,0 +1,16 @@
+> +#!/bin/bash
+> +
+> +inst busybox /sbin/busybox
+> +
+> +# List of shell programs that we use in other official dracut modules, that
+> +# must be supported by the busybox installed on the host system
+> +progs="echo grep usleep [ rmmod insmod mount uname umount setfont kbd_mode stty gzip bzip2 chvt readlink blkid dd losetup tr sed seq ps more cat rm free ping netstat vi ping6 fsck ip hostname basename mknod mkdir pidof sleep chroot ls cp mv dmesg mkfifo less ln modprobe"
+> +
+> +# FIXME: switch_root should be in the above list, but busybox version hangs
+> +# (using busybox-1.15.1-7.fc14.i686 at the time of writing)
+> +
+> +for i in $progs; do
+> +	path=$(find_binary "$i")
+> +	ln -s /sbin/busybox "$initdir/$path"
+> +done
+> +
 
-This can be used not only with nfs I think...
-nfs is just one use case which I needed for my project.
-
-And information after fake: should be some-how handled in dracut, but I
-currently do not see any use-cases for that. Do you see them? iSCSI? Is
-it really needed so early if it is not for root?
-
-And, I'd not mount not-root nfs from within dracut, we need to know
-mount point on a real system for that. Additionally, I've already had
-much fun with nfs4 and root user access to files. This requires
-rpcidmapd, and it has too many dependencies (and properly configured
-resolver).
-
-I'd keep it generic, thus making it possible to start network-enabled
-node solely from PXE. It is much easier to exploit generic solutions
-(IMHO) for own needs.
-
-> 
-> and find another name for "fake".. maybe "container"?
-Hmmm....
-The main idea was to have networking configured without real networked root.
-Current dracut policy is to skip networking if no networked root is
-configured. That's why I called it 'fake' - I'm cheating with this policy.
-I agree that 'fake' is not a best name.
-Container... then there should be some contents, but I do not see it...
-
-netroot=force?
-networking=force?
-Later would require additional efforts, but sounds quite nice for me.
-
-> 
-> netroot=container:nfs:xxx.yyy.zzz.www:/mnt root=live:blablabla
-> 
-> Which reminds me, that we should probably have the possibility to
-> concatenate several stages.
-> 
-> root=nfs:xxx.yyy.zzz.www:/mnt|loop:test.img|live:blablabla
-
-This is quite interesting. But this is from another story.
-
-> 
-> comments?
+pushed
