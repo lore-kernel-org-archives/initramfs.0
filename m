@@ -1,42 +1,37 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] i18n: fix udev error due to empty rules file
-Date: Wed, 10 Nov 2010 15:22:51 +0100
-Message-ID: <4CDAAABB.4090403@redhat.com>
-References: <1288974698-21387-1-git-send-email-arvidjaar@gmail.com>
+Subject: Re: Live module for root=nfs using Aufs
+Date: Wed, 10 Nov 2010 15:28:47 +0100
+Message-ID: <4CDAAC1F.6060308@redhat.com>
+References: <AANLkTi=7coxwNNu22um=qO7Tz18QZj_N7h3=G5ABnjqV@mail.gmail.com>	<4CD7B293.8050809@bfh.ch> <AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1288974698-21387-1-git-send-email-arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
 
-On 11/05/2010 05:31 PM, Andrey Borzenkov wrote:
-> Empty rule file is causing udev error:
+On 11/08/2010 08:03 PM, Jon Ander Hernandez wrote:
+> 2010/11/8 Seewer Philippe<philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
 >
-> dracut: udevd[99]: can not read '/etc/udev/rules.d/10-console.rules'
+>> I just had a quick look over the patch and in itself it looks ok. Although
+>> I'm not sure if having the aufs at this stage is necessary. What if you just
+>> mount it later inside the rootfs? (Background: I'm using aufs overlays for
+>> our read only nfs-roots, and I just put the necessary aufs mounts inside
+>> fstab)
 >
-> Remove file completely instead of truncating it.
+> I have to say that I haven't thought about it before.... It is really
+> a good idea, and is probably better than have a specific module. :-)
 >
-> Signed-off-by: Andrey Borzenkov<arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> But something that worries me, is if the init process will cause
+> problems, since we will be mounting a new root over the old one once
+> we have processes which have previously opened files on the old /.
 >
-> ---
->   modules.d/10i18n/parse-i18n.sh |    2 +-
->   1 files changed, 1 insertions(+), 1 deletions(-)
+> Regards,
 >
-> diff --git a/modules.d/10i18n/parse-i18n.sh b/modules.d/10i18n/parse-i18n.sh
-> index 0a58cc2..8f7f8f8 100755
-> --- a/modules.d/10i18n/parse-i18n.sh
-> +++ b/modules.d/10i18n/parse-i18n.sh
-> @@ -35,5 +35,5 @@ if [ -e /dev/tty0 ]; then
->       # if the device already exists, yes
->       # clear the udev rules and run it
->       /lib/udev/console_init /dev/tty0
-> ->  /etc/udev/rules.d/10-console.rules
-> +    rm /etc/udev/rules.d/10-console.rules
->   fi
+> Jon Ander.
 
-
-http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=6545b9d7920cd4e09274b1d38d45c191e9991646
+So, do you still need this dracut module? Or is it good enough, to do this in 
+the real root?
