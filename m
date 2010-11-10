@@ -1,8 +1,8 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH v2] 95rootfs-block: fix missing root when label contains
  slash
-Date: Wed, 10 Nov 2010 15:48:58 +0100
-Message-ID: <4CDAB0DA.909@redhat.com>
+Date: Wed, 10 Nov 2010 16:03:34 +0100
+Message-ID: <4CDAB446.7000409@redhat.com>
 References: <1288963916-3609-1-git-send-email-arvidjaar@gmail.com> <1289080013-3525-1-git-send-email-arvidjaar@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -49,4 +49,4 @@ On 11/06/2010 10:46 PM, Andrey Borzenkov wrote:
 >       if [ -z "$fastboot" -a "$READONLY" != "yes" ]; then
 >           info "Checking filesystems"
 
-maybe we should just turn \x2f back into / ??
+pushed
