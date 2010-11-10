@@ -1,62 +1,51 @@
-From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Debian/Ubuntu patches
-Date: Wed, 10 Nov 2010 22:18:04 +0100
-Message-ID: <AANLkTi=MCfaK5K-ZV3gvrFCzezJdjAMf-WY_VgM64dHA@mail.gmail.com>
-References: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com>
-	<4CD9102B.7030702@bfh.ch>
-	<AANLkTi=EkL7ivKKj6ck3w6RuOOq++cGwtP_pX0HHhVWu@mail.gmail.com>
-	<20101109125820.GO19612@vostochny.stro.at>
-	<AANLkTimfYTDFkUgk3x0ry6Z1Q_COYyij5CKMs_50t9MK@mail.gmail.com>
-	<AANLkTikGCZofdYvX78vw+Rj_XmKyY1FmVcp_NT=_B_fF@mail.gmail.com>
-	<20101110195826.GA8486@vostochny.stro.at>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [dracut GIT] branch, master, updated. 5dc6f240856a37d864298e67233a8312c882a927
+Date: Wed, 10 Nov 2010 21:50:40 +0000
+Message-ID: <E1PGIZ6-00043s-D7@sfp-scmshell-1.v30.ch3.sourceforge.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:received:in-reply-to
-         :references:date:message-id:subject:from:to:cc:content-type
-         :content-transfer-encoding;
-        bh=29rWD+2CF7BlDQIi3B9eGC40SbEflaVXCSHgdmbWUmU=;
-        b=pAGBZ5MxjKhe58ZcaaXEW3xnPAcnQtd92iBvlVtEUFGwnl25AroFH3Am47FBiJEsZs
-         VUaKWxlXLy0LbfLEI+Fg7Mi4qEcgaXkgRjDvrZ8TV1R7O0IPGWgq1JhE9BKxOCAu7YyW
-         4xQLBj4r00+JT+zM0AxSdXnijhHgQD7iQp/xE=
-In-Reply-To: <20101110195826.GA8486-VJknIhvjf2Ov8OlOgJ4AIV6hYfS7NtTn@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-2010/11/10 maximilian attems <max-U9r9yeDMy7A@public.gmane.org>:
+The branch, master has been updated
+       via  5dc6f240856a37d864298e67233a8312c882a927 (commit)
+      from  e53fdd1c35f647441dec690e57f23ab0ebd3343e (commit)
 
-> yes, but didn't understand your reply and short of time..
-> this seems like a chicken and egg trouble, please rephrase more coher=
-ently.
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-I'm sorry, I need to improve my English. :-)
+- Log -----------------------------------------------------------------
+commit 5dc6f240856a37d864298e67233a8312c882a927
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Nov 10 22:50:20 2010 +0100
 
-I meant that if we ship Dracut with the kernel postinst script
-(/etc/kernel/postinst), then the next time a linux image is installed,
-that script will be fired and a Dracut based initramfs will be created
-for that new kernel.
+    base/loginit: s/==/=
+    
+    stupid bug!
 
-But when we install Dracut for the first time, there is not any Dracut
-based initramfs installed on the system, and Dracut package's postinst
-calls actually only call "dracut-update-initramfs -u" which only
-updates the initramfs images present in the system (in this case no
-one). So after installing Dracut you won't get a Dracut based image
-for the kernel you are using, which is not very consistent with the
-behaviour of creating the initramfs for any new kernel installed
-afterwards.
+diff --git a/modules.d/99base/loginit b/modules.d/99base/loginit
+index 7476262..3ceaede 100755
+--- a/modules.d/99base/loginit
++++ b/modules.d/99base/loginit
+@@ -11,7 +11,7 @@ QUIET=$1
+ exec 6>/init.log
+ 
+ while read line; do 
+-    [ "$line" == "DRACUT_LOG_END" ] && exit 0
++    [ "$line" = "DRACUT_LOG_END" ] && exit 0
+     echo "<7>dracut: $line" >&5
+     # if "quiet" is specified we output to /dev/console
+     [ -n "$QUIET" ] && echo "dracut: $line" 
+-----------------------------------------------------------------------
 
-I understand that is the linux kernel package's mission to call the
-kernel postinst scripts under /etc/kernel/postinst, but... I think we
-should do something. Maybe make the current linux kernel package call
-the /etc/kernel/postinst scripts, or maybe call
-dracut-update-initramfs, which was what I was doing in my original
-patch... =BFWhat could be the best solution?
+Summary of changes:
+ modules.d/99base/loginit |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Thanks,
 
-Jon Ander.
+-- 
+dracut - Initramfs generator using udev
