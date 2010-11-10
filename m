@@ -1,44 +1,42 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] add fake root support
-Date: Wed, 10 Nov 2010 15:21:36 +0100
-Message-ID: <4CDAAA70.1070302@redhat.com>
-References: <4CBDB007.4090802@hoster-ok.com> <4CCECBB0.3030609@hoster-ok.com>
+Subject: Re: [PATCH] i18n: fix udev error due to empty rules file
+Date: Wed, 10 Nov 2010 15:22:51 +0100
+Message-ID: <4CDAAABB.4090403@redhat.com>
+References: <1288974698-21387-1-git-send-email-arvidjaar@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4CCECBB0.3030609-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
+In-Reply-To: <1288974698-21387-1-git-send-email-arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
+To: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/01/2010 03:16 PM, Vladislav Bogdanov wrote:
-> 19.10.2010 17:49, Vladislav Bogdanov wrote:
->> Attached is a patch for "fake" root functionality,
->> I'm (mostly) duplicating issue's description from my previous e-mail
->> (for commit message if this is to be pushed):
->>
+On 11/05/2010 05:31 PM, Andrey Borzenkov wrote:
+> Empty rule file is causing udev error:
 >
-> Sorry for being annoying, but... Any comments?
+> dracut: udevd[99]: can not read '/etc/udev/rules.d/10-console.rules'
 >
-> Best,
-> Vladislav
+> Remove file completely instead of truncating it.
 >
+> Signed-off-by: Andrey Borzenkov<arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+>
+> ---
+>   modules.d/10i18n/parse-i18n.sh |    2 +-
+>   1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/modules.d/10i18n/parse-i18n.sh b/modules.d/10i18n/parse-i18n.sh
+> index 0a58cc2..8f7f8f8 100755
+> --- a/modules.d/10i18n/parse-i18n.sh
+> +++ b/modules.d/10i18n/parse-i18n.sh
+> @@ -35,5 +35,5 @@ if [ -e /dev/tty0 ]; then
+>       # if the device already exists, yes
+>       # clear the udev rules and run it
+>       /lib/udev/console_init /dev/tty0
+> ->  /etc/udev/rules.d/10-console.rules
+> +    rm /etc/udev/rules.d/10-console.rules
+>   fi
 
-I like it, but I don't like the parameters...
 
-Maybe we can express it like this:
-
-netroot=fake:xxx.yyy.zzz.www:/mnt root=live:blablabla
-
-and find another name for "fake".. maybe "container"?
-
-netroot=container:nfs:xxx.yyy.zzz.www:/mnt root=live:blablabla
-
-Which reminds me, that we should probably have the possibility to concatenate 
-several stages.
-
-root=nfs:xxx.yyy.zzz.www:/mnt|loop:test.img|live:blablabla
-
-comments?
+http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=6545b9d7920cd4e09274b1d38d45c191e9991646
