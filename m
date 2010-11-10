@@ -1,37 +1,46 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Live module for root=nfs using Aufs
-Date: Wed, 10 Nov 2010 15:28:47 +0100
-Message-ID: <4CDAAC1F.6060308@redhat.com>
-References: <AANLkTi=7coxwNNu22um=qO7Tz18QZj_N7h3=G5ABnjqV@mail.gmail.com>	<4CD7B293.8050809@bfh.ch> <AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY@mail.gmail.com>
+Subject: Re: [PATCH] Allow fstab-based remount to be controlled by modules
+Date: Wed, 10 Nov 2010 15:32:06 +0100
+Message-ID: <4CDAACE6.8040108@redhat.com>
+References: <20101108194128.EBFEB9D401B@zog.reactivated.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20101108194128.EBFEB9D401B-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/08/2010 08:03 PM, Jon Ander Hernandez wrote:
-> 2010/11/8 Seewer Philippe<philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
+On 11/08/2010 08:41 PM, Daniel Drake wrote:
+> OLPC would like to be able to disable this behaviour through
+> a custom dracut module. Add a "no_fstab_remount" flag which can be
+> set by modules that want to disable this functionality.
 >
->> I just had a quick look over the patch and in itself it looks ok. Although
->> I'm not sure if having the aufs at this stage is necessary. What if you just
->> mount it later inside the rootfs? (Background: I'm using aufs overlays for
->> our read only nfs-roots, and I just put the necessary aufs mounts inside
->> fstab)
+> (Background: having the correct rootfs info in /etc/fstab is a bit of a
+>   challenge for OLPC, because this info is not known at build time.)
+> ---
+>   modules.d/95rootfs-block/mount-root.sh |    1 +
+>   1 files changed, 1 insertions(+), 0 deletions(-)
 >
-> I have to say that I haven't thought about it before.... It is really
-> a good idea, and is probably better than have a specific module. :-)
->
-> But something that worries me, is if the init process will cause
-> problems, since we will be mounting a new root over the old one once
-> we have processes which have previously opened files on the old /.
->
-> Regards,
->
-> Jon Ander.
+> diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+> index ff64209..7602731 100755
+> --- a/modules.d/95rootfs-block/mount-root.sh
+> +++ b/modules.d/95rootfs-block/mount-root.sh
+> @@ -73,6 +73,7 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
+>       rootopts=
+>       if getargbool 1 rd.fstab -n rd_NO_FSTAB \
+>           &&  ! getarg rootflags \
+> +&&  [ -z "$no_fstab_remount" ] \
+>           &&  [ -f "$NEWROOT/etc/fstab" ] \
+>           &&  ! [ -L "$NEWROOT/etc/fstab" ]; then
+>           # if $NEWROOT/etc/fstab contains special mount options for
 
-So, do you still need this dracut module? Or is it good enough, to do this in 
-the real root?
+Why don't you reuse rd.fstab then? You could add preset kernel cmdline options 
+in /etc/cmdline in the initramfs.
+
+Just add for your dracut module in install:
+
+mkdir -p ${initdir}/etc
+echo " rd.fstab=0 " >> ${initdir}/etc/cmdline
