@@ -1,223 +1,63 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] resume: merge uswsusp module into resume
-Date: Wed, 10 Nov 2010 16:11:13 +0100
-Message-ID: <4CDAB611.30208@redhat.com>
-References: <1288970966-3652-1-git-send-email-arvidjaar@gmail.com>
+From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Live module for root=nfs using Aufs
+Date: Wed, 10 Nov 2010 16:40:34 +0100
+Message-ID: <AANLkTimLmuCG9S0hAowK3Qo7j_-dNZJzJxuBXXbEQF8N@mail.gmail.com>
+References: <AANLkTi=7coxwNNu22um=qO7Tz18QZj_N7h3=G5ABnjqV@mail.gmail.com>
+	<4CD7B293.8050809@bfh.ch>
+	<AANLkTinNFeT8kuoe5FRJig=un76kE6bLoU4BzJKxp4OY@mail.gmail.com>
+	<4CDAAC1F.6060308@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1288970966-3652-1-git-send-email-arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:received:in-reply-to
+         :references:date:message-id:subject:from:to:cc:content-type;
+        bh=EtYhHk+lO2SNb6o5BKDhPtwP1ZrXCyTv6ITfp3Q1xY0=;
+        b=nsdMzGhkPK3+hPsSy5YYvQJk3Pcostp7f244z7Zi5DbHpyaSk3BIoZUeth6ofuYh3J
+         3t5UC60ogduAW55QysclxX73GI0YccwKHDMTLcm11DV6XgbVw328dTKdGRtAq5SyF0uZ
+         wW0+KP7ey6MUmcEp7HzLUwUyem3t0fDiiEVkU=
+In-Reply-To: <4CDAAC1F.6060308-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/05/2010 04:29 PM, Andrey Borzenkov wrote:
-> uswsusp almost completely duplicates resume; merge them.
+2010/11/10 Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
+> On 11/08/2010 08:03 PM, Jon Ander Hernandez wrote:
+>>
+>> 2010/11/8 Seewer Philippe<philippe.seewer-omB+W0Dpw2o@public.gmane.org>:
+>>
+>>> I just had a quick look over the patch and in itself it looks ok.
+>>> Although
+>>> I'm not sure if having the aufs at this stage is necessary. What if you
+>>> just
+>>> mount it later inside the rootfs? (Background: I'm using aufs overlays
+>>> for
+>>> our read only nfs-roots, and I just put the necessary aufs mounts inside
+>>> fstab)
+>>
+>> I have to say that I haven't thought about it before.... It is really
+>> a good idea, and is probably better than have a specific module. :-)
+>>
+>> But something that worries me, is if the init process will cause
+>> problems, since we will be mounting a new root over the old one once
+>> we have processes which have previously opened files on the old /.
+>>
+>> Regards,
+>>
+>> Jon Ander.
 >
-> Signed-off-by: Andrey Borzenkov<arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->
-> ---
->   modules.d/95resume/install            |   10 ++++++++++
->   modules.d/95resume/parse-resume.sh    |    6 ++++++
->   modules.d/95resume/resume-genrules.sh |   24 ++++++++++++++++++++++++
->   modules.d/95resume/resume.sh          |   11 +++++++++++
->   modules.d/95uswsusp/check             |    5 -----
->   modules.d/95uswsusp/install           |   14 --------------
->   modules.d/95uswsusp/parse-uswsusp.sh  |   23 -----------------------
->   modules.d/95uswsusp/resume-uswsusp.sh |   16 ----------------
->   8 files changed, 51 insertions(+), 58 deletions(-)
->
-> diff --git a/modules.d/95resume/install b/modules.d/95resume/install
-> index 779d076..330a3ea 100755
-> --- a/modules.d/95resume/install
-> +++ b/modules.d/95resume/install
-> @@ -2,6 +2,16 @@
->   # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
->   # ex: ts=8 sw=4 sts=4 et filetype=sh
->
-> +# Optional uswsusp support
-> +for bin in /usr/sbin/resume /usr/lib/suspend/resume
-> +do
-> +    [[ -x "${bin}" ]]&&  {
-> +        inst "${bin}" /usr/sbin/resume
-> +        [[ -f /etc/suspend.conf ]]&&  inst /etc/suspend.conf
-> +        break
-> +    }
-> +done
-> +
->   inst_hook cmdline 10 "$moddir/parse-resume.sh"
->   inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
->   inst_hook mount 10 "$moddir/resume.sh"
-> diff --git a/modules.d/95resume/parse-resume.sh b/modules.d/95resume/parse-resume.sh
-> index 2c7661f..90db4a7 100755
-> --- a/modules.d/95resume/parse-resume.sh
-> +++ b/modules.d/95resume/parse-resume.sh
-> @@ -16,3 +16,9 @@ case "$resume" in
->       UUID=*) \
->           resume="/dev/disk/by-uuid/${resume#UUID=}" ;;
->   esac
-> +
-> +if splash=$(getarg splash=); then
-> +    export splash
-> +else
-> +    unset splash
-> +fi
-> diff --git a/modules.d/95resume/resume-genrules.sh b/modules.d/95resume/resume-genrules.sh
-> index ce880a5..d7c5b64 100755
-> --- a/modules.d/95resume/resume-genrules.sh
-> +++ b/modules.d/95resume/resume-genrules.sh
-> @@ -1,6 +1,15 @@
->   # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
->   # ex: ts=8 sw=4 sts=4 et filetype=sh
->
-> +case "$splash" in
-> +    quiet )
-> +        a_splash="-P splash=y"
-> +    ;;
-> +    * )
-> +        a_splash="-P splash=n"
-> +    ;;
-> +esac
-> +
->   if [ -n "$resume" ]; then
->       {
->           printf "KERNEL==\"%s\", ACTION==\"add|change\", SYMLINK+=\"/dev/resume\"\n" \
-> @@ -10,6 +19,12 @@ if [ -n "$resume" ]; then
->       }>>  /dev/.udev/rules.d/99-resume-link.rules
->
->       {
-> +        if [ -x /usr/sbin/resume ]; then
-> +            printf "KERNEL==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/usr/sbin/resume %s '%s'\"\n" \
-> +                ${resume#/dev/} "$a_splash" "$resume";
-> +            printf "SYMLINK==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/usr/sbin/resume %s '%s'\"\n" \
-> +                ${resume#/dev/} "$a_splash" "$resume";
-> +        fi
->           printf "KERNEL==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/bin/sh -c 'echo %%M:%%m>  /sys/power/resume'\"\n" \
->               ${resume#/dev/};
->           printf "SYMLINK==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/bin/sh -c 'echo %%M:%%m>  /sys/power/resume'\"\n" \
-> @@ -21,8 +36,17 @@ if [ -n "$resume" ]; then
->
->       echo '[ -e /dev/resume ]'>  /initqueue-finished/resume.sh
->
-> +    {
-> +        printf '[ -e /dev/resume ] || '
-> +        printf 'warn "resume device "%s" not found"\n' "$resume"
-> +    }>>  /emergency/00-resume.sh
-> +
-> +
->   elif ! getarg noresume; then
->       {
-> +        if [ -x /usr/sbin/resume ]; then
-> +            printf "SUBSYSTEM==\"block\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/usr/sbin/resume %s '\$tempnode'\"\n" "$a_splash"
-> +        fi
->           echo "SUBSYSTEM==\"block\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\"," \
->               " RUN+=\"/bin/sh -c 'echo %M:%m>  /sys/power/resume'\"";
->       }>>  /etc/udev/rules.d/99-resume.rules
-> diff --git a/modules.d/95resume/resume.sh b/modules.d/95resume/resume.sh
-> index ee55414..943d9e5 100755
-> --- a/modules.d/95resume/resume.sh
-> +++ b/modules.d/95resume/resume.sh
-> @@ -3,6 +3,17 @@
->   # ex: ts=8 sw=4 sts=4 et filetype=sh
->
->   [ -s /.resume -a -b "$resume" ]&&  {
-> +    # First try user level resume; it offers splash etc
-> +    case "$splash" in
-> +        quiet )
-> +            a_splash="-P splash=y"
-> +        ;;
-> +        * )
-> +            a_splash="-P splash=n"
-> +        ;;
-> +    esac
-> +    [ -x /usr/sbin/resume ]&&  /usr/sbin/resume $a_splash "$resume"
-> +
->       # parsing the output of ls is Bad, but until there is a better way...
->       ls -lH "$resume" | (
->           read x x x x maj min x;
-> diff --git a/modules.d/95uswsusp/check b/modules.d/95uswsusp/check
-> deleted file mode 100755
-> index 3df4e4e..0000000
-> --- a/modules.d/95uswsusp/check
-> +++ /dev/null
-> @@ -1,5 +0,0 @@
-> -#!/bin/sh
-> -# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-> -# ex: ts=8 sw=4 sts=4 et filetype=sh
-> -
-> -[ -x /usr/sbin/resume ] || [ -x /usr/lib/suspend/resume ]
-> diff --git a/modules.d/95uswsusp/install b/modules.d/95uswsusp/install
-> deleted file mode 100755
-> index 61b8edd..0000000
-> --- a/modules.d/95uswsusp/install
-> +++ /dev/null
-> @@ -1,14 +0,0 @@
-> -#!/bin/bash
-> -# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-> -# ex: ts=8 sw=4 sts=4 et filetype=sh
-> -
-> -for bin in /usr/sbin/resume /usr/lib/suspend/resume
-> -do
-> -    [ -x "${bin}" ]&&  break
-> -done
-> -
-> -inst "${bin}" /usr/sbin/resume
-> -[ -f /etc/suspend.conf ]&&  inst /etc/suspend.conf
-> -
-> -inst_hook cmdline 10 "$moddir/parse-uswsusp.sh"
-> -inst_hook mount 10 "$moddir/resume-uswsusp.sh"
-> diff --git a/modules.d/95uswsusp/parse-uswsusp.sh b/modules.d/95uswsusp/parse-uswsusp.sh
-> deleted file mode 100755
-> index ac18b09..0000000
-> --- a/modules.d/95uswsusp/parse-uswsusp.sh
-> +++ /dev/null
-> @@ -1,23 +0,0 @@
-> -#!/bin/sh
-> -# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-> -# ex: ts=8 sw=4 sts=4 et filetype=sh
-> -
-> -if resume=$(getarg resume=)&&  ! getarg noresume; then
-> -    export resume
-> -else
-> -    unset resume
-> -fi
-> -
-> -case "$resume" in
-> -    LABEL=*) \
-> -        resume="$(echo $resume | sed 's,/,\\x2f,g')"
-> -        resume="/dev/disk/by-label/${resume#LABEL=}" ;;
-> -    UUID=*) \
-> -        resume="/dev/disk/by-uuid/${resume#UUID=}" ;;
-> -esac
-> -
-> -if splash=$(getarg rd.splash= splash=); then
-> -    export splash
-> -else
-> -    unset splash
-> -fi
-> diff --git a/modules.d/95uswsusp/resume-uswsusp.sh b/modules.d/95uswsusp/resume-uswsusp.sh
-> deleted file mode 100755
-> index e8d3b70..0000000
-> --- a/modules.d/95uswsusp/resume-uswsusp.sh
-> +++ /dev/null
-> @@ -1,16 +0,0 @@
-> -#!/bin/sh
-> -# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-> -# ex: ts=8 sw=4 sts=4 et filetype=sh
-> -
-> -case "$splash" in
-> -    quiet )
-> -        a_splash="-P splash=y"
-> -        ;;
-> -    * )
-> -        a_splash="-P splash=n"
-> -        ;;
-> -esac
-> -
-> -if [ -n "$resume" ]; then
-> -    /usr/sbin/resume $a_splash "$resume"
-> -fi
+> So, do you still need this dracut module? Or is it good enough, to do this
+> in the real root?
 
-pushed
+The short answer is I still require something which makes the union
+mount very early.
+The long answer is I don't know if it is feasible to do the union
+mount on the fstab or if the initramfs is the only option. The idea
+doesn't seem to be so bad, but I find terrible dificul to debug the
+result when in that ecuation you have nfs4 and upstart. So I don't
+exactly know what is going on before my nodes get freezed...
+
+I'll need to make more tests, and debug a little more.
