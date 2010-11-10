@@ -1,104 +1,77 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] i18n: do not use systemd-vconsole-setup
-Date: Wed, 10 Nov 2010 15:53:33 +0100
-Message-ID: <4CDAB1ED.2070605@redhat.com>
-References: <1289078089-3599-1-git-send-email-arvidjaar@gmail.com>
+From: Vladislav Bogdanov <bubble-Awb4OmSD/41iLUuM0BA3LQ@public.gmane.org>
+Subject: Re: [PATCH] add fake root support
+Date: Wed, 10 Nov 2010 16:54:41 +0200
+Message-ID: <4CDAB231.80903@hoster-ok.com>
+References: <4CBDB007.4090802@hoster-ok.com> <4CCECBB0.3030609@hoster-ok.com> <4CDAAA70.1070302@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1289078089-3599-1-git-send-email-arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <4CDAAA70.1070302-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/06/2010 10:14 PM, Andrey Borzenkov wrote:
-> systemd-vconsole-setup was not designed to be run from udevd.
-> It checks locale environment to decide, whether UNICODE should
-> be enabled or disabled. Normally environment is setup by
-> systemd; but the only environment available in udev rules is
-> those from device properties. It means systemd-vconsole-setup
-> always assumes default C locale and disables UNICODE.
->
-> Revert to using built-in console_init which explicitly
-> imports locale settings from /etc/vconsole.conf. Alternative
-> is to revert 6545b9d7 and call console_init directly :)
->
-> Additionally patch fixes console_init to use new namespace as
-> well as ensures that default font is always installed.
->
-> Signed-off-by: Andrey Borzenkov<arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->
-> ---
->   modules.d/10i18n/console_init |   10 +++++-----
->   modules.d/10i18n/install      |   18 ++++++++----------
->   2 files changed, 13 insertions(+), 15 deletions(-)
->
-> diff --git a/modules.d/10i18n/console_init b/modules.d/10i18n/console_init
-> index e6f2da4..bdd39b0 100755
-> --- a/modules.d/10i18n/console_init
-> +++ b/modules.d/10i18n/console_init
-> @@ -4,7 +4,7 @@
->
->   [ -e /etc/vconsole.conf ]&&  . /etc/vconsole.conf
->
-> -DEFAULT_SYSFONT=LatArCyrHeb-16
-> +DEFAULT_FONT=LatArCyrHeb-16
->   DEFAULT_KEYMAP=/etc/sysconfig/console/default.kmap
->
->   set_keyboard() {
-> @@ -42,11 +42,11 @@ set_keymap() {
->   set_font() {
->       local dev=$1; local trans=''; local uni=''
->
-> -    [ -z "${SYSFONT}" ]&&  SYSFONT=${DEFAULT_SYSFONT}
-> -    [ -n "${CONTRANS}" ]&&  trans="-m ${CONTRANS}"
-> -    [ -n "${UNIMAP}" ]&&  uni="-u ${UNIMAP}"
-> +    [ -z "${FONT}" ]&&  FONT=${DEFAULT_FONT}
-> +    [ -n "${FONT_MAP}" ]&&  trans="-m ${FONT_MAP}"
-> +    [ -n "${FONT_UNIMAP}" ]&&  uni="-u ${FONT_UNIMAP}"
->
-> -    setfont ${SYSFONT} -C ${dev} ${trans} ${uni}
-> +    setfont ${FONT} -C ${dev} ${trans} ${uni}
->   }
->
->   dev_close() {
-> diff --git a/modules.d/10i18n/install b/modules.d/10i18n/install
-> index d8647c0..96d563d 100755
-> --- a/modules.d/10i18n/install
-> +++ b/modules.d/10i18n/install
-> @@ -73,13 +73,7 @@ gather_vars() {
->   install_base() {
->       dracut_install setfont loadkeys kbd_mode stty
->
-> -    if [ -x /lib/systemd/systemd-vconsole-setup ]; then
-> -        dracut_install /lib/systemd/systemd-vconsole-setup
-> -        inst_dir /lib/udev
-> -        ln -s /lib/systemd/systemd-vconsole-setup "${initdir}/lib/udev/console_init"
-> -    else
-> -        inst ${moddir}/console_init /lib/udev/console_init
-> -    fi
-> +    inst ${moddir}/console_init /lib/udev/console_init
->       inst_rules ${moddir}/10-console.rules
->       inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
->   }
-> @@ -123,9 +117,13 @@ install_local_i18n() {
->
->       inst_opt_decompress ${KEYMAPS}
->
-> -    [[ ${FONT} ]] || FONT=${DEFAULT_FONT}
-> -    FONT=${FONT%.psf*}
-> -    inst_opt_decompress ${kbddir}/consolefonts/${FONT}.*
-> +    inst_opt_decompress ${kbddir}/consolefonts/${DEFAULT_FONT}.*
-> +
-> +    if [[ ${FONT} ]]
-> +    then
-> +        FONT=${FONT%.psf*}
-> +        inst_opt_decompress ${kbddir}/consolefonts/${FONT}.*
-> +    fi
->
->       if [[ ${FONT_MAP} ]]
->       then
+10.11.2010 16:21, Harald Hoyer wrote:
+> On 11/01/2010 03:16 PM, Vladislav Bogdanov wrote:
+>> 19.10.2010 17:49, Vladislav Bogdanov wrote:
+>>> Attached is a patch for "fake" root functionality,
+>>> I'm (mostly) duplicating issue's description from my previous e-mail
+>>> (for commit message if this is to be pushed):
+>>>
+>>
+>> Sorry for being annoying, but... Any comments?
+>>
+>> Best,
+>> Vladislav
+>>
+> 
+> I like it, but I don't like the parameters...
+> 
+> Maybe we can express it like this:
+> 
+> netroot=fake:xxx.yyy.zzz.www:/mnt root=live:blablabla
 
-pushed
+This can be used not only with nfs I think...
+nfs is just one use case which I needed for my project.
+
+And information after fake: should be some-how handled in dracut, but I
+currently do not see any use-cases for that. Do you see them? iSCSI? Is
+it really needed so early if it is not for root?
+
+And, I'd not mount not-root nfs from within dracut, we need to know
+mount point on a real system for that. Additionally, I've already had
+much fun with nfs4 and root user access to files. This requires
+rpcidmapd, and it has too many dependencies (and properly configured
+resolver).
+
+I'd keep it generic, thus making it possible to start network-enabled
+node solely from PXE. It is much easier to exploit generic solutions
+(IMHO) for own needs.
+
+> 
+> and find another name for "fake".. maybe "container"?
+Hmmm....
+The main idea was to have networking configured without real networked root.
+Current dracut policy is to skip networking if no networked root is
+configured. That's why I called it 'fake' - I'm cheating with this policy.
+I agree that 'fake' is not a best name.
+Container... then there should be some contents, but I do not see it...
+
+netroot=force?
+networking=force?
+Later would require additional efforts, but sounds quite nice for me.
+
+> 
+> netroot=container:nfs:xxx.yyy.zzz.www:/mnt root=live:blablabla
+> 
+> Which reminds me, that we should probably have the possibility to
+> concatenate several stages.
+> 
+> root=nfs:xxx.yyy.zzz.www:/mnt|loop:test.img|live:blablabla
+
+This is quite interesting. But this is from another story.
+
+> 
+> comments?
