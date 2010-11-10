@@ -1,46 +1,104 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Allow fstab-based remount to be controlled by modules
-Date: Wed, 10 Nov 2010 15:32:06 +0100
-Message-ID: <4CDAACE6.8040108@redhat.com>
-References: <20101108194128.EBFEB9D401B@zog.reactivated.net>
+Subject: Re: [PATCH] i18n: do not use systemd-vconsole-setup
+Date: Wed, 10 Nov 2010 15:53:33 +0100
+Message-ID: <4CDAB1ED.2070605@redhat.com>
+References: <1289078089-3599-1-git-send-email-arvidjaar@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20101108194128.EBFEB9D401B-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
+In-Reply-To: <1289078089-3599-1-git-send-email-arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+To: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/08/2010 08:41 PM, Daniel Drake wrote:
-> OLPC would like to be able to disable this behaviour through
-> a custom dracut module. Add a "no_fstab_remount" flag which can be
-> set by modules that want to disable this functionality.
+On 11/06/2010 10:14 PM, Andrey Borzenkov wrote:
+> systemd-vconsole-setup was not designed to be run from udevd.
+> It checks locale environment to decide, whether UNICODE should
+> be enabled or disabled. Normally environment is setup by
+> systemd; but the only environment available in udev rules is
+> those from device properties. It means systemd-vconsole-setup
+> always assumes default C locale and disables UNICODE.
 >
-> (Background: having the correct rootfs info in /etc/fstab is a bit of a
->   challenge for OLPC, because this info is not known at build time.)
+> Revert to using built-in console_init which explicitly
+> imports locale settings from /etc/vconsole.conf. Alternative
+> is to revert 6545b9d7 and call console_init directly :)
+>
+> Additionally patch fixes console_init to use new namespace as
+> well as ensures that default font is always installed.
+>
+> Signed-off-by: Andrey Borzenkov<arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+>
 > ---
->   modules.d/95rootfs-block/mount-root.sh |    1 +
->   1 files changed, 1 insertions(+), 0 deletions(-)
+>   modules.d/10i18n/console_init |   10 +++++-----
+>   modules.d/10i18n/install      |   18 ++++++++----------
+>   2 files changed, 13 insertions(+), 15 deletions(-)
 >
-> diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-> index ff64209..7602731 100755
-> --- a/modules.d/95rootfs-block/mount-root.sh
-> +++ b/modules.d/95rootfs-block/mount-root.sh
-> @@ -73,6 +73,7 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
->       rootopts=
->       if getargbool 1 rd.fstab -n rd_NO_FSTAB \
->           &&  ! getarg rootflags \
-> +&&  [ -z "$no_fstab_remount" ] \
->           &&  [ -f "$NEWROOT/etc/fstab" ] \
->           &&  ! [ -L "$NEWROOT/etc/fstab" ]; then
->           # if $NEWROOT/etc/fstab contains special mount options for
+> diff --git a/modules.d/10i18n/console_init b/modules.d/10i18n/console_init
+> index e6f2da4..bdd39b0 100755
+> --- a/modules.d/10i18n/console_init
+> +++ b/modules.d/10i18n/console_init
+> @@ -4,7 +4,7 @@
+>
+>   [ -e /etc/vconsole.conf ]&&  . /etc/vconsole.conf
+>
+> -DEFAULT_SYSFONT=LatArCyrHeb-16
+> +DEFAULT_FONT=LatArCyrHeb-16
+>   DEFAULT_KEYMAP=/etc/sysconfig/console/default.kmap
+>
+>   set_keyboard() {
+> @@ -42,11 +42,11 @@ set_keymap() {
+>   set_font() {
+>       local dev=$1; local trans=''; local uni=''
+>
+> -    [ -z "${SYSFONT}" ]&&  SYSFONT=${DEFAULT_SYSFONT}
+> -    [ -n "${CONTRANS}" ]&&  trans="-m ${CONTRANS}"
+> -    [ -n "${UNIMAP}" ]&&  uni="-u ${UNIMAP}"
+> +    [ -z "${FONT}" ]&&  FONT=${DEFAULT_FONT}
+> +    [ -n "${FONT_MAP}" ]&&  trans="-m ${FONT_MAP}"
+> +    [ -n "${FONT_UNIMAP}" ]&&  uni="-u ${FONT_UNIMAP}"
+>
+> -    setfont ${SYSFONT} -C ${dev} ${trans} ${uni}
+> +    setfont ${FONT} -C ${dev} ${trans} ${uni}
+>   }
+>
+>   dev_close() {
+> diff --git a/modules.d/10i18n/install b/modules.d/10i18n/install
+> index d8647c0..96d563d 100755
+> --- a/modules.d/10i18n/install
+> +++ b/modules.d/10i18n/install
+> @@ -73,13 +73,7 @@ gather_vars() {
+>   install_base() {
+>       dracut_install setfont loadkeys kbd_mode stty
+>
+> -    if [ -x /lib/systemd/systemd-vconsole-setup ]; then
+> -        dracut_install /lib/systemd/systemd-vconsole-setup
+> -        inst_dir /lib/udev
+> -        ln -s /lib/systemd/systemd-vconsole-setup "${initdir}/lib/udev/console_init"
+> -    else
+> -        inst ${moddir}/console_init /lib/udev/console_init
+> -    fi
+> +    inst ${moddir}/console_init /lib/udev/console_init
+>       inst_rules ${moddir}/10-console.rules
+>       inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
+>   }
+> @@ -123,9 +117,13 @@ install_local_i18n() {
+>
+>       inst_opt_decompress ${KEYMAPS}
+>
+> -    [[ ${FONT} ]] || FONT=${DEFAULT_FONT}
+> -    FONT=${FONT%.psf*}
+> -    inst_opt_decompress ${kbddir}/consolefonts/${FONT}.*
+> +    inst_opt_decompress ${kbddir}/consolefonts/${DEFAULT_FONT}.*
+> +
+> +    if [[ ${FONT} ]]
+> +    then
+> +        FONT=${FONT%.psf*}
+> +        inst_opt_decompress ${kbddir}/consolefonts/${FONT}.*
+> +    fi
+>
+>       if [[ ${FONT_MAP} ]]
+>       then
 
-Why don't you reuse rd.fstab then? You could add preset kernel cmdline options 
-in /etc/cmdline in the initramfs.
-
-Just add for your dracut module in install:
-
-mkdir -p ${initdir}/etc
-echo " rd.fstab=0 " >> ${initdir}/etc/cmdline
+pushed
