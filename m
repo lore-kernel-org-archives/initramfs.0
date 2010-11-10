@@ -1,28 +1,36 @@
-From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Subject: Re: Debian/Ubuntu patches
-Date: Wed, 10 Nov 2010 16:32:27 +0000
-Message-ID: <20101110163227.GS19612@vostochny.stro.at>
-References: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com> <4CD9102B.7030702@bfh.ch> <AANLkTi=EkL7ivKKj6ck3w6RuOOq++cGwtP_pX0HHhVWu@mail.gmail.com> <20101109125820.GO19612@vostochny.stro.at> <AANLkTinfZNiQ14XD3OAC8WasnGXi6bcD9WJipvKS0f1S@mail.gmail.com> <20101109140028.GP19612@vostochny.stro.at> <AANLkTi=Mc4qBA7yhExb2VCCGyMNCXq+k9BZ=JhZpN4GE@mail.gmail.com>
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] Allow fstab-based remount to be controlled by modules
+Date: Wed, 10 Nov 2010 18:55:48 +0000
+Message-ID: <AANLkTi=nt8=DRspkvOwR5B=EtSqHUPpWPDW=Znd1Lpdf@mail.gmail.com>
+References: <20101108194128.EBFEB9D401B@zog.reactivated.net>
+	<4CDAACE6.8040108@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTi=Mc4qBA7yhExb2VCCGyMNCXq+k9BZ=JhZpN4GE-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:sender:received
+         :in-reply-to:references:date:x-google-sender-auth:message-id:subject
+         :from:to:cc:content-type;
+        bh=2zlKI7it2j5GMDThjKjr9g7EIzb7YSooikgKe2yOO98=;
+        b=Pklgxa4GO8slrwnRFL51wlCv79HxhuE7c6h5dtP0FlnSjPu6rWUiwTVdFZWWlDHVoH
+         GMfeB01DODue+OwQ9UQcoxaNthlD9/LVKpfMPVgRcXjJVboapkC/ExHfsCpCvOwQ5yhe
+         oGi4qRtUTK1LyQ70pdem0yMdqx1gEv+uRvVlM=
+In-Reply-To: <4CDAACE6.8040108-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Nov 10, 2010 at 05:21:41PM +0100, Jon Ander Hernandez wrote:
-> By now an upgraded version of the patches as a single patch :
+On 10 November 2010 14:32, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> Just add for your dracut module in install:
+>
+> mkdir -p ${initdir}/etc
+> echo " rd.fstab=0 " >> ${initdir}/etc/cmdline
 
-ok, this look good to me at first sight.
+Thanks!
+Wasn't aware that you could do this. It was exactly what I was looking
+for, no patch needed.
 
-Please make sure to build this dracut in a chroot
-(use sbuild or pbuilder or whatever suits you) in order
-to check that it really autobuilds on upload.
-
-thanks.
-
-Acked-by: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Daniel
