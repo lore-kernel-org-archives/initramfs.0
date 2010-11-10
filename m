@@ -1,62 +1,115 @@
-From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Subject: Re: Debian/Ubuntu patches
-Date: Wed, 10 Nov 2010 19:58:26 +0000
-Message-ID: <20101110195826.GA8486@vostochny.stro.at>
-References: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com> <4CD9102B.7030702@bfh.ch> <AANLkTi=EkL7ivKKj6ck3w6RuOOq++cGwtP_pX0HHhVWu@mail.gmail.com> <20101109125820.GO19612@vostochny.stro.at> <AANLkTimfYTDFkUgk3x0ry6Z1Q_COYyij5CKMs_50t9MK@mail.gmail.com> <AANLkTikGCZofdYvX78vw+Rj_XmKyY1FmVcp_NT=_B_fF@mail.gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [dracut GIT] branch, master, updated. 040f3d2ffcebad74b8447bb6ce36d68ad910b3af
+Date: Wed, 10 Nov 2010 20:28:03 +0000
+Message-ID: <E1PGHH5-0008Gy-Gx@sfp-scmshell-2.v30.ch3.sourceforge.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTikGCZofdYvX78vw+Rj_XmKyY1FmVcp_NT=_B_fF-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-9"
-To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Nov 10, 2010 at 08:44:45PM +0100, Jon Ander Hernandez wrote:
-> Hi maximilian,
->=20
-> 2010/11/9 Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
-> > 2010/11/9 maximilian attems <max-U9r9yeDMy7A@public.gmane.org>:
-> >
-> >>> - Postinst script can be executed when installing first time drac=
-ut,
-> >>> and when we are upgrading Dracut. Check if it should create a new
-> >>> initramfs or if it should upgrade it.
-> >>>
-> >>> diff -urN dracut/debian/dracut.postinst dracut-007/debian/dracut.=
-postinst
-> >>> --- dracut/debian/dracut.postinst =A0 =A0 2010-08-09 16:13:51.000=
-000000 +0200
-> >>> +++ dracut-007/debian/dracut.postinst 2010-10-21 02:49:45.7145649=
-95 +0200
-> >>> @@ -2,7 +2,11 @@
-> >>>
-> >>> =A0set -e
-> >>>
-> >>> -# Regenerate initramfs when we're `installed`
-> >>> -DPKG_MAINTSCRIPT_PACKAGE=3D'' dracut-update-initramfs -u
-> >>> +if [ -f /boot/dracut.img-`uname -r` ]; then
-> >>> + =A0 =A0# Regenerate initramfs when we're `installed`
-> >>> + =A0 =A0DPKG_MAINTSCRIPT_PACKAGE=3D'' dracut-update-initramfs -t=
- -u
-> >>> +else
-> >>> + =A0 =A0dracut-update-initramfs -c -k `uname -r`
-> >>> +fi
-> >>
-> >> not sure why you want a create at all here, create should be calle=
-d
-> >> by linux-2.6 images not the wrapper script itself.
-> >
-> > But you probably will install dracut once you have a linux kernel
-> > installed, so if you do so, the kernel postinst script will create
-> > dracut initramfs for any new kernel image installed, but not for th=
-e
-> > current installed one.
->=20
-> Sorry, =BFDid you read this email? 0:-)
+The branch, master has been updated
+       via  040f3d2ffcebad74b8447bb6ce36d68ad910b3af (commit)
+       via  d884af80775e6a3299e65930235b64135e9d4220 (commit)
+       via  a4f88b8a49af96423161f5a62376395768871b43 (commit)
+       via  3d7c58ca1e0129b6f96fb66ba214eae71337616a (commit)
+      from  ce51f3be1188bc27dfa2fd24a04efff664a116b4 (commit)
 
-yes, but didn't understand your reply and short of time..
-this seems like a chicken and egg trouble, please rephrase more coheren=
-tly.
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
+
+- Log -----------------------------------------------------------------
+commit 040f3d2ffcebad74b8447bb6ce36d68ad910b3af
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Nov 10 21:27:33 2010 +0100
+
+    base/init: re-add initqueue-finished
+
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index 1a1a0e5..ef96918 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -187,6 +187,14 @@ while :; do
+ 
+     $UDEV_QUEUE_EMPTY >/dev/null 2>&1 || continue
+ 
++    for job in /initqueue-settled/*.sh; do
++        [ -e "$job" ] || break
++        job=$job . $job
++        check_finished && break 2
++    done
++
++    $UDEV_QUEUE_EMPTY >/dev/null 2>&1 || continue
++
+     # no more udev jobs and queues empty.
+     sleep 0.5
+ 
+commit d884af80775e6a3299e65930235b64135e9d4220
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Nov 10 20:45:12 2010 +0100
+
+    rootfs-block/mount-root.sh: remove $NEWROOT/{.autofsck,forcefsck} if possible
+
+diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+index baa1ce5..93c5c42 100755
+--- a/modules.d/95rootfs-block/mount-root.sh
++++ b/modules.d/95rootfs-block/mount-root.sh
+@@ -137,4 +137,6 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
+     info "Remounting ${root#block:} with -o ${rflags},${rootopts}"
+     mount -t "$rootfs" -o "$rflags","$rootopts" \
+         "${root#block:}" "$NEWROOT" 2>&1 | vinfo
++
++    [ -f "$NEWROOT"/forcefsck ] && rm -f "$NEWROOT"/forcefsck 2>/dev/null
+ fi
+commit a4f88b8a49af96423161f5a62376395768871b43
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Nov 10 20:45:02 2010 +0100
+
+    rootfs-block/mount-root.sh: set prompt in emergency shell
+
+diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+index f56fbed..baa1ce5 100755
+--- a/modules.d/95rootfs-block/mount-root.sh
++++ b/modules.d/95rootfs-block/mount-root.sh
+@@ -127,7 +127,7 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
+             warn "*** An error occurred during the file system check."
+             warn "*** Dropping you to a shell; the system will retry"
+             warn "*** to mount the system, when you leave the shell."
+-            emergency_shell "(Repair filesystem)"
++            emergency_shell -n "(Repair filesystem)"
+         else
+             echo $out|vinfo
+             [ $RD_ROOTFS_FSCK -gt 0 ] && warn "fsck returned with $RD_ROOTFS_FSCK"
+commit 3d7c58ca1e0129b6f96fb66ba214eae71337616a
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Nov 10 20:43:22 2010 +0100
+
+    rootfs-block/mount-root.sh: echo fsck return code to
+    /dev/.initramfs/fsck
+
+diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+index b242acf..f56fbed 100755
+--- a/modules.d/95rootfs-block/mount-root.sh
++++ b/modules.d/95rootfs-block/mount-root.sh
+@@ -117,6 +117,8 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
+         info fsck -T -t noopts=_netdev -A $fsckoptions
+         out=$(fsck -T -t noopts=_netdev -A $fsckoptions) 
+         export RD_ROOTFS_FSCK=$?
++        mkdir -p /dev/.initramfs
++        echo $RD_ROOTFS_FSCK > /dev/.initramfs/fsck
+         
+         # A return of 4 or higher means there were serious problems.
+         if [ $RD_ROOTFS_FSCK -gt 3 ]; then
+-----------------------------------------------------------------------
+
+Summary of changes:
+ modules.d/95rootfs-block/mount-root.sh |    6 +++++-
+ modules.d/99base/init                  |    8 ++++++++
+ 2 files changed, 13 insertions(+), 1 deletions(-)
+
+
+-- 
+dracut - Initramfs generator using udev
