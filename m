@@ -1,46 +1,62 @@
-From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [dracut GIT] branch, master, updated. e53fdd1c35f647441dec690e57f23ab0ebd3343e
-Date: Wed, 10 Nov 2010 21:12:17 +0000
-Message-ID: <E1PGHxu-00070G-Ie@sfp-scmshell-3.v30.ch3.sourceforge.com>
+From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Debian/Ubuntu patches
+Date: Wed, 10 Nov 2010 22:18:04 +0100
+Message-ID: <AANLkTi=MCfaK5K-ZV3gvrFCzezJdjAMf-WY_VgM64dHA@mail.gmail.com>
+References: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com>
+	<4CD9102B.7030702@bfh.ch>
+	<AANLkTi=EkL7ivKKj6ck3w6RuOOq++cGwtP_pX0HHhVWu@mail.gmail.com>
+	<20101109125820.GO19612@vostochny.stro.at>
+	<AANLkTimfYTDFkUgk3x0ry6Z1Q_COYyij5CKMs_50t9MK@mail.gmail.com>
+	<AANLkTikGCZofdYvX78vw+Rj_XmKyY1FmVcp_NT=_B_fF@mail.gmail.com>
+	<20101110195826.GA8486@vostochny.stro.at>
+Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:received:in-reply-to
+         :references:date:message-id:subject:from:to:cc:content-type
+         :content-transfer-encoding;
+        bh=29rWD+2CF7BlDQIi3B9eGC40SbEflaVXCSHgdmbWUmU=;
+        b=pAGBZ5MxjKhe58ZcaaXEW3xnPAcnQtd92iBvlVtEUFGwnl25AroFH3Am47FBiJEsZs
+         VUaKWxlXLy0LbfLEI+Fg7Mi4qEcgaXkgRjDvrZ8TV1R7O0IPGWgq1JhE9BKxOCAu7YyW
+         4xQLBj4r00+JT+zM0AxSdXnijhHgQD7iQp/xE=
+In-Reply-To: <20101110195826.GA8486-VJknIhvjf2Ov8OlOgJ4AIV6hYfS7NtTn@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+To: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The branch, master has been updated
-       via  e53fdd1c35f647441dec690e57f23ab0ebd3343e (commit)
-      from  040f3d2ffcebad74b8447bb6ce36d68ad910b3af (commit)
+2010/11/10 maximilian attems <max-U9r9yeDMy7A@public.gmane.org>:
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+> yes, but didn't understand your reply and short of time..
+> this seems like a chicken and egg trouble, please rephrase more coher=
+ently.
 
-- Log -----------------------------------------------------------------
-commit e53fdd1c35f647441dec690e57f23ab0ebd3343e
-Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Nov 10 22:10:54 2010 +0100
+I'm sorry, I need to improve my English. :-)
 
-    rootfs-block/mount-root.sh: remove $NEWROOT/.autofsck if possible
+I meant that if we ship Dracut with the kernel postinst script
+(/etc/kernel/postinst), then the next time a linux image is installed,
+that script will be fired and a Dracut based initramfs will be created
+for that new kernel.
 
-diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-index 93c5c42..fecc347 100755
---- a/modules.d/95rootfs-block/mount-root.sh
-+++ b/modules.d/95rootfs-block/mount-root.sh
-@@ -139,4 +139,5 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
-         "${root#block:}" "$NEWROOT" 2>&1 | vinfo
- 
-     [ -f "$NEWROOT"/forcefsck ] && rm -f "$NEWROOT"/forcefsck 2>/dev/null
-+    [ -f "$NEWROOT"/.autofsck ] && rm -f "$NEWROOT"/.autofsck 2>/dev/null
- fi
------------------------------------------------------------------------
+But when we install Dracut for the first time, there is not any Dracut
+based initramfs installed on the system, and Dracut package's postinst
+calls actually only call "dracut-update-initramfs -u" which only
+updates the initramfs images present in the system (in this case no
+one). So after installing Dracut you won't get a Dracut based image
+for the kernel you are using, which is not very consistent with the
+behaviour of creating the initramfs for any new kernel installed
+afterwards.
 
-Summary of changes:
- modules.d/95rootfs-block/mount-root.sh |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+I understand that is the linux kernel package's mission to call the
+kernel postinst scripts under /etc/kernel/postinst, but... I think we
+should do something. Maybe make the current linux kernel package call
+the /etc/kernel/postinst scripts, or maybe call
+dracut-update-initramfs, which was what I was doing in my original
+patch... =BFWhat could be the best solution?
 
+Thanks,
 
--- 
-dracut - Initramfs generator using udev
+Jon Ander.
