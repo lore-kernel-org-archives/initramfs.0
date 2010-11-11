@@ -1,171 +1,71 @@
-From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [dracut GIT] branch, master, updated. 5023964844530eebef6fb779320b09472ef1d8d7
-Date: Thu, 11 Nov 2010 10:10:48 +0000
-Message-ID: <E1PGU7R-00087t-I8@sfp-scmshell-1.v30.ch3.sourceforge.com>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: Re: Debian/Ubuntu patches
+Date: Thu, 11 Nov 2010 21:30:31 +0100
+Message-ID: <20101111203031.GB3336@stro.at>
+References: <AANLkTikEPsCQzMSJbhwuO95Br+7aYJPw9zbVRd4Y8vOC@mail.gmail.com>
+ <4CD9102B.7030702@bfh.ch>
+ <AANLkTi=EkL7ivKKj6ck3w6RuOOq++cGwtP_pX0HHhVWu@mail.gmail.com>
+ <20101109125820.GO19612@vostochny.stro.at>
+ <AANLkTimfYTDFkUgk3x0ry6Z1Q_COYyij5CKMs_50t9MK@mail.gmail.com>
+ <AANLkTikGCZofdYvX78vw+Rj_XmKyY1FmVcp_NT=_B_fF@mail.gmail.com>
+ <20101110195826.GA8486@vostochny.stro.at>
+ <AANLkTi=MCfaK5K-ZV3gvrFCzezJdjAMf-WY_VgM64dHA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <AANLkTi=MCfaK5K-ZV3gvrFCzezJdjAMf-WY_VgM64dHA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The branch, master has been updated
-       via  5023964844530eebef6fb779320b09472ef1d8d7 (commit)
-       via  4af673c3f8626872f1f638e4df2c6fab9a0d45ef (commit)
-      from  5dc6f240856a37d864298e67233a8312c882a927 (commit)
+On Wed, 10 Nov 2010, Jon Ander Hernandez wrote:
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
+> 2010/11/10 maximilian attems <max-U9r9yeDMy7A@public.gmane.org>:
+>=20
+> > yes, but didn't understand your reply and short of time..
+> > this seems like a chicken and egg trouble, please rephrase more coh=
+erently.
+>=20
+> I'm sorry, I need to improve my English. :-)
+>=20
+> I meant that if we ship Dracut with the kernel postinst script
+> (/etc/kernel/postinst), then the next time a linux image is installed=
+,
+> that script will be fired and a Dracut based initramfs will be create=
+d
+> for that new kernel.
+>=20
+> But when we install Dracut for the first time, there is not any Dracu=
+t
+> based initramfs installed on the system, and Dracut package's postins=
+t
+> calls actually only call "dracut-update-initramfs -u" which only
+> updates the initramfs images present in the system (in this case no
+> one). So after installing Dracut you won't get a Dracut based image
+> for the kernel you are using, which is not very consistent with the
+> behaviour of creating the initramfs for any new kernel installed
+> afterwards.
 
-- Log -----------------------------------------------------------------
-commit 5023964844530eebef6fb779320b09472ef1d8d7
-Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Thu Nov 11 10:56:26 2010 +0100
+no, no this wrong logic.
+first of all the linux image depends on the a linux initramfs creator
+tool and thus this is installed *before* linux-2.6.
 
-    move initlog.pipe to /dev/.initramfs
+> I understand that is the linux kernel package's mission to call the
+> kernel postinst scripts under /etc/kernel/postinst, but... I think we
+> should do something. Maybe make the current linux kernel package call
+> the /etc/kernel/postinst scripts, or maybe call
+> dracut-update-initramfs, which was what I was doing in my original
+> patch... =BFWhat could be the best solution?
 
-diff --git a/modules.d/40network/dhclient-script b/modules.d/40network/dhclient-script
-index 4b566d0..81917e0 100755
---- a/modules.d/40network/dhclient-script
-+++ b/modules.d/40network/dhclient-script
-@@ -47,7 +47,7 @@ setup_interface() {
- PATH=$PATH:/sbin:/usr/sbin
- 
- export PS4="dhclient.$interface.$$ + "
--exec >>/dev/initlog.pipe 2>>/dev/initlog.pipe
-+exec >>/dev/.initramfs/initlog.pipe 2>>/dev/.initramfs/initlog.pipe
- . /lib/dracut-lib.sh
- 
- # We already need a set netif here
-diff --git a/modules.d/40network/ifup b/modules.d/40network/ifup
-index 73e7984..c548ece 100755
---- a/modules.d/40network/ifup
-+++ b/modules.d/40network/ifup
-@@ -83,7 +83,7 @@ do_static() {
- PATH=$PATH:/sbin:/usr/sbin
- 
- export PS4="ifup.$1.$$ + "
--exec >>/dev/initlog.pipe 2>>/dev/initlog.pipe
-+exec >>/dev/.initramfs/initlog.pipe 2>>/dev/.initramfs/initlog.pipe
- . /lib/dracut-lib.sh
- 
- # Huh? No $1?
-diff --git a/modules.d/95fcoe/fcoe-up b/modules.d/95fcoe/fcoe-up
-index 4607507..b4eaa09 100755
---- a/modules.d/95fcoe/fcoe-up
-+++ b/modules.d/95fcoe/fcoe-up
-@@ -14,7 +14,7 @@ PATH=$PATH:/sbin:/usr/sbin
- [ -z "$1" -o -z "$2" ] && exit 1
- 
- export PS4="fcoe-up.$1.$$ + "
--exec >>/dev/initlog.pipe 2>>/dev/initlog.pipe
-+exec >>/dev/.initramfs/initlog.pipe 2>>/dev/.initramfs/initlog.pipe
- . /lib/dracut-lib.sh
- 
- netif=$1
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index bc5dc7f..ee67ae5 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -33,6 +33,7 @@ wait_for_loginit()
-         done
-         set -x
-     fi
-+    rm -f /dev/.initramfs/initlog.pipe
- }
- 
- emergency_shell()
-@@ -105,9 +106,9 @@ mount -t tmpfs -o mode=1777,noexec,nosuid,nodev  tmpfs /dev/shm >/dev/null 2>&1
- 
- if getargbool 0 rd.debug -y rdinitdebug -y rdnetdebug; then
-     getarg quiet && DRACUT_QUIET="yes"
--    mkfifo /dev/initlog.pipe
--    /sbin/loginit $DRACUT_QUIET </dev/initlog.pipe >/dev/console 2>&1 &
--    exec >/dev/initlog.pipe 2>&1
-+    mkfifo /dev/.initramfs/initlog.pipe
-+    /sbin/loginit $DRACUT_QUIET </dev/.initramfs/initlog.pipe >/dev/console 2>&1 &
-+    exec >/dev/.initramfs/initlog.pipe 2>&1
- else
-     exec 0<>/dev/console 1<>/dev/console 2<>/dev/console
- fi
-commit 4af673c3f8626872f1f638e4df2c6fab9a0d45ef
-Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Thu Nov 11 10:58:38 2010 +0100
+the proposed create seems really wrong, I would nack any postinst
+in debian or escalate as serious bug.
 
-    base/init: merge mkdir and add more mount options
-
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index ef96918..bc5dc7f 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -75,17 +75,17 @@ RDDEBUG=""
- [ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
- 
- # mount some important things
--mount -t proc /proc /proc >/dev/null 2>&1
--mount -t sysfs /sys /sys >/dev/null 2>&1
-+mount -t proc -o nosuid,noexec,nodev /proc /proc >/dev/null 2>&1
-+mount -t sysfs -o nosuid,noexec,nodev /sys /sys >/dev/null 2>&1
- 
- read RD_TIMESTAMP _tmp < /proc/uptime
- unset _tmp
- 
- if [ ! -c /dev/ptmx ]; then
-     # try to mount devtmpfs
--    if ! mount -t devtmpfs -omode=0755 udev /dev >/dev/null 2>&1; then
-+    if ! mount -t devtmpfs -o mode=0755,nosuid udev /dev >/dev/null 2>&1; then
-         # if it failed fall back to normal tmpfs
--        mount -t tmpfs -omode=0755 udev /dev >/dev/null 2>&1 
-+        mount -t tmpfs -o mode=0755,nosuid udev /dev >/dev/null 2>&1 
-         # Make some basic devices first, let udev handle the rest
-         mknod -m 0666 /dev/null c 1 3
-         mknod -m 0666 /dev/ptmx c 5 2
-@@ -94,10 +94,14 @@ if [ ! -c /dev/ptmx ]; then
-     fi
- fi
- 
-+# prepare the /dev directory
- ln -s /proc/self/fd /dev/fd >/dev/null 2>&1
- ln -s /proc/self/fd/0 /dev/stdin >/dev/null 2>&1
- ln -s /proc/self/fd/1 /dev/stdout >/dev/null 2>&1
- ln -s /proc/self/fd/2 /dev/stderr >/dev/null 2>&1
-+mkdir -m 0755 /dev/shm /dev/pts /dev/.udev /dev/.udev/rules.d /dev/.initramfs
-+mount -t devpts -o gid=5,mode=620,noexec,nosuid devpts /dev/pts >/dev/null 2>&1
-+mount -t tmpfs -o mode=1777,noexec,nosuid,nodev  tmpfs /dev/shm >/dev/null 2>&1
- 
- if getargbool 0 rd.debug -y rdinitdebug -y rdnetdebug; then
-     getarg quiet && DRACUT_QUIET="yes"
-@@ -110,11 +114,6 @@ fi
- 
- setdebug
- 
--mkdir /dev/shm /dev/pts 
--mkdir -p -m 0755 /dev/.udev/rules.d
--mount -t devpts -o gid=5,mode=620 devpts /dev/pts >/dev/null 2>&1
--mount -t tmpfs tmpfs /dev/shm >/dev/null 2>&1
--
- UDEVVERSION=$(udevadm --version)
- 
- source_conf /etc/conf.d
-@@ -313,7 +312,6 @@ fi
- 
- # Debug: Copy state
- if getargbool 0 rd.copystate -y rdcopystate; then
--    mkdir -p /dev/.initramfs
-     cp /tmp/* /dev/.initramfs/ >/dev/null 2>&1
- fi
- 
------------------------------------------------------------------------
-
-Summary of changes:
- modules.d/40network/dhclient-script |    2 +-
- modules.d/40network/ifup            |    2 +-
- modules.d/95fcoe/fcoe-up            |    2 +-
- modules.d/99base/init               |   25 ++++++++++++-------------
- 4 files changed, 15 insertions(+), 16 deletions(-)
-
-
--- 
-dracut - Initramfs generator using udev
+if you want hostile takeover that is up to the local admin
+and only one command away
+update-intramfs-dracut -t -u -k all
+=20
+--=20
+maks
