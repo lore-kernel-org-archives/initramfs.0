@@ -1,7 +1,7 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: [PATCH 1/3] 99base/dracut-lib.sh: 5 new functions & 1 modified
-Date: Fri, 12 Nov 2010 00:59:31 +0100
-Message-ID: <1289519973-12026-1-git-send-email-aidecoe@aidecoe.name>
+Date: Fri, 12 Nov 2010 02:09:30 +0100
+Message-ID: <1289524172-11173-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
