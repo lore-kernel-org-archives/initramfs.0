@@ -1,43 +1,91 @@
 From: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 2/3] 90crypt: probe for keydev asynchronously; changed
- kernel arg
-Date: Sat, 13 Nov 2010 11:50:54 +0300
-Message-ID: <AANLkTimg81mVgKeJ93y_J52Kud_NaUSB6RLT3wFst7fN@mail.gmail.com>
-References: <1289553710-7568-1-git-send-email-aidecoe@aidecoe.name>
-	<1289553710-7568-2-git-send-email-aidecoe@aidecoe.name>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Subject: [PATCH] i18n: support KEYMAP_TOGGLE from vconsole.conf
+Date: Mon, 15 Nov 2010 10:25:34 +0300
+Message-ID: <1289805934-17653-1-git-send-email-arvidjaar@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:received:received:in-reply-to
-         :references:date:message-id:subject:from:to:cc:content-type
-         :content-transfer-encoding;
-        bh=riAWfgYHuzdH/rZXXO88av8ceDoB/QRcfaGn7CWKtDg=;
-        b=tThPhScpub+6IWVSNypyO1ftsdVSGUhcB38lOlWMuUmLLrhvx44fepx8ZOKF54H7zX
-         42YiQgvwjyECtfY1YKkdXyv3E/H1Mn6bSB/TizTciSLjONioS9WfplSDkM6f+bJNq5kX
-         mlosMfQEXeX68m+Ha4jUOVGd5BPl0odkznZTc=
-In-Reply-To: <1289553710-7568-2-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+        h=domainkey-signature:received:received:from:to:subject:date
+         :message-id:x-mailer;
+        bh=YOvUnn+WIJiWdd2waL055RWP4SBYs1CcVVgs+ykt9U8=;
+        b=VYakHVBa6fDZ1P7hWde1RQC8OSr73ErNRXsXG53Y0BUFnL+U0ukuzUxB4BtQ6mGykn
+         EiBXBUEvQFtm7pELRSZ6gLN3ktaoXqdqcw7DOCEBxpGF9ipthSEVId1likL+BYnoNl4n
+         jIwCxdPVq4SCGjeuEVEEsJZyPpo6tSDGQuIss=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: =?ISO-8859-2?Q?Amadeusz_=AFo=B3nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-2010/11/12 Amadeusz =AFo=B3nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>:
-[...]
-> diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/c=
-ryptroot-ask.sh
-[...]
-> =A0inst "$moddir"/cryptroot-ask.sh /sbin/cryptroot-ask
+Support KEYMAP_TOGGLE for switching keyboard layout.
+This is what GRP_TOGGLE most likey maps to.
 
-As you are currently working on it, could you look into making
-cryptroot coexist with plymouth? Currently they fight for
-/sbin/cryptroot-ask; I thought about adding minimal plugin support
-(i.e. something like /cryptroot-ask.d where modules can drop their
-implementation; they will be tried is sequence until some succeeds).
-Then /sbin/cryptroot-ask could be moved to base and be simple wrapper
-around this directory.
+Signed-off-by: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Unfortunately I do not currently have ready-to-use infrastructure to
-test this implementation.
+---
+ modules.d/10i18n/README       |    2 +-
+ modules.d/10i18n/console_init |    2 +-
+ modules.d/10i18n/install      |    6 +++---
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/modules.d/10i18n/README b/modules.d/10i18n/README
+index b2204cd..1007763 100644
+--- a/modules.d/10i18n/README
++++ b/modules.d/10i18n/README
+@@ -47,6 +47,7 @@ The following variables are used by i18n install script and at initramfs
+ runtime:
+ 
+     KEYMAP - keyboard translation table loaded by loadkeys
++    KEYMAP_TOGGLE - map that defines characters to switch keyboard layouts
+     EXT_KEYMAPS - list of extra keymaps to bo loaded (sep. by space)
+     UNICODE - boolean, indicating UTF-8 mode
+     FONT - console font
+@@ -56,7 +57,6 @@ runtime:
+ The following are appended to EXT_KEYMAPS only during build time:
+ 
+     UNIKEYMAP
+-    GRP_TOGGLE
+ 
+ They were used in 10redhat-i18n module, but not sure of its purpose.
+ I'm leaving it in case...  The following are taken from the environment:
+diff --git a/modules.d/10i18n/console_init b/modules.d/10i18n/console_init
+index bdd39b0..dde550a 100755
+--- a/modules.d/10i18n/console_init
++++ b/modules.d/10i18n/console_init
+@@ -36,7 +36,7 @@ set_keymap() {
+ 
+     [ "${UNICODE}" = 1 ] && utf_switch=-u
+ 
+-    loadkeys -q ${utf_switch} ${KEYMAP} ${EXT_KEYMAPS}
++    loadkeys -q ${utf_switch} ${KEYMAP} ${KEYMAP_TOGGLE} ${EXT_KEYMAPS}
+ }
+ 
+ set_font() {
+diff --git a/modules.d/10i18n/install b/modules.d/10i18n/install
+index 96d563d..0daf920 100755
+--- a/modules.d/10i18n/install
++++ b/modules.d/10i18n/install
+@@ -102,9 +102,9 @@ install_local_i18n() {
+ 
+     # Gentoo user may have KEYMAP set to something like "-u pl2",
+     KEYMAP=${KEYMAP#-* }
+-    # I'm not sure of the purpose of UNIKEYMAP and GRP_TOGGLE.  They were in
++    # I'm not sure of the purpose of UNIKEYMAP.  It was in
+     # original redhat-i18n module.  Anyway it won't hurt.
+-    EXT_KEYMAPS+=\ ${UNIKEYMAP}\ ${GRP_TOGGLE}
++    EXT_KEYMAPS+=\ ${UNIKEYMAP}
+ 
+     [[ ${KEYMAP} ]] || dwarning 'No KEYMAP.' || return 1
+     findkeymap ${KEYMAP}
+@@ -157,7 +157,7 @@ install_local_i18n() {
+     mksubdirs ${initdir}${I18N_CONF}
+     mksubdirs ${initdir}${VCONFIG_CONF}
+     print_vars LC_ALL LANG >> ${initdir}${I18N_CONF}
+-    print_vars KEYMAP EXT_KEYMAPS UNICODE FONT FONT_MAP FONT_UNIMAP >> ${initdir}${VCONFIG_CONF}
++    print_vars KEYMAP KEYMAP_TOGGLE EXT_KEYMAPS UNICODE FONT FONT_MAP FONT_UNIMAP >> ${initdir}${VCONFIG_CONF}
+     return 0
+ }
+ 
+-- 
+tg: (325d491..) upstream/01-keymap_toggle (depends on: master)
