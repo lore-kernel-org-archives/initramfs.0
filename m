@@ -1,49 +1,31 @@
-From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [dracut GIT] branch, master, updated. 5b928ffade721f63c3d6c6001cf3588493fdc8b0
-Date: Mon, 22 Nov 2010 15:28:07 +0000
-Message-ID: <E1PKYJc-0001be-Gb@sfp-scmshell-1.v30.ch3.sourceforge.com>
+From: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [dracut GIT] branch, master, updated. 5b928ffade721f63c3d6c6001cf3588493fdc8b0
+Date: Mon, 22 Nov 2010 18:49:37 +0300
+Message-ID: <AANLkTi=j+9f8o2QnHpf_90HXnSaq0qqcDRXWf-Y65MKg@mail.gmail.com>
+References: <E1PKYJc-0001be-Gb@sfp-scmshell-1.v30.ch3.sourceforge.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:received:received:in-reply-to
+         :references:date:message-id:subject:from:to:cc:content-type;
+        bh=FqZFqPq3E2D1eZOS9WqXaeNck836ZlAypq3eXGVc+Ao=;
+        b=kPQLgUx1NR/lPcYyMQl5hh+4BzouoTyTQRQOOTklg4IuSFO6yLrma9WXrVR+FaPG8j
+         rQag/e1L4YN1QqcwOw8Ehn1061eiMMWIb0WuCHIA6VmMACKbHzJrX3O/OvUi9sDJ/Lkh
+         caFP3BHu3eMYhCdpxtDeNBlWeMtaWNU44/mow=
+In-Reply-To: <E1PKYJc-0001be-Gb-k4i/gY8Meg/5oxsc1G8FJ7gy3r6b7hxHn8KVU9S6xrQkmLvzuZlaBw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The branch, master has been updated
-       via  5b928ffade721f63c3d6c6001cf3588493fdc8b0 (commit)
-      from  ae202ef02e2bbc553753a6cc4749e61d8cf9a7a6 (commit)
+On Mon, Nov 22, 2010 at 6:28 PM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>  Version: 008
+> -%define release_prefix 0.9%{?rdist}
+> +%define release_prefix 0.10%{?rdist}
 
-Those revisions listed above that are new to this repository have
-not appeared on any other notification email; so we list those
-revisions in full, below.
-
-- Log -----------------------------------------------------------------
-commit 5b928ffade721f63c3d6c6001cf3588493fdc8b0
-Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Mon Nov 22 10:05:42 2010 +0100
-
-    dracut.spec: inc release
-
-diff --git a/dracut.spec b/dracut.spec
-index 6a9a462..4b7f068 100644
---- a/dracut.spec
-+++ b/dracut.spec
-@@ -15,7 +15,7 @@
- 
- Name: dracut
- Version: 008
--%define release_prefix 0.9%{?rdist}
-+%define release_prefix 0.10%{?rdist}
- Release: %{release_prefix}
- 
- Summary: Initramfs generator using udev
------------------------------------------------------------------------
-
-Summary of changes:
- dracut.spec |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-
--- 
-dracut - Initramfs generator using udev
+There is neither 0.8 tarball available nor GIT is tagged with 008
+version.If it is released, could you please tag and upload tarball?
+Thank you!
