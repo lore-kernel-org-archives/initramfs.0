@@ -1,36 +1,50 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] fix installation of `modules.builtin.bin'
-Date: Fri, 26 Nov 2010 09:36:42 +0100
-Message-ID: <4CEF719A.6060209@redhat.com>
-References: <1290738077-17335-1-git-send-email-christian.ch.heinz@gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [dracut GIT] branch, master, updated. ab9b7eee0a334d2c367ebd60b7bd22beac68a5f8
+Date: Fri, 26 Nov 2010 08:35:43 +0000
+Message-ID: <E1PLtmc-000091-Rh@sfp-scmshell-4.v30.ch3.sourceforge.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1290738077-17335-1-git-send-email-christian.ch.heinz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Christian Heinz <christian.ch.heinz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 26.11.2010 03:21, schrieb Christian Heinz:
-> `modules.builtin.bin' is installed like a regular file, thereby ending
-> up in the wrong place when `--kmoddir' is in effect. Fix this by
-> specifying the installation destination.
-> ---
->   modules.d/90kernel-modules/install |    2 +-
->   1 files changed, 1 insertions(+), 1 deletions(-)
->
-> diff --git a/modules.d/90kernel-modules/install b/modules.d/90kernel-modules/install
-> index 863ffac..b635216 100755
-> --- a/modules.d/90kernel-modules/install
-> +++ b/modules.d/90kernel-modules/install
-> @@ -4,4 +4,4 @@
->   [ -f /etc/modprobe.conf ]&&  dracut_install /etc/modprobe.conf
->   dracut_install $(find /etc/modprobe.d/ -type f -name '*.conf')
->   inst_hook cmdline 01 "$moddir/parse-kernel.sh"
-> -inst "$srcmods/modules.builtin.bin"
-> +inst "$srcmods/modules.builtin.bin" "/lib/modules/$kernel/modules.builtin.bin"
+The branch, master has been updated
+       via  ab9b7eee0a334d2c367ebd60b7bd22beac68a5f8 (commit)
+      from  3f003263d292af26b1f7971439df3a813d7b0f93 (commit)
+
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
+
+- Log -----------------------------------------------------------------
+commit ab9b7eee0a334d2c367ebd60b7bd22beac68a5f8
+Author: Christian Heinz <christian.ch.heinz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Date:   Fri Nov 26 03:21:17 2010 +0100
+
+    fix installation of `modules.builtin.bin'
+    
+    `modules.builtin.bin' is installed like a regular file, thereby ending
+    up in the wrong place when `--kmoddir' is in effect. Fix this by
+    specifying the installation destination.
+
+diff --git a/modules.d/90kernel-modules/install b/modules.d/90kernel-modules/install
+index 863ffac..b635216 100755
+--- a/modules.d/90kernel-modules/install
++++ b/modules.d/90kernel-modules/install
+@@ -4,4 +4,4 @@
+ [ -f /etc/modprobe.conf ] && dracut_install /etc/modprobe.conf
+ dracut_install $(find /etc/modprobe.d/ -type f -name '*.conf')
+ inst_hook cmdline 01 "$moddir/parse-kernel.sh"
+-inst "$srcmods/modules.builtin.bin"
++inst "$srcmods/modules.builtin.bin" "/lib/modules/$kernel/modules.builtin.bin"
+-----------------------------------------------------------------------
+
+Summary of changes:
+ modules.d/90kernel-modules/install |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
 
-pushed
+-- 
+dracut - Initramfs generator using udev
