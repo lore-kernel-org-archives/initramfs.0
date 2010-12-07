@@ -1,65 +1,44 @@
-From: Matt Domsch <Matt_Domsch-8PEkshWhKlo@public.gmane.org>
-Subject: [PATCH] include biosdevname calls in dracut
-Date: Sun, 5 Dec 2010 18:52:29 -0600
-Message-ID: <20101206005229.GA687@auslistsprd01.us.dell.com>
-Mime-Version: 1.0
+From: Christian Heinz <christian.ch.heinz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 2/2] dracut: don't print misleading dinfo after successful ldconfig run
+Date: Tue,  7 Dec 2010 02:44:20 +0100
+Message-ID: <1291686260-32371-2-git-send-email-christian.ch.heinz@gmail.com>
+References: <1291686260-32371-1-git-send-email-christian.ch.heinz@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:received:received:received:from:to:cc:subject
+         :date:message-id:x-mailer:in-reply-to:references;
+        bh=gydp4Ne/Fw9J1zjOQjSrBnz6CbR/0LTBnHLRt5v0x9Q=;
+        b=W79OdnJYTkanI6u5uXnj97D9zJur8GfbioFLc9uaZizLOI79VQXaFH1M8yxdkLX4LR
+         6lEb3eNubo7g+Z8c8RZ2H5utR6tqqKp/hU7RymFTxYNbABdjoZvTx55+9fZLPTm93kEa
+         KctnaeWKELA9tKc3/5He/Z3ATYmeyRoYOjX14=
+In-Reply-To: <1291686260-32371-1-git-send-email-christian.ch.heinz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-For your consideration.  This allows biosdevname to be called from
-network-using functions in dracut.  biosdevname is included in Fedora
-15, and there are tickets open to include it in other distros.
-
-Signed-off-by: Matt Domsch <Matt_Domsch-8PEkshWhKlo@public.gmane.org>
-
-Thanks,
-Matt
-
-
-From ef6a283f685571c730063a666830e2f02d8e9244 Mon Sep 17 00:00:00 2001
-From: Matt Domsch <Matt_Domsch-8PEkshWhKlo@public.gmane.org>
-Date: Fri, 3 Dec 2010 23:41:01 -0600
-Subject: [PATCH] add biosdevname calls to network subpackage
+Cc: Christian Heinz <christian.ch.heinz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
 ---
- dracut.spec                    |    1 +
- modules.d/95udev-rules/install |    5 +++--
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ dracut |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/dracut.spec b/dracut.spec
-index f3b92d7..f3fb3dd 100644
---- a/dracut.spec
-+++ b/dracut.spec
-@@ -113,6 +113,7 @@ Requires: bridge-utils
- Requires: iscsi-initiator-utils
- Requires: nfs-utils 
- Requires: dhclient
-+Requires: biosdevname
- %endif
+diff --git a/dracut b/dracut
+index 5cdd313..93ea308 100755
+--- a/dracut
++++ b/dracut
+@@ -351,8 +351,8 @@ unset item
+ # make sure that library links are correct and up to date
+ cp -ar /etc/ld.so.conf* "$initdir"/etc
+ mkdir -p "$initdir/var/cache/ldconfig"
+-ldconfig -r "$initdir" || [[ $UID != "0" ]] && \
+-    dinfo "ldconfig might need uid=0 (root) for chroot()"
++ldconfig -r "$initdir" || { [[ $UID != "0" ]] && \
++    dinfo "ldconfig might need uid=0 (root) for chroot()"; }
  
- %if 0%{?suse_version}
-diff --git a/modules.d/95udev-rules/install b/modules.d/95udev-rules/install
-index ee32b56..f42f68a 100755
---- a/modules.d/95udev-rules/install
-+++ b/modules.d/95udev-rules/install
-@@ -6,10 +6,11 @@
- # ultimately, /lib/initramfs/rules.d or somesuch which includes links/copies
- # of the rules we want so that we just copy those in would be best
- dracut_install udevd udevadm /etc/udev/udev.conf /etc/group
--dracut_install basename
-+dracut_install basename biosdevname
- inst_rules 50-udev-default.rules 60-persistent-storage.rules \
-     61-persistent-storage-edd.rules 80-drivers.rules 95-udev-late.rules \
--    60-pcmcia.rules 
-+    60-pcmcia.rules \
-+    71-netdevice.rules
- #Some debian udev rules are named differently
- inst_rules 50-udev.rules 95-late.rules
+ [[ $beverbose = yes ]] && (du -c "$initdir" | sort -n)
  
 -- 
-1.7.3.2
+1.7.3.3
