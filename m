@@ -1,61 +1,71 @@
-From: Matt Domsch <Matt_Domsch-8PEkshWhKlo@public.gmane.org>
-Subject: Re: [PATCH] include biosdevname calls in dracut
-Date: Fri, 31 Dec 2010 08:57:40 -0600
-Message-ID: <20101231145740.GB29376@auslistsprd01.us.dell.com>
-References: <20101206005229.GA687@auslistsprd01.us.dell.com> <20101214195807.GB31714@auslistsprd01.us.dell.com> <1292947718-sup-548@ittemni>
-Mime-Version: 1.0
+From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [dracut GIT] branch, master, updated. 2ca68bb82bc610cc9db6a5de5cae9c19f3bfc269
+Date: Fri,  7 Jan 2011 11:05:27 +0000
+Message-ID: <E1PbA8X-0006xI-Im@sfp-scmshell-4.v30.ch3.sourceforge.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1292947718-sup-548@ittemni>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Amadeusz ??o??nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Dec 21, 2010 at 05:16:17PM +0100, Amadeusz ??o??nowski wrote:
-> Excerpts from Matt Domsch's message of Tue Dec 14 20:58:07 +0100 2010:
-> > On Sun, Dec 05, 2010 at 06:52:29PM -0600, Matt Domsch wrote:
-> > > For your consideration.  This allows biosdevname to be called from
-> > > network-using functions in dracut.  biosdevname is included in
-> > > Fedora 15, and there are tickets open to include it in other
-> > > distros.
-> > 
-> > Any thoughts on this patch?
-> 
-> I think that better would be to include your patch with first its usage.
-> Having additional dependencies without a real use brings mess.  But it's
-> just my opinion and I'm not in charge. :-)
+The branch, master has been updated
+       via  2ca68bb82bc610cc9db6a5de5cae9c19f3bfc269 (commit)
+       via  e2d86d001ad96ade298efdbe0c1e4b5189648846 (commit)
+      from  8082a0946e5702217d9b04f8d67287ebd4958da6 (commit)
 
-The use case is simple - any network-using functions that are started
-using dracut (NFS root, iSCSI root, FCoE root) will then use the
-biosdevname names for devices, rather than the non-deterministic
-kernel names ethX.
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-The three instances where <interface> can be passed are:
+- Log -----------------------------------------------------------------
+commit 2ca68bb82bc610cc9db6a5de5cae9c19f3bfc269
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Fri Jan 7 12:05:42 2011 +0100
 
-ip=<interface>:{dhcp|on|any|dhcp6|auto6}
-bootdev=<interface>
-netroot=fcoe:<interface|MAC>:<dcb|nodcb>
+    base/install: make install of "less" optional
 
-plus the forceable rewrite rule:
-ifname=<interface>:<MAC>
-which only works when you already know the MAC address of the target device.
+diff --git a/modules.d/99base/install b/modules.d/99base/install
+index 57bf4bc..4a18fbf 100755
+--- a/modules.d/99base/install
++++ b/modules.d/99base/install
+@@ -2,7 +2,8 @@
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ 
+ dracut_install mount mknod mkdir modprobe pidof sleep chroot \
+-    sed ls flock cp mv dmesg rm ln rmmod mkfifo less 
++    sed ls flock cp mv dmesg rm ln rmmod mkfifo 
++dracut_install -o less 
+ if [ ! -e "${initdir}/bin/sh" ]; then
+     dracut_install bash
+     (ln -s bash "${initdir}/bin/sh" || :)
+commit e2d86d001ad96ade298efdbe0c1e4b5189648846
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Mon Jan 3 09:48:37 2011 +0100
 
-The biosdevname method behaves similarly to the ifname= method, except
-you get device names from BIOS, without needing to know the MAC
-address of the target device(s).  
+    fips: s/==/=
 
-With this patch, you no longer need to use bootdev=eth0  and later
-have udev rename eth0 to be em1, which leads to different devices names
-for configuration at different times (dracut and post-dracut).  Both
-dracut and post-dracut use the same device names.
+diff --git a/modules.d/01fips/fips.sh b/modules.d/01fips/fips.sh
+index 0596839..c51b16c 100755
+--- a/modules.d/01fips/fips.sh
++++ b/modules.d/01fips/fips.sh
+@@ -61,7 +61,7 @@ do_fips()
+     return 0
+ }
+ 
+-if ! fipsmode=$(getarg fips) || [ $fipsmode == "0" ]; then
++if ! fipsmode=$(getarg fips) || [ $fipsmode = "0" ]; then
+     rm -f /etc/modprobe.d/fips.conf >/dev/null 2>&1
+ else
+     set -e
+-----------------------------------------------------------------------
 
-Thanks,
-Matt
+Summary of changes:
+ modules.d/01fips/fips.sh |    2 +-
+ modules.d/99base/install |    3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
 
 -- 
-Matt Domsch
-Technology Strategist
-Dell | Office of the CTO
+dracut - Initramfs generator using udev
