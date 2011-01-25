@@ -1,33 +1,49 @@
-From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: inst not installing library dependencies of shared objects
-Date: Tue, 25 Jan 2011 03:59:28 +0100
-Message-ID: <AANLkTimXftdnoFMyoHHKF3H4B+x46Hpf8tJbYBEz5QwC@mail.gmail.com>
-Mime-Version: 1.0
+From: "Harald Hoyer" <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [dracut GIT] branch, master, updated. 444061de67a7d02441519e07ff6acafe78baa752
+Date: Tue, 25 Jan 2011 09:33:26 +0000
+Message-ID: <E1PhfHH-0005zb-7g@sfp-scmshell-3.v30.ch3.sourceforge.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:mime-version:date:message-id:subject:from:to
-         :content-type;
-        bh=ew1WgaEOlCL+tvd/I0yYb0jBuba5TP6xeCbyj6IbmRc=;
-        b=vl/EXPWjEokcQa14FDgFfGIiHywladHy60fV44EHT+yQOYxZKrEBgNgYkLaxLFeCkZ
-         thnhKh4BrVYT/ID4vDuYxTiCBK1kQ3LcGFG6RloCRiMbPFioJHfMCZXSZcNblbZ6iKCK
-         PjTvMR0wocfUTerrICgKCCrnOjncw4F/AkPzg=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello,
+The branch, master has been updated
+       via  444061de67a7d02441519e07ff6acafe78baa752 (commit)
+      from  ee1fa07f3d8258a78ae83ea2ec0e0d973e9a7624 (commit)
 
-I'm trying to add plymouth support to dracut on Ubuntu, and I'm having
-some troubles because some files
-(/lib/plymouth/{script.so,renderers/drm.so,...}) are not executable
-(as Fedora does for example), and that makes inst not install some
-libraries as libpng, libply-splash-graphics.so.2...
+Those revisions listed above that are new to this repository have
+not appeared on any other notification email; so we list those
+revisions in full, below.
 
-Any suggestions?
+- Log -----------------------------------------------------------------
+commit 444061de67a7d02441519e07ff6acafe78baa752
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Tue Jan 25 10:35:20 2011 +0100
 
-Thanks in advance,
+    base/init: drop "noexec" from /dev/shm
 
-JonAn.
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index 22cb39a..8116a4d 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -104,7 +104,7 @@ ln -s /proc/self/fd/1 /dev/stdout >/dev/null 2>&1
+ ln -s /proc/self/fd/2 /dev/stderr >/dev/null 2>&1
+ mkdir -m 0755 /dev/shm /dev/pts /dev/.udev /dev/.udev/rules.d /dev/.initramfs
+ mount -t devpts -o gid=5,mode=620,noexec,nosuid devpts /dev/pts >/dev/null 2>&1
+-mount -t tmpfs -o mode=1777,noexec,nosuid,nodev  tmpfs /dev/shm >/dev/null 2>&1
++mount -t tmpfs -o mode=1777,nosuid,nodev  tmpfs /dev/shm >/dev/null 2>&1
+ 
+ if getargbool 0 rd.debug -y rdinitdebug -y rdnetdebug; then
+     getarg quiet && DRACUT_QUIET="yes"
+-----------------------------------------------------------------------
+
+Summary of changes:
+ modules.d/99base/init |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+
+-- 
+dracut - Initramfs generator using udev
