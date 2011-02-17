@@ -1,82 +1,114 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: inst not installing library dependencies of shared objects
-Date: Thu, 17 Feb 2011 10:52:23 +0100
-Message-ID: <4D5CEFD7.70604@redhat.com>
-References: <AANLkTimXftdnoFMyoHHKF3H4B+x46Hpf8tJbYBEz5QwC@mail.gmail.com> <AANLkTi=jb1_kyzDLisXnMigs6aCyuG2eQhvVGhQHZTqs@mail.gmail.com>
+From: Andrey Borzenkov <arvidjaar@gmail.com>
+Subject: Re: [PATCH] vconsole: properly set terminal UTF-8
+	mode
+Date: Thu, 17 Feb 2011 21:52:51 +0300
+Message-ID: <AANLkTinvswsHGgEjnLf_dF+RPvc8pZH+Ku+o-2guyzsa@mail.gmail.com>
+References: <1288967715-3513-1-git-send-email-arvidjaar@gmail.com>
+	<AANLkTik9bv1U5_y6QV1jCJB5mj-DT3zZUucdsVmo+6Vy@mail.gmail.com>
+	<AANLkTi=GFHnhnagJ-7ZfGB62oQxVeT+YOZH003CA16Rf@mail.gmail.com>
+	<AANLkTi=_uDMFudNq4+jcojgGgoKvU0f2ySb+_7fTaZj7@mail.gmail.com>
+	<AANLkTi=8q8K3ST5_QXyHQuUCM=W0u060wcBmBRRBWm+9@mail.gmail.com>
+	<20101110224457.GE319@tango.0pointer.de>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <AANLkTi=jb1_kyzDLisXnMigs6aCyuG2eQhvVGhQHZTqs-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=gamma;
+	h=domainkey-signature:mime-version:in-reply-to:references:date
+	:message-id:subject:from:to:cc:content-type;
+	bh=TmaaSBQuf6mqa/m2Rw7/COiF1mpud2+vppbTjDsuDog=;
+	b=AF7lM5fNFjj+gAN2oxNUFqhgBJrK1XSWCukC/WOqUI9qhym408qeVcNuHVmZb22l2r
+	VpfJMLJdQaPQuWrd9QZCBtylX7R89T6kiD79uKkkQOgb229u7l3PTLniCO3e/KF06sWk
+	hd0uUhV5PughFQ7J4s5nOcQ6m7ZOKjAKuc+eo=
+In-Reply-To: <20101110224457.GE319@tango.0pointer.de>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+To: Lennart Poettering <lennart@poettering.net>
+Cc: initramfs <initramfs@vger.kernel.org>, Kay Sievers <kay.sievers@vrfy.org>, systemd-devel@lists.freedesktop.org
 
-Am 26.01.2011 21:47, schrieb Jon Ander Hernandez:
-> Hello,
-> 
-> 2011/1/25 Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
->> Hello,
+On Thu, Nov 11, 2010 at 1:44 AM, Lennart Poettering
+<lennart@poettering.net> wrote:
+> On Fri, 05.11.10 19:14, Andrey Borzenkov (arvidjaar@gmail.com) wrote:
+>
+>> >> It is rather interesting. I was testing unrelated patch for dracut
+>> >> using dracut tip. It turned out, dracut now installs
+>> >> systemd-vconsole-setup when available. Unfortunately it also also
+>> >> changed parsing of configuration files so no locale config was
+>> >> installed. Which caused vconsole-setup assume we are in non-UNICODE
+>> >> mode and disable it.
+>> >>
+>> >> I still believe we should not make any assumption about console state
+>> >> at the time of systemd startup and ensure it is configured as
+>> >> requested.
+>> >
+>> > I see, then we should fix the vconsole setup if stuff goes wrong here.
 >>
->> I'm trying to add plymouth support to dracut on Ubuntu, and I'm having
->> some troubles because some files
->> (/lib/plymouth/{script.so,renderers/drm.so,...}) are not executable
->> (as Fedora does for example), and that makes inst not install some
->> libraries as libpng, libply-splash-graphics.so.2...
-> 
-> I modified inst_binary to also act with non-executable shared objects.
-> 
-> I have also fixed a bug when installing a libraries whose directory
-> links to another directory (better explained which commands) :
-> 
-> $ ldd `which bash` | grep ld
-> 	/lib64/ld-linux-x86-64.so.2 (0x00007fa1cc3ff000)
-> 
-> $ readlink -f /lib64/ld-linux-x86-64.so.2
-> /lib/ld-2.12.1.so
-> 
-> So inst_library /lib64/ld-linux-x86-64.so.2 was doing :
-> 
-> (cd "/tmp/initramfs.4uaeD9/lib64" && ln -s "/lib/ld-2.12.1.so"
-> "ld-linux-x86-64.so.2")
-> 
-> But, /tmp/initramfs.4uaeD9/lib64 -> /lib... :-S
-> 
-> diff --git a/dracut-functions b/dracut-functions
-> index 2232dc9..473c68c 100755
-> --- a/dracut-functions
-> +++ b/dracut-functions
-> @@ -299,6 +299,8 @@ inst_library() {
->          lib=${src##*/}
->          inst_simple "$reallib" "$reallib"
->          inst_dir "${dest%/*}"
-> +        [[ -L ${initdir}${dest%/*} ]] && \
-> +        dest=$(readlink -f ${initdir}${dest%/*})/
->          (cd "${initdir}${dest%/*}" && ln -s "$reallib" "$lib")
->      else
->          inst_simple "$src" "$dest"
-> @@ -317,7 +319,9 @@ inst_library() {
->  # search in the usual places to find the binary.
->  find_binary() {
->      local binpath="/bin /sbin /usr/bin /usr/sbin" p
-> -    [[ -z ${1##/*} && -x $1 ]] && { echo $1; return 0; }
-> +    [[ -z ${1##/*} ]] &&
-> +    ( [[ -x $1 ]] || ( [[ -e $1 ]] && file $1 | grep -q "shared
-> object.*dynamically linked" )) &&
-> +    { echo $1; return 0; }
->      for p in $binpath; do
->          [[ -x $p/$1 ]] && { echo "$p/$1"; return 0; }
->      done
-> 
-> Regards,
-> 
-> JonAn.
+>> That is basically what my patch does.
+>>
+>> > We can safely assume that the kernel we rely on is utf8 by default.
+>> >
+>>
+>> OK, do you want me to resubmit with fixed description?
+>
+> I think it is safe to assume that the kernel enables UTF8 by default. I
+> see little need to redo what the kernel has been doing anyway already.
+>
+> Or, in other words: if vconsole-setup for reason didn't work properly in
+> the initrd we probably should fix that, not then try to work-around this
+> be enabling UTF8 a second time.
+>
 
-Thanks! Pushed.. Let me know, if
-http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=81c6e7fb69a0b7ef5169d13f8b4a4025db923ead
+As it stands now, dracut 008 in generic (not hostonly) mode explicitly
+disables UTF-8 because UNICODE is not set:
 
-works also for you.
+modules.d/10i18n/console_init:
 
-The other patch is:
-http://dracut.git.sourceforge.net/git/gitweb.cgi?p=dracut/dracut;a=commitdiff;h=172d85b9c949b321771d63dbd5f06ecf19cf94f0
+set_keyboard() {
+    local param
+
+    [ "${UNICODE}" = 1 ] && param=-u || param=-a
+    kbd_mode ${param}
+}
+
+The problem is, you do not know whether UNICODE is not set because
+system is configured for non-UNICODE or because we do not know yet.
+
+That's basically the same problem we already had in the past, and that
+was fixed (for hostonly) by
+
+commit 161da365e23cd4ac85f06e928a799f3427d8009d
+Author: Andrey Borzenkov <arvidjaar@gmail.com>
+Date:   Sun Nov 7 00:14:49 2010 +0300
+
+    i18n: do not use systemd-vconsole-setup
+
+    systemd-vconsole-setup was not designed to be run from udevd.
+    It checks locale environment to decide, whether UNICODE should
+    be enabled or disabled. Normally environment is setup by
+    systemd; but the only environment available in udev rules is
+    those from device properties. It means systemd-vconsole-setup
+    always assumes default C locale and disables UNICODE.
+
+    Revert to using built-in console_init which explicitly
+    imports locale settings from /etc/vconsole.conf. Alternative
+    is to revert 6545b9d7 and call console_init directly :)
+
+I do not really see how to fix it in dracut given current
+configuration. May be we should gradually move to using UNICODE=0 or
+UNICODE=no to *disable* it, but still right now generic dracut image +
+systemd is broken:
+
+Feb 19 03:20:51 localhost kernel: systemd-vconsole-setup[341]:
+loadkeys: warning: loading Unicode keymap on non-Unicode console
+Feb 19 03:20:51 localhost kernel: systemd-vconsole-setup[341]:
+(perhaps you want to do `kbd_mode -u'?)
+
+So I humbly ask to revise whether my patch is acceptable.
