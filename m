@@ -1,62 +1,55 @@
-From: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] fix c0a82e271e2730159f042ee7d7fc4aca2e08d28a
-Date: Sat, 19 Feb 2011 09:57:55 +0300
-Message-ID: <1298098675-24424-1-git-send-email-arvidjaar@gmail.com>
+From: Anssi Hannula <anssi-4qZELD6Fgxhg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH] load dracut.conf.d before dracut.conf
+Date: Sun, 20 Feb 2011 19:29:49 +0200
+Message-ID: <4D614F8D.10505@mandriva.org>
+References: <201007140205.35944.maarten.vanraes@gmail.com> <4C46DCD0.3020608@redhat.com> <4D280724.8050405@mandriva.org> <4D5E46DC.4020303@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=domainkey-signature:from:to:subject:date:message-id:x-mailer;
-        bh=d4ESPaArrYh72UZT17KDGzDnFvZPx1ryweqzhen/Vxc=;
-        b=kcVU9RJRvobWp+bMtoO2PBURY9CptfMw2JylwT/3IKkuUGiwx09k6M3Ol9K6saG8O2
-         nZAiugxmtZQz+C0m3U1OAEHDwIIybZY9DTApOg/f4CgRt7BOjJcj7lBoKXG5cBtpQp1G
-         zy40Vq5geCBi3NNlobT/y+2BVPxDHO+WC3jRA=
+In-Reply-To: <4D5E46DC.4020303-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Maarten Vanraes <maarten.vanraes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Let inst_key_val usage agree with above patch :)
+On 18.02.2011 12:15, Harald Hoyer wrote:
+> Am 08.01.2011 07:41, schrieb Anssi Hannula:
+>> The conffile patch causes dracut to load /etc/dracut.conf first and only
+>> then /etc/dracut.conf.d, allowing the latter to override the former.
+>>
+>> IMO this is backwards. I thought distribution/package default stuff was
+>> supposed to be put in /etc/dracut.conf.d/*.conf, and /etc/dracut.conf
+>> was the place for the user to override them if they so wished.
+>>
+>> Is this not the case?
+>>
+>> If I've indeed misunderstood this, what is the recommended way for a
+>> user to override distribution default settings?
+>> Create a /etc/dracut.conf.d/zzz-last-user.conf?
+>> Wouldn't that make /etc/dracut.conf superfluous? Or is that file indeed
+>> intended for distribution defaults instead?
+>>
+>> Or is there some more important reason to have it this way?
+>>
+>> I've attached a patch which makes the behaviour sensible to me.
+>>
+>>
+>> For background, the Mandriva package (again, wrongly IMO) currently uses
+>> /etc/dracut.conf for distribution defaults and expects any user
+>> configuration to be in /etc/dracut.conf.d/*.conf, and that was the
+>> reason for the original patch submission; I'll change this behavior in
+>> Mandriva (no one was against it on our ml in March) if the attached
+>> patch gets OK'd.
+>>
+> 
+> in Fedora, I put distro specific stuff in /etc/dracut.conf.d/01-dist.conf and I
+> encourage people to put their config in e.g. /etc/dracut.conf.d/99-myconf.conf
 
-Also UNICODE is rather global console property, not font specific
-(and if anything, is rather keyboard specific). Let it be just
-vconsole.unicode
+What's the purpose of /etc/dracut.conf then?
 
-Signed-off-by: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+If you don't think my previous patch was reasonable, I suggest removing
+it completely :)
 
----
- modules.d/10i18n/parse-i18n.sh |   16 ++++++++--------
- 1 files changed, 8 insertions(+), 8 deletions(-)
-
-diff --git a/modules.d/10i18n/parse-i18n.sh b/modules.d/10i18n/parse-i18n.sh
-index 61280c0..73dff6e 100755
---- a/modules.d/10i18n/parse-i18n.sh
-+++ b/modules.d/10i18n/parse-i18n.sh
-@@ -19,15 +19,15 @@ inst_key_val() {
-     unset _value
- }
- 
--inst_key_val /etc/vconsole.conf '' KEYMAP      vconsole.keymap      KEYTABLE
--inst_key_val /etc/vconsole.conf '' FONT        vconsole.font        SYSFONT 
--inst_key_val /etc/vconsole.conf '' FONT_MAP    vconsole.font.map    CONTRANS 
--inst_key_val /etc/vconsole.conf '' FONT_UNIMAP vconsole.font.unimap UNIMAP 
--inst_key_val /etc/vconsole.conf 1  UNICODE     vconsole.font.unicode
--inst_key_val /etc/vconsole.conf '' EXT_KEYMAP  vconsole.keymap.ext
-+inst_key_val '' /etc/vconsole.conf KEYMAP      vconsole.keymap      KEYTABLE
-+inst_key_val '' /etc/vconsole.conf FONT        vconsole.font        SYSFONT 
-+inst_key_val '' /etc/vconsole.conf FONT_MAP    vconsole.font.map    CONTRANS 
-+inst_key_val '' /etc/vconsole.conf FONT_UNIMAP vconsole.font.unimap UNIMAP 
-+inst_key_val 1  /etc/vconsole.conf UNICODE     vconsole.unicode
-+inst_key_val '' /etc/vconsole.conf EXT_KEYMAP  vconsole.keymap.ext
- 
--inst_key_val /etc/locale.conf   LANG   locale.LANG
--inst_key_val /etc/locale.conf   LC_ALL locale.LC_ALL
-+inst_key_val '' /etc/locale.conf   LANG        locale.LANG
-+inst_key_val '' /etc/locale.conf   LC_ALL      locale.LC_ALL
- 
- if [ -f /etc/locale.conf ]; then
-     . /etc/locale.conf
 -- 
-tg: (9edf1b2..) upstream/fix-c0a82e (depends on: master)
+Anssi Hannula
