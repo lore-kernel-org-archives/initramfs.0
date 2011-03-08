@@ -1,8 +1,10 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] btrfs improvements, in-initramfs dmsquash-live images
-Date: Tue,  8 Mar 2011 18:35:10 -0500
-Message-ID: <1299627317-11145-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 1/7] Fix bash logic typo/buglet ([ condition ] & expression)
+Date: Tue,  8 Mar 2011 18:35:11 -0500
+Message-ID: <1299627317-11145-2-git-send-email-wwoods@redhat.com>
+References: <1299627317-11145-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1299627317-11145-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -10,41 +12,22 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi folks,
+---
+ modules.d/90dmsquash-live/dmsquash-live-root |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-This patch series is the result of my attempt to convert anaconda (the
-Fedora installer) into a btrfs-based, dmsquash-live image that uses dracut
-to start up.
-
-The first 4 patches are just bugfixes (1, 2) and minor tweaks that should
-not change existing behavior (3, 4). Patch 5 and 6 improve btrfs handling and
-add support for images named 'btrfs.img' to dmsquash-live-root.
-
-The final patch is the interesting one. It adds code to dmsquash-live to
-allow live systems that run completely from an image within the initramfs.
-(This happens to be how anaconda runs right now - as a 360MB initramfs.)
-
-For this to work you need to pass:
-   root=live:/path/to/*{squashfs,ext3fs,btrfs}.img
-on the boot commandline. (And, obviously, that file needs to exist inside
-initramfs.)
-
-Doing this lets us keep the anaconda runtime compressed in RAM while the
-installation process runs. With our current images we run out of RAM on
-systems with <= 512MB; using ext3/btrfs inside squashfs fixes that.
-
-Feedback welcomed. Thanks.
-
- dracut-functions                                   |    4 +-
- modules.d/90btrfs/80-btrfs.rules                   |    2 +-
- modules.d/90btrfs/module-setup.sh                  |   10 ++++--
- modules.d/90dm/module-setup.sh                     |    3 --
- modules.d/90dmraid/module-setup.sh                 |    3 --
- .../90dmsquash-live/dmsquash-live-genrules.sh      |   12 +++++-
- modules.d/90dmsquash-live/dmsquash-live-root       |   38 +++++++++++++------
- modules.d/90dmsquash-live/module-setup.sh          |    4 ++
- modules.d/90dmsquash-live/parse-dmsquash-live.sh   |    2 +
- modules.d/90lvm/module-setup.sh                    |    3 --
- 10 files changed, 52 insertions(+), 29 deletions(-)
-
--w
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-root b/modules.d/90dmsquash-live/dmsquash-live-root
+index d4ba839..e7c9626 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-root
++++ b/modules.d/90dmsquash-live/dmsquash-live-root
+@@ -26,7 +26,7 @@ getargbool 0 rd.live.overlay.readonly -y readonly_overlay && readonly_overlay="-
+ overlay=$(getarg rd.live.overlay overlay)
+ 
+ # FIXME: we need to be able to hide the plymouth splash for the check really
+-[ -e $livedev ] & fs=$(blkid -s TYPE -o value $livedev)
++[ -e $livedev ] && fs=$(blkid -s TYPE -o value $livedev)
+ if [ "$fs" = "iso9660" -o "$fs" = "udf" ]; then
+     check="yes"
+ fi
+-- 
+1.7.4
