@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/7] Use 'btrfs' command rather than 'btrfsctl', and install btrfs driver
-Date: Tue,  8 Mar 2011 18:35:15 -0500
-Message-ID: <1299627317-11145-6-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 7/7] Add support for in-initramfs live images with "root=live:/path/name.img"
+Date: Tue,  8 Mar 2011 18:35:17 -0500
+Message-ID: <1299627317-11145-8-git-send-email-wwoods@redhat.com>
 References: <1299627317-11145-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1299627317-11145-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -12,56 +12,92 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-btrfsctl is being replaced by the btrfs command in the upstream
-tools, so change accordingly. Also, if we're using the btrfs module
-we should probably make sure the btrfs driver gets installed.
----
- modules.d/90btrfs/80-btrfs.rules  |    2 +-
- modules.d/90btrfs/module-setup.sh |   10 +++++++---
- 2 files changed, 8 insertions(+), 4 deletions(-)
+This allows creation of initramfs images which contain a Live system.
+The primary use for this is keeping very large initramfs-based systems
+(e.g. anaconda, the Fedora installer) compressed in-memory, by using a
+compressed filesystem image like squashfs or btrfs.
 
-diff --git a/modules.d/90btrfs/80-btrfs.rules b/modules.d/90btrfs/80-btrfs.rules
-index 92c8553..7c98d98 100644
---- a/modules.d/90btrfs/80-btrfs.rules
-+++ b/modules.d/90btrfs/80-btrfs.rules
-@@ -2,7 +2,7 @@ SUBSYSTEM!="block", GOTO="btrfs_end"
- ACTION!="add|change", GOTO="btrfs_end"
- 
- ENV{ID_FS_TYPE}=="btrfs", RUN+="/sbin/modprobe btrfs"
--ENV{ID_FS_TYPE}=="btrfs", RUN+="/sbin/btrfsctl -A $env{DEVNAME}"
-+ENV{ID_FS_TYPE}=="btrfs", RUN+="/sbin/btrfs device scan $env{DEVNAME}"
- 
- LABEL="btrfs_end"
- 
-diff --git a/modules.d/90btrfs/module-setup.sh b/modules.d/90btrfs/module-setup.sh
-index 0503e1d..765d960 100755
---- a/modules.d/90btrfs/module-setup.sh
-+++ b/modules.d/90btrfs/module-setup.sh
-@@ -3,9 +3,9 @@
+dmsquash-live-genrules.sh will initqueue dmsquash-live-root itself
+(rather than making udev rules) if the given live "device" is actually
+an existing, plain file.
+
+parse-dmsquash-live.sh will only accept paths that end in ".img".
+dmsquash-live-root will only handle images named "*squashfs.img",
+"*ext3fs.img", or "*btrfs.img".
+---
+ .../90dmsquash-live/dmsquash-live-genrules.sh      |   12 ++++++++++--
+ modules.d/90dmsquash-live/dmsquash-live-root       |   18 +++++++++++++-----
+ modules.d/90dmsquash-live/parse-dmsquash-live.sh   |    2 ++
+ 3 files changed, 25 insertions(+), 7 deletions(-)
+
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-genrules.sh b/modules.d/90dmsquash-live/dmsquash-live-genrules.sh
+index 72695a9..5642d53 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-genrules.sh
++++ b/modules.d/90dmsquash-live/dmsquash-live-genrules.sh
+@@ -1,7 +1,8 @@
+ #!/bin/sh
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
  # ex: ts=8 sw=4 sts=4 et filetype=sh
+-if [ "${root%%:*}" = "live" ]; then
++case "$root" in
++  live:/dev/*)
+     {
+         printf 'KERNEL=="%s", SYMLINK+="live"\n' \
+             ${root#live:/dev/} 
+@@ -15,4 +16,11 @@ if [ "${root%%:*}" = "live" ]; then
+             ${root#live:/dev/} 
+     } >> /etc/udev/rules.d/99-live-squash.rules
+     echo '[ -e /dev/root ]' > /initqueue-finished/dmsquash.sh
+-fi
++  ;;
++  live:*)
++    if [ -f "${root#live:}" ]; then
++        /sbin/initqueue --settled --onetime --unique /sbin/dmsquash-live-root "${root#live:}"
++        echo '[ -e /dev/root ]' > /initqueue-finished/dmsquash.sh
++    fi
++  ;;
++esac
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-root b/modules.d/90dmsquash-live/dmsquash-live-root
+index f8aa805..c857e48 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-root
++++ b/modules.d/90dmsquash-live/dmsquash-live-root
+@@ -44,11 +44,19 @@ getarg rw && liverw=rw
+ [ -z "$liverw" ] && liverw=ro
+ # mount the backing of the live image first
+ mkdir -p /dev/.initramfs/live
+-mount -n -t $fstype -o $liverw $livedev /dev/.initramfs/live
+-RES=$?
+-if [ "$RES" != "0" ]; then
+-    die "Failed to mount block device of live image"
+-    exit 1
++if [ -f $livedev ]; then
++    # no mount needed - we've already got the LiveOS image in initramfs
++    case $livedev in
++        *squashfs.img) SQUASHED=$livedev ;;
++        *ext3fs.img|*btrfs.img) FSIMG=$livedev ;;
++    esac
++else
++    mount -n -t $fstype -o $liverw $livedev /dev/.initramfs/live
++    RES=$?
++    if [ "$RES" != "0" ]; then
++        die "Failed to mount block device of live image"
++        exit 1
++    fi
+ fi
  
- check() {
--    # if we don't have btrfs (btrfsctl) installed on the host system,
-+    # if we don't have btrfs installed on the host system,
-     # no point in trying to support it in the initramfs.
--    type -P btrfsctl >/dev/null || return 1
-+    type -P btrfs >/dev/null || return 1
- 
-     . $dracutfunctions
-     [[ $debug ]] && set -x
-@@ -27,8 +27,12 @@ depends() {
-     return 0
- }
- 
-+installkernel() {
-+    instmods btrfs
-+}
-+
- install() {
-     inst_rules "$moddir/80-btrfs.rules"
--    dracut_install btrfsctl
-+    dracut_install btrfs
- }
+ # overlay setup helper function
+diff --git a/modules.d/90dmsquash-live/parse-dmsquash-live.sh b/modules.d/90dmsquash-live/parse-dmsquash-live.sh
+index 38610fb..6e0db29 100755
+--- a/modules.d/90dmsquash-live/parse-dmsquash-live.sh
++++ b/modules.d/90dmsquash-live/parse-dmsquash-live.sh
+@@ -38,6 +38,8 @@ case "$liveroot" in
+         rootok=1 ;;
+     live:/dev/*)
+         rootok=1 ;;
++    live:/*.[Ii][Mm][Gg]|/*.[Ii][Mm][Gg])
++        [ -f "${root#live:}" ] && rootok=1 ;;
+ esac
+ info "root was $root, liveroot is now $liveroot"
  
 -- 
 1.7.4
