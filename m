@@ -1,66 +1,60 @@
-From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: dracut 005 question
-Date: Mon, 14 Mar 2011 12:25:55 +0100
-Message-ID: <1300101485-sup-8139@ittemni>
-References: <AANLkTimG_vvX-qDQ7+hUA7LjrWBmJU6uA1OY0ZHMA+VG@mail.gmail.com> <AANLkTikhgLdM_x_UHgCDQYqD=ekVE2G+aY+YNyuwXD75@mail.gmail.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] dmsquash-live: use 'rootfs.img' for rootfs image name
+Date: Mon, 14 Mar 2011 16:31:11 +0100
+Message-ID: <4D7E34BF.1070805@redhat.com>
+References: <1299878949-27941-1-git-send-email-wwoods@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="=-1300101955-975312-29800-3030-2-="; protocol="application/pgp-signature"
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <AANLkTikhgLdM_x_UHgCDQYqD=ekVE2G+aY+YNyuwXD75-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1299878949-27941-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Am 11.03.2011 22:29, schrieb Will Woods:
+> Every image gets handled the same way regardless of filesystem, so
+> let's use a filesystem-neutral name (rather than adding new
+> lines for every fstype anyone might want to use).
+> ---
+>  modules.d/90dmsquash-live/dmsquash-live-root |   10 +++++-----
+>  1 files changed, 5 insertions(+), 5 deletions(-)
+> 
+> diff --git a/modules.d/90dmsquash-live/dmsquash-live-root b/modules.d/90dmsquash-live/dmsquash-live-root
+> index 06893d5..16262b6 100755
+> --- a/modules.d/90dmsquash-live/dmsquash-live-root
+> +++ b/modules.d/90dmsquash-live/dmsquash-live-root
+> @@ -48,7 +48,7 @@ if [ -f $livedev ]; then
+>      # no mount needed - we've already got the LiveOS image in initramfs
+>      case $livedev in
+>          *squashfs.img) SQUASHED=$livedev ;;
+> -        *ext3fs.img|*btrfs.img) FSIMG=$livedev ;;
+> +        *ext3fs.img|*rootfs.img) FSIMG=$livedev ;;
+>      esac
+>  else
+>      mount -n -t $fstype -o $liverw $livedev /dev/.run/initramfs/live
+> @@ -135,8 +135,8 @@ fi
+>  # we might have an embedded fs image to use as rootfs (uncompressed live)
+>  if [ -e /dev/.run/initramfs/live/${live_dir}/ext3fs.img ]; then
+>      FSIMG="/dev/.run/initramfs/live/${live_dir}/ext3fs.img"
+> -elif [ -e /dev/.run/initramfs/live/${live_dir}/btrfs.img ]; then
+> -    FSIMG="/dev/.run/initramfs/live/${live_dir}/btrfs.img"
+> +elif [ -e /dev/.run/initramfs/live/${live_dir}/rootfs.img ]; then
+> +    FSIMG="/dev/.run/initramfs/live/${live_dir}/rootfs.img"
+>  fi
+>  
+>  if [ -n "$FSIMG" ] ; then
+> @@ -170,8 +170,8 @@ if [ -e "$SQUASHED" ] ; then
+>      BASE_LOOPDEV=$( losetup -f )
+>      if [ -f /squashfs/LiveOS/ext3fs.img ]; then
+>          losetup -r $BASE_LOOPDEV /squashfs/LiveOS/ext3fs.img
+> -    elif [ -f /squashfs/LiveOS/btrfs.img ]; then
+> -        losetup -r $BASE_LOOPDEV /squashfs/LiveOS/btrfs.img
+> +    elif [ -f /squashfs/LiveOS/rootfs.img ]; then
+> +        losetup -r $BASE_LOOPDEV /squashfs/LiveOS/rootfs.img
+>      fi
+>  
+>      umount -l /squashfs
 
---=-1300101955-975312-29800-3030-2-=
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-
-Hi,
-
-Dracut 005? Keys are supported since 006, IIRC.
-
-Excerpts from jaivuk's message of Mon Mar 14 11:53:59 +0100 2011:
-> My root partition and other partitions on the same lvm group mount
-> fine, but my second volume group (vg3) is not OK:
-> My root partition is configured like that:
-> md raid -> luks1 -> LVM vg2 -> filesystem
-> =
-
-> My second volume group:
-> LVM vg3 -> luks2 -> filesystem
-
-Do you I understand correctly, that you'd like Dracut to mount all
-partitions? Or even activate all volume groups? Dracut is meant to mount
-root partition and as soon it's done, he switches to it. You cannot
-expect it will mount any other stuff. The rest should be done by
-system's init scripts.
-
-I have actually a setup, where I have one volume group divided between
-two physical devices. Dracut opens only part of it where root is, then
-switches to it and the second physical device is activated by init
-scripts.
--- =
-
-Amadeusz =C5=BBo=C5=82nowski
-
-PGP key fpr: C700 CEDE 0C18 212E 49DA  4653 F013 4531 E1DB FAB5
-
---=-1300101955-975312-29800-3030-2-=
-Content-Disposition: attachment; filename="signature.asc"
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iQEcBAEBAgAGBQJNfftDAAoJEPATRTHh2/q1EEMH/0Y0zFLvo8Z9L6qeqoCMNF0u
-gV+19Bd6MvE3Tgn6vYlrT/Hvz/Qbia459TiUAzRhF0LzDOs8P8PhU9Gl4DKrhczf
-0sQMeWAl3k1WOXnA3BMyWHmzxqPNuU2uEyqmIkzty8ZwhBnUzLqRvAGu5yR5xl+0
-EdJMVuLUB+vu35yToHuHFwI6yIRtPkPTU47hQ0d5/5RGxeNKBNv+6w3sZI6vkRyr
-Zp+MsxqYmSF/pOIQHspkqowFp6Pe4c6TpKrmIw2fPwW4pfB07s3BjGoZA036AEuH
-c+abF8l411X2wUz86BYC1VBfllu5bPQyyjtvPNrvFvpZ7UImkgKjZNHotxfGW1w=
-=fZji
------END PGP SIGNATURE-----
-
---=-1300101955-975312-29800-3030-2-=--
+pushed
