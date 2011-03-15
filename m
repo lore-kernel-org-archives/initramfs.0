@@ -1,7 +1,7 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: =?UTF-8?q?=5BPATCHv3=5D=20dracut-logger=3A=20logging=20facility=20module=20for=20build-=20and=20boot-time?=
-Date: Tue, 15 Mar 2011 19:37:45 +0100
-Message-ID: <1300214265-30479-1-git-send-email-aidecoe@aidecoe.name>
+Subject: =?UTF-8?q?=5BPATCHv4=5D=20dracut-logger=3A=20logging=20facility=20module=20for=20build-=20and=20boot-time?=
+Date: Tue, 15 Mar 2011 20:06:27 +0100
+Message-ID: <1300215987-11639-1-git-send-email-aidecoe@aidecoe.name>
 References: <1300064403-23298-1-git-send-email-aidecoe@aidecoe.name>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
@@ -29,10 +29,10 @@ in dracut-logger.
 ---
  dracut           |   25 ++++-
  dracut-functions |   30 +-----
- dracut-logger    |  293 ++++++++++++++++++++++++++++++++++++++++++++++=
+ dracut-logger    |  294 ++++++++++++++++++++++++++++++++++++++++++++++=
 ++++++++
  dracut.conf      |    4 +
- 4 files changed, 324 insertions(+), 28 deletions(-)
+ 4 files changed, 325 insertions(+), 28 deletions(-)
  create mode 100755 dracut-logger
 
 diff --git a/dracut b/dracut
@@ -166,10 +166,10 @@ e"
  print_vars() {
 diff --git a/dracut-logger b/dracut-logger
 new file mode 100755
-index 0000000..f7ea1b4
+index 0000000..85e9c55
 --- /dev/null
 +++ b/dracut-logger
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,294 @@
 +#!/bin/sh
 +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -=
 *-
@@ -350,6 +350,7 @@ g logging"
 +    for lvl in $stdloglvl $sysloglvl $fileloglvl; do
 +        [ $lvl -gt $_maxloglvl ] && _maxloglvl=3D$lvl
 +    done
++    export _maxloglvl
 +
 +    [ -n "$errmsg" ] && derror "$errmsg"
 +
