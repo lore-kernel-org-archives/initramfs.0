@@ -1,60 +1,49 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dmsquash-live: use 'rootfs.img' for rootfs image name
-Date: Mon, 14 Mar 2011 16:31:11 +0100
-Message-ID: <4D7E34BF.1070805@redhat.com>
-References: <1299878949-27941-1-git-send-email-wwoods@redhat.com>
+From: jaivuk <jaivuk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: dracut 005 question
+Date: Tue, 15 Mar 2011 09:25:06 +0000
+Message-ID: <AANLkTik9Q+ga+nvjawVOc4gYdHohwwEN7FYC02Kdmi4H@mail.gmail.com>
+References: <AANLkTimG_vvX-qDQ7+hUA7LjrWBmJU6uA1OY0ZHMA+VG@mail.gmail.com>
+	<AANLkTikhgLdM_x_UHgCDQYqD=ekVE2G+aY+YNyuwXD75@mail.gmail.com>
+	<1300101485-sup-8139@ittemni>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1299878949-27941-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:mime-version:in-reply-to:references:date
+         :message-id:subject:from:to:content-type;
+        bh=fIMAKNjvuGQf7lAYTTA/UCWOum2WcMeSKIGG8nVwwGk=;
+        b=JhxXN13MpGZ1D0LNkJ1dwf64Jzi9qjI4BUC1Mg9FFeYro9kYddLU3ktqjP2K7Fjva2
+         TGjkbDUN+7bf93Rsh33H4f0RHmQOITBeULI5mzaMBxilMqcKzdOqXfGXw4A2KSPJ+qhb
+         J3EQF7NVFURU87E3RQ9edsLeEB+TfuC2/Lx18=
+In-Reply-To: <1300101485-sup-8139@ittemni>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Am 11.03.2011 22:29, schrieb Will Woods:
-> Every image gets handled the same way regardless of filesystem, so
-> let's use a filesystem-neutral name (rather than adding new
-> lines for every fstype anyone might want to use).
-> ---
->  modules.d/90dmsquash-live/dmsquash-live-root |   10 +++++-----
->  1 files changed, 5 insertions(+), 5 deletions(-)
-> 
-> diff --git a/modules.d/90dmsquash-live/dmsquash-live-root b/modules.d/90dmsquash-live/dmsquash-live-root
-> index 06893d5..16262b6 100755
-> --- a/modules.d/90dmsquash-live/dmsquash-live-root
-> +++ b/modules.d/90dmsquash-live/dmsquash-live-root
-> @@ -48,7 +48,7 @@ if [ -f $livedev ]; then
->      # no mount needed - we've already got the LiveOS image in initramfs
->      case $livedev in
->          *squashfs.img) SQUASHED=$livedev ;;
-> -        *ext3fs.img|*btrfs.img) FSIMG=$livedev ;;
-> +        *ext3fs.img|*rootfs.img) FSIMG=$livedev ;;
->      esac
->  else
->      mount -n -t $fstype -o $liverw $livedev /dev/.run/initramfs/live
-> @@ -135,8 +135,8 @@ fi
->  # we might have an embedded fs image to use as rootfs (uncompressed live)
->  if [ -e /dev/.run/initramfs/live/${live_dir}/ext3fs.img ]; then
->      FSIMG="/dev/.run/initramfs/live/${live_dir}/ext3fs.img"
-> -elif [ -e /dev/.run/initramfs/live/${live_dir}/btrfs.img ]; then
-> -    FSIMG="/dev/.run/initramfs/live/${live_dir}/btrfs.img"
-> +elif [ -e /dev/.run/initramfs/live/${live_dir}/rootfs.img ]; then
-> +    FSIMG="/dev/.run/initramfs/live/${live_dir}/rootfs.img"
->  fi
->  
->  if [ -n "$FSIMG" ] ; then
-> @@ -170,8 +170,8 @@ if [ -e "$SQUASHED" ] ; then
->      BASE_LOOPDEV=$( losetup -f )
->      if [ -f /squashfs/LiveOS/ext3fs.img ]; then
->          losetup -r $BASE_LOOPDEV /squashfs/LiveOS/ext3fs.img
-> -    elif [ -f /squashfs/LiveOS/btrfs.img ]; then
-> -        losetup -r $BASE_LOOPDEV /squashfs/LiveOS/btrfs.img
-> +    elif [ -f /squashfs/LiveOS/rootfs.img ]; then
-> +        losetup -r $BASE_LOOPDEV /squashfs/LiveOS/rootfs.img
->      fi
->  
->      umount -l /squashfs
+Hi guys,
 
-pushed
+Let me tell you what I want to achieve here - I have a host with
+several luks partitions using the same key and I want them to be
+unlocked by plugging USB stick with the key during the boot and not
+typing the key via the keyboard at any stage.
+
+I managed to install F14 with dracut-006-6.fc14 and I configured
+second key and I assumed it will work. But it didn't. To my surpsire I
+do not see rd_LUKS_KEYDEV_UUID anywhere in the 90crypt/* folder. I
+searched whole modules.d and I did not find it either. So it looks to
+me this version of dracut actually dropped support of key on external
+device entirely?
+
+What I would like to do now is to install dracut 008 (or the latest
+version) in my F14 and try my USB key with it. I checked dracut 006
+has dependency on plymouth-scripts, can you please advise me if it is
+the same for dracut 008? Do I have to install latests plymouth-scripts
+or is it optional?
+And can you please give me any hint what is the best way of upgrade
+from 006 to the latest one?
+
+Thank you very much,
+
+Jaiv
