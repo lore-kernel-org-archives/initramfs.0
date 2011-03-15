@@ -1,7 +1,7 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: =?UTF-8?q?=5BPATCHv2=5D=20dracut-logger=3A=20logging=20facility=20module=20for=20build-=20and=20boot-time?=
-Date: Tue, 15 Mar 2011 18:50:53 +0100
-Message-ID: <1300211453-7394-1-git-send-email-aidecoe@aidecoe.name>
+Subject: =?UTF-8?q?=5BPATCHv3=5D=20dracut-logger=3A=20logging=20facility=20module=20for=20build-=20and=20boot-time?=
+Date: Tue, 15 Mar 2011 19:37:45 +0100
+Message-ID: <1300214265-30479-1-git-send-email-aidecoe@aidecoe.name>
 References: <1300064403-23298-1-git-send-email-aidecoe@aidecoe.name>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
@@ -27,16 +27,16 @@ functions, yet.
 Doxygen formatted documentation (as a proposal, by the way) is included
 in dracut-logger.
 ---
- dracut           |   22 ++++-
+ dracut           |   25 ++++-
  dracut-functions |   30 +-----
  dracut-logger    |  293 ++++++++++++++++++++++++++++++++++++++++++++++=
 ++++++++
  dracut.conf      |    4 +
- 4 files changed, 322 insertions(+), 27 deletions(-)
+ 4 files changed, 324 insertions(+), 28 deletions(-)
  create mode 100755 dracut-logger
 
 diff --git a/dracut b/dracut
-index 4c3394c..f60b854 100755
+index 4c3394c..5a6ead5 100755
 --- a/dracut
 +++ b/dracut
 @@ -59,7 +59,16 @@ Creates initial ramdisk images for preloading module=
@@ -98,15 +98,19 @@ files=20
  [[ $drivers_dir_l ]] && drivers_dir=3D$drivers_dir_l
  [[ $do_strip_l ]] && do_strip=3D$do_strip_l
  [[ $hostonly_l ]] && hostonly=3D$hostonly_l
-@@ -411,7 +429,7 @@ trap 'exit 1;' SIGINT
+@@ -411,9 +429,10 @@ trap 'exit 1;' SIGINT
  chmod 755 "$initdir"
 =20
  export initdir hookdirs dracutbasedir dracutmodules drivers \
 -    fw_dir drivers_dir debug beverbose no_kernel kernel_only \
 +    fw_dir drivers_dir debug no_kernel kernel_only \
      add_drivers mdadmconf lvmconf filesystems \
-     use_fstab libdir usrlibdir
+-    use_fstab libdir usrlibdir
++    use_fstab libdir usrlibdir \
++    stdloglvl sysloglvl fileloglvl kmsgloglvl logfile
 =20
+ if [[ $kernel_only !=3D yes ]]; then
+     # Create some directory structure first
 diff --git a/dracut-functions b/dracut-functions
 index e321dc9..915124a 100755
 --- a/dracut-functions
