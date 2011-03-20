@@ -1,14 +1,11 @@
 From: Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: dracut 008 luks key in external device - still broken
-Date: Sun, 20 Mar 2011 09:23:05 +0300
-Message-ID: <AANLkTi=JFPaoX6gmp2NZaU+P+qa7fLSUeBj-0Mv1+m-s@mail.gmail.com>
+Date: Sun, 20 Mar 2011 09:29:57 +0300
+Message-ID: <AANLkTi=WLnW3u40asnRLeNpyW4yA1nSCGff+4juvp6+D@mail.gmail.com>
 References: <AANLkTi=w7BiyjDa2e5NJVr96q37kZPb2L=BxL1-He=PD@mail.gmail.com>
 	<1300544966-sup-1505@ittemni>
 	<AANLkTikifPgn4N1mF67o4Cm3TPBGDfS-TF7RgTXb7NfZ@mail.gmail.com>
 	<1300577445-sup-6446@ittemni>
-	<AANLkTinL5H7rdTeW=gRrtvpuToP368uQw=m5xNONbr26@mail.gmail.com>
-	<AANLkTimAf=rYGhqFEPwrFBJH6TkrinUw-gBE6aqh-Fou@mail.gmail.com>
-	<AANLkTin9K2C2795xg=bjdPr66CUkBsONj7AFMULqBDcD@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -17,62 +14,54 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=domainkey-signature:mime-version:in-reply-to:references:date
          :message-id:subject:from:to:cc:content-type
          :content-transfer-encoding;
-        bh=P5hrvTLpGkNpBkQ+DSPegX2GzRFWs3txlR/FbfljnBw=;
-        b=xcNeIAGRZq0BMXD3NMrNAHazZ7LswJWxz0W7fAYxTyljnWwCkljDtAwCE5yV9oMIyw
-         xKui9TAQpAJqkAg2ngPxPZuAGq9yL0YggB/LPVDmp3XFm4f9NDF8PnxURPTBosfM4Obo
-         T6Kq/YjqyUud6Bw1knnWz2R6VVEJB7qQcn2m0=
-In-Reply-To: <AANLkTin9K2C2795xg=bjdPr66CUkBsONj7AFMULqBDcD-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+        bh=/1vZyQekWqVh727j3yiHIN/O3aS7wgXtvoKM8unYSC0=;
+        b=uRRFSv0DKNKGoZYOk87aDkN9HUL2oSmcj8LVjINKDo88h7lXsTZR221b5PiUl7Ld21
+         xGBhxYtjCDrkp0i4PlAGzoOZ/By6gKOIZwznv16ie1ePGyKyRLm2nzORagYDqjzvPGKu
+         eOSDlfC0D4ncK2IUkpF6cjHgcBLlMoonxT/ko=
+In-Reply-To: <1300577445-sup-6446@ittemni>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: jaivuk <jaivuk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: =?ISO-8859-2?Q?Amadeusz_=AFo=B3nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="utf-8"
+To: =?ISO-8859-2?Q?Amadeusz_=AFo=B3nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, jaivuk <jaivuk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-2011/3/20 Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
-> 2011/3/20 Andrey Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
->> 2011/3/20 jaivuk <jaivuk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
->>> 2011/3/20 Amadeusz =AFo=B3nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>:
->>>> First of all I haven't taken into consideration fact, that one can=
- want
->>>> to use dracut for mounting something more than root. That's why th=
-ere's
->>>> only key or only password. But it probably would be possible to
->>>> optionally ask for password, too. I will have to think of cases wi=
-th
->>>> multiple devices to be decrypted and improve the module.
->>>
->>> Anaconda by added swap as well, and other things can be added manua=
-lly
->>> as a kernel parameter...
->>>
->>>> What happens? Doesn't decrypt anything? Or just one of devices?
->>> Apparently anything.
->>>
->> [...]
->>>> 4) dmesg
->>> http://pastebin.com/nA4qVFcZ
->>>
+2011/3/20 Amadeusz =C5=BBo=C5=82nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>:
+> Excerpts from jaivuk's message of Sun Mar 20 00:14:56 +0100 2011:
+>> > It re queues cryptroot-ask for after udev queue is settled if key =
+is
+>> > not available initially. If device is still not available at this
+>> > point, I am not sure what can be done sensibly.
 >>
->> It shows that no additional device was seen by dracut. Have you
->> connected your USB key before booting?
->>
+>> I think it should ask for password. And if it does so it would be go=
+od
+>> if I could still connect the key during the password prompt as I
+>> explained...
 >
-> Oops, sorry :(
+> First of all I haven't taken into consideration fact, that one can wa=
+nt
+> to use dracut for mounting something more than root.
+
+Remembering recent discussion about separate /usr, it seems quite possi=
+ble :)
+
+> That's why there's
+> only key or only password. But it probably would be possible to
+> optionally ask for password, too. I will have to think of cases with
+> multiple devices to be decrypted and improve the module.
 >
-> [ =A0 =A09.326667] dracut: Probing /dev/sdc1 for /mykey...
-> [ =A0 13.161241] dracut: Found /mykey on /dev/sdc1
+
+ I think this can be combined with below. If keydev was not found
+after udevsettle, fall through to password request, combined with
+request to insert key if respective kernel option was present.
+
+>> So in case an attempt to open another luks partition failes, then ye=
+s
+>> in my view it would be best if user can either enter key manually or
+>> insert the USB stick with the key (in case rd.luks.key was specified=
+).
 >
+> Hm, might be good idea.
 
-[    3.272805] dracut: dracut-008-7.fc15
-
-Key file parsing was fixed in current master:
-
-commit b20ff981c4b31d650ac0b2e5227f4d6f6eb459e2
-Author: Amadeusz =AFo=B3nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Date:   Mon Mar 7 13:48:02 2011 +0100
-
-    crypt-lib.sh: moved IFS=3D: from before 'read' to before 'while'
-
-so you need updated modules.d/90crypt/crypt-lib.sh. May be you could
-open a bug report in fedora to request update. I confirm that this bug
-also happens with dash we have here.
+Yep. Currently if user forgot to plug in stick before booting it is
+"Oops, I forgot to attach my key" and reboot. Stop there (after udev
+settle) and give user chance to still plug in device,
