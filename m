@@ -1,69 +1,62 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 8/9] dracut: new option: -M, --show-modules - lists modules on build
-Date: Fri, 25 Mar 2011 15:56:51 +0100
-Message-ID: <1301065012-16356-8-git-send-email-aidecoe@aidecoe.name>
-References: <1301065012-16356-1-git-send-email-aidecoe@aidecoe.name>
- <1301065012-16356-2-git-send-email-aidecoe@aidecoe.name>
- <1301065012-16356-3-git-send-email-aidecoe@aidecoe.name>
- <1301065012-16356-4-git-send-email-aidecoe@aidecoe.name>
- <1301065012-16356-5-git-send-email-aidecoe@aidecoe.name>
- <1301065012-16356-6-git-send-email-aidecoe@aidecoe.name>
- <1301065012-16356-7-git-send-email-aidecoe@aidecoe.name>
+From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
+Subject: Re: [PATCH 6/9] 40network: install dhclient, brctl and ifenslave
+ optionally
+Date: Fri, 25 Mar 2011 16:30:40 +0100
+Message-ID: <4D8CB520.60504@bfh.ch>
+References: <1301065012-16356-1-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-2-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-3-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-4-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-5-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-6-git-send-email-aidecoe@aidecoe.name>
+Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1301065012-16356-7-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1301065012-16356-6-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
+To: =?ISO-8859-2?Q?Amadeusz_=AFo=B3nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Module name is printed to standard output before its inclusion.
----
- dracut |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
 
-diff --git a/dracut b/dracut
-index 192c5b5..2c5a813 100755
---- a/dracut
-+++ b/dracut
-@@ -106,6 +106,8 @@ Creates initial ramdisk images for preloading modules
-   --no-compress         Do not compress the generated initramfs.  This will
-                          override any other compression options.
-   --list-modules        List all available dracut modules.
-+  -M, --show-modules    Print included module's name to standard output during
-+                         build.
- EOF
- }
- 
-@@ -230,6 +232,9 @@ while (($# > 0)); do
-         --list-modules)
-             do_list="yes";
-             ;;
-+        -M|--show-modules)
-+                       show_modules_l="yes"
-+                       ;;
-         -*) printf "\nUnknown option: %s\n\n" "$1" >&2; usage; exit 1;;
-         *) 
-             if ! [[ $outfile ]]; then
-@@ -347,6 +352,7 @@ stdloglvl=$((stdloglvl + verbosity_mod_l))
- [[ $fw_dir ]] || fw_dir=/lib/firmware
- [[ $do_strip ]] || do_strip=no
- [[ $compress_l ]] && compress=$compress_l
-+[[ $show_modules_l ]] && show_modules=$show_modules_l
- # eliminate IFS hackery when messing with fw_dir
- fw_dir=${fw_dir//:/ }
- 
-@@ -473,7 +479,8 @@ check_module_dir
- for moddir in "$dracutbasedir/modules.d"/[0-9][0-9]*; do
-     mod=${moddir##*/}; mod=${mod#[0-9][0-9]}
-     if strstr "$mods_to_load" " $mod "; then
--        dinfo "*** Including module: $mod ***"
-+        [[ $show_modules = yes ]] && echo "$mod" || \
-+            dinfo "*** Including module: $mod ***"
-         if [[ $kernel_only = yes ]]; then
-             module_installkernel $mod
-         else
--- 
-1.7.4.1
+
+On 03/25/2011 03:56 PM, Amadeusz =AFo=B3nowski wrote:
+> Warning given by check() function in case if any of those binaries
+> doesn't exist was removed, because it's produces by "dracut_install -=
+o"
+> later.
+
+I'll have to object to this, sorry. The current network implementation=20
+does not check if these binaries are there and throws errors if ip=3Ddh=
+cp=20
+is provided and no dhclient is available.
+
+> ---
+>   modules.d/40network/module-setup.sh |    9 ++-------
+>   1 files changed, 2 insertions(+), 7 deletions(-)
+>
+> diff --git a/modules.d/40network/module-setup.sh b/modules.d/40networ=
+k/module-setup.sh
+> index 59f358f..f32745c 100755
+> --- a/modules.d/40network/module-setup.sh
+> +++ b/modules.d/40network/module-setup.sh
+> @@ -11,12 +11,6 @@ check() {
+>               return 1
+>           fi
+>       done
+> -    for program in dhclient brctl ifenslave tr; do
+> -        if ! type -P $program>/dev/null; then
+> -            dwarn "Could not find program \"$program\" it might be r=
+equired " \
+> -                "by network."
+> -        fi
+> -    done
+>
+>       return 255
+>   }
+> @@ -48,7 +42,8 @@ installkernel() {
+>   }
+>
+>   install() {
+> -    dracut_install ip dhclient brctl arping ifenslave tr
+> +    dracut_install ip arping tr
+> +    dracut_install -o dhclient brctl ifenslave
+>       inst "$moddir/ifup" "/sbin/ifup"
+>       inst "$moddir/netroot" "/sbin/netroot"
+>       inst "$moddir/dhclient-script" "/sbin/dhclient-script"
