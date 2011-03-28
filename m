@@ -1,39 +1,52 @@
-From: Seewer Philippe <philippe.seewer-omB+W0Dpw2o@public.gmane.org>
-Subject: Re: [PATCH 6/9] 40network: install dhclient, brctl and ifenslave
- optionally
-Date: Mon, 28 Mar 2011 11:51:59 +0200
-Message-ID: <4D905A3F.6040908@bfh.ch>
-References: <1301065012-16356-1-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-2-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-3-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-4-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-5-git-send-email-aidecoe@aidecoe.name> <1301065012-16356-6-git-send-email-aidecoe@aidecoe.name> <4D8CB520.60504@bfh.ch> <1301305103-sup-5234@ittemni>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCE] dracut 009 release
+Date: Mon, 28 Mar 2011 22:27:04 +0200
+Message-ID: <4D90EF18.3020600@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1301305103-sup-5234@ittemni>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
+
+The tarball can be found here:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/
+	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+
+Git:
+	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+
+Git Web:
+	http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+	http://dracut.wiki.kernel.org
 
 
+dracut-009
+==========
+- dracut generator
+  - dracut-logger
+  - xz compression
+  - better argument handling
 
-On 03/28/2011 11:40 AM, Amadeusz =C5=BBo=C5=82nowski wrote:
-> Excerpts from Seewer Philippe's message of Fri Mar 25 16:30:40 +0100 =
-2011:
->> I'll have to object to this, sorry. The current network implementati=
-on
->> does not check if these binaries are there and throws errors if ip=3D=
-dhcp
->> is provided and no dhclient is available.
->
-> dhclient was optional before. You suggest it should be made required,
-> yes?
-
-Ok, I see the point. The dwarning in module-setup was/is misleading. I=20
-guess I missed that, sorry.
-
-Since there's currently no code that makes any network functionality=20
-optional (See modules.d/40network/ifup for example) question is should=20
-there be or should all required binaries actually be *required*?
-
-Regards,
-Philippe
+- initramfs
+  - hooks moved to /lib/dracut/hooks in initramfs
+  - rd.driver.{blacklist|pre|post} accept comma seperated driver list
+  - iSCSI: iSCSI Boot Firmware Table (iBFT) support
+  - support for /run
+  - live image: support for generic rootfs.img (instead of ext3fs.img)
+  - caps module
+  - FCoE: EDD support
