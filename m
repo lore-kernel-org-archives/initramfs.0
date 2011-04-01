@@ -1,7 +1,7 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut goes Cross OS
-Date: Fri, 01 Apr 2011 10:26:17 +0200
-Message-ID: <4D958C29.6000602@redhat.com>
+Subject: [ANNOUNCE] dracut 010 release
+Date: Fri, 01 Apr 2011 16:08:04 +0200
+Message-ID: <4D95DC44.4050809@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,13 +10,35 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-We have reached the point, where dracut can boot various linux distributions.
-That might be enough for most of you, but it's not enough for world domination.
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-Our next goal is to boot also other operating systems. We will start with BSD
-variants, then Solaris, MacOS and finally Windows.
+The tarball can be found here:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/
+	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
 
-We made contracts with Oracle, Apple and Microsoft, who will provide all
-technical documentation and developers to help us reach that goal.
+Git:
+	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
 
-Stay tuned! :-)
+Git Web:
+	http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+	http://dracut.wiki.kernel.org
+
+
+dracut-010
+==========
+- lots of bugfixes
+- plymouth: use /run/plymouth/pid instead of /run/initramfs/plymouth
+- add "/lib/firmware/updates" to default firmware path
+
+P.S.: no joke...
