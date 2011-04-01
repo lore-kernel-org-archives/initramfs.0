@@ -1,44 +1,34 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 010 release
-Date: Fri, 01 Apr 2011 16:08:04 +0200
-Message-ID: <4D95DC44.4050809@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] dracut: don't fail on empty /etc/ld.so.conf.d/
+Date: Sat,  2 Apr 2011 00:45:44 +0200
+Message-ID: <1301697944-12372-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-Here comes a new dracut version. Thanks to all who have contributed to
-this release.
+---
+ dracut |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-The tarball can be found here:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/
-	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
-
-Git:
-	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
-
-Git Web:
-	http://git.kernel.org/?p=boot/dracut/dracut.git
-
-Git Web RSS Feed:
-	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-	http://dracut.wiki.kernel.org
-
-
-dracut-010
-==========
-- lots of bugfixes
-- plymouth: use /run/plymouth/pid instead of /run/initramfs/plymouth
-- add "/lib/firmware/updates" to default firmware path
-
-P.S.: no joke...
+diff --git a/dracut b/dracut
+index c6605bb..15a5ee5 100755
+--- a/dracut
++++ b/dracut
+@@ -524,7 +524,9 @@ done
+ unset item
+ 
+ # make sure that library links are correct and up to date
+-dracut_install /etc/ld.so.conf /etc/ld.so.conf.d/*
++for f in /etc/ld.so.conf /etc/ld.so.conf.d/*; do
++    [[ -e $f ]] && dracut_install "$f"
++done
+ if ! ldconfig -r "$initdir"; then
+     if [[ $UID = 0 ]]; then
+         derror "ldconfig exited ungracefully"
+-- 
+1.7.4.1
