@@ -1,42 +1,61 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut: use TMPDIR defintion
-Date: Mon, 16 May 2011 18:08:32 +0200
-Message-ID: <4DD14C00.6070708@redhat.com>
-References: <1305560806-27836-1-git-send-email-max@stro.at>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Fix "can't shift that many" crash with empty /proc/cmdline
+Date: Mon, 16 May 2011 19:17:57 -0400
+Message-ID: <1305587877-14485-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1305560806-27836-1-git-send-email-max-U9r9yeDMy7A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 16.05.2011 17:46, schrieb maximilian attems:
-> mktemp has marked the "-t" as deprecated.
-> TMPDIR is anyway write guarded just a line above since dracut 003.
-> 
-> Signed-off-by: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
-> ---
->  dracut |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/dracut b/dracut
-> index d19c162..e018061 100755
-> --- a/dracut
-> +++ b/dracut
-> @@ -452,7 +452,7 @@ elif [[ -f "$outfile" && ! -w "$outfile" ]]; then
->  fi
->  
->  [[ $TMPDIR && ! -w $TMPDIR ]] && unset TMPDIR
+If /proc/cmdline is empty (like if root=... is set in /etc/cmdline),
+modules.d/99base/init will crash with a message saying "can't shift that
+many" right before switch_root. The problem is in the block of code that
+tries to look for init args. It does something like:
 
-We should even remove the above line, because we really want /var/tmp here.
-/tmp might be to small and we want to prevent accidents (like as we do, when we
-set $PATH)
+read CMDLINE </proc/cpuinfo
+    [...]
+    set $CMDLINE
+    shift
 
-> -readonly initdir=$(mktemp --tmpdir=/var/tmp/ -d -t initramfs.XXXXXX)
-> +readonly initdir=$(mktemp --tmpdir=${TMPDIR:-/var/tmp/} -d initramfs.XXXXXX)
->  
->  # clean up after ourselves no matter how we die.
->  trap 'ret=$?;rm -rf "$initdir";exit $ret;' EXIT
+If CMDLINE="" then "set $CMDLINE" will dump all the variables to stdout.
+(That should be "set -- $CMDLINE" instead.) Since there's no $1, the
+"shift" causes an error, and dracut crashes.
+
+The 'shift' was copy-and-pasted from the previous block. It doesn't
+belong here; remove it.
+
+Signed-off-by: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/99base/init |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index e2c34c7..87778ac 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -361,8 +361,8 @@ if getarg init= >/dev/null ; then
+     ignoreargs="console BOOT_IMAGE"
+     # only pass arguments after init= to the init
+     CLINE=${CLINE#*init=}
+-        set $CLINE
+-        shift
++        set -- $CLINE
++        shift # clear out the rest of the "init=" arg
+         for x in "$@"; do
+             for s in $ignoreargs; do
+                 [ "${x%%=*}" = $s ] && continue 2
+@@ -372,8 +372,7 @@ if getarg init= >/dev/null ; then
+         unset CLINE
+ else
+     set +x # Turn off debugging for this section
+-    set $CLINE
+-    shift
++    set -- $CLINE
+     for x in "$@"; do
+         case "$x" in
+             [0-9]|s|S|single|emergency|auto ) \
+-- 
+1.7.5.1
