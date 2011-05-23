@@ -1,108 +1,56 @@
-From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH 4/5] 95rootfs-block/mount-root.sh: Rely on det_fs and wrap_fsck
-Date: Fri, 20 May 2011 17:09:26 +0200
-Message-ID: <1305904167-14199-5-git-send-email-soltys@ziu.info>
-References: <1305904167-14199-1-git-send-email-soltys@ziu.info>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/5] 95fstab-sys: use det_fs and wrap_fsck
+Date: Tue, 24 May 2011 01:05:07 +0200
+Message-ID: <20110523230507.GC2659@nb.net.home>
+References: <1305904167-14199-1-git-send-email-soltys@ziu.info> <1305904167-14199-4-git-send-email-soltys@ziu.info>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1305904167-14199-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1305904167-14199-4-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Use common fsck and det_fs code. Verify filesystem type more
-aggressively, which has a chance to be more resistant to
-accidental mistakes.
+On Fri, May 20, 2011 at 05:09:25PM +0200, Michal Soltys wrote:
+> +fstab_mount() {
+> +    local _dev _mp _fs _opts _dump _pass _rest
+>      test -e "$1" || return 1
+>      info "Mounting from $1"
+> -    while read dev mp type opts rest; do
+> -	[ -z "${dev%%#*}" ]&& continue # Skip comment lines
+> -	mount -v -t $type -o $opts $dev $NEWROOT/$mp
+> -    done < $1 | vinfo
+> +    while read _dev _mp _fs _opts _dump _pass _rest; do
 
-Also, there's no need to generate custom fstab for the sake of fsck
-anymore.
+ How does this code handle encoding in fstab? (e.g. /path/foo\x40bar)
 
-Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
----
- modules.d/95rootfs-block/mount-root.sh |   47 ++++++-------------------------
- 1 files changed, 9 insertions(+), 38 deletions(-)
+> +        [ -z "${_dev%%#*}" ] && continue # Skip comment lines
+> +        if [ ! -e "$_dev" ]; then
+> +            warn "Device $_dev doesn't exist, skipping mount."
+> +            continue
+> +        fi
+> +        if [ "$_pass" -gt 0 ] && ! strstr "$_opts" _netdev; then
+> +            wrap_fsck "$_dev"
+> +        fi
+> +        _fs=$(det_fs "$_dev" "$_fs" /etc/fstab.sys)
+> +        info "Mounting $_dev"
+> +        mount -v -t $_fs -o $_opts $_dev $NEWROOT/$_mp 2>&1 | vinfo
+> +    done < $1
 
-diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-index 8e86024..9334323 100755
---- a/modules.d/95rootfs-block/mount-root.sh
-+++ b/modules.d/95rootfs-block/mount-root.sh
-@@ -26,8 +26,10 @@ filter_rootopts() {
- }
+ It means that fsck is not running in parallel if you have more
+ devices in /ect/fstab.sys. Is it expected?
+
+ It would be better to call one fsck instance for all devices
  
- if [ -n "$root" -a -z "${root%%block:*}" ]; then
--    mount -t ${fstype:-auto} -o "$rflags",ro "${root#block:}" "$NEWROOT" \
--        && ROOTFS_MOUNTED=yes
-+
-+    # sanity - determine/fix fstype
-+    rootfs=$(det_fs "${root#block:}" "$fstype" "cmdline")
-+    mount -t ${rootfs} -o "$rflags",ro "${root#block:}" "$NEWROOT"
- 
-     READONLY=
-     fsckoptions=
-@@ -71,7 +73,6 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
-         fsckoptions="-a $fsckoptions"
-     fi
- 
--    rootfs=${fstype:-auto}
-     rootopts=
-     if getargbool 1 rd.fstab -n rd_NO_FSTAB \
-         && ! getarg rootflags \
-@@ -86,7 +87,8 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
-             [ "${dev%%#*}" != "$dev" ] && continue
- 
-             if [ "$mp" = "/" ]; then
--                rootfs=$fs
-+                # sanity - determine/fix fstype
-+                rootfs=$(det_fs "${root#block:}" "$fs" "$NEWROOT/etc/fstab")
-                 rootopts=$opts
-                 break
-             fi
-@@ -96,41 +98,10 @@ if [ -n "$root" -a -z "${root%%block:*}" ]; then
-     fi
- 
-     umount "$NEWROOT"
--    if [ "$rootfs" = "auto" ]; then
--        rootfs=$(udevadm info --query=env --name=${root#block:} | \
--            while read line; do
--                if strstr $line ID_FS_TYPE; then
--                    eval $line
--                    echo $ID_FS_TYPE
--                    break
--                fi
--            done)
--        rootfs=${rootfs:-auto}
--    fi
- 
--    # backslashes are treated as escape character in fstab
--    esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
--    printf '%s %s %s %s,%s 1 1 \n' "$esc_root" "$NEWROOT" "$rootfs" "$rflags" "$rootopts"  > /etc/fstab
--
--    if [ -z "$fastboot" -a "$READONLY" != "yes" ]; then
--        info "Checking filesystems"
--        info fsck -T -t noopts=_netdev -A $fsckoptions
--        out=$(fsck -T -t noopts=_netdev -A $fsckoptions)
--        export RD_ROOTFS_FSCK=$?
--        echo $RD_ROOTFS_FSCK > /run/initramfs/root-fsck
--
--        # A return of 4 or higher means there were serious problems.
--        if [ $RD_ROOTFS_FSCK -gt 3 ]; then
--            warn $out
--            warn "fsck returned with error code $RD_ROOTFS_FSCK"
--            warn "*** An error occurred during the file system check."
--            warn "*** Dropping you to a shell; the system will retry"
--            warn "*** to mount the system, when you leave the shell."
--            emergency_shell -n "(Repair filesystem)"
--        else
--            echo $out|vinfo
--            [ $RD_ROOTFS_FSCK -gt 0 ] && warn "fsck returned with $RD_ROOTFS_FSCK"
--        fi
-+    if [ -z "$fastboot" -a "$READONLY" != "yes" ] && ! strstr "${rflags},${rootopts}" _netdev; then
-+        wrap_fsck "${root#block:}" "$fsckoptions"
-+        echo $? >/run/initramfs/root-fsck
-     fi
- 
-     info "Remounting ${root#block:} with -o ${rflags},${rootopts}"
+    fsck -T /dev/sda1 /dev/sda2 /dev/sdb1
+
+ or use the "-l" option for more instances.
+
+    Karel
+
 -- 
-1.7.2.1
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+ http://karelzak.blogspot.com
