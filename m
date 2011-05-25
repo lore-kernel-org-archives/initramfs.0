@@ -1,55 +1,33 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Run plymouth only if on a normal console
-Date: Wed, 25 May 2011 13:36:44 +0200
-Message-ID: <4DDCE9CC.8040901@redhat.com>
-References: <Pine.LNX.4.58.1105251221110.7357@gate.bb.dicp.net>
+From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 3/5] 95fstab-sys: use det_fs and wrap_fsck
+Date: Wed, 25 May 2011 15:16:46 +0200
+Message-ID: <4DDD013E.9000207@gmail.com>
+References: <1305904167-14199-1-git-send-email-soltys@ziu.info> <1305904167-14199-4-git-send-email-soltys@ziu.info> <20110523230507.GC2659@nb.net.home> <4DDC1A05.9030400@ziu.info> <20110524223936.GG2659@nb.net.home>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.58.1105251221110.7357-bvJ793YqIODNUDpmljszgg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=domainkey-signature:message-id:date:from:user-agent:mime-version:to
+         :cc:subject:references:in-reply-to:content-type
+         :content-transfer-encoding;
+        bh=GDRKBUrXL4J8dWguAbg30sbmMdXcTWCHldRQMKyZYYE=;
+        b=rytr2/4UM5ktRT7+gwgTyOxNWqV0OgKNE+fKMENPHaFJVKOc9bt4sXxlDd58/YjTs0
+         EiTK5h0466kQV80IY6UeErfaWfy6Fk+fPhOAC8TkSDmqPH/T+qJndSljSCTxjXHnnAVo
+         RRcQaHf1quKGynGem1C9ulKRrTFcvw7gWGmPw=
+In-Reply-To: <20110524223936.GG2659-sHeGUpI7y9L/9pzu0YdTqQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 25.05.2011 12:26, schrieb Andreas Thienemann:
+Am 25.05.2011 00:39, schrieb Karel Zak:
+>   Unfortunately mount(8) does not allow to read info about mountpoints
+>   from alternative fstab file and it does not support --target-prefix
+>   now.  I'll add this to my TODO list.
 >
-> Run plymouth only when running on a normal console. When the machine is
-> using a serial console or braille terminal etc. do not start plymouth.
+>      Karel
 >
-> That will give people the ability to type in crypto passphrases etc. on a
-> serial terminal.
->
-> ---
->   modules.d/50plymouth/plymouth-pretrigger.sh |   13 ++++++++++++-
->   1 files changed, 12 insertions(+), 1 deletions(-)
->
-> diff --git a/modules.d/50plymouth/plymouth-pretrigger.sh b/modules.d/50plymouth/plymouth-pretrigger.sh
-> index 25ed06f..d3c8a2a 100755
-> --- a/modules.d/50plymouth/plymouth-pretrigger.sh
-> +++ b/modules.d/50plymouth/plymouth-pretrigger.sh
-> @@ -2,7 +2,18 @@
->   # -*- mode: shell-script; indent-tabs-mode: nil; sh -basic-offset: 4; -*-
->   # ex: ts=8 sw=4 sts=4 et filetype=sh
->
-> -if getargbool 1 rd.plymouth -n rd_NO_PLYMOUTH; then
-> +# Check for normal console
-> +is_normal_console() {
-> +    for con in $(getargs console); do
-> +        case $con in
-> +            tty[0..9]) continue;;
-> +            *) return 1;;
-> +        esac
-> +    done
-> +    return 0
-> +}
-> +
-> +if getargbool 1 rd.plymouth -n rd_NO_PLYMOUTH&&  is_normal_console; then
->       [ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
->       # first trigger graphics subsystem
->       udevadm trigger --action=add --attr-match=class=0x030000>/dev/null 2>&1
 
-
-Does it also work if you check /sys/class/tty/console/active for tty0 
-instead?
+That would be really cool! Thank you!
