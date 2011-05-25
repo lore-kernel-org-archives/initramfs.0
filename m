@@ -1,7 +1,7 @@
 From: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
-Subject: [PATCH] Remove obsolete check reference from README.modules
-Date: Wed, 25 May 2011 01:31:29 +0200 (CEST)
-Message-ID: <Pine.LNX.4.58.1105250129350.7357@gate.bb.dicp.net>
+Subject: [PATCH] Run plymouth only if on a normal console
+Date: Wed, 25 May 2011 12:26:06 +0200 (CEST)
+Message-ID: <Pine.LNX.4.58.1105251221110.7357@gate.bb.dicp.net>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
@@ -10,24 +10,40 @@ Content-Type: TEXT/PLAIN; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Should be self explanatory. Now that we have all the shell commands 
-condensed in the module-install.sh, the lone reference to check should be 
-removed.
 
-Signed-off-by: Andreas Thienemann <andreas-XTk7JcP0uDNeoWH0uzbU5w@public.gmane.org>
+Run plymouth only when running on a normal console. When the machine is 
+using a serial console or braille terminal etc. do not start plymouth.
 
- README.modules |    1 -
- 1 files changed, 1 deletion(-)
+That will give people the ability to type in crypto passphrases etc. on a 
+serial terminal.
 
-diff --git a/README.modules b/README.modules
-index 21461de..746701a 100644
---- a/README.modules
-+++ b/README.modules
-@@ -5,7 +5,6 @@ structure:
- dracut_install_dir/modules.d/
- 	00modname/
- 		module-setup.sh
--		check
- 		<other files as needed by the hook>
+---
+ modules.d/50plymouth/plymouth-pretrigger.sh |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
+
+diff --git a/modules.d/50plymouth/plymouth-pretrigger.sh b/modules.d/50plymouth/plymouth-pretrigger.sh
+index 25ed06f..d3c8a2a 100755
+--- a/modules.d/50plymouth/plymouth-pretrigger.sh
++++ b/modules.d/50plymouth/plymouth-pretrigger.sh
+@@ -2,7 +2,18 @@
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
  
- 00modname: The name of the module prefixed by a two-digit numeric sort code.
+-if getargbool 1 rd.plymouth -n rd_NO_PLYMOUTH; then
++# Check for normal console
++is_normal_console() {
++    for con in $(getargs console); do
++        case $con in
++            tty[0..9]) continue;;
++            *) return 1;;
++        esac
++    done
++    return 0
++}
++
++if getargbool 1 rd.plymouth -n rd_NO_PLYMOUTH && is_normal_console; then
+     [ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
+     # first trigger graphics subsystem
+     udevadm trigger --action=add --attr-match=class=0x030000 >/dev/null 2>&1
+-- 
+1.7.4.4
