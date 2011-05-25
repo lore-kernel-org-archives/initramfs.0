@@ -1,50 +1,176 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/5] 95fstab-sys: use det_fs and wrap_fsck
-Date: Wed, 25 May 2011 16:33:11 +0200
-Message-ID: <20110525143311.GA14298@nb.net.home>
-References: <1305904167-14199-1-git-send-email-soltys@ziu.info> <1305904167-14199-4-git-send-email-soltys@ziu.info> <20110523230507.GC2659@nb.net.home> <4DDC1A05.9030400@ziu.info> <20110524223936.GG2659@nb.net.home> <4DDD0E48.3060607@rasengan.ppgk.com.pl>
+From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+Subject: Re: [PATCH] new module - 98evm
+Date: Wed, 25 May 2011 17:55:09 +0200
+Message-ID: <201105251755.09520.roberto.sassu@polito.it>
+References: <1306243102.3231.14.camel@localhost.localdomain>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4DDD0E48.3060607-dAhJnYnFfKxY6LDf3zcCrARSaAK4NQh3@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:subject:date:cc:references:in-reply-to:mime-version:content-type:content-transfer-encoding:message-id; s=smtpout; bh=TGwmaQwaQsL47y+oMkqSp28DVt0=; b=ChldfFHKNaO5mI2AvGlp8UcpI5w86ya/2h6hE9nTuZxTBHEd0sqity4zZBxd5aTF+iSw7oMzuKCJ24HAF9uHssfpdwcHUl4CQk+DUUvvGGL57t+XFl0NUzPFkXEOCI0L9qUtobhOFRjpMzjS8Ka9ryDds0Gdk7FWxBXRVJmAhAE=
+In-Reply-To: <1306243102.3231.14.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: rasengan rootish <root-FKoNWt1xKxkgbZ1banK5DA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: Text/Plain; charset="us-ascii"
+To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On Wed, May 25, 2011 at 04:12:24PM +0200, rasengan rootish wrote:
-> W dniu 25.05.2011 00:39, Karel Zak pisze:
->>
->>    From my point of view it would be ideal to avoid fstab parsing in the
->>   script at all.
->>
->>   export FSTAB_FILE=/etc/fstab.sys
->>
->>   for $dev in $(findmnt --fstab -o SOURCE -e -n -O no_netdev); do
->>
->>      fsck -T $dev
->>      mount $dev --target-prefix $NEWROOT
->>
->>   done
->>
->>   Unfortunately mount(8) does not allow to read info about mountpoints
->>   from alternative fstab file and it does not support --target-prefix
->>   now.  I'll add this to my TODO list.
->>
->>      Karel
->>
->
-> Ok, thanks for info (btw, findmnt seems to only handle octal escapes).
+Hi all
 
- That's correct. 
- 
- The hex (e.g. \x40) escapes are used by udev for /dev/disk/by-*
- symlinks only. 
+i think we should have two separate dracut modules: one for
+the loading of a trusted or an user key and another for the
+initialization of EVM, so that other modules which need to load
+an encrypted key will depend only on the former.
 
-    Karel
+Roberto Sassu
 
--- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
- http://karelzak.blogspot.com
+
+On Tuesday, May 24, 2011 03:18:22 PM Mimi Zohar wrote:
+> EVM verifies file metadata integrity based on a keyed HMAC.  The key
+> should be loaded in the initramfs before pivoting root.  This patch
+> loads the trusted and encrypted EVM keys onto root's keyring before
+> enabling EVM.
+> 
+> --- /dev/null	2011-05-24 06:19:53.737797039 -0400
+> +++ modules.d/98evm/install	2011-05-23 08:47:39.859250064 -0400
+> @@ -0,0 +1,4 @@
+> +#!/bin/bash
+> +
+> +dracut_install keyctl
+> +inst_hook pre-pivot 60 "$moddir/evm-enable.sh"
+> --- /dev/null	2011-05-24 06:19:53.737797039 -0400
+> +++ modules.d/98evm/check	2011-05-23 07:49:31.839983246 -0400
+> @@ -0,0 +1,9 @@
+> +#!/bin/bash
+> +
+> +[[ $1 = '-h' ]] && {
+> +    [ -x "/bin/keyctl" ] || exit 1
+> +    exit 0
+> +}
+> +
+> +exit 0
+> +
+> --- /dev/null	2011-05-24 06:19:53.737797039 -0400
+> +++ modules.d/98evm/evm-enable.sh	2011-05-23 06:59:27.786421196 -0400
+> @@ -0,0 +1,65 @@
+> +#!/bin/sh
+> +
+> +security_evm_exists()
+> +{
+> +    RC=0
+> +
+> +    if [ ! -d "/security" ]; then
+> +       mkdir /security
+> +    fi
+> +    mount -t securityfs /security /security >/dev/null 2>&1
+> +    if [ ! -e "/security/evm" ]; then
+> +       RC=1
+> +    fi
+> +    umount /security
+> +    return $RC
+> +}
+> +
+> +enable_evm()
+> +{
+> +    if [ ! -d "/security" ]; then
+> +       mkdir /security
+> +    fi
+> +    mount -t securityfs /security /security >/dev/null 2>&1
+> +    if [ -e "/security/evm" ]; then
+> +       echo 1 > /security/evm
+> +    fi
+> +    umount /security
+> +}
+> +
+> +load_keys()
+> +{
+> +    RC=0
+> +
+> +    MASTERKEY=$(getarg masterkey=)
+> +    if [ $? -ne 0 ]; then
+> +        MASTERKEY='kmk-trusted.blob'
+> +    fi
+> +
+> +    EVMKEY=$(getarg evmkey=)
+> +    if [ $? -ne 0 ]; then
+> +        EVMKEY='evm-trusted.blob'
+> +    fi
+> +
+> +    if [ ! -f "$NEWROOT/etc/keys/$MASTERKEY" ]; then
+> +	info "EVM: missing master key"
+> +        RC=1
+> +    elif [ ! -f "$NEWROOT/etc/keys/$EVMKEY" ]; then
+> +	info "EVM: missing EVM key"
+> +        RC=1
+> +    else
+> +        keyctl add trusted kmk-trusted "load `cat $NEWROOT/etc/keys/$MASTERKEY`" @u
+> +        keyctl add encrypted evm-key "load `cat $NEWROOT/etc/keys/$EVMKEY`" @u
+> +    fi
+> +    return $RC
+> +}
+> +
+> +security_evm_exists
+> +RC=$?
+> +if [ $RC -eq 0 ]; then
+> +   load_keys
+> +   RC=$?
+> +fi
+> +if [ $RC -eq 0 ]; then
+> +   enable_evm
+> +fi
+> --- /dev/null	2011-05-24 06:19:53.737797039 -0400
+> +++ modules.d/98evm/README	2011-05-24 07:37:43.467948636 -0400
+> @@ -0,0 +1,47 @@
+> +# Directions for creating an EVM key, encrypted/decrypted using a trusted key.
+> +
+> +# Create the kernel master key (trusted key type) for encrypting/decrypting
+> +# other keys, including the EVM key.
+> + 
+> +# A trusted key is a TPM random number, which is only ever exposed to
+> +# userspace as an encrypted datablob. A trusted key can be sealed to a 
+> +# set of PCR values. For more details on trusted keys, refer to the 
+> +# kernel keys-trusted-encrypted.txt documentation.
+> +$ keyctl add trusted kmk-trusted "new 32" @u
+> +801713097
+> +
+> +# Save the kernel master key
+> +$ su -c 'keyctl pipe 801713097 > /etc/keys/kmk-trusted.blob'
+> +
+> +# Create the EVM key (encrypted key type)
+> +#
+> +# The encrypted key is a random number encrypted/decrypted using the
+> +# kernel master key.  The encrypted key is only exposed to userspace
+> +# as an encrypted datablob.
+> +$ keyctl add encrypted evm-key "new trusted:kmk-trusted 32" @u
+> +782117972
+> +
+> +# Save the encrypted key
+> +$ su -c 'keyctl pipe 782117972 > /etc/keys/evm-trusted.blob'
+> +
+> +------------------------------------------------------------------
+> +# Directions for creating an EVM key, encrypted/decrypted using a user key.
+> +# (Dracut support for encrypting/decrypting the EVM key using a user key is
+> +# not provided.)
+> +
+> +# For those systems which don't have a TPM, create a user key of 32 
+> +# random bytes. Unlike trusted/encrypted keys, user type key data is
+> +# visible to userspace.
+> +$ keyctl add user kmk-user "`dd if=/dev/urandom bs=1 count=32 2>/dev/null`" @u
+> +144468621
+> +
+> +# Save the user key
+> +$ su -c 'keyctl pipe 144468621 > /etc/keys/kmk-user.blob'
+> +
+> +# Create the EVM key (encrypted key type), using the user key to
+> +# encrypt/decrypt it.
+> +$ keyctl add encrypted evm-key "new user:kmk-user 32" @u
+> +432095285
+> +
+> +# Save the encrypted key
+> +$ su -c 'keyctl pipe 432095285 > /etc/keys/evm-user.blob'
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
