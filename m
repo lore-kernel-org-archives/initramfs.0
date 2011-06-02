@@ -1,25 +1,56 @@
-From: <haruo.tomita-g3qfMnKXm6lL9jVzuh4AOg@public.gmane.org>
-Subject: RE: (PATCH) force LANG=C for selinux load policy
-Date: Wed, 1 Jun 2011 08:02:56 +0000
-Message-ID: <4915AF3239D2024A92BCEC8BDAC566CE0116FC83@TGXML315.toshiba.local>
-References: <4915AF3239D2024A92BCEC8BDAC566CE0116FA8A@TGXML315.toshiba.local>
- <1306833291-sup-8652@ittemni>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: [PATCH 3/4] 95rootfs-block/mount-root.sh: squash rootopts into rflags
+Date: Thu,  2 Jun 2011 23:22:14 +0200
+Message-ID: <1307049735-2345-4-git-send-email-soltys@ziu.info>
+References: <1307049735-2345-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1306833291-sup-8652@ittemni>
-Content-Language: ja-JP
+In-Reply-To: <1307049735-2345-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-PiBUaGlzIGlzIHRvbyBzdHJpY3QuICBJcyB0aGlzIG9ubHkgZm9yIEphcGFuZXNlPyANCg0KVW1t
-IHBlcmhhcHMgTm8uDQpJIHRoaW5rIHRoYXQgSSBnYXJibGUgZXhjbHVkaW5nIEphcGFuZXNlLiBG
-b3IgaW5zdGFuY2UsIENoaW5lc2UuLi4NCg0KPiBPbiBzb21lIHN5c3RlbSB0aGVyZSdzDQo+IGFs
-c28gc3VmZml4IOKAnHV0ZjjigJ0gaW5zdGVhZCBvZiDigJxVVEYtOOKAnS4gIFdoeSBub3QganVz
-dCB1bmNvZGl0aW9uYWxseQ0KPiBMQU5HPUMgYW5kL29yIExDX0FMTD1DIGJlZm9yZSBzcGVjaWZp
-YyBjb21tYW5kcz8NCg0KSXQgdGhvdWdodCBhYm91dCB0aGUgaW5mbHVlbmNlIG9mIGFuIG92ZXJ3
-cml0ZSBvZiBMQ19BTEwgb2YgTEFORy4NCkkgdGhpbmsgdGhhdCBzZXQgTEFORz1DIHdpdGhvdXQg
-Y2hlY2tpbmcgdGhlIGxhbmd1YWdlLiA=
+Small simplification - prepend rootopts to rflags before mount
+operations. Shortens resulting command lines quite a bit.
+---
+ modules.d/95rootfs-block/mount-root.sh |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+index 440f1b7..3a43a66 100755
+--- a/modules.d/95rootfs-block/mount-root.sh
++++ b/modules.d/95rootfs-block/mount-root.sh
+@@ -94,21 +94,24 @@ mount_root() {
+         rootopts=$(filter_rootopts $rootopts)
+     fi
+ 
++    # we want rootflags (rflags) to take precedence so prepend rootopts to
++    # them; rflags is guaranteed to not be empty
++    rflags="${rootopts:+"${rootopts},"}${rflags}"
++
+     umount "$NEWROOT"
+ 
+     # backslashes are treated as escape character in fstab
+     esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
+-    printf '%s %s %s %s,%s 1 1 \n' "$esc_root" "$NEWROOT" "$rootfs" "$rflags" "$rootopts"  > /etc/fstab
++    printf '%s %s %s %s 1 1 \n' "$esc_root" "$NEWROOT" "$rootfs" "$rflags" >/etc/fstab
+ 
+-    if [ -z "$fastboot" -a "$READONLY" != "yes" ] && ! strstr "${rflags},${rootopts}" _netdev; then
++    if [ -z "$fastboot" -a "$READONLY" != "yes" ] && ! strstr "${rflags}" _netdev; then
+         fsck_single "${root#block:}" "$rootfs" "$fsckoptions"
+         _ret=$?
+         [ $_ret -ne 255 ] && echo $_ret >/run/initramfs/root-fsck
+     fi
+ 
+-    info "Remounting ${root#block:} with -o ${rflags},${rootopts}"
+-    mount -t "$rootfs" -o "$rflags","$rootopts" \
+-        "${root#block:}" "$NEWROOT" 2>&1 | vinfo
++    info "Remounting ${root#block:} with -o ${rflags}"
++    mount -t "$rootfs" -o "$rflags" "${root#block:}" "$NEWROOT" 2>&1 | vinfo
+ 
+     [ -f "$NEWROOT"/forcefsck ] && rm -f "$NEWROOT"/forcefsck 2>/dev/null
+     [ -f "$NEWROOT"/.autofsck ] && rm -f "$NEWROOT"/.autofsck 2>/dev/null
+-- 
+1.7.5.2
