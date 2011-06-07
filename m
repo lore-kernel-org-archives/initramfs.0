@@ -1,7 +1,7 @@
 From: =?UTF-8?B?UHJ6ZW15c8WCYXcgUnVkeQ==?= <prudy1-h7QdYz1kt/Q@public.gmane.org>
-Subject: [PATCH 2/2] luks key on ext dev - wait for luks
-Date: Tue, 07 Jun 2011 20:22:51 +0200
-Message-ID: <islq9r$vpc$1@dough.gmane.org>
+Subject: [PATCH 1/2] luks key on ext dev - wait for luks
+Date: Tue, 07 Jun 2011 20:17:19 +0200
+Message-ID: <islpvf$tn5$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,89 +10,35 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This asks for the luks passphrase if key is not found for defined time (if defined with rd.luks.tout cmd line):
+This really waits for the luks mapper device, so luksOpen can do it job:
 
- modules.d/90crypt/cryptroot-ask.sh |   21 ++++++++++++++++++---
- modules.d/90crypt/parse-crypt.sh   |    5 +++--
- 2 files changed, 21 insertions(+), 5 deletions(-)
+ modules.d/90crypt/parse-crypt.sh |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
-index f8e1bd8..9b8f8c2 100755
---- a/modules.d/90crypt/cryptroot-ask.sh
-+++ b/modules.d/90crypt/cryptroot-ask.sh
-@@ -22,6 +22,9 @@ NEWROOT=${NEWROOT:-"/sysroot"}
- # default luksname - luks-UUID
- luksname=$2
- 
-+# fallback to passphrase
-+ask_passphrase=1
-+
- # if device name is /dev/dm-X, convert to /dev/mapper/name
- if [ "${1##/dev/dm-}" != "$1" ]; then
-     device="/dev/mapper/$(dmsetup info -c --noheadings -o name "$1")"
-@@ -63,12 +66,21 @@ fi
- 
- info "luksOpen $device $luksname"
- 
--if [ -n "$(getarg rd.luks.key)" ]; then
-+while [ -n "$(getarg rd.luks.key)" ]; do
-     if tmp=$(getkey /tmp/luks.keys $device); then
-         keydev="${tmp%%:*}"
-         keypath="${tmp#*:}"
-     else
--        info "No key found for $device.  Will try later."
-+        if [ $# -eq 3 ]; then
-+            if [ $3 -eq 0 ]; then
-+                info "No key found for $device.  Fallback to passphrase mode."
-+                break
-+            fi
-+            info "No key found for $device.  Will try $3 time(s) more later."
-+            set -- "$1" "$2" "$(($3 - 1))"
-+        else
-+            info "No key found for $device.  Will try later."
-+        fi
-         initqueue --unique --onetime --settled \
-             --name cryptroot-ask-$luksname \
-             $(command -v cryptroot-ask) "$@"
-@@ -80,7 +92,10 @@ if [ -n "$(getarg rd.luks.key)" ]; then
-     readkey "$keypath" "$keydev" "$device" \
-         | cryptsetup -d - luksOpen "$device" "$luksname"
-     unset keypath keydev
--else
-+    ask_passphrase=0
-+    break
-+done    
-+if [ $ask_passphrase -ne 0 ]; then
-     luks_open="$(command -v cryptsetup) luksOpen"
-     ask_for_password --ply-tries 5 \
-         --ply-cmd "$luks_open -T1 $device $luksname" \
 diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-crypt.sh
-index 7ec232a..c76fb23 100755
+index 7ec232a..a2d64a0 100755
 --- a/modules.d/90crypt/parse-crypt.sh
 +++ b/modules.d/90crypt/parse-crypt.sh
-@@ -11,6 +11,7 @@ else
-     } > /etc/udev/rules.d/70-luks.rules.new
- 
-     LUKS=$(getargs rd.luks.uuid rd_LUKS_UUID)
-+    tout=$(getarg rd.luks.tout)
- 
-     if [ -n "$LUKS" ]; then
-         for luksid in $LUKS; do
-@@ -20,7 +21,7 @@ else
-                 printf -- 'ENV{ID_FS_UUID}=="*%s*", ' $luksid
-                 printf -- 'RUN+="%s --unique --onetime ' $(command -v initqueue)
-                 printf -- '--name cryptroot-ask-%%k %s ' $(command -v cryptroot-ask)
--                printf -- '$env{DEVNAME} luks-$env{ID_FS_UUID}"\n'
-+                printf -- '$env{DEVNAME} luks-$env{ID_FS_UUID} %s"\n' $tout
+@@ -23,8 +23,20 @@ else
+                 printf -- '$env{DEVNAME} luks-$env{ID_FS_UUID}"\n'
              } >> /etc/udev/rules.d/70-luks.rules.new
  
-             printf -- '[ -e /dev/disk/by-uuid/*%s* ]\n' $luksid \
-@@ -34,7 +35,7 @@ else
-         {
-             printf -- 'ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="%s ' $(command -v initqueue)
-             printf -- '--unique --onetime --name cryptroot-ask-%%k '
--            printf -- '%s $env{DEVNAME} luks-$env{ID_FS_UUID}"\n' $(command -v cryptroot-ask)
-+            printf -- '%s $env{DEVNAME} luks-$env{ID_FS_UUID} %s"\n' $(command -v cryptroot-ask) $tout
-         } >> /etc/udev/rules.d/70-luks.rules.new
-     fi
- 
+-            printf -- '[ -e /dev/disk/by-uuid/*%s* ]\n' $luksid \
+-                >> $hookdir/initqueue/finished/90-crypt.sh
++            [ -e $hookdir/initqueue/finished/90-crypt.sh ] || \
++            {
++                printf -- 'UUIDS=:\n'
++                printf -- 'for dm in /dev/dm-*; do\n'
++                printf -- '[ -e "$dm" ] || exit 1\n'
++                printf -- 'dmid=`/sbin/dmsetup info -c -o uuid --noheadings "$dm"`\n'
++                printf -- 'uuid=${dmid#CRYPT-LUKS*-}\n'
++                printf -- '[ "x$uuid" = "x$dmid" ] && continue\n'
++                printf -- 'UUIDS="${UUIDS}${uuid%%%%-*}:"\n'
++                printf -- 'done\n'
++            } > $hookdir/initqueue/finished/90-crypt.sh
++            uuid=$luksid
++            while [ "$uuid" != "${uuid#*-}" ]; do uuid=${uuid%%-*}${uuid#*-}; done
++            printf -- '[ "x${UUIDS#*:%s:}" != "x$UUIDS" ] || exit 1\n' $uuid >> $hookdir/initqueue/finished/90-crypt.sh
+             {
+                 printf -- '[ -e /dev/disk/by-uuid/*%s* ] || ' $luksid
+                 printf -- 'warn "crypto LUKS UUID "%s" not found"\n' $luksid
