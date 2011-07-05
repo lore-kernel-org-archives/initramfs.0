@@ -1,12 +1,12 @@
 From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Subject: [PATCH v2 2/4] dracut: added new module masterkey
-Date: Tue,  5 Jul 2011 18:23:05 +0200
-Message-ID: <1309882990-2828-3-git-send-email-roberto.sassu@polito.it>
+Subject: [PATCH v2 4/4] dracut: added new module ecryptfs
+Date: Tue,  5 Jul 2011 18:23:07 +0200
+Message-ID: <1309882990-2828-5-git-send-email-roberto.sassu@polito.it>
 References: <1309882990-2828-1-git-send-email-roberto.sassu@polito.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha1"; boundary="----E6FAC37FFBD6069AADED238708A74C92"
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha1"; boundary="----52CDD36003C03BE0EFADC75BBFF48CC1"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:cc:subject:date:message-id:in-reply-to:references:mime-version:content-type; s=smtpout; bh=9oVG+H9NV8XgRd3kVWvZ8HZ/2tY=; b=ts3NyIU3nRN+/CmJhNhc/gaCHeOXhmNBaJZS3LsuHqsMgWGb0WXobwK40GDlsaZsckKfNXp8MEk/uHHgbeI2fjLuJh+1bKJJHbQEK8Ht4MS46K32WbmAyjlga5rpea1n59bOCiY9vOtTB9TtyrIiqNJW/ZnRg8vAvOciuFJv5ac=
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:cc:subject:date:message-id:in-reply-to:references:mime-version:content-type; s=smtpout; bh=grOd0nR+Gs4vVCSy/mjB8b+Kc9s=; b=gNGNQM8u/TTQhZr1XSKym5suo0D7oypswWkU1lvzRrPpp+nTuukVp5YF7ZVuqWhHpzrUuxHyfJnpGtMenTAZzHxzhzzi9P/I/Tp0sfsRPVAgh1ezCecFxyhItqWMYpgr1BYK7mE1PGXyrk6Z02X7r28BhTv+pZUpLTxz7T0hjFE=
 In-Reply-To: <1309882990-2828-1-git-send-email-roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -15,122 +15,97 @@ Cc: harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, zohar-23VcF4HTsmIX0ybB
 
 This is an S/MIME signed message
 
-------E6FAC37FFBD6069AADED238708A74C92
+------52CDD36003C03BE0EFADC75BBFF48CC1
 
-This module initializes a trusted/user kernel master key that will be used
-to decrypt other encrypted keys.
+This modules mounts an eCryptfs filesystem from the initial ramdisk using
+an encrypted key.
 
 Signed-off-by: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Acked-by: Gianluca Ramunno <ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 ---
- dracut.kernel.7.xml                   |   17 ++++++++
- modules.d/97masterkey/README          |   59 +++++++++++++++++++++++++++++
- modules.d/97masterkey/masterkey.sh    |   67 +++++++++++++++++++++++++++++++++
- modules.d/97masterkey/module-setup.sh |   25 ++++++++++++
- 4 files changed, 168 insertions(+), 0 deletions(-)
- create mode 100644 modules.d/97masterkey/README
- create mode 100755 modules.d/97masterkey/masterkey.sh
- create mode 100755 modules.d/97masterkey/module-setup.sh
+ dracut.kernel.7.xml                    |    6 ++
+ modules.d/98ecryptfs/README            |   45 +++++++++++++++
+ modules.d/98ecryptfs/ecryptfs-mount.sh |   95 ++++++++++++++++++++++++++++++++
+ modules.d/98ecryptfs/module-setup.sh   |   20 +++++++
+ 4 files changed, 166 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/98ecryptfs/README
+ create mode 100755 modules.d/98ecryptfs/ecryptfs-mount.sh
+ create mode 100755 modules.d/98ecryptfs/module-setup.sh
 
 diff --git a/dracut.kernel.7.xml b/dracut.kernel.7.xml
-index a277c74..3fac18b 100644
+index 759871b..c5d74d0 100644
 --- a/dracut.kernel.7.xml
 +++ b/dracut.kernel.7.xml
-@@ -703,6 +703,23 @@ rd.znet=ctc,0.0.0600,0.0.0601,0.0.0602,protocol=bar</programlisting></para>
+@@ -724,6 +724,12 @@ rd.znet=ctc,0.0.0600,0.0.0601,0.0.0602,protocol=bar</programlisting></para>
+             <para>Set the path name of the EVM key. e.g.: <programlisting>evmkey=/etc/keys/evm-trusted.blob</programlisting></para>
+           </listitem>
          </varlistentry>
++        <varlistentry>
++          <term><envar>ecryptfskey=</envar><replaceable>&lt;eCryptfs key path name&gt;</replaceable></term>
++          <listitem>
++            <para>Set the path name of the eCryptfs key. e.g.: <programlisting>ecryptfskey=/etc/keys/ecryptfs-trusted.blob</programlisting></para>
++          </listitem>
++        </varlistentry>
        </variablelist>
      </refsect2>
-+   <refsect2>
-+      <title>Kernel keys</title>
-+      <variablelist>
-+        <varlistentry>
-+          <term><envar>masterkey=</envar><replaceable>&lt;kernel master key path name&gt;</replaceable></term>
-+          <listitem>
-+            <para>Set the path name of the kernel master key. e.g.: <programlisting>masterkey=/etc/keys/kmk-trusted.blob</programlisting></para>
-+          </listitem>
-+        </varlistentry>
-+        <varlistentry>
-+          <term><envar>masterkeytype=</envar><replaceable>&lt;kernel master key type&gt;</replaceable></term>
-+          <listitem>
-+            <para>Set the type of the kernel master key. e.g.: <programlisting>masterkeytype=trusted</programlisting></para>
-+          </listitem>
-+        </varlistentry>
-+      </variablelist>
-+    </refsect2>
      <refsect2>
-       <title>Deprecated, renamed Options</title>
-       <para>Here is a list of options, which were used in dracut prior to version 008, and their new replacement.</para>
-diff --git a/modules.d/97masterkey/README b/modules.d/97masterkey/README
+diff --git a/modules.d/98ecryptfs/README b/modules.d/98ecryptfs/README
 new file mode 100644
-index 0000000..c4e0fbd
+index 0000000..c592d8d
 --- /dev/null
-+++ b/modules.d/97masterkey/README
-@@ -0,0 +1,59 @@
-+# Directions for creating the kernel master key that will be used for
-+# encrypting/decrypting other keys.
++++ b/modules.d/98ecryptfs/README
+@@ -0,0 +1,45 @@
++# Directions for creating the encrypted key that will be used to mount an
++# eCryptfs filesystem
 +
-+# A trusted key is a TPM random number, which is only ever exposed to
-+# userspace as an encrypted datablob. A trusted key can be sealed to a
-+# set of PCR values. For more details on trusted keys, refer to the
-+# kernel keys-trusted-encrypted.txt documentation.
-+$ keyctl add trusted kmk-trusted "new 32" @u
-+801713097
++# Create the eCryptfs key (encrypted key type)
++#
++# The encrypted key type supports two formats: the 'default' format allows
++# to generate a random symmetric key of the length specified, the 'ecryptfs'
++# format generates an authentication token for the eCryptfs filesystem,
++# which contains a randomly generated key. Two requirements for the latter
++# format is that the key description must contain exactly 16 hexadecimal
++# characters and that the encrypted key length must be equal to 64.
++$ keyctl add encrypted 1000100010001000 "new ecryptfs trusted:kmk-trusted 64" @u
++782117972
 +
-+# For those systems which don't have a TPM, but want to experiment with
-+# encrypted keys, create a user key of 32 random bytes. Unlike
-+# trusted/encrypted keys, user type key data is visible to userspace.
-+$ keyctl add user kmk-user "`dd if=/dev/urandom bs=1 count=32 2>/dev/null`" @u
-+144468621
++# Save the encrypted key
++$ su -c 'keyctl pipe `keyctl search @u encrypted 1000100010001000` > /etc/keys/ecryptfs-trusted.blob'
 +
-+# Save the kernel master key (trusted type):
-+$ su -c 'keyctl pipe `keyctl search @u trusted kmk-trusted` > /etc/keys/kmk-trusted.blob'
++# The eCryptfs key path name can be set in one of the following ways (specified in
++# the order in which the variable is overwritten):
 +
-+# or (user type):
-+$ su -c 'keyctl pipe `keyctl search @u user kmk-user` > /etc/keys/kmk-user.blob'
-+
-+# A useful feature of trusted keys is that it is possible to prevent their
-+# unsealing at later time by providing the parameter 'pcrlock=<pcrnum>' when
-+# loading it, which causes the PCR #<pcrnum> to be extended with a random value.
-+# Actually, the <pcrnum> variable is set to '11' to let users experiment with
-+# this feature by using a register that is never extended during the boot,
-+# making the re-sealing not necessary. In the future, the kernel master key will
-+# be sealed to the PCR #14 which is extended, according to the TrustedGRUB
-+# documentation[1], to the measure of the kernel and the initial ramdisk.
-+
-+# The kernel master key path name and type can be set in one of the following
-+# ways (specified in the order in which variables are overwritten):
-+
-+1) use default values:
++1) use the default value:
 +--------------------------------------------------------------------------
-+MASTERKEYTYPE=trusted
-+MASTERKEY=/etc/keys/kmk-trusted-$(uname -r).blob
++ECRYPTFSKEY=/etc/keys/ecryptfs-trusted.blob
 +--------------------------------------------------------------------------
 +
-+2) create the configuration file '/etc/sysconfig/masterkey' to override the
-+value of one or both variables;
++2) create the configuration file '/etc/sysconfig/ecryptfs' and set the ECRYPTFSKEY
++variable;
 +
-+3) specify these parameters in the kernel command line:
-+- masterkey=</kernel/master/key/path>, to override the MASTERKEY variable;
-+- masterkeytype=<kernel-master-key-type>, to override the MASTERKEYTYPE variable.
++3) specify the eCryptfs key path name in the 'ecryptfskey=' parameter of the kernel command
++line.
 +
-+# If only the MASTERKEYTYPE variable is overridden with the value 'user',
-+# the default value of MASTERKEY will be:
-+--------------------------------------------------------------------------
-+MASTERKEY=/etc/keys/kmk-user-$(uname -r).blob
-+--------------------------------------------------------------------------
++# The configuration file '/etc/sysconfig/ecryptfs' is also used to specify
++# more options for mounting the eCryptfs filesystem:
 +
-+# If the system is configured to boot multiple kernels and a trusted/user key is
-+# tied to each one, the MASTERKEY variable should be not modified to avoid
-+# setting the path name each time a different kernel is chosen.
++ECRYPTFSDIR: mount point directory for the eCryptfs filesystem (the directory must be
++             created in the root filesystem before rebooting the system);
++ECRYPTFS_EXTRA_MOUNT_OPTS: extra mount options for the eCryptfs filesystem (the 'ecryptfs_sig'
++                           option is automatically added by the dracut script) 
 +
-+
-+[1] https://projects.sirrix.com/trac/trustedgrub/
-diff --git a/modules.d/97masterkey/masterkey.sh b/modules.d/97masterkey/masterkey.sh
++# Example of the configuration file:
++----------- '/etc/sysconfig/ecryptfs' (with default values) -----------
++ECRYPTFS_KEY=/etc/keys/ecryptfs-trusted.blob
++ECRYPTFSDIR="/secret"
++ECRYPTFS_EXTRA_MOUNT_OPTS="ecryptfs_cipher=aes,ecryptfs_key_bytes=32"
++-----------------------------------------------------------------------
+diff --git a/modules.d/98ecryptfs/ecryptfs-mount.sh b/modules.d/98ecryptfs/ecryptfs-mount.sh
 new file mode 100755
-index 0000000..af042a9
+index 0000000..b1abfc2
 --- /dev/null
-+++ b/modules.d/97masterkey/masterkey.sh
-@@ -0,0 +1,67 @@
++++ b/modules.d/98ecryptfs/ecryptfs-mount.sh
+@@ -0,0 +1,95 @@
 +#!/bin/sh
 +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
 +# ex: ts=8 sw=4 sts=4 et filetype=sh
@@ -141,99 +116,122 @@ index 0000000..af042a9
 +#                    TORSEC group -- http://security.polito.it
 +# Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 +
-+MASTERKEYSCONFIG="${NEWROOT}/etc/sysconfig/masterkey"
-+PCRLOCKNUM=11
++ECRYPTFSCONFIG="${NEWROOT}/etc/sysconfig/ecryptfs"
++ECRYPTFSKEYTYPE="encrypted"
++ECRYPTFSKEYDESC="1000100010001000"
++ECRYPTFSKEYID=""
++ECRYPTFSDIR="/secret"
++ECRYPTFS_EXTRA_MOUNT_OPTS="ecryptfs_cipher=aes,ecryptfs_key_bytes=32"
 +
-+load_masterkey()
++load_ecryptfs_key()
 +{
-+    # read the configuration from the config file
-+    [ -f "${MASTERKEYSCONFIG}" ] && \
-+        . ${MASTERKEYSCONFIG}
-+
-+    # override the kernel master key path name from the 'masterkey=' parameter
-+    # in the kernel command line
-+    MASTERKEYARG=$(getarg masterkey=)
++    # override the eCryptfs key path name from the 'ecryptfskey=' parameter in the kernel
++    # command line
++    ECRYPTFSKEYARG=$(getarg ecryptfskey=)
 +    [ $? -eq 0 ] && \
-+        MASTERKEY=$MASTERKEYARG
++        ECRYPTFSKEY=$ECRYPTFSKEYARG
 +
-+    # override the kernel master key type from the 'masterkeytype=' parameter
-+    # in the kernel command line
-+    MASTERKEYTYPEARG=$(getarg masterkeytype=)
-+    [ $? -eq 0 ] && \
-+        MASTERKEYTYPE=$MASTERKEYTYPEARG
++    # set the default value
++    [ -z "$ECRYPTFSKEY" ] && \
++        ECRYPTFSKEY="/etc/keys/ecryptfs-trusted.blob";
 +
-+    # set default values
-+    [ -z "$MASTERKEYTYPE" ] && \
-+        MASTERKEYTYPE="trusted"
++    # set the eCryptfs key path name
++    ECRYPTFSKEYPATH="${NEWROOT}${ECRYPTFSKEY}"
 +
-+    [ -z "$MASTERKEY" ] && \
-+        MASTERKEY="/etc/keys/kmk-${MASTERKEYTYPE}-$(uname -r).blob"
-+
-+    # set the kernel master key path name
-+    MASTERKEYPATH="${NEWROOT}${MASTERKEY}"
-+
-+    # check for kernel master key's existence
-+    if [ ! -f "${MASTERKEYPATH}" ]; then
++    # check for eCryptfs encrypted key's existence
++    if [ ! -f "${ECRYPTFSKEYPATH}" ]; then
 +        if [ "${RD_DEBUG}" = "yes" ]; then
-+            info "masterkey: missing the kernel master key: kmk-${MASTERKEYTYPE}"
++            info "eCryptfs: missing the eCryptfs key: ${ECRYPTFSKEYDESC}"
 +        fi
 +        return 1
 +    fi
 +
-+    # read the kernel master key blob
-+    KEYBLOB=$(cat ${MASTERKEYPATH})
++    # read the eCryptfs encrypted key blob
++    KEYBLOB=$(cat ${ECRYPTFSKEYPATH})
 +
-+    # add the 'load' prefix if the key type is 'trusted'
-+    [ "${MASTERKEYTYPE}" = "trusted" ] && \
-+        KEYBLOB="load ${KEYBLOB} pcrlock=${PCRLOCKNUM}"
-+
-+    # load the kernel master key
-+    info "Loading the kernel master key"
-+    keyctl add "${MASTERKEYTYPE}" "kmk-${MASTERKEYTYPE}" "${KEYBLOB}" @u >/dev/null || {
-+        info "masterkey: failed to load the kernel master key: kmk-${MASTERKEYTYPE}";
++    # load the eCryptfs encrypted key blob
++    ECRYPTFSKEYID=`keyctl add ${ECRYPTFSKEYTYPE} ${ECRYPTFSKEYDESC} "load ${KEYBLOB}" @u`
++    [ $? -eq 0 ] || {
++        info "eCryptfs: failed to load the eCryptfs key: ${ECRYPTFSKEYDESC}";
 +        return 1;
 +    }
 +
 +    return 0
 +}
 +
-+load_masterkey
-diff --git a/modules.d/97masterkey/module-setup.sh b/modules.d/97masterkey/module-setup.sh
-new file mode 100755
-index 0000000..64f164b
---- /dev/null
-+++ b/modules.d/97masterkey/module-setup.sh
-@@ -0,0 +1,25 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+check() {
-+    [ "$1" = "-h" ] && {
-+        [ -x "/bin/keyctl" ] || return 1
++unload_ecryptfs_key()
++{
++    # unlink the eCryptfs encrypted key
++    keyctl unlink ${ECRYPTFSKEYID} @u || {
++        info "eCryptfs: failed to unlink the eCryptfs key: ${ECRYPTFSKEYDESC}";
++        return 1;
 +    }
 +
 +    return 0
 +}
 +
++mount_ecryptfs()
++{
++    # read the configuration from the config file
++    [ -f "${ECRYPTFSCONFIG}" ] && \
++        . ${ECRYPTFSCONFIG}
++
++    # load the eCryptfs encrypted key
++    load_ecryptfs_key || return 1
++
++    # set the eCryptfs filesystem mount point
++    ECRYPTFSMNT="${NEWROOT}${ECRYPTFSDIR}"
++
++    # build the mount options variable
++    ECRYPTFS_MOUNT_OPTS="ecryptfs_sig=${ECRYPTFSKEYDESC}"
++    [ ! -z ${ECRYPTFS_EXTRA_MOUNT_OPTS} ] && \
++        ECRYPTFS_MOUNT_OPTS="${ECRYPTFS_MOUNT_OPTS},${ECRYPTFS_EXTRA_MOUNT_OPTS}"
++
++    # mount the eCryptfs filesystem
++    info "Mounting the configured eCryptfs filesystem"
++    mount -i -t ecryptfs -o${ECRYPTFS_MOUNT_OPTS} ${ECRYPTFSMNT} ${ECRYPTFSMNT} >/dev/null || {
++        info "eCryptfs: mount of the eCryptfs filesystem failed";
++        return 1;
++    }
++
++    # unload the eCryptfs encrypted key
++    unload_ecryptfs_key || return 1
++
++    return 0
++}
++
++mount_ecryptfs
+diff --git a/modules.d/98ecryptfs/module-setup.sh b/modules.d/98ecryptfs/module-setup.sh
+new file mode 100755
+index 0000000..56c2d41
+--- /dev/null
++++ b/modules.d/98ecryptfs/module-setup.sh
+@@ -0,0 +1,20 @@
++#!/bin/bash
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++check() {
++    return 0
++}
++
 +depends() {
++    echo masterkey
 +    return 0
 +}
 +
 +installkernel() {
-+    instmods trusted encrypted
++    instmods ecryptfs
 +}
 +
 +install() {
-+    inst keyctl
-+    inst uname
-+    inst_hook pre-pivot 60 "$moddir/masterkey.sh"
++    inst_hook pre-pivot 63 "$moddir/ecryptfs-mount.sh"
 +}
 -- 
 1.7.4.4
 
 
-------E6FAC37FFBD6069AADED238708A74C92
+------52CDD36003C03BE0EFADC75BBFF48CC1
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -271,16 +269,16 @@ YlqPpFTtU9czuoEP12A86nqSVsoNok2mZOeYa9IdIjeE2rfdKx6k3YNRg08xggJt
 MIICaQIBATBrMGUxCzAJBgNVBAYTAklUMR4wHAYDVQQKExVQb2xpdGVjbmljbyBk
 aSBUb3Jpbm8xNjA0BgNVBAMTLVBvbGl0ZWNuaWNvIGRpIFRvcmlubyBDZXJ0aWZp
 Y2F0aW9uIEF1dGhvcml0eQICArswCQYFKw4DAhoFAKCB2DAYBgkqhkiG9w0BCQMx
-CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA3MDUxNjIzNDFaMCMGCSqG
-SIb3DQEJBDEWBBSEOI8O6spJPwsVN1hqDw1h5MGq9jB5BgkqhkiG9w0BCQ8xbDBq
+CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA3MDUxNjIzNTBaMCMGCSqG
+SIb3DQEJBDEWBBSdfgTp2H/GbEkaQwP8FIPI82QNDDB5BgkqhkiG9w0BCQ8xbDBq
 MAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3
 DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggq
-hkiG9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQAulabwFhxSQzG6cCNyPysH1/w+
-JtpQDIj+6Wv/oJLWRNGhnZHGgyI4b9j+JuMHyQlT2/o3LFjdADcQ7HWGF/w3lkwA
-QPwDZk+D7uCThTzVplz1jlR65KMW2zsidDmxlc192hfoKIV0UsjYCWOLUKSqlWpa
-GsmdCtdQ2QUXmD9uOotHy8+TPzydDh7DMstTS7659OCjrIY7kazH3TT8XIHjVQIA
-q5frzIeOksO8angw0k4pzOVCOKtJjnS1Tj4h4WuSvJ/apYYvuyu6KfTDhljlwffI
-Vot+7wPYb9pxS4n5UNFzzqpIhh7RTBtWmMSFbJEmvVLRMn9HDpReJ+rOfoDA
+hkiG9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQCVIMWVUI4MrK5kh/i7vTWCldEL
+/otiqKAvvKLkA4GIGpOizELi6IVAoJrRxL9QC9SF7lH7bhqMRtuqAGoAYQGFTlh2
+EYObDHgsLjwtdTCBs/phyHox/ixLofAqtPZiivyt2B2PeieH+l+zYP8WIJIQ50w2
+RPcEDM6om3LAF8XFhx+rmjIQeRSgFkK+tkSU++3ySpgtPUY0WwBqOhNLk85DSdZN
+IxMEkpuBu224k5VyfxBLxF1KjS0MwOry0oKNMV5Hct+X28S4CdOiJj527eBST1/X
+cXi/+C/eiqG1J4C3mQfMMxsgYiN/NLOy5FN+DKIWMYatLfOkp0TdDElBtQbT
 
-------E6FAC37FFBD6069AADED238708A74C92--
+------52CDD36003C03BE0EFADC75BBFF48CC1--
 
