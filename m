@@ -1,36 +1,38 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH] crypt: dropped plymouth --has-active-vt check on passwd prompt
-Date: Thu, 30 Jun 2011 23:49:20 +0200
-Message-ID: <1309470560-16173-1-git-send-email-aidecoe@aidecoe.name>
+From: "Prashant Batra (prbatra)" <prbatra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+Subject: initramfs building
+Date: Tue, 5 Jul 2011 13:35:56 +0530
+Message-ID: <B97B134FACB2024DB45F524AB0A7B7F203BBD010@XMB-BGL-419.cisco.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8BIT
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=cisco.com; i=prbatra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org; l=470; q=dns/txt;
+  s=iport; t=1309853162; x=1311062762;
+  h=mime-version:content-transfer-encoding:subject:date:
+   message-id:from:to;
+  bh=FJ704ZTzTqTuv/Al2C+Awb5KScrjzJ6IKOHisk1vRKQ=;
+  b=Btikz3K+qbacPnn0B3ahUIYB0NXmcLSVARWyBdk554E3ODGRbooaVIcI
+   yTkJLtde6UQJl6gV0+g/l0OVVpT+y+mBckoZg75yOcqAnMgXPmEKKpVi2
+   SDeF/W8yrRr/j9k2hjBBcgtQnlVLmunijdGBulwwSBRwnzeq12p6QTkSC
+   k=;
+Content-class: urn:content-classes:message
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-As Ray Strode explains, plymouth --has-active-vt may fail if the user
-passes console=ttyS0 or something other not corresponding to
-console=tty0, because plymouth is outputing to the serial console and
-not a VT in this case.
----
- modules.d/90crypt/crypt-lib.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Hi, 
 
-diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
-index 122d88e..3ef8482 100644
---- a/modules.d/90crypt/crypt-lib.sh
-+++ b/modules.d/90crypt/crypt-lib.sh
-@@ -47,7 +47,7 @@ ask_for_password() {
- 
-     { flock -s 9;
-         # Prompt for password with plymouth, if installed and running.
--        if [ -x /bin/plymouth ] && /bin/plymouth --has-active-vt; then
-+        if [ -x /bin/plymouth ]; then
-             /bin/plymouth ask-for-password \
-                 --prompt "$ply_prompt" --number-of-tries=$ply_tries \
-                 --command="$ply_cmd"
--- 
-1.7.5.3
+To build a initramfs image as part of kenel, the path to the build image
+is needed. 
+But if you start of a fresh kernel, you can not have the ramfs image
+built for that kernel.
+
+So, the way is to build the kernel, install all the modules into
+/lib/modules/version folder, then build the initramfs image, include the
+path in kernel config and again build kernel image.
+
+Is this correct or there is a better procedure?
+
+Regards, 
+Prashant Batra
