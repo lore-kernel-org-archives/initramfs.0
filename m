@@ -1,33 +1,32 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: initramfs building
-Date: Thu, 07 Jul 2011 10:28:15 +0200
-Message-ID: <4E156E1F.7080704@redhat.com>
-References: <B97B134FACB2024DB45F524AB0A7B7F203BBD010@XMB-BGL-419.cisco.com>
+Subject: Re: [PATCH v2 0/4] new dracut modules
+Date: Thu, 07 Jul 2011 10:29:54 +0200
+Message-ID: <4E156E82.1060602@redhat.com>
+References: <1309882990-2828-1-git-send-email-roberto.sassu@polito.it>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <B97B134FACB2024DB45F524AB0A7B7F203BBD010-rRFx+brps5guW2sxTbe+i6BKnGwkPULj@public.gmane.org>
+In-Reply-To: <1309882990-2828-1-git-send-email-roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: "Prashant Batra (prbatra)" <prbatra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, safford-aZOuKsOsJu3MbYB6QlFGEg@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org, tyhicks-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, kirkland-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, ecryptfs-devel-oU9gvf+ajcQ97yFScArB1dHuzzzSOjJt@public.gmane.org
 
-On 05.07.2011 10:05, Prashant Batra (prbatra) wrote:
-> Hi, 
+On 05.07.2011 18:23, Roberto Sassu wrote:
+> Hi all
 > 
-> To build a initramfs image as part of kenel, the path to the build image
-> is needed. 
-> But if you start of a fresh kernel, you can not have the ramfs image
-> built for that kernel.
+> this patch set introduces three new modules (masterkey, integrity and
+> ecryptfs) and allows to mount the securityfs filesystem from the initial
+> ramdisk.
 > 
-> So, the way is to build the kernel, install all the modules into
-> /lib/modules/version folder, then build the initramfs image, include the
-> path in kernel config and again build kernel image.
+> These patches are based upon the first version sent by Mimi Zohar, which
+> can be retrieved at the address:
 > 
-> Is this correct or there is a better procedure?
+> http://article.gmane.org/gmane.linux.kernel.initramfs/1910
 > 
-> Regards, 
-> Prashant Batra
+> Roberto Sassu 
+> 
 
-I do it the same way...
+Why did you split it into three dracut modules?
+Personally, I would put it into one single module.
