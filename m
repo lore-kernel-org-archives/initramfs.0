@@ -1,13 +1,11 @@
 From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Subject: [PATCH v3 1/4] base/init: mount the securityfs filesystem
-Date: Fri,  8 Jul 2011 14:10:59 +0200
-Message-ID: <1310127065-23292-2-git-send-email-roberto.sassu@polito.it>
-References: <1310127065-23292-1-git-send-email-roberto.sassu@polito.it>
+Subject: [PATCH v3 0/4] new dracut modules
+Date: Fri,  8 Jul 2011 14:10:58 +0200
+Message-ID: <1310127065-23292-1-git-send-email-roberto.sassu@polito.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha1"; boundary="----DDDFC55A27F25CC97E2F4B4F52C0AFD2"
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha1"; boundary="----260E48914652AA1EC80D2DD7DD0DDFB6"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:cc:subject:date:message-id:in-reply-to:references:mime-version:content-type; s=smtpout; bh=PcUwDnqhi14ta/cwSUEN4XeHv94=; b=PVvR8XqJh7giAqRYv+b1yE5G+fn1eK2maeBa609ukkvL2dUuhvEvSmV2BcpZBOPGlhb+aUglaCULnGEMbSstLqMHfUUKwQs4XGYHXcEl2Fjr0Yo4nn0SCs7AtY6vv7T4+UNzLcEfWF2ta08+j1KWT7L5XGjIvwQaEbnLmmX0Ubc=
-In-Reply-To: <1310127065-23292-1-git-send-email-roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:cc:subject:date:message-id:mime-version:content-type; s=smtpout; bh=mDnieFmPkYKCJceQ9bYRdaJD9nQ=; b=Wx2lBfIdEMkp4/l3cUvXlm4yaESiGjlqIODLQdbTKZVAuZMQ9rlMik/6iwYLxoCckhLzOr9isypcTRGtny82pLKxvTmXs2wTiBU+9yBk43kQtOOTMMq5ohfOpKkNiwJB4xt4EZv5aFSMs4TaFZO2VRN26mTK/ayxH9QIbtDSEDg=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
@@ -15,39 +13,59 @@ Cc: harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, zohar-23VcF4HTsmIX0ybB
 
 This is an S/MIME signed message
 
-------DDDFC55A27F25CC97E2F4B4F52C0AFD2
+------260E48914652AA1EC80D2DD7DD0DDFB6
 
-Mount the securityfs filesystem and make available its location through the
-exported variable SECURITYFSDIR.
+Hi all
 
-Signed-off-by: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Acked-by: Gianluca Ramunno <ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
----
- modules.d/99base/init |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+i'm reposting the patch set which allows to mount the securityfs filesystem
+from the initial ramdisk and introduces three new modules: masterkey,
+integrity and ecryptfs.
 
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index 5975b25..e2bbf3d 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -84,6 +84,12 @@ RD_DEBUG=""
- [ ! -d /sys/kernel ] && \
-     mount -t sysfs -o nosuid,noexec,nodev sysfs /sys >/dev/null 2>&1
- 
-+SECURITYFSDIR="/sys/kernel/security"
-+export SECURITYFSDIR
-+if ! ismounted "${SECURITYFSDIR}"; then
-+    mount -t securityfs -o nosuid,noexec,nodev ${SECURITYFSDIR} ${SECURITYFSDIR} >/dev/null 2>&1
-+fi
-+
- if [ -x /lib/systemd/systemd-timestamp ]; then
-     RD_TIMESTAMP=$(/lib/systemd/systemd-timestamp)
- else
+Changelog from version v2:
+* masterkey: added MULTIKERNELMODE configuration variable;
+* {masterkey,integrity, ecryptfs}: modified some debug messages for better
+  clarity;
+* ecryptfs: ECRYPTFS_EXTRA_MOUNT_OPTS configuration variable set to empty;
+* ecryptfs: replaced ECRYPTFSDIR with ECRYPTFSSRCDIR and ECRYPTFSDSTDIR.
+
+Roberto Sassu
+
+
+Roberto Sassu (4):
+  base/init: mount the securityfs filesystem
+  dracut: added new module masterkey
+  dracut: added new module integrity
+  dracut: added new module ecryptfs
+
+ dracut.kernel.7.xml                      |   29 +++++++++
+ modules.d/97masterkey/README             |   68 ++++++++++++++++++++
+ modules.d/97masterkey/masterkey.sh       |   75 ++++++++++++++++++++++
+ modules.d/97masterkey/module-setup.sh    |   25 ++++++++
+ modules.d/98ecryptfs/README              |   50 +++++++++++++++
+ modules.d/98ecryptfs/ecryptfs-mount.sh   |  100 ++++++++++++++++++++++++++++++
+ modules.d/98ecryptfs/module-setup.sh     |   20 ++++++
+ modules.d/98integrity/README             |   40 ++++++++++++
+ modules.d/98integrity/evm-enable.sh      |   91 +++++++++++++++++++++++++++
+ modules.d/98integrity/ima-policy-load.sh |   41 ++++++++++++
+ modules.d/98integrity/module-setup.sh    |   17 +++++
+ modules.d/99base/init                    |    6 ++
+ 12 files changed, 562 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/97masterkey/README
+ create mode 100755 modules.d/97masterkey/masterkey.sh
+ create mode 100755 modules.d/97masterkey/module-setup.sh
+ create mode 100644 modules.d/98ecryptfs/README
+ create mode 100755 modules.d/98ecryptfs/ecryptfs-mount.sh
+ create mode 100755 modules.d/98ecryptfs/module-setup.sh
+ create mode 100644 modules.d/98integrity/README
+ create mode 100755 modules.d/98integrity/evm-enable.sh
+ create mode 100755 modules.d/98integrity/ima-policy-load.sh
+ create mode 100755 modules.d/98integrity/module-setup.sh
+
 -- 
 1.7.4.4
 
 
-------DDDFC55A27F25CC97E2F4B4F52C0AFD2
+------260E48914652AA1EC80D2DD7DD0DDFB6
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -85,16 +103,16 @@ YlqPpFTtU9czuoEP12A86nqSVsoNok2mZOeYa9IdIjeE2rfdKx6k3YNRg08xggJt
 MIICaQIBATBrMGUxCzAJBgNVBAYTAklUMR4wHAYDVQQKExVQb2xpdGVjbmljbyBk
 aSBUb3Jpbm8xNjA0BgNVBAMTLVBvbGl0ZWNuaWNvIGRpIFRvcmlubyBDZXJ0aWZp
 Y2F0aW9uIEF1dGhvcml0eQICArswCQYFKw4DAhoFAKCB2DAYBgkqhkiG9w0BCQMx
-CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA3MDgxMjExMTZaMCMGCSqG
-SIb3DQEJBDEWBBTFmGj8bZFpCNfALbgskbpIOMfiXDB5BgkqhkiG9w0BCQ8xbDBq
+CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA3MDgxMjExMDVaMCMGCSqG
+SIb3DQEJBDEWBBTG3Zu1EHOt/ZngWWQ1/acxQ7FK6TB5BgkqhkiG9w0BCQ8xbDBq
 MAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3
 DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggq
-hkiG9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQCi9CcDs3122PGqyfYIa+mSGWy+
-6mq4DxcHUMGF8SS6w9ZUcEXpciaWwhTdDsgjuCDELL4wBZy4KPZalwMaZRmI1V7k
-YNzSnISYFCxpXpmH2OIwjkdZd23pURcHN7yxCaoapK347b5Zu3eYkGKS0e8QNxvY
-5XnTe4HBtX79smwbknmGpNVXZLfBIXNnGPFvW8PxWWgxAONgDUZhyP+v946nKehG
-G54Y2p6Di1ERkX9yIcAYhCoGBHN26bcn1g1qSRnV24aevwedfFjNxFI0PmB4+pid
-/Yx7nd9gfxVQI5lcXDeixRctdGAdo7QnhgHk+5pZZETzMvR2X05eLfF5Xpzd
+hkiG9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQBWDY6fZwrTlaQAo69qHBeQplKG
+XKYCePyKeyu1lLVUHMugOeKuY1x/iDNjHeUiLLkdilU9rz6jbbskyZ83ED1aHssO
+IknhxiIkoqjLl4VEATTlIFdn9BrClPsSi7HZBxvZvZsgFQC5b6D1bBQW45YB4Bpj
+z2gmtAfafn7wEX5FZQo2lSmbd+zOy6Rptnp39Y90UJBHrP64SeXmXVMaFSXPzWhh
+Zh8qvOKjejPU/n1K7OlIz0mh/vGabbelz+AsQ01H/BZ/AUHpSJk/dDqxMfUKhvku
+p/ue7HwCS04FM1+kRRUgAdiAvB1aw0yi2qepGojt/jlvlj43cTIleUOvsOlN
 
-------DDDFC55A27F25CC97E2F4B4F52C0AFD2--
+------260E48914652AA1EC80D2DD7DD0DDFB6--
 
