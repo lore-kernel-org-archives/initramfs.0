@@ -1,12 +1,12 @@
 From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Subject: [PATCH v3 2/4] dracut: added new module masterkey
-Date: Fri,  8 Jul 2011 14:11:00 +0200
-Message-ID: <1310127065-23292-3-git-send-email-roberto.sassu@polito.it>
+Subject: [PATCH v3 3/4] dracut: added new module integrity
+Date: Fri,  8 Jul 2011 14:11:01 +0200
+Message-ID: <1310127065-23292-4-git-send-email-roberto.sassu@polito.it>
 References: <1310127065-23292-1-git-send-email-roberto.sassu@polito.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha1"; boundary="----3B0D058E1DA7261331FAD246F76721C8"
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg="sha1"; boundary="----4EC7A0B2C0DA53A64092828E37353ECC"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:cc:subject:date:message-id:in-reply-to:references:mime-version:content-type; s=smtpout; bh=huGYc09R4tNUVmGl+0j/yzqCWlc=; b=HRKdB7DBHvlue18v8y+tg3TQR3vgZ5IQlI8d9DVNvsje38I1eIROlWupujkFv9Ma/SfgtP6uRMq8xe5u1GvkJu/A70yBQVFB8v6aJsa56GDZgm8ywy+iGvvTABDagPEp7uGV6JCn1wRAHBKohI/+OITx33zehnkpYEcQ2q/6rl0=
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=messagingengine.com; h=from:to:cc:subject:date:message-id:in-reply-to:references:mime-version:content-type; s=smtpout; bh=7ZwE1Ln+gdHBpV/u2TrSi/7qRKg=; b=aCfaYfQlEvtWMZHLJBhZg+YdRFkCu3pO+UWMQ9gLGrEJ5ZFLNws3YWHteH8y62901XO/75t6NGRAqptj5sEdP9VkFATGh+vo1nEQ9e1SUjFy1Hb6hGpu4XYs1k7qFaVk1mx1qRmmaWPSvPr3Ue4lYtskz/K4cqo74mVkOvlMSVw=
 In-Reply-To: <1310127065-23292-1-git-send-email-roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -15,131 +15,94 @@ Cc: harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, zohar-23VcF4HTsmIX0ybB
 
 This is an S/MIME signed message
 
-------3B0D058E1DA7261331FAD246F76721C8
+------4EC7A0B2C0DA53A64092828E37353ECC
 
-This module initializes a trusted/user kernel master key that will be used
-to decrypt other encrypted keys.
+This module initializes the EVM software and permits to load a custom IMA
+policy.
 
 Signed-off-by: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Acked-by: Gianluca Ramunno <ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 ---
- dracut.kernel.7.xml                   |   17 +++++++
- modules.d/97masterkey/README          |   68 +++++++++++++++++++++++++++++
- modules.d/97masterkey/masterkey.sh    |   75 +++++++++++++++++++++++++++++++++
- modules.d/97masterkey/module-setup.sh |   25 +++++++++++
- 4 files changed, 185 insertions(+), 0 deletions(-)
- create mode 100644 modules.d/97masterkey/README
- create mode 100755 modules.d/97masterkey/masterkey.sh
- create mode 100755 modules.d/97masterkey/module-setup.sh
+ dracut.kernel.7.xml                      |    6 ++
+ modules.d/98integrity/README             |   40 +++++++++++++
+ modules.d/98integrity/evm-enable.sh      |   91 ++++++++++++++++++++++++++++++
+ modules.d/98integrity/ima-policy-load.sh |   41 +++++++++++++
+ modules.d/98integrity/module-setup.sh    |   17 ++++++
+ 5 files changed, 195 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/98integrity/README
+ create mode 100755 modules.d/98integrity/evm-enable.sh
+ create mode 100755 modules.d/98integrity/ima-policy-load.sh
+ create mode 100755 modules.d/98integrity/module-setup.sh
 
 diff --git a/dracut.kernel.7.xml b/dracut.kernel.7.xml
-index a277c74..3fac18b 100644
+index 3fac18b..759871b 100644
 --- a/dracut.kernel.7.xml
 +++ b/dracut.kernel.7.xml
-@@ -703,6 +703,23 @@ rd.znet=ctc,0.0.0600,0.0.0601,0.0.0602,protocol=bar</programlisting></para>
+@@ -718,6 +718,12 @@ rd.znet=ctc,0.0.0600,0.0.0601,0.0.0602,protocol=bar</programlisting></para>
+             <para>Set the type of the kernel master key. e.g.: <programlisting>masterkeytype=trusted</programlisting></para>
+           </listitem>
          </varlistentry>
++        <varlistentry>
++          <term><envar>evmkey=</envar><replaceable>&lt;EVM key path name&gt;</replaceable></term>
++          <listitem>
++            <para>Set the path name of the EVM key. e.g.: <programlisting>evmkey=/etc/keys/evm-trusted.blob</programlisting></para>
++          </listitem>
++        </varlistentry>
        </variablelist>
      </refsect2>
-+   <refsect2>
-+      <title>Kernel keys</title>
-+      <variablelist>
-+        <varlistentry>
-+          <term><envar>masterkey=</envar><replaceable>&lt;kernel master key path name&gt;</replaceable></term>
-+          <listitem>
-+            <para>Set the path name of the kernel master key. e.g.: <programlisting>masterkey=/etc/keys/kmk-trusted.blob</programlisting></para>
-+          </listitem>
-+        </varlistentry>
-+        <varlistentry>
-+          <term><envar>masterkeytype=</envar><replaceable>&lt;kernel master key type&gt;</replaceable></term>
-+          <listitem>
-+            <para>Set the type of the kernel master key. e.g.: <programlisting>masterkeytype=trusted</programlisting></para>
-+          </listitem>
-+        </varlistentry>
-+      </variablelist>
-+    </refsect2>
      <refsect2>
-       <title>Deprecated, renamed Options</title>
-       <para>Here is a list of options, which were used in dracut prior to version 008, and their new replacement.</para>
-diff --git a/modules.d/97masterkey/README b/modules.d/97masterkey/README
+diff --git a/modules.d/98integrity/README b/modules.d/98integrity/README
 new file mode 100644
-index 0000000..524ccfc
+index 0000000..d74e063
 --- /dev/null
-+++ b/modules.d/97masterkey/README
-@@ -0,0 +1,68 @@
-+# Directions for creating the kernel master key that will be used for
-+# encrypting/decrypting other keys.
++++ b/modules.d/98integrity/README
+@@ -0,0 +1,40 @@
++# Directions for creating the encrypted key that will be used to initialize
++# the EVM software.
 +
-+# A trusted key is a TPM random number, which is only ever exposed to
-+# userspace as an encrypted datablob. A trusted key can be sealed to a
-+# set of PCR values. For more details on trusted keys, refer to the
-+# kernel keys-trusted-encrypted.txt documentation.
-+$ keyctl add trusted kmk-trusted "new 32" @u
-+801713097
++# Create the EVM key (encrypted key type)
++#
++# The encrypted key is a random number encrypted/decrypted using the
++# kernel master key.  The encrypted key is only exposed to userspace
++# as an encrypted datablob.
++$ keyctl add encrypted evm-key "new trusted:kmk-trusted 32" @u
++782117972
 +
-+# For those systems which don't have a TPM, but want to experiment with
-+# encrypted keys, create a user key of 32 random bytes. Unlike
-+# trusted/encrypted keys, user type key data is visible to userspace.
-+$ keyctl add user kmk-user "`dd if=/dev/urandom bs=1 count=32 2>/dev/null`" @u
-+144468621
++# Save the encrypted key
++$ su -c 'keyctl pipe `keyctl search @u encrypted evm_key` > /etc/keys/evm-trusted.blob'
 +
-+# Save the kernel master key (trusted type):
-+$ su -c 'keyctl pipe `keyctl search @u trusted kmk-trusted` > /etc/keys/kmk-trusted.blob'
++# The EVM key path name can be set in one of the following ways (specified in
++# the order in which the variable is overwritten):
 +
-+# or (user type):
-+$ su -c 'keyctl pipe `keyctl search @u user kmk-user` > /etc/keys/kmk-user.blob'
-+
-+# A useful feature of trusted keys is that it is possible to prevent their
-+# unsealing at later time by providing the parameter 'pcrlock=<pcrnum>' when
-+# loading it, which causes the PCR #<pcrnum> to be extended with a random value.
-+# Actually, the <pcrnum> variable is set to '11' to let users experiment with
-+# this feature by using a register that is never extended during the boot,
-+# making the re-sealing not necessary. In the future, the kernel master key will
-+# be sealed to the PCR #14 which is extended, according to the TrustedGRUB
-+# documentation[1], to the measure of the kernel and the initial ramdisk.
-+
-+# The kernel master key path name and type can be set in one of the following
-+# ways (specified in the order in which variables are overwritten):
-+
-+1) use default values:
++1) use the default value:
 +--------------------------------------------------------------------------
-+MULTIKERNELMODE="NO"
-+MASTERKEYTYPE="trusted"
-+MASTERKEY="/etc/keys/kmk-${MASTERKEYTYPE}.blob"
++EVMKEY="/etc/keys/evm-trusted.blob"
 +--------------------------------------------------------------------------
 +
-+2) create the configuration file '/etc/sysconfig/masterkey' to override the
-+value of one or all variables;
++2) create the configuration file '/etc/sysconfig/evm' and set the EVMKEY variable;
 +
-+3) specify these parameters in the kernel command line:
-+- masterkey=</kernel/master/key/path>, to override the MASTERKEY variable;
-+- masterkeytype=<kernel-master-key-type>, to override the MASTERKEYTYPE variable.
-+
-+# The variable MULTIKERNELMODE has been introduced to support multi boot
-+# configurations, where a trusted/user key is tied to a specific kernel and
-+# initial ramdisk. In this case, setting MULTIKERNELMODE to 'YES' will cause the
-+# kernel version to be added to the default masterkey path name, so that the
-+# MASTERKEY variable should not be overridden each time a different kernel is
-+# chosen. The default value of MASTERKEY will be equal to:
-+--------------------------------------------------------------------------
-+MASTERKEY="/etc/keys/kmk-${MASTERKEYTYPE}-$(uname -r).blob"
-+--------------------------------------------------------------------------
-+
-+# The masterkey path name also depends on the value of MASTERKEYTYPE, as reported
-+# in the default values for defined variables. For example, if only MASTERKEYTYPE
-+# is overridden by setting it to 'user' in the configuration file or from the
-+# kernel command line, the value of MASTERKEY will be:
-+--------------------------------------------------------------------------
-+MASTERKEY="/etc/keys/kmk-user.blob"
-+--------------------------------------------------------------------------
++3) specify the EVM key path name in the 'evmkey=' parameter of the kernel command
++line.
 +
 +
-+[1] https://projects.sirrix.com/trac/trustedgrub/
-diff --git a/modules.d/97masterkey/masterkey.sh b/modules.d/97masterkey/masterkey.sh
++# Directions for loading a custom IMA policy.
++
++# Write the policy following the instructions provided in the file
++# 'Documentation/ABI/testing/ima_policy' of the kernel documentation.
++
++# Save the policy in a file.
++
++# Create the configuration file '/etc/sysconfig/ima' to override the path name of
++# the IMA custom policy.
++------------- '/etc/sysconfig/ima' (with the default value) -------------
++IMAPOLICY="/etc/sysconfig/ima-policy"
++-------------------------------------------------------------------------
+diff --git a/modules.d/98integrity/evm-enable.sh b/modules.d/98integrity/evm-enable.sh
 new file mode 100755
-index 0000000..0cd009a
+index 0000000..a4cdf45
 --- /dev/null
-+++ b/modules.d/97masterkey/masterkey.sh
-@@ -0,0 +1,75 @@
++++ b/modules.d/98integrity/evm-enable.sh
+@@ -0,0 +1,91 @@
 +#!/bin/sh
 +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
 +# ex: ts=8 sw=4 sts=4 et filetype=sh
@@ -150,107 +113,162 @@ index 0000000..0cd009a
 +#                    TORSEC group -- http://security.polito.it
 +# Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 +
-+MASTERKEYSCONFIG="${NEWROOT}/etc/sysconfig/masterkey"
-+MULTIKERNELMODE="NO"
-+PCRLOCKNUM=11
++EVMSECFILE="${SECURITYFSDIR}/evm"
++EVMCONFIG="${NEWROOT}/etc/sysconfig/evm"
++EVMKEYDESC="evm-key"
++EVMKEYTYPE="encrypted"
++EVMKEYID=""
 +
-+load_masterkey()
++load_evm_key()
 +{
 +    # read the configuration from the config file
-+    [ -f "${MASTERKEYSCONFIG}" ] && \
-+        . ${MASTERKEYSCONFIG}
++    [ -f "${EVMCONFIG}" ] && \
++        . ${EVMCONFIG}
 +
-+    # override the kernel master key path name from the 'masterkey=' parameter
-+    # in the kernel command line
-+    MASTERKEYARG=$(getarg masterkey=)
++    # override the EVM key path name from the 'evmkey=' parameter in the kernel
++    # command line
++    EVMKEYARG=$(getarg evmkey=)
 +    [ $? -eq 0 ] && \
-+        MASTERKEY=${MASTERKEYARG}
++        EVMKEY=${EVMKEYARG}
 +
-+    # override the kernel master key type from the 'masterkeytype=' parameter
-+    # in the kernel command line
-+    MASTERKEYTYPEARG=$(getarg masterkeytype=)
-+    [ $? -eq 0 ] && \
-+        MASTERKEYTYPE=${MASTERKEYTYPEARG}
++    # set the default value
++    [ -z "${EVMKEY}" ] && \
++        EVMKEY="/etc/keys/evm-trusted.blob";
 +
-+    # set default values
-+    [ -z "${MASTERKEYTYPE}" ] && \
-+        MASTERKEYTYPE="trusted"
++    # set the EVM key path name
++    EVMKEYPATH="${NEWROOT}${EVMKEY}"
 +
-+    if [ -z "${MASTERKEY}" ]; then
-+        # append the kernel version to the default masterkey path name
-+        # if MULTIKERNELMODE is set to YES
-+        if [ "${MULTIKERNELMODE}" = "YES" ]; then
-+            MASTERKEY="/etc/keys/kmk-${MASTERKEYTYPE}-$(uname -r).blob"
-+        else
-+            MASTERKEY="/etc/keys/kmk-${MASTERKEYTYPE}.blob"
-+        fi
-+    fi
-+
-+    # set the kernel master key path name
-+    MASTERKEYPATH="${NEWROOT}${MASTERKEY}"
-+
-+    # check for kernel master key's existence
-+    if [ ! -f "${MASTERKEYPATH}" ]; then
++    # check for EVM encrypted key's existence
++    if [ ! -f "${EVMKEYPATH}" ]; then
 +        if [ "${RD_DEBUG}" = "yes" ]; then
-+            info "masterkey: kernel master key file not found: ${MASTERKEYPATH}"
++            info "integrity: EVM encrypted key file not found: ${EVMKEYPATH}"
 +        fi
 +        return 1
 +    fi
 +
-+    # read the kernel master key blob
-+    KEYBLOB=$(cat ${MASTERKEYPATH})
++    # read the EVM encrypted key blob
++    KEYBLOB=$(cat ${EVMKEYPATH})
 +
-+    # add the 'load' prefix if the key type is 'trusted'
-+    [ "${MASTERKEYTYPE}" = "trusted" ] && \
-+        KEYBLOB="load ${KEYBLOB} pcrlock=${PCRLOCKNUM}"
-+
-+    # load the kernel master key
-+    info "Loading the kernel master key"
-+    keyctl add "${MASTERKEYTYPE}" "kmk-${MASTERKEYTYPE}" "${KEYBLOB}" @u >/dev/null || {
-+        info "masterkey: failed to load the kernel master key: kmk-${MASTERKEYTYPE}";
++    # load the EVM encrypted key
++    EVMKEYID=$(keyctl add ${EVMKEYTYPE} ${EVMKEYDESC} "load ${KEYBLOB}" @u)
++    [ $? -eq 0 ] || {
++        info "integrity: failed to load the EVM encrypted key: ${EVMKEYDESC}";
 +        return 1;
 +    }
 +
 +    return 0
 +}
 +
-+load_masterkey
-diff --git a/modules.d/97masterkey/module-setup.sh b/modules.d/97masterkey/module-setup.sh
-new file mode 100755
-index 0000000..64f164b
---- /dev/null
-+++ b/modules.d/97masterkey/module-setup.sh
-@@ -0,0 +1,25 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+check() {
-+    [ "$1" = "-h" ] && {
-+        [ -x "/bin/keyctl" ] || return 1
++unload_evm_key()
++{
++    # unlink the EVM encrypted key
++    keyctl unlink ${EVMKEYID} @u || {
++        info "integrity: failed to unlink the EVM encrypted key: ${EVMKEYDESC}";
++        return 1;
 +    }
 +
 +    return 0
 +}
 +
-+depends() {
++enable_evm()
++{
++    # check kernel support for EVM
++    if [ ! -e "${EVMSECFILE}" ]; then
++        if [ "${RD_DEBUG}" = "yes" ]; then
++            info "integrity: EVM kernel support is disabled"
++        fi
++        return 0
++    fi
++
++    # load the EVM encrypted key
++    load_evm_key || return 1
++
++    # initialize EVM
++    info "Enabling EVM"
++    echo 1 > ${EVMSECFILE}
++
++    # unload the EVM encrypted key
++    unload_evm_key || return 1
++
 +    return 0
 +}
 +
-+installkernel() {
-+    instmods trusted encrypted
++enable_evm
+diff --git a/modules.d/98integrity/ima-policy-load.sh b/modules.d/98integrity/ima-policy-load.sh
+new file mode 100755
+index 0000000..55c98bb
+--- /dev/null
++++ b/modules.d/98integrity/ima-policy-load.sh
+@@ -0,0 +1,41 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++# Licensed under the GPLv2
++#
++# Copyright (C) 2011 Politecnico di Torino, Italy
++#                    TORSEC group -- http://security.polito.it
++# Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
++
++IMASECDIR="${SECURITYFSDIR}/ima"
++IMACONFIG="${NEWROOT}/etc/sysconfig/ima"
++IMAPOLICY="/etc/sysconfig/ima-policy"
++
++load_ima_policy()
++{
++    # check kernel support for IMA
++    if [ ! -e "${IMASECDIR}" ]; then
++        if [ "${RD_DEBUG}" = "yes" ]; then
++            info "integrity: IMA kernel support is disabled"
++        fi
++        return 0
++    fi
++
++    # override the default configuration
++    [ -f "${IMACONFIG}" ] && \
++        . ${IMACONFIG}
++
++    # set the IMA policy path name
++    IMAPOLICYPATH="${NEWROOT}${IMAPOLICY}"
++
++    # check the existence of the IMA policy file
++    [ -f "${IMAPOLICYPATH}" ] && {
++        info "Loading the provided IMA custom policy";
++        cat ${IMAPOLICYPATH} > ${IMASECDIR}/policy;
++    }
++
++    return 0
++}
++
++load_ima_policy
+diff --git a/modules.d/98integrity/module-setup.sh b/modules.d/98integrity/module-setup.sh
+new file mode 100755
+index 0000000..f1b97fd
+--- /dev/null
++++ b/modules.d/98integrity/module-setup.sh
+@@ -0,0 +1,17 @@
++#!/bin/bash
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++check() {
++    return 0
++}
++
++depends() {
++    echo masterkey
++    return 0
 +}
 +
 +install() {
-+    inst keyctl
-+    inst uname
-+    inst_hook pre-pivot 60 "$moddir/masterkey.sh"
++    inst_hook pre-pivot 61 "$moddir/evm-enable.sh"
++    inst_hook pre-pivot 62 "$moddir/ima-policy-load.sh"
 +}
 -- 
 1.7.4.4
 
 
-------3B0D058E1DA7261331FAD246F76721C8
+------4EC7A0B2C0DA53A64092828E37353ECC
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -288,16 +306,16 @@ YlqPpFTtU9czuoEP12A86nqSVsoNok2mZOeYa9IdIjeE2rfdKx6k3YNRg08xggJt
 MIICaQIBATBrMGUxCzAJBgNVBAYTAklUMR4wHAYDVQQKExVQb2xpdGVjbmljbyBk
 aSBUb3Jpbm8xNjA0BgNVBAMTLVBvbGl0ZWNuaWNvIGRpIFRvcmlubyBDZXJ0aWZp
 Y2F0aW9uIEF1dGhvcml0eQICArswCQYFKw4DAhoFAKCB2DAYBgkqhkiG9w0BCQMx
-CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA3MDgxMjExMjFaMCMGCSqG
-SIb3DQEJBDEWBBQglspLt93m6KUZLxrcyOz8/mILmDB5BgkqhkiG9w0BCQ8xbDBq
+CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA3MDgxMjExMjZaMCMGCSqG
+SIb3DQEJBDEWBBSHRJltdbIAFvXzUfD/RBVr+0Z1KDB5BgkqhkiG9w0BCQ8xbDBq
 MAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3
 DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggq
-hkiG9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQA4ZEBAvw6YAmKv8xe9M2n2TanN
-VXPx2QlE0FhtFmTxqhRLHChL4bKUs6JGWrEfcpYFXxVBOpcA6JuRlxoL9EnLkiuE
-xUvhftzmyBkFYya7Dy0nbCnY1fbFJcWXawD/dph3Mz0nVohbwoH3knD0Q6o90Uby
-DlN44jCk4SyU3H7Ak0GmVRrwYXqN5kW+L206wxRgdFU349L8aIj3Hwh+52Ub1VRH
-fo8cQiAP1BEWpMkJtLGbmKgNEMS9cjXJFKOyPjCyHJ85bJkN6HOlLOVNPh8Z05kM
-zpBOpWgujmI32i8Balk5GHCsWzYZYYz5PfhOWIdpZQd8mohUKbCHBLgmdIwy
+hkiG9w0DAgIBKDANBgkqhkiG9w0BAQEFAASCAQAOApD8BnEDsxs59iqY25SC9AUz
+llnPU194/yfAzAVR0tbhaTv6BOxTQ554eJignosuwJg/QMYDqbvN+H8egbiao00j
+7sVoRGZvjeTazuVctxibXySZpLYs+RJfcvbWcngCrMJ9RCY+AKoW3Hym/jOhd3Bf
+E3lq+MQXSgqLc/Y7k651ZijTDxZICEuN/6ySD26daRAKutTP5QvkHOrclnV9IqBp
+UAOEfJkvZ483leGs2VfE0xxsb1sThnyNVdKz1PcznfjpFtUubDpCdR5JqwKRdBN6
+/sqmuWDQwbRCCAauMdBfoMbMP9v01QbmIHfHMzDWpB+3KDggekfe+p0iUHqL
 
-------3B0D058E1DA7261331FAD246F76721C8--
+------4EC7A0B2C0DA53A64092828E37353ECC--
 
