@@ -1,63 +1,30 @@
 From: =?UTF-8?Q?Am=C3=A9rico_Wang?= <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [Patch] busybox module: parse busybox defined functions dynamically
-Date: Thu, 21 Jul 2011 15:33:19 +0800
-Message-ID: <CAM_iQpWn9SMU8NXKd-XzdXX7WZv3ba6swRcf2yYTwEJvGHN35w@mail.gmail.com>
+Subject: Re: [Patch] busybox module: parse busybox defined functions dynamically
+Date: Thu, 21 Jul 2011 15:36:25 +0800
+Message-ID: <CAM_iQpUgtNtTozr89xesTF9yAh0H_dHymDcq=ptpZiq7v9hX+g@mail.gmail.com>
+References: <CAM_iQpWn9SMU8NXKd-XzdXX7WZv3ba6swRcf2yYTwEJvGHN35w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=485b397dcd3df0a42304a88f5c0d
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=pDImZDLYfFvs6Y0RvOi4hBWarmZoihKxgqABEFuhRJk=;
-        b=kF6EISEi6GCVv9NCDRA/iL+VUICPrIHQhWOyLSXZO1yZUdaRXFDgu9/+YFPbCEenf4
-         B7Ks8vj87XB8s20d0CtwElBiK2nBiVjE6Ts3Qsnyv8P2sWUDMTpMfsR3IGZAVrWC0a8U
-         CkH5e8m2N0K/uPFOAvfv/LbxK46+ysNvLfgAc=
+        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+         :content-type:content-transfer-encoding;
+        bh=A0SGg1svUh4TP8btNSnq5pBAHzjMuXECNRscUbjeXBk=;
+        b=wOH+miEaiZB1msL0nRqQpbvM+guVN9zV5MreAaOZ4suz4LWq0cU2vYnu23TJQBnckA
+         i2L/4nME0Jk1CR1OKc7H+xOwhmIFjhXEMjLxqiaRYzxoLQhllh7feAgII2GoCDuGqqBA
+         4qnmh/p2HYoQuGndlE14i+U4xJhs1qS2YgK3E=
+In-Reply-To: <CAM_iQpWn9SMU8NXKd-XzdXX7WZv3ba6swRcf2yYTwEJvGHN35w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="macroman"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---485b397dcd3df0a42304a88f5c0d
-Content-Type: text/plain; charset=UTF-8
+On Thu, Jul 21, 2011 at 3:33 PM, Am=C3=A9rico Wang <xiyou.wangcong@gmai=
+l.com> wrote:
+> Currently in dracut busybox module, we hard-code the list of binaries
+> available in busybox. Actually we can get this list by running busybo=
+x
+> without any arguments.
 
-Currently in dracut busybox module, we hard-code the list of binaries
-available in busybox. Actually we can get this list by running busybox
-without any arguments.
-
-Also, if find_binary() finds nothing, we would symlink $initdir/
-which is not we expect.
-
-Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
---485b397dcd3df0a42304a88f5c0d
-Content-Type: text/x-patch; charset=US-ASCII; name="dracut-busybox.diff"
-Content-Disposition: attachment; filename="dracut-busybox.diff"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gqdeetml0
-
-ZGlmZiAtLWdpdCBhL21vZHVsZXMuZC8wNWJ1c3lib3gvbW9kdWxlLXNldHVwLnNoIGIvbW9kdWxl
-cy5kLzA1YnVzeWJveC9tb2R1bGUtc2V0dXAuc2gKaW5kZXggNWVmMDNlZi4uMzJiNTQ1OCAxMDA3
-NTUKLS0tIGEvbW9kdWxlcy5kLzA1YnVzeWJveC9tb2R1bGUtc2V0dXAuc2gKKysrIGIvbW9kdWxl
-cy5kLzA1YnVzeWJveC9tb2R1bGUtc2V0dXAuc2gKQEAgLTE1LDIyICsxNSwyMiBAQCBkZXBlbmRz
-KCkgewogaW5zdGFsbCgpIHsKICAgICBsb2NhbCBfaSBfcHJvZ3MgX3BhdGgKICAgICBpbnN0IGJ1
-c3lib3ggL3Vzci9iaW4vYnVzeWJveAotCi0gICAgIyBMaXN0IG9mIHNoZWxsIHByb2dyYW1zIHRo
-YXQgd2UgdXNlIGluIG90aGVyIG9mZmljaWFsIGRyYWN1dCBtb2R1bGVzLCB0aGF0Ci0gICAgIyBt
-dXN0IGJlIHN1cHBvcnRlZCBieSB0aGUgYnVzeWJveCBpbnN0YWxsZWQgb24gdGhlIGhvc3Qgc3lz
-dGVtCi0gICAgX3Byb2dzPSJlY2hvIGdyZXAgdXNsZWVwIFsgcm1tb2QgaW5zbW9kIG1vdW50IHVu
-YW1lIHVtb3VudCBzZXRmb250IGtiZF9tb2RlIHN0dHkgZ3ppcCBiemlwMiBjaHZ0IHJlYWRsaW5r
-IGJsa2lkIGRkIGxvc2V0dXAgdHIgc2VkIHNlcSBwcyBtb3JlIGNhdCBybSBmcmVlIHBpbmcgbmV0
-c3RhdCB2aSBwaW5nNiBmc2NrIGlwIGhvc3RuYW1lIGJhc2VuYW1lIG1rbm9kIG1rZGlyIHBpZG9m
-IHNsZWVwIGNocm9vdCBscyBjcCBtdiBkbWVzZyBta2ZpZm8gbGVzcyBsbiBtb2Rwcm9iZSIKKyAg
-ICBmb3IgX2kgaW4gYC9zYmluL2J1c3lib3ggfCBzZWQgLW5lICcxLC9DdXJyZW50bHkvIXtzLywv
-L2c7IHMvYnVzeWJveC8vZzsgcH0nYAorICAgIGRvCisgICAgICAgIF9wcm9ncz0iJF9wcm9ncyAk
-X2kiCisgICAgZG9uZQogCiAgICAgIyBGSVhNRTogc3dpdGNoX3Jvb3Qgc2hvdWxkIGJlIGluIHRo
-ZSBhYm92ZSBsaXN0LCBidXQgYnVzeWJveCB2ZXJzaW9uIGhhbmdzCiAgICAgIyAodXNpbmcgYnVz
-eWJveC0xLjE1LjEtNy5mYzE0Lmk2ODYgYXQgdGhlIHRpbWUgb2Ygd3JpdGluZykKIAogICAgIGZv
-ciBfaSBpbiAkX3Byb2dzOyBkbwogCV9wYXRoPSQoZmluZF9iaW5hcnkgIiRfaSIpCisgICAgICAg
-IFsgLXogIiRfcGF0aCIgXSAmJiBjb250aW51ZQogICAgICAgICBpZiBbWyAkX3BhdGggIT0gJHtf
-cGF0aCMvdXNyfSBdXTsgdGhlbgotICAgIAkgICAgbG4gLXMgLi4vLi4vdXNyL2Jpbi9idXN5Ym94
-ICIkaW5pdGRpci8kX3BhdGgiCisgICAgICAgICAgICBsbiAtc2YgLi4vLi4vdXNyL2Jpbi9idXN5
-Ym94ICIkaW5pdGRpci8kX3BhdGgiCiAgICAgICAgIGVsc2UKLSAgICAgICAgICAgIGxuIC1zIC4u
-L3Vzci9iaW4vYnVzeWJveCAiJGluaXRkaXIvJF9wYXRoIgorICAgICAgICAgICAgbG4gLXNmIC4u
-L3Vzci9iaW4vYnVzeWJveCAiJGluaXRkaXIvJF9wYXRoIgogICAgICAgICBmaQogICAgIGRvbmUK
-LQogfQogCg==
---485b397dcd3df0a42304a88f5c0d--
+Note, we used this trick in mkdumprd for a long time.
