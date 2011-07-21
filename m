@@ -1,58 +1,63 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 011 release
-Date: Mon, 18 Jul 2011 18:13:07 +0200
-Message-ID: <4E245B93.4090205@redhat.com>
+From: =?UTF-8?Q?Am=C3=A9rico_Wang?= <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [Patch] busybox module: parse busybox defined functions dynamically
+Date: Thu, 21 Jul 2011 15:33:19 +0800
+Message-ID: <CAM_iQpWn9SMU8NXKd-XzdXX7WZv3ba6swRcf2yYTwEJvGHN35w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/mixed; boundary=485b397dcd3df0a42304a88f5c0d
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=pDImZDLYfFvs6Y0RvOi4hBWarmZoihKxgqABEFuhRJk=;
+        b=kF6EISEi6GCVv9NCDRA/iL+VUICPrIHQhWOyLSXZO1yZUdaRXFDgu9/+YFPbCEenf4
+         B7Ks8vj87XB8s20d0CtwElBiK2nBiVjE6Ts3Qsnyv8P2sWUDMTpMfsR3IGZAVrWC0a8U
+         CkH5e8m2N0K/uPFOAvfv/LbxK46+ysNvLfgAc=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Here comes a new dracut version. Thanks to all who have contributed to
-this release.
+--485b397dcd3df0a42304a88f5c0d
+Content-Type: text/plain; charset=UTF-8
 
-The tarball can be found here:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/
-	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Currently in dracut busybox module, we hard-code the list of binaries
+available in busybox. Actually we can get this list by running busybox
+without any arguments.
 
-Git:
-	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+Also, if find_binary() finds nothing, we would symlink $initdir/
+which is not we expect.
 
-Git Web:
-	http://git.kernel.org/?p=3Dboot/dracut/dracut.git
+Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Git Web RSS Feed:
-	http://git.kernel.org/?p=3Dboot/dracut/dracut.git;a=3Drss
+--485b397dcd3df0a42304a88f5c0d
+Content-Type: text/x-patch; charset=US-ASCII; name="dracut-busybox.diff"
+Content-Disposition: attachment; filename="dracut-busybox.diff"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gqdeetml0
 
-Project Page:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-	http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=3Dboot/dracut/dracut.git;a=3Dblob_plai=
-n;f=3DNEWS
-
-
-dracut-011
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-- use udev-168 features for shutting down udev
-- introduce "--prefix" to put all initramfs files in e.g "/run/initramf=
-s"
-- new shutdown script (called by systemd >=3D 030) to disassemble the r=
-oot device
-- lots of bugfixes
-- new module for gpg-encrypted keys - 91crypt-gpg
-
-
-   107  Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-    11  Amadeusz =C5=BBo=C5=82nowski <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-     8  Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-     3  Marian Ganisin <mganisin-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-     2  Alan Pevec <apevec-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-     1  Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+ZGlmZiAtLWdpdCBhL21vZHVsZXMuZC8wNWJ1c3lib3gvbW9kdWxlLXNldHVwLnNoIGIvbW9kdWxl
+cy5kLzA1YnVzeWJveC9tb2R1bGUtc2V0dXAuc2gKaW5kZXggNWVmMDNlZi4uMzJiNTQ1OCAxMDA3
+NTUKLS0tIGEvbW9kdWxlcy5kLzA1YnVzeWJveC9tb2R1bGUtc2V0dXAuc2gKKysrIGIvbW9kdWxl
+cy5kLzA1YnVzeWJveC9tb2R1bGUtc2V0dXAuc2gKQEAgLTE1LDIyICsxNSwyMiBAQCBkZXBlbmRz
+KCkgewogaW5zdGFsbCgpIHsKICAgICBsb2NhbCBfaSBfcHJvZ3MgX3BhdGgKICAgICBpbnN0IGJ1
+c3lib3ggL3Vzci9iaW4vYnVzeWJveAotCi0gICAgIyBMaXN0IG9mIHNoZWxsIHByb2dyYW1zIHRo
+YXQgd2UgdXNlIGluIG90aGVyIG9mZmljaWFsIGRyYWN1dCBtb2R1bGVzLCB0aGF0Ci0gICAgIyBt
+dXN0IGJlIHN1cHBvcnRlZCBieSB0aGUgYnVzeWJveCBpbnN0YWxsZWQgb24gdGhlIGhvc3Qgc3lz
+dGVtCi0gICAgX3Byb2dzPSJlY2hvIGdyZXAgdXNsZWVwIFsgcm1tb2QgaW5zbW9kIG1vdW50IHVu
+YW1lIHVtb3VudCBzZXRmb250IGtiZF9tb2RlIHN0dHkgZ3ppcCBiemlwMiBjaHZ0IHJlYWRsaW5r
+IGJsa2lkIGRkIGxvc2V0dXAgdHIgc2VkIHNlcSBwcyBtb3JlIGNhdCBybSBmcmVlIHBpbmcgbmV0
+c3RhdCB2aSBwaW5nNiBmc2NrIGlwIGhvc3RuYW1lIGJhc2VuYW1lIG1rbm9kIG1rZGlyIHBpZG9m
+IHNsZWVwIGNocm9vdCBscyBjcCBtdiBkbWVzZyBta2ZpZm8gbGVzcyBsbiBtb2Rwcm9iZSIKKyAg
+ICBmb3IgX2kgaW4gYC9zYmluL2J1c3lib3ggfCBzZWQgLW5lICcxLC9DdXJyZW50bHkvIXtzLywv
+L2c7IHMvYnVzeWJveC8vZzsgcH0nYAorICAgIGRvCisgICAgICAgIF9wcm9ncz0iJF9wcm9ncyAk
+X2kiCisgICAgZG9uZQogCiAgICAgIyBGSVhNRTogc3dpdGNoX3Jvb3Qgc2hvdWxkIGJlIGluIHRo
+ZSBhYm92ZSBsaXN0LCBidXQgYnVzeWJveCB2ZXJzaW9uIGhhbmdzCiAgICAgIyAodXNpbmcgYnVz
+eWJveC0xLjE1LjEtNy5mYzE0Lmk2ODYgYXQgdGhlIHRpbWUgb2Ygd3JpdGluZykKIAogICAgIGZv
+ciBfaSBpbiAkX3Byb2dzOyBkbwogCV9wYXRoPSQoZmluZF9iaW5hcnkgIiRfaSIpCisgICAgICAg
+IFsgLXogIiRfcGF0aCIgXSAmJiBjb250aW51ZQogICAgICAgICBpZiBbWyAkX3BhdGggIT0gJHtf
+cGF0aCMvdXNyfSBdXTsgdGhlbgotICAgIAkgICAgbG4gLXMgLi4vLi4vdXNyL2Jpbi9idXN5Ym94
+ICIkaW5pdGRpci8kX3BhdGgiCisgICAgICAgICAgICBsbiAtc2YgLi4vLi4vdXNyL2Jpbi9idXN5
+Ym94ICIkaW5pdGRpci8kX3BhdGgiCiAgICAgICAgIGVsc2UKLSAgICAgICAgICAgIGxuIC1zIC4u
+L3Vzci9iaW4vYnVzeWJveCAiJGluaXRkaXIvJF9wYXRoIgorICAgICAgICAgICAgbG4gLXNmIC4u
+L3Vzci9iaW4vYnVzeWJveCAiJGluaXRkaXIvJF9wYXRoIgogICAgICAgICBmaQogICAgIGRvbmUK
+LQogfQogCg==
+--485b397dcd3df0a42304a88f5c0d--
