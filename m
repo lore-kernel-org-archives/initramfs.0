@@ -1,45 +1,35 @@
-From: jaivuk <jaivuk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Unable to boot Fedora 15 Live iso image from grub2 (iso-scan/filename
- kernel parameter)
-Date: Thu, 21 Jul 2011 09:53:22 +0100
-Message-ID: <CAC-ivu5wS+xGoekc_jjs72BC4=Dz+k3umnAdSHVu_vjGDva=rQ@mail.gmail.com>
+From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [Patch] busybox module: parse busybox defined functions dynamically
+Date: Thu, 21 Jul 2011 10:01:01 +0200
+Message-ID: <4E27DCBD.4010407@gmail.com>
+References: <CAM_iQpWn9SMU8NXKd-XzdXX7WZv3ba6swRcf2yYTwEJvGHN35w@mail.gmail.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=UMxcd7ChXMcQrsdaLxCdRaB6ClHNDwl96HQZa5B31nI=;
-        b=do0G4XKHw0yV27OzpDdhXaZoKK8lbNz07KRKfn0jHDfcLGB4ZVuFUXKBCwZlSOD1rS
-         044aeuPpbPMspbhnJUVrS8ZCLtFkQ1NFu4xm73NcbDQqXOGzvqjAEaInNCIV9JSsMt1F
-         MpmPl8SBbYNpgf4toyEdrzeGKQPhs0JTtRMeM=
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=T9wfp8MyR92kKyU1432Efw8yAzxSALOdVpJ+GgaR33I=;
+        b=dDR7q5tc4bJj5LcPBpKCKACrB4+80V0zIveYaldBodlgKooKRxOFHGOZ4c+HcujkCd
+         MrxvbflbH+CMJ6tSbatTCx9EyTy8ie5QK5ukw8TiROHlQYALpVSBS5oDP1MTTlCIXQ0W
+         CGBxpx196W7Bl7RwraxuNxjyNeIA9xIEv3qok=
+In-Reply-To: <CAM_iQpWn9SMU8NXKd-XzdXX7WZv3ba6swRcf2yYTwEJvGHN35w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+To: =?UTF-8?B?QW3DqXJpY28gV2FuZw==?= <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi guys,
+On 21.07.2011 09:33, Am=C3=A9rico Wang wrote:
+> Currently in dracut busybox module, we hard-code the list of binaries
+> available in busybox. Actually we can get this list by running busybo=
+x
+> without any arguments.
+>=20
+> Also, if find_binary() finds nothing, we would symlink $initdir/
+> which is not we expect.
+>=20
+> Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-I tried to boot Fedora live ISO in form of ISO image from USB
-partition (FAT32) where I have grub2 installed but still no luck.
-
-I opened new ticket for this issue:
-https://bugzilla.redhat.com/show_bug.cgi?id=723801
-
-I ended up in dracut shell and I tried to mount root manually - I was
-successful with that but I still cannot boot:
-
-mkdir -p /liveiso
-mount /dev/disk/by-uuid/1234-ABCD /root
-losetup -f --show /root/Fedora-15-i686-Live-XFCE.iso
-#displayed: /dev/loop0
-mount -t auto -o -ro /dev/loop0 /liveiso
-#image is mounted to /liveiso
-exit
-#Now I get the same error message - No root device ... found
-
-Do you think I'm missing some additional commands?
-
-Thank you,
-
-Jaiv
+pushed
