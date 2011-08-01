@@ -1,67 +1,119 @@
-From: =?UTF-8?Q?Am=C3=A9rico_Wang?= <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Q: How to add more modules when -H is specified?
-Date: Fri, 29 Jul 2011 17:44:31 +0800
-Message-ID: <CAM_iQpWGqM6S-S-oj+YfgF9uZGFdeqx--+Mn6Fjw+1wwpop3jA@mail.gmail.com>
-References: <j0tsl5$2kj$2@dough.gmane.org>
-	<4E327C58.1000406@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+From: Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/2] dracut: add --force-add option
+Date: Mon,  1 Aug 2011 10:01:23 +0800
+Message-ID: <1312164084-11496-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :cc:content-type:content-transfer-encoding;
-        bh=6PWH6TVr4IFFLL/VjZMu9ZK169iudpgHN707pxpJao4=;
-        b=sss4K7x+kLV/qzxbfHYuvyZ1qSwAb1q8EYO+WB0ysMEMLFvfgqRbx/zHyuWxVDtm3E
-         4BUfQlDBVtoLnq3KiizpCoxAxroit2I0AubijvTVH8kKf/nDt48hgN1uyeDAjv6gqHux
-         rrHX6LycrRLHGOqDmwpKeSknAy11+PQPv8/jU=
-In-Reply-To: <4E327C58.1000406-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Fri, Jul 29, 2011 at 5:24 PM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote=
-:
-> On 29.07.2011 10:57, WANG Cong wrote:
->>
->> Hi, dracut people,
->>
->> I am not sure about the expected behaviour when I specify both
->> -H and --add foo (where module foo is not automatially added
->> by -H). It looks like with -H specified, --add foo will not
->> take any effect?
->>
->> At least `-H --add nfs` doesn't work if my rootfs is not nfs,
->> I see the following check in modules.d/95nfs/module-setup.sh,
->>
->> =C2=A0 =C2=A0 [ $hostonly ] && ! egrep -q '/ nfs[34 ]' /proc/mounts =
-&& return 1
->>
->> So, is this expected? I mean as long as I specify -H, there is
->> no way to add more modules? Or just the nfs check code is wrong?
->
-> Hmm, yes, currently all "add" modules also have the hostonly check.
-> Sometimes you want that behaviour, sometimes not..
->
-> We might want s.th. like "--force-add" for that use case.
+This patch adds a new option --force-add, which
+can force dracut to load some module when -H
+is specified.
 
-This is exactly what comes into my mind. :-D
+Signed-off-by: Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut           |    8 ++++++++
+ dracut-functions |   24 ++++++++++++++++++------
+ 2 files changed, 26 insertions(+), 6 deletions(-)
 
->
->>
->> Also, I am looking for a way to add all needed modules for
->> devices mounted in current system, as -H only adds modules
->> needed by rootfs.
->>
->> Thanks!
->>
->
-> Not (yet) implemented. I accept patches :-)
->
-
-How about add a new option, e.g. '--all-mounted'?
-Anyway, I will try to make some patches.
-
-Thanks!
+diff --git a/dracut b/dracut
+index aa8cb58..c9fb6d5 100755
+--- a/dracut
++++ b/dracut
+@@ -195,6 +195,7 @@ verbosity_mod_l=0
+ while (($# > 0)); do
+     case ${1%%=*} in
+         -a|--add)      push_arg add_dracutmodules_l  "$@" || shift;;
++        --force-add)   push_arg force_add_dracutmodules_l  "$@" || shift;;
+         --add-drivers) push_arg add_drivers_l        "$@" || shift;;
+         -m|--modules)  push_arg dracutmodules_l      "$@" || shift;;
+         -o|--omit)     push_arg omit_dracutmodules_l "$@" || shift;;
+@@ -301,6 +302,13 @@ if (( ${#add_dracutmodules_l[@]} )); then
+     done
+ fi
+ 
++if (( ${#force_add_dracutmodules_l[@]} )); then
++    while pop force_add_dracutmodules_l val; do
++        force_add_dracutmodules+=" $val "
++    done
++fi
++
++
+ if (( ${#add_drivers_l[@]} )); then
+     while pop add_drivers_l val; do
+         add_drivers+=" $val "
+diff --git a/dracut-functions b/dracut-functions
+index 61e10e8..f0abe9f 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -607,21 +607,27 @@ inst_opt_decompress() {
+ module_check() {
+     local _moddir=$(echo ${dracutbasedir}/modules.d/??${1})
+     local _ret
++    local _forced=0
++    local _hostonly=$hostonly
++    [ $# -eq 2 ] && _forced=$2
+     [[ -d $_moddir ]] || return 1
+     if [[ ! -f $_moddir/module-setup.sh ]]; then
+         # if we do not have a check script, we are unconditionally included
+         [[ -x $_moddir/check ]] || return 0
++        [ $_forced -ne 0 ] && unset hostonly
+         $_moddir/check $hostonly
+-        return $?
++        _ret=$?
+     else
+         unset check depends install installkernel
+         . $_moddir/module-setup.sh
+         is_func check || return 0
+-        check
++        [ $_forced -ne 0 ] && unset hostonly
++        check $hostonly
+         _ret=$?
+         unset check depends install installkernel
+-        return $_ret
+     fi
++    hostonly=$_hostonly
++    return $_ret
+ }
+ 
+ module_depends() {
+@@ -696,8 +702,12 @@ check_module() {
+ 
+     strstr " $omit_dracutmodules " " $_mod " && return 1
+ 
+-    if strstr " $dracutmodules $add_dracutmodules " " $_mod "; then
+-        module_check $_mod; ret=$?
++    if strstr " $dracutmodules $add_dracutmodules $force_add_dracutmodules" " $_mod "; then
++        if strstr " $force_add_dracutmodules" " $_mod"; then
++            module_check $_mod 1; ret=$?
++        else
++            module_check $_mod 0; ret=$?
++        fi
+         # explicit module, so also accept ret=255
+         [[ $ret = 0 || $ret = 255 ]] || return 1
+     else
+@@ -715,6 +725,8 @@ check_module() {
+         # handle deps as if they were manually added
+         strstr " $add_dracutmodules " " $_moddep " || \
+             add_dracutmodules+=" $_moddep "
++        strstr " $force_add_dracutmodules " " $_moddep " || \
++            force_add_dracutmodules+=" $_moddep "
+         # if a module we depend on fail, fail also
+         check_module $_moddep || return 1
+     done
+@@ -736,7 +748,7 @@ check_module_dir() {
+     done
+ 
+     # Report any missing dracut modules, the user has specified
+-    _modcheck=$add_dracutmodules
++    _modcheck="$add_dracutmodules $force_add_dracutmodules"
+     [[ $dracutmodules != all ]] && _modcheck="$m $dracutmodules"
+     for _mod in $_modcheck; do
+         strstr "$mods_to_load" "$_mod" && continue
+-- 
+1.7.4.4
