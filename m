@@ -1,7 +1,7 @@
-From: Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [Patch] lsinitrd: display the size of initrd
-Date: Mon,  1 Aug 2011 14:55:15 +0800
-Message-ID: <1312181715-27796-1-git-send-email-amwang@redhat.com>
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: small updates for dmsquash-live module
+Date: Mon,  1 Aug 2011 16:21:06 -0400
+Message-ID: <1312230069-10674-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -9,23 +9,23 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-It is useful to display the size of initrd in human-friendly form.
+These are just some smallish updates for dmsquash-live.
 
-Signed-off-by: Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Patch 1/3 is just a few cleanups - inessential, but nice to have.
 
----
-diff --git a/lsinitrd b/lsinitrd
-index 3b9cc85..7da9f61 100755
---- a/lsinitrd
-+++ b/lsinitrd
-@@ -41,7 +41,7 @@ if [[ $# -eq 2 ]]; then
-     exit $?
- fi
- 
--echo "$image:"
-+echo "$image: $(du -h $image | awk '{print $1}')"
- echo "========================================================================"
- $CAT "$image" | cpio --extract --verbose --quiet --to-stdout 'lib/dracut/dracut-*' 2>/dev/null
- echo "========================================================================"
+Patch 2/3 makes dmsquash-live-root determine the image type (i.e.
+squashed or unsquashed) by mounting it and checking the filesystem
+type, rather than requiring a specific filename. This is important for
+the livenet module (which will be appearing in a later email).
+
+Patch 3/3 is simple and useful - it adds a pre-pivot hook which will
+copy any files found in /updates in the initramfs into the live
+filesystem. This allows hotfixes to live images. Whee!
+
+ modules.d/90dmsquash-live/apply-live-updates.sh |    7 ++++++
+ modules.d/90dmsquash-live/dmsquash-live-root    |   27 ++++++++++++++--------
+ modules.d/90dmsquash-live/module-setup.sh       |    1 +
+ 3 files changed, 25 insertions(+), 10 deletions(-)
+
+-w
