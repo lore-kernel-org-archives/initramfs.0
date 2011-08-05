@@ -1,28 +1,23 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] livenet: module for fetching live images from the
- network
-Date: Tue, 02 Aug 2011 11:33:55 -0400
-Message-ID: <1312299236.10823.34.camel@samus.localdomain>
-References: <1312230160-11295-1-git-send-email-wwoods@redhat.com>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: 90mdraid questions
+Date: Fri, 05 Aug 2011 13:44:17 +0200
+Message-ID: <4E3BD791.8040201@ziu.info>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1312230160-11295-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 2011-08-01 at 16:22 -0400, Will Woods wrote:
-> The livenet module allows you to use a root arg like:
-> 
->     root=http://server.name/path/to/live.img ip=dhcp
+Small question about mdcontainer_start.sh and mdraid_start.sh - both 
+scripts are wrapped in --stop-exec-queue and --start-exec-queue calls. 
+ From earlier versions I can see also the basic mdadm_auto was once 
+guarded with those invocations, but it was removed due to container + 
+array assembly problems.
 
-Whoops, that should be:
-  root=live:http://server.name/path/to/live.img ip=dhcp
+What is the exact reason behind the queue locking here ?
 
-We *could* make livenet the default behavior for "root=[URL]", but I'm
-not sure if there are other things that might want to use that scheme..
-so let's keep the "live:..." convention for now.
-
--w
+Another question - why is pre-pivot cleanup script added twice ? I'm 
+guessing it's to run both before and after crypt-cleanup, but maybe 
+there's something else more subtle.
