@@ -1,20 +1,43 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] livenet: module for fetching live images from the
- network
-Date: Fri, 05 Aug 2011 16:03:17 -0400
-Message-ID: <1312574597.20784.46.camel@samus.localdomain>
-References: <1312230160-11295-1-git-send-email-wwoods@redhat.com>
+From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Subject: dracut: automatically add "unix" kernel module
+Date: Fri, 12 Aug 2011 01:01:21 +0200
+Message-ID: <1824774.VrzXCv2fyA@ernie>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; boundary="nextPart5459658.psUQDruG4A"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1312230160-11295-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 2011-08-01 at 16:22 -0400, Will Woods wrote:
-> +    inst_hook cmdline 30 "$moddir/parse-livenet.sh"
-A buglet here - parse-livenet.sh needs to go before dmsquash-live's
-cmdline parsing, so this should be:
-+    inst_hook cmdline 29 "$moddir/parse-livenet.sh"
+
+--nextPart5459658.psUQDruG4A
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+
+Hello!
+
+Dracut currently does not seem to automatically include the "unix" kernel 
+module in the initramfs, which causes udev to be unable to start ("address 
+family not supported by protocol").
+
+It should be adjusted to include it if possible.
+
+I am using dracut-011 and had to set add_drivers+="unix" in dracut.conf to be 
+able to boot my system.
+
+Kind regards,
+Dennis
+--nextPart5459658.psUQDruG4A
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+
+iEYEABECAAYFAk5EX0cACgkQjqfyF1DtJW6YIACgmiT+98dkPFLNZ0yExt02LxFS
+MMAAoLfSvqOneG3QVB7RVcQyDvM4Lbkz
+=Bdt9
+-----END PGP SIGNATURE-----
+
+--nextPart5459658.psUQDruG4A--
