@@ -1,43 +1,32 @@
-From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Subject: dracut: automatically add "unix" kernel module
-Date: Fri, 12 Aug 2011 01:01:21 +0200
-Message-ID: <1824774.VrzXCv2fyA@ernie>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut: automatically add "unix" kernel module
+Date: Fri, 12 Aug 2011 08:01:20 +0200
+Message-ID: <4E44C1B0.7050605@redhat.com>
+References: <1824774.VrzXCv2fyA@ernie>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart5459658.psUQDruG4A"; micalg="pgp-sha1"; protocol="application/pgp-signature"
-Content-Transfer-Encoding: 7Bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1824774.VrzXCv2fyA@ernie>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-
---nextPart5459658.psUQDruG4A
-Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
+To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello!
+On 12.08.2011 01:01, Dennis Schridde wrote:
+> Hello!
+> 
+> Dracut currently does not seem to automatically include the "unix" kernel 
+> module in the initramfs, which causes udev to be unable to start ("address 
+> family not supported by protocol").
+> 
+> It should be adjusted to include it if possible.
+> 
+> I am using dracut-011 and had to set add_drivers+="unix" in dracut.conf to be 
+> able to boot my system.
+> 
+> Kind regards,
+> Dennis
 
-Dracut currently does not seem to automatically include the "unix" kernel 
-module in the initramfs, which causes udev to be unable to start ("address 
-family not supported by protocol").
-
-It should be adjusted to include it if possible.
-
-I am using dracut-011 and had to set add_drivers+="unix" in dracut.conf to be 
-able to boot my system.
-
-Kind regards,
-Dennis
---nextPart5459658.psUQDruG4A
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iEYEABECAAYFAk5EX0cACgkQjqfyF1DtJW6YIACgmiT+98dkPFLNZ0yExt02LxFS
-MMAAoLfSvqOneG3QVB7RVcQyDvM4Lbkz
-=Bdt9
------END PGP SIGNATURE-----
-
---nextPart5459658.psUQDruG4A--
+Just add a file /etc/modprobe.d/myaliases.conf to your system, containing:
+alias net-pf-1 unix
