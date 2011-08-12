@@ -1,45 +1,42 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut: automatically add "unix" kernel module
-Date: Fri, 12 Aug 2011 10:09:54 +0200
-Message-ID: <4E44DFD2.8070601@redhat.com>
-References: <1824774.VrzXCv2fyA@ernie> <4E44C1B0.7050605@redhat.com> <2596808.kGfioqbkmA@ernie>
+Subject: Re: [ANNOUNCE] dracut 012 release
+Date: Fri, 12 Aug 2011 16:01:23 +0200
+Message-ID: <4E453233.30901@redhat.com>
+References: <4E44C438.50301@redhat.com> <4E44C5A6.60304@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <2596808.kGfioqbkmA@ernie>
+In-Reply-To: <4E44C5A6.60304-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 12.08.2011 09:58, Dennis Schridde wrote:
-> Hello!
-> 
-> Please CC me, since I am not on the list.
-> 
-> Am Freitag, 12. August 2011, 06:41:56 schrieb WANG Cong:
->> On Fri, 12 Aug 2011 08:01:20 +0200, Harald Hoyer wrote:
->>> On 12.08.2011 01:01, Dennis Schridde wrote:
->>>> Dracut currently does not seem to automatically include the "unix"
->>>> kernel module in the initramfs, which causes udev to be unable to start
->>>> ("address family not supported by protocol").
->>>
->>> Just add a file /etc/modprobe.d/myaliases.conf to your system,
->>> containing: alias net-pf-1 unix
->>
->> The kernel already does the same thing:
->>
->> MODULE_ALIAS_NETPROTO(PF_UNIX);
->>
->> don't know why udev can't load it automatically...
-> 
-> The problem is that dracut does not automatically include the "unix" module in 
-> the initramfs it generates. If I include the module manually (via 
-> "add_drivers" in dracut.conf) it will be successfully loaded.
+Here we go, with the real files
 
-ah, ok.. didn't think about that one. So, I guess, we need:
+dracut-012.tar.bz2      12-Aug-2011 06:05  145K
+dracut-012.tar.bz2.sign 12-Aug-2011 06:05  249
+dracut-012.tar.gz       12-Aug-2011 06:05  175K
+dracut-012.tar.gz.sign  12-Aug-2011 06:05  249
+dracut-012.tar.sign     12-Aug-2011 06:05  249
 
-http://git.kernel.org/?p=boot/dracut/dracut.git;a=commitdiff;h=016c3cfed27952f328d481b231a51129341746d9
+$ cat dracut-012.tar.bz2.sign
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: See http://www.kernel.org/signature.html for info
 
-(might need some time to show up on kernel.org)
+iD8DBQBORN2wyGugalF9Dw4RAqBRAJ9AWcKNgFYmW4AEQLTVQWQQ6OMn9QCfeN/M
+Se7hDA8K3YmlGXREFPIDraA=
+=Gq8d
+-----END PGP SIGNATURE-----
+
+
+$ cat dracut-012.tar.gz.sign
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: See http://www.kernel.org/signature.html for info
+
+iD8DBQBORN22yGugalF9Dw4RAvSlAJ9v23vvbpARM+6Guk0Dar/B85WyhQCfW7FJ
+rE/bURSk64do7P5ztAbeCKc=
+=wdij
+-----END PGP SIGNATURE-----
