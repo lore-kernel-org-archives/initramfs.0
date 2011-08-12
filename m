@@ -1,42 +1,75 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [ANNOUNCE] dracut 012 release
-Date: Fri, 12 Aug 2011 16:01:23 +0200
-Message-ID: <4E453233.30901@redhat.com>
-References: <4E44C438.50301@redhat.com> <4E44C5A6.60304@redhat.com>
+Subject: [ANNOUNCE] dracut 013 release
+Date: Fri, 12 Aug 2011 16:26:19 +0200
+Message-ID: <4E45380B.8050905@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4E44C5A6.60304-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Here we go, with the real files
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-dracut-012.tar.bz2      12-Aug-2011 06:05  145K
-dracut-012.tar.bz2.sign 12-Aug-2011 06:05  249
-dracut-012.tar.gz       12-Aug-2011 06:05  175K
-dracut-012.tar.gz.sign  12-Aug-2011 06:05  249
-dracut-012.tar.sign     12-Aug-2011 06:05  249
+The tarball can be found here:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/
+	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
 
-$ cat dracut-012.tar.bz2.sign
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: See http://www.kernel.org/signature.html for info
+Git:
+	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
 
-iD8DBQBORN2wyGugalF9Dw4RAqBRAJ9AWcKNgFYmW4AEQLTVQWQQ6OMn9QCfeN/M
-Se7hDA8K3YmlGXREFPIDraA=
-=Gq8d
------END PGP SIGNATURE-----
+Git Web:
+	http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+	http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
 
 
-$ cat dracut-012.tar.gz.sign
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: See http://www.kernel.org/signature.html for info
+dracut-013
+==========
+- speedup of initramfs creation
+- fixed inst_dir for symbolic links
+- add unix kernel module
 
-iD8DBQBORN22yGugalF9Dw4RAvSlAJ9v23vvbpARM+6Guk0Dar/B85WyhQCfW7FJ
-rE/bURSk64do7P5ztAbeCKc=
-=wdij
------END PGP SIGNATURE-----
+dracut-012
+==========
+- better fsck handling
+- fixed wait condition for LVM volumes
+- fix for hardlinks (welcome Debian! :-)
+- shutdown bugfixes
+- automatic busybox symlink creation
+- try to mount /usr, if init points to a path in /usr
+- btrfs with multiple devices
+- "--force-add" option for dracut, to force-add dracut modules,
+  without hostonly checks
+- lsinitrd also display the initramfs size in human readable form
+- livenet module, to mount live-isos over http
+- masterkey,ecryptfs,integrity security modules
+- initqueue/timeout queue e.g. for starting degraded raids
+- "make rpm" creates an rpm with an increasing release number from any
+  git checkout
+- support lvm mirrors
+- start degraded lvm mirrors after a timeout
+- start degraded md raids after a timeout
+- getarg() now returns wildcards without file matching to the current fs
+- lots of bugfixes
+
+    58  Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+     5  Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+     4  Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+     4  Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+     3  Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+     1  Thomas Lange <lange-jNDFPZUTrfRKC+uPiMyuu7CDI8haxt8Z@public.gmane.org>
