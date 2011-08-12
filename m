@@ -1,42 +1,69 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] parse-lvm.sh: fix for generated initqueue/finished script
-Date: Fri, 12 Aug 2011 08:07:31 +0200
-Message-ID: <4E44C323.2040001@redhat.com>
-References: <1311856810-2481-1-git-send-email-soltys@ziu.info>
+Subject: [ANNOUNCE] dracut 012 release
+Date: Fri, 12 Aug 2011 08:12:08 +0200
+Message-ID: <4E44C438.50301@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1311856810-2481-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 28.07.2011 14:40, Michal Soltys wrote:
-> The script that was generated always returned the status of the last test
-> condition, potentially missing any earlier non-existing devices.
-> 
-> The change assures, that the script returns 0 only if all expected
-> devices are found.
-> 
-> Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-> ---
->  modules.d/90lvm/parse-lvm.sh |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/modules.d/90lvm/parse-lvm.sh b/modules.d/90lvm/parse-lvm.sh
-> index 2e21d82..b85a1ac 100755
-> --- a/modules.d/90lvm/parse-lvm.sh
-> +++ b/modules.d/90lvm/parse-lvm.sh
-> @@ -10,7 +10,7 @@ if ! getargbool 1 rd.lvm -n rd_NO_LVM; then
->      rm -f /etc/udev/rules.d/64-lvm*.rules
->  else
->      for dev in $(getargs rd.lvm.vg rd_LVM_VG=) $(getargs rd.lvm.lv rd_LVM_LV=); do
-> -        printf '[ -e "/dev/%s" ]\n' $dev \
-> +        printf '[ -e "/dev/%s" ] || return 1\n' $dev \
->              >> $hookdir/initqueue/finished/lvm.sh
->          {
->              printf '[ -e "/dev/%s" ] || ' $dev
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-pushed
+The tarball can be found here:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/
+	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+
+Git:
+	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+
+Git Web:
+	http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+	http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+
+
+dracut-012
+==========
+- better fsck handling
+- fixed wait condition for LVM volumes
+- fix for hardlinks (welcome Debian! :-)
+- shutdown bugfixes
+- automatic busybox symlink creation
+- try to mount /usr, if init points to a path in /usr
+- btrfs with multiple devices
+- "--force-add" option for dracut, to force-add dracut modules,
+  without hostonly checks
+- lsinitrd also display the initramfs size in human readable form
+- livenet module, to mount live-isos over http
+- masterkey,ecryptfs,integrity security modules
+- initqueue/timeout queue e.g. for starting degraded raids
+- "make rpm" creates an rpm with an increasing release number from any
+  git checkout
+- support lvm mirrors
+- start degraded lvm mirrors after a timeout
+- start degraded md raids after a timeout
+- getarg() now returns wildcards without file matching to the current fs
+- lots of bugfixes
+
+    58  Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+     5  Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+     4  Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+     4  Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+     3  Amerigo Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+     1  Thomas Lange <lange-jNDFPZUTrfRKC+uPiMyuu7CDI8haxt8Z@public.gmane.org>
