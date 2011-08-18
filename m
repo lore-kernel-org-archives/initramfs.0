@@ -1,51 +1,74 @@
-From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: [PATCH 2/2] luks key on ext dev - wait for luks
-Date: Thu, 18 Aug 2011 18:06:05 +0200
-Message-ID: <1313683317-sup-8002@ittemni>
-References: <islq9r$vpc$1@dough.gmane.org> <loom.20110818T175530-594@post.gmane.org>
+From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Subject: building initramfs is slow
+Date: Thu, 18 Aug 2011 11:18:33 -0700
+Message-ID: <4E4D5779.6090209@bitwagon.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pgp-signature"; boundary="=-1313683565-305716-23628-7211-1-="
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <loom.20110818T175530-594-eS7Uydv5nfjZ+VzJOa5vwg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Building an initramfs is unreasonably slow.  On Fedora 16
+dracut-011 takes almost a minute when installing a new kernel:
+   real   56s
+   user   20s   \__   dracut is CPU bound, not I/O bound.
+   sys    31s   /
+The final "gzip -9" takes 12 seconds, and the cpio 1 second,
+which leaves 43 seconds for the rest of dracut.  That's a
+factor of 3 or 4 too long.  The output initramfs is 14.9MB
+(41MB unzipped) and contains 1619 files, including 367 .ko
+kernel modules.
 
---=-1313683565-305716-23628-7211-1-=
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Running
+   strace -o strace.out -f -e trace=execve dracut test.img
+and applying some text processing to strace.out shows
+  12518 SIGCHLD   (processes terminated)
+So dracut fondles each file with an average of (12518 / 1619)
+= 7.7 processes.  No wonder building an initramfs is slow!
 
-Excerpts from Przemek Rudy's message of 2011-08-18 17:57:10 +0200:
-> Any future for those two patches?
+Again in strace.out:
+   8917 execve    (address-space images instantiated)
+and taking (#SIGCHLD - #execve) gives:
+   3591 fork-and-no-exec  (shell builtins that need a process)
+because there is almost no chaining of execve without a fork.
 
-Yes, sure. I'm sorry. I haven't got time and later I have forgotten.
-I'll test it soon and probably will be applied.
+The sorted histogram of execve begins:
+   3803 execve("/bin/egrep"
+   1343 execve("/bin/cp"
+    858 execve("/lib64/ld-linux-x86-64.so.2"
+    760 execve("/usr/bin/ldd"
+    375 execve("/sbin/modinfo"
+    359 execve("/bin/chmod"
+    344 execve("/bin/rm"
+    341 execve("/sbin/modprobe"
+    256 execve("/bin/mkdir"
+    222 execve("/bin/readlink"
+    100 execve("/bin/cat"
 
+This data, and a glance at the source of dracut, suggests
+considering the bash shell regexp operator "[[ string =~ pattern ]]"
+and the expansion substitution operator "${parameter/pattern/string}"
+to replace most instances of egrep.
 
-Regards,
+The uses of cp, ldd, chmod, and modinfo should be investigated for
+the possibility of batching more than one file at a time.  Operating
+inside one directory at a time can effectively remove the threat of
+exceeding the 32KB limit on the arglist to execve.
 
--- =
+Using pipelines (possibly including bash's "while read fname ; do")
+to filter streamed lists of filenames can reduce overhead significantly
+in contrast to "for fname in ...; do <<execve>>".  A pipeline may also
+introduce effective parallelism.
 
-Amadeusz =C5=BBo=C5=82nowski
+"sort --uniq" handily removes duplicates.
 
-PGP key fpr: C700 CEDE 0C18 212E 49DA  4653 F013 4531 E1DB FAB5
+In most cases "cat filename |" should be replaced with ordinary
+redirection "< filename", and similarly "$(cat filename)" should
+be "$(< filename)".  If SELinux denies access by dracut (etc.)
+but allows /bin/cat, then such a comment is REQUIRED.
 
---=-1313683565-305716-23628-7211-1-=
-Content-Disposition: attachment; filename="signature.asc"
-Content-Type: application/pgp-signature; name="signature.asc"
+Yes, I'm going to work on it.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQEcBAEBAgAGBQJOTThtAAoJEPATRTHh2/q1ElAH/R8tocfX3KnynP719InggvlR
-Kt1H7wIs7QFHIfeasbNwsM3R7hiWnAcyERRadlnoN7Z5Nq8yUbRpC4UwyjURyuy/
-T7SdgHkmn0ikzIAAAv+qyWtHdFfMGN+2btwNET8dtESC2p/51790dfwIWZOJGaRS
-9411yGieqxo1NK2oloiddEsguCFsrxp/S9kJ6JPq8z3d3MESUplu9WBvLqKOvDBJ
-lFN+jMCYQL4+htBGppxQvyu1DOTwCPcdjG71mIXHiv1kUgeKlym3MIjB1V7hfcmD
-1i8lxdpt/94QOXRBgpGWNLuBmK+bxAYlqLl6SVnbB5N4L1xbKIt12xeXOVaCVrs=
-=+ZRA
------END PGP SIGNATURE-----
-
---=-1313683565-305716-23628-7211-1-=--
+-- 
