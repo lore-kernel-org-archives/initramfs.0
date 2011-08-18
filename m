@@ -1,74 +1,58 @@
 From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Subject: building initramfs is slow
-Date: Thu, 18 Aug 2011 11:18:33 -0700
-Message-ID: <4E4D5779.6090209@bitwagon.com>
+Subject: Re: building initramfs is slow
+Date: Thu, 18 Aug 2011 16:09:19 -0700
+Message-ID: <4E4D9B9F.9030001@bitwagon.com>
+References: <4E4D5779.6090209@bitwagon.com> <CALAkbJOkMTQdkmhBBvqHk3oKRzMHvXcp1MxasMrMpCbTP3+0eg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <CALAkbJOkMTQdkmhBBvqHk3oKRzMHvXcp1MxasMrMpCbTP3+0eg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Building an initramfs is unreasonably slow.  On Fedora 16
-dracut-011 takes almost a minute when installing a new kernel:
-   real   56s
-   user   20s   \__   dracut is CPU bound, not I/O bound.
-   sys    31s   /
-The final "gzip -9" takes 12 seconds, and the cpio 1 second,
-which leaves 43 seconds for the rest of dracut.  That's a
-factor of 3 or 4 too long.  The output initramfs is 14.9MB
-(41MB unzipped) and contains 1619 files, including 367 .ko
-kernel modules.
+On 08/18/2011 11:25 AM, Harald Hoyer wrote:
+> Try dracut version 013. It's already faster.
 
-Running
-   strace -o strace.out -f -e trace=execve dracut test.img
-and applying some text processing to strace.out shows
-  12518 SIGCHLD   (processes terminated)
-So dracut fondles each file with an average of (12518 / 1619)
-= 7.7 processes.  No wonder building an initramfs is slow!
+Yes, there is some improvement, but I still seek a *factor* of 3 to 4
+overall before cpio+gzip.  All the slow coding persists.
 
-Again in strace.out:
-   8917 execve    (address-space images instantiated)
-and taking (#SIGCHLD - #execve) gives:
-   3591 fork-and-no-exec  (shell builtins that need a process)
-because there is almost no chaining of execve without a fork.
 
-The sorted histogram of execve begins:
-   3803 execve("/bin/egrep"
-   1343 execve("/bin/cp"
-    858 execve("/lib64/ld-linux-x86-64.so.2"
-    760 execve("/usr/bin/ldd"
-    375 execve("/sbin/modinfo"
-    359 execve("/bin/chmod"
-    344 execve("/bin/rm"
-    341 execve("/sbin/modprobe"
-    256 execve("/bin/mkdir"
-    222 execve("/bin/readlink"
-    100 execve("/bin/cat"
+$ time /abs/path/to/dracut-013/dracut --local --force test2.img
+###  [fixed-width font, please]   contrast to dracut-011
+   real  59s                           +3s
+   user  26s                           +6s
+   sys   29s                           -2s
 
-This data, and a glance at the source of dracut, suggests
-considering the bash shell regexp operator "[[ string =~ pattern ]]"
-and the expansion substitution operator "${parameter/pattern/string}"
-to replace most instances of egrep.
+     26.0MB  output image            + 11.1MB
+     69.0MB  unzipped                + 28.0MB
+   1947      files listed by cpio    +328  files
+    483      .ko kernel modules      +116  modules
 
-The uses of cp, ldd, chmod, and modinfo should be investigated for
-the possibility of batching more than one file at a time.  Operating
-inside one directory at a time can effectively remove the threat of
-exceeding the 32KB limit on the arglist to execve.
+## Note the results have gotten larger (time, bytes, files, modules).
+## The input (and configuration) has evolved, too.
 
-Using pipelines (possibly including bash's "while read fname ; do")
-to filter streamed lists of filenames can reduce overhead significantly
-in contrast to "for fname in ...; do <<execve>>".  A pipeline may also
-introduce effective parallelism.
 
-"sort --uniq" handily removes duplicates.
+$ strace -o strace.out -f -e trace=execve /abs/path/to/dracut-013/dracut --local --force test2.img
+  11349  SIGCHLD                    -1169  processes   !yea!
+   7544  execve                     -1373  execve      !yea!
+   3805  fork-and-no-exec           + 214  shell builtins that get a process
 
-In most cases "cat filename |" should be replaced with ordinary
-redirection "< filename", and similarly "$(cat filename)" should
-be "$(< filename)".  If SELinux denies access by dracut (etc.)
-but allows /bin/cat, then such a comment is REQUIRED.
 
-Yes, I'm going to work on it.
+   2686 execve("/bin/egrep"         -1117  good, but should be at most a few dozen
+   1587 execve("/bin/cp"            + 244
+    491 execve("/sbin/modinfo"      + 116
+    468 execve("/bin/chmod"         + 109
+    458 execve("/bin/rm"
+    455 execve("/sbin/modprobe"
+    320 execve("/bin/readlink"
+    318 execve("/bin/mkdir"
+    285 execve("/lib64/ld-linux..."  -573  !yea!
+    166 execve("/usr/bin/ldd"        -594  !yea!
+    119 execve("/bin/cat"
+     88 execve("/bin/ln"
+     44 execve("/bin/grep"
+     17 execve("/bin/find"
 
 -- 
