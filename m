@@ -1,50 +1,40 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: building initramfs is slow
-Date: Fri, 19 Aug 2011 08:47:35 +0200
-Message-ID: <4E4E0707.4060504@redhat.com>
-References: <4E4D5779.6090209@bitwagon.com> <CALAkbJOkMTQdkmhBBvqHk3oKRzMHvXcp1MxasMrMpCbTP3+0eg@mail.gmail.com> <4E4D9B9F.9030001@bitwagon.com> <j2kq7p$guf$1@dough.gmane.org>
+Date: Fri, 19 Aug 2011 09:03:32 +0200
+Message-ID: <4E4E0AC4.1020709@redhat.com>
+References: <4E4D5779.6090209@bitwagon.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <j2kq7p$guf$1@dough.gmane.org>
+In-Reply-To: <4E4D5779.6090209-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 19.08.2011 06:53, WANG Cong wrote:
-> On Thu, 18 Aug 2011 16:09:19 -0700, John Reiser wrote:
-> 
->> On 08/18/2011 11:25 AM, Harald Hoyer wrote:
->>> Try dracut version 013. It's already faster.
->>
->> Yes, there is some improvement, but I still seek a *factor* of 3 to 4
->> overall before cpio+gzip.  All the slow coding persists.
->>
->>
->> $ time /abs/path/to/dracut-013/dracut --local --force test2.img ### 
->> [fixed-width font, please]   contrast to dracut-011
->>    real  59s                           +3s user  26s                    
->>          +6s sys   29s                           -2s
->>
->>      26.0MB  output image            + 11.1MB 69.0MB  unzipped          
->>           + 28.0MB
->>    1947      files listed by cpio    +328  files
->>     483      .ko kernel modules      +116  modules
->>
->> ## Note the results have gotten larger (time, bytes, files, modules). ##
->> The input (and configuration) has evolved, too.
->>
-> 
-> Can you add -M to see which modules are loaded?
-> 
-> As a kdump developer, I worry more about the size of initramfs generated
-> by dracut, because we have very limited memory (usually 128M or 256M)
-> in the second kernel. So, the output of `lsinitrd test2.img` would
-> be helpful too.
-> 
-> Thanks.
+On 18.08.2011 20:18, John Reiser wrote:
+> Building an initramfs is unreasonably slow.  On Fedora 16
+> dracut-011 takes almost a minute when installing a new kernel:
+>    real   56s
+>    user   20s   \__   dracut is CPU bound, not I/O bound.
+>    sys    31s   /
+> The final "gzip -9" takes 12 seconds, and the cpio 1 second,
+> which leaves 43 seconds for the rest of dracut.  That's a
+> factor of 3 or 4 too long.  The output initramfs is 14.9MB
+> (41MB unzipped) and contains 1619 files, including 367 .ko
+> kernel modules.
 
-Maybe you should build your kdump kernel with the "hostonly" option, which will
-significantly reduce your initramfs.
+Some general thoughts.
+
+1. speed at initramfs creation time is not sooo important. Normally this is only
+done once in a while and not every day. Boot speed is more important.
+
+2. if you care about speed of creation and size of the initramfs, turn on
+"hostonly" in /etc/dracut.conf
+
+
+> Yes, I'm going to work on it.
+> 
+
+That's cool! I accept patches :-)
