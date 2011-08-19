@@ -1,30 +1,46 @@
-From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Subject: build initramfs: prelink --undo /sbin/*
-Date: Thu, 18 Aug 2011 20:55:35 -0700
-Message-ID: <4E4DDEB7.3050602@bitwagon.com>
+From: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: building initramfs is slow
+Date: Fri, 19 Aug 2011 04:53:13 +0000 (UTC)
+Message-ID: <j2kq7p$guf$1@dough.gmane.org>
+References: <4E4D5779.6090209@bitwagon.com>
+	<CALAkbJOkMTQdkmhBBvqHk3oKRzMHvXcp1MxasMrMpCbTP3+0eg@mail.gmail.com>
+	<4E4D9B9F.9030001@bitwagon.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Fix a typo (omitting the 's' in "sbin") which caused
-"prelink --undo" twice on      /bin/*,  and
-"prelink --undo" omitted for  /sbin/*.
+On Thu, 18 Aug 2011 16:09:19 -0700, John Reiser wrote:
 
-diff --git a/dracut b/dracut
-index cf27b23..601fb6c 100755
---- a/dracut
-+++ b/dracut
-@@ -642,7 +642,7 @@ type hardlink &>/dev/null && {
-  if strstr "$modules_loaded" " fips " && command -v prelink >/dev/null; then
-     for i in $initdir/bin/* \
--       $initdir/bin/* \
-+       $initdir/sbin/* \
-        $initdir/usr/bin/* \
-        $initdir/usr/sbin/*; do
-        [ -x $i ] && prelink -u $i &>/dev/null
+> On 08/18/2011 11:25 AM, Harald Hoyer wrote:
+>> Try dracut version 013. It's already faster.
+> 
+> Yes, there is some improvement, but I still seek a *factor* of 3 to 4
+> overall before cpio+gzip.  All the slow coding persists.
+> 
+> 
+> $ time /abs/path/to/dracut-013/dracut --local --force test2.img ### 
+> [fixed-width font, please]   contrast to dracut-011
+>    real  59s                           +3s user  26s                    
+>          +6s sys   29s                           -2s
+> 
+>      26.0MB  output image            + 11.1MB 69.0MB  unzipped          
+>           + 28.0MB
+>    1947      files listed by cpio    +328  files
+>     483      .ko kernel modules      +116  modules
+> 
+> ## Note the results have gotten larger (time, bytes, files, modules). ##
+> The input (and configuration) has evolved, too.
+> 
 
--- 
+Can you add -M to see which modules are loaded?
+
+As a kdump developer, I worry more about the size of initramfs generated
+by dracut, because we have very limited memory (usually 128M or 256M)
+in the second kernel. So, the output of `lsinitrd test2.img` would
+be helpful too.
+
+Thanks.
