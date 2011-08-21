@@ -1,67 +1,34 @@
-From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Subject: Re: building initramfs is slow
-Date: Fri, 19 Aug 2011 11:27:25 -0700
-Message-ID: <4E4EAB0D.4000604@bitwagon.com>
-References: <4E4D5779.6090209@bitwagon.com>	<CALAkbJOkMTQdkmhBBvqHk3oKRzMHvXcp1MxasMrMpCbTP3+0eg@mail.gmail.com>	<4E4D9B9F.9030001@bitwagon.com> <j2kq7p$guf$1@dough.gmane.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 2/2] crypt: changed cmdline arg name from rd.luks.tout to rd.luks.key.tout
+Date: Sun, 21 Aug 2011 10:26:40 +0200
+Message-ID: <1313915200-13079-1-git-send-email-aidecoe@aidecoe.name>
+References: <loom.20110818T175530-594@post.gmane.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <j2kq7p$guf$1@dough.gmane.org>
+In-Reply-To: <loom.20110818T175530-594-eS7Uydv5nfjZ+VzJOa5vwg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-On 08/18/2011 09:53 PM, WANG Cong wrote:
+---
+ modules.d/90crypt/parse-crypt.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> Can you add -M to see which modules are loaded?
-
-I'm going to skip this because of other people's responses in the meantime.
-About 450 of the 2363 *.ko kernel modules in Fedora 16 were loaded.
-See also the histogram below.
-
-> 
-> As a kdump developer, I worry more about the size of initramfs generated
-> by dracut, because we have very limited memory (usually 128M or 256M)
-> in the second kernel. So, the output of `lsinitrd test2.img` would
-> be helpful too.
-
-Fedora releases, pre-releases, and Live media are readily available.
-You should be able to download, install/boot, and experiment in half a day.
-$(lsinitrd test2.img) is too long, so I've made a sorted histogram
-of number files by directory, and include the beginning here.
-[My quick-and-dirty methodology might have holes.]
-
-    188 lib/kbd/consolefonts/
-    120 lib/kbd/keymaps/i386/qwerty/
-     88 lib/modules/3.0.0-1.fc16.x86_64/kernel/drivers/net/
-     88 lib64/
-     63 lib/kbd/unimaps/
-     62 lib/firmware/radeon/
-     61 sbin/
-     59 lib/modules/3.0.0-1.fc16.x86_64/kernel/drivers/ata/
-     55 lib/modules/3.0.0-1.fc16.x86_64/kernel/drivers/scsi/
-     48 lib/kbd/consoletrans/
-     46 lib/modules/3.0.0-1.fc16.x86_64/kernel/crypto/
-     44 lib/modules/3.0.0-1.fc16.x86_64/kernel/fs/
-     40 usr/share/plymouth/themes/charge/
-     39 lib/kbd/consolefonts/partialfonts/
-     38 lib/modules/3.0.0-1.fc16.x86_64/kernel/fs/nls/
-     29 bin/
-     28 lib/firmware/
-     25 lib/modules/3.0.0-1.fc16.x86_64/kernel/drivers/
-     24 usr/lib64/
-     19 lib/kbd/keymaps/i386/include/
-     19 etc/
-     18 lib/modules/3.0.0-1.fc16.x86_64/
-     18 lib/kbd/keymaps/i386/qwertz/
-     18 lib64/multipath/
-     17 lib/kbd/keymaps/mac/all/
-     17 lib/dracut/hooks/cmdline/
-     16 lib/kbd/keymaps/sun/
-     15 lib/modules/3.0.0-1.fc16.x86_64/kernel/drivers/usb/storage/
-     15 lib/modules/3.0.0-1.fc16.x86_64/kernel/drivers/md/
-     13 lib/udev/rules.d/
-     12 lib/dracut/hooks/
-
+diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-crypt.sh
+index c76fb23..ff86700 100755
+--- a/modules.d/90crypt/parse-crypt.sh
++++ b/modules.d/90crypt/parse-crypt.sh
+@@ -11,7 +11,7 @@ else
+     } > /etc/udev/rules.d/70-luks.rules.new
+ 
+     LUKS=$(getargs rd.luks.uuid rd_LUKS_UUID)
+-    tout=$(getarg rd.luks.tout)
++    tout=$(getarg rd.luks.key.tout)
+ 
+     if [ -n "$LUKS" ]; then
+         for luksid in $LUKS; do
 -- 
+1.7.6
