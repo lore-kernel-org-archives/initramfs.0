@@ -1,8 +1,10 @@
 From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/4] 91crypt-loop: open root device with a key inside encrypted loop container
-Date: Mon, 22 Aug 2011 15:39:07 +0300
-Message-ID: <1314016750-9655-1-git-send-email-leho@kraav.com>
+Subject: [PATCH 4/4] 91crypt-loop: use initqueue for cleanup strategy
+Date: Mon, 22 Aug 2011 15:39:10 +0300
+Message-ID: <1314016750-9655-4-git-send-email-leho@kraav.com>
+References: <1314016750-9655-1-git-send-email-leho@kraav.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1314016750-9655-1-git-send-email-leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -12,78 +14,39 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 
 ---
- modules.d/91crypt-loop/crypt-loop-lib.sh |   40 ++++++++++++++++++++++++++++++
- modules.d/91crypt-loop/module-setup.sh   |   15 +++++++++++
- 2 files changed, 55 insertions(+), 0 deletions(-)
- create mode 100644 modules.d/91crypt-loop/crypt-loop-lib.sh
- create mode 100644 modules.d/91crypt-loop/module-setup.sh
+ modules.d/90crypt/crypt-lib.sh           |    3 +++
+ modules.d/91crypt-loop/crypt-loop-lib.sh |    5 +++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
 
+diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
+index b04512f..3095774 100755
+--- a/modules.d/90crypt/crypt-lib.sh
++++ b/modules.d/90crypt/crypt-lib.sh
+@@ -225,6 +225,9 @@ readkey() {
+             if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
+                 . /lib/dracut-crypt-loop-lib.sh
+                 loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
++                initqueue --onetime --finished --unique --name "crypt-loop-cleanup-99-$(basename $mntp)" \
++                    $(command -v umount) "$mntp; " $(command -v rmdir) "$mntp"
++                return 0
+             else
+                 die "No loop file support to decrypt '$keypath' on '$keydev'."
+             fi
 diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
-new file mode 100644
-index 0000000..63a553c
---- /dev/null
+index 63a553c..6774e7d 100644
+--- a/modules.d/91crypt-loop/crypt-loop-lib.sh
 +++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
-@@ -0,0 +1,40 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=4 sw=4 sts=0 et filetype=sh
+@@ -32,6 +32,11 @@ loop_decrypt() {
+             --tty-echo-off
+ 
+         [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
 +
-+command -v ask_for_password >/dev/null || . /lib/dracut-crypt-lib.sh
-+
-+# loop_decrypt mnt_point keypath keydev device
-+#
-+# Decrypts symmetrically encrypted key to standard output.
-+#
-+# mnt_point - mount point where <keydev> is already mounted
-+# keypath - LUKS encrypted loop file path relative to <mnt_point>
-+# keydev - device on which key resides; only to display in prompt
-+# device - device to be opened by cryptsetup; only to display in prompt
-+loop_decrypt() {
-+    local mntp="$1"
-+    local keypath="$2"
-+    local keydev="$3"
-+    local device="$4"
-+
-+    local key="/dev/mapper/$(basename $mntp)"
-+
-+    if [ ! -b $key ]; then
-+        info "Keyfile has .img suffix, treating it as LUKS-encrypted loop keyfile container to unlock $device"
-+
-+        local loopdev=$(losetup -f "${mntp}/${keypath}" --show)
-+        local opts="-d - luksOpen $loopdev $(basename $key)"
-+
-+        ask_for_password \
-+            --cmd "cryptsetup $opts" \
-+            --prompt "Password ($keypath on $keydev for $device)" \
-+            --tty-echo-off
-+
-+        [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
-+    else
-+        info "Existing keyfile found, re-using it for $device"
-+    fi
-+
-+    cat $key
-+}
-diff --git a/modules.d/91crypt-loop/module-setup.sh b/modules.d/91crypt-loop/module-setup.sh
-new file mode 100644
-index 0000000..2616b9b
---- /dev/null
-+++ b/modules.d/91crypt-loop/module-setup.sh
-@@ -0,0 +1,15 @@
-+check() {
-+	[ -n $hostonly ] || return 1
-+	type -P losetup >/dev/null || return 1
-+	
-+	return 255
-+}
-+
-+depends() {
-+	echo crypt
-+}
-+
-+install() {
-+	dracut_install losetup
-+	inst "$moddir/crypt-loop-lib.sh" "/lib/dracut-crypt-loop-lib.sh"
-+}
++        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-10-$(basename $key)" \
++            $(command -v cryptsetup) "luksClose $key"
++        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-20-$(basename $loopdev)" \
++            $(command -v losetup) "-d $loopdev"
+     else
+         info "Existing keyfile found, re-using it for $device"
+     fi
 -- 
 1.7.6
