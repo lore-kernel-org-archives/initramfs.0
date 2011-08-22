@@ -1,7 +1,7 @@
 From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/4] 91crypt-loop: use initqueue for cleanup strategy
-Date: Mon, 22 Aug 2011 15:39:10 +0300
-Message-ID: <1314016750-9655-4-git-send-email-leho@kraav.com>
+Subject: [PATCH 2/4] 90crypt: recognize .img as loop key container
+Date: Mon, 22 Aug 2011 15:39:08 +0300
+Message-ID: <1314016750-9655-2-git-send-email-leho@kraav.com>
 References: <1314016750-9655-1-git-send-email-leho@kraav.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1314016750-9655-1-git-send-email-leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
@@ -14,39 +14,27 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 
 ---
- modules.d/90crypt/crypt-lib.sh           |    3 +++
- modules.d/91crypt-loop/crypt-loop-lib.sh |    5 +++++
- 2 files changed, 8 insertions(+), 0 deletions(-)
+ modules.d/90crypt/crypt-lib.sh |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
 diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
-index b04512f..3095774 100755
+index 69f14d0..75b74a8 100755
 --- a/modules.d/90crypt/crypt-lib.sh
 +++ b/modules.d/90crypt/crypt-lib.sh
-@@ -225,6 +225,9 @@ readkey() {
-             if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
-                 . /lib/dracut-crypt-loop-lib.sh
-                 loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
-+                initqueue --onetime --finished --unique --name "crypt-loop-cleanup-99-$(basename $mntp)" \
-+                    $(command -v umount) "$mntp; " $(command -v rmdir) "$mntp"
-+                return 0
-             else
-                 die "No loop file support to decrypt '$keypath' on '$keydev'."
+@@ -214,6 +214,14 @@ readkey() {
+                 die "No GPG support to decrypt '$keypath' on '$keydev'."
              fi
-diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
-index 63a553c..6774e7d 100644
---- a/modules.d/91crypt-loop/crypt-loop-lib.sh
-+++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
-@@ -32,6 +32,11 @@ loop_decrypt() {
-             --tty-echo-off
+             ;;
++        img)
++            if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
++                . /lib/dracut-crypt-loop-lib.sh
++                loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
++            else
++                die "No loop file support to decrypt '$keypath' on '$keydev'."
++            fi
++            ;;
+         *) cat "$mntp/$keypath" ;;
+     esac
  
-         [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
-+
-+        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-10-$(basename $key)" \
-+            $(command -v cryptsetup) "luksClose $key"
-+        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-20-$(basename $loopdev)" \
-+            $(command -v losetup) "-d $loopdev"
-     else
-         info "Existing keyfile found, re-using it for $device"
-     fi
 -- 
 1.7.6
