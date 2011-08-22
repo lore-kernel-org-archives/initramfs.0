@@ -1,7 +1,7 @@
 From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] 99base: whitespace fix
-Date: Mon, 22 Aug 2011 11:54:47 +0300
-Message-ID: <1314003287-25481-1-git-send-email-leho@kraav.com>
+Subject: [PATCH 1/4] 91crypt-loop: open root device with a key inside encrypted loop container
+Date: Mon, 22 Aug 2011 15:39:07 +0300
+Message-ID: <1314016750-9655-1-git-send-email-leho@kraav.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -12,23 +12,78 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 
 ---
- modules.d/99base/initqueue |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ modules.d/91crypt-loop/crypt-loop-lib.sh |   40 ++++++++++++++++++++++++++++++
+ modules.d/91crypt-loop/module-setup.sh   |   15 +++++++++++
+ 2 files changed, 55 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/91crypt-loop/crypt-loop-lib.sh
+ create mode 100644 modules.d/91crypt-loop/module-setup.sh
 
-diff --git a/modules.d/99base/initqueue b/modules.d/99base/initqueue
-index 21b1c61..2c06a0b 100755
---- a/modules.d/99base/initqueue
-+++ b/modules.d/99base/initqueue
-@@ -19,8 +19,8 @@ while [ $# -gt 0 ]; do
-             qname="/settled";;
-         --finished)
-             qname="/finished";;
--	--timeout)
--	    qname="/timeout";;
-+        --timeout)
-+            qname="/timeout";;
-         --unique)
-             unique="yes";;
-         --name)
+diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
+new file mode 100644
+index 0000000..63a553c
+--- /dev/null
++++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
+@@ -0,0 +1,40 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=4 sw=4 sts=0 et filetype=sh
++
++command -v ask_for_password >/dev/null || . /lib/dracut-crypt-lib.sh
++
++# loop_decrypt mnt_point keypath keydev device
++#
++# Decrypts symmetrically encrypted key to standard output.
++#
++# mnt_point - mount point where <keydev> is already mounted
++# keypath - LUKS encrypted loop file path relative to <mnt_point>
++# keydev - device on which key resides; only to display in prompt
++# device - device to be opened by cryptsetup; only to display in prompt
++loop_decrypt() {
++    local mntp="$1"
++    local keypath="$2"
++    local keydev="$3"
++    local device="$4"
++
++    local key="/dev/mapper/$(basename $mntp)"
++
++    if [ ! -b $key ]; then
++        info "Keyfile has .img suffix, treating it as LUKS-encrypted loop keyfile container to unlock $device"
++
++        local loopdev=$(losetup -f "${mntp}/${keypath}" --show)
++        local opts="-d - luksOpen $loopdev $(basename $key)"
++
++        ask_for_password \
++            --cmd "cryptsetup $opts" \
++            --prompt "Password ($keypath on $keydev for $device)" \
++            --tty-echo-off
++
++        [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
++    else
++        info "Existing keyfile found, re-using it for $device"
++    fi
++
++    cat $key
++}
+diff --git a/modules.d/91crypt-loop/module-setup.sh b/modules.d/91crypt-loop/module-setup.sh
+new file mode 100644
+index 0000000..2616b9b
+--- /dev/null
++++ b/modules.d/91crypt-loop/module-setup.sh
+@@ -0,0 +1,15 @@
++check() {
++	[ -n $hostonly ] || return 1
++	type -P losetup >/dev/null || return 1
++	
++	return 255
++}
++
++depends() {
++	echo crypt
++}
++
++install() {
++	dracut_install losetup
++	inst "$moddir/crypt-loop-lib.sh" "/lib/dracut-crypt-loop-lib.sh"
++}
 -- 
 1.7.6
