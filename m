@@ -1,68 +1,57 @@
-From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: build initramfs: unclear _mpargs in instmods()
-Date: Tue, 30 Aug 2011 12:19:22 +0200
-Message-ID: <4E5CB92A.4060700@gmail.com>
-References: <4E5C07B7.4050907@bitwagon.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 3/4] 90crypt: enhance crypt-lib keydev mounting
+Date: Tue, 30 Aug 2011 16:36:30 +0300
+Message-ID: <1314711391-7149-3-git-send-email-leho@kraav.com>
+References: <1314711391-7149-1-git-send-email-leho@kraav.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=message-id:date:from:user-agent:mime-version:to:cc:subject
-         :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=73baky5A34uzH/48C/Yiw4eNzLc7umlYmn6NKp/tYwQ=;
-        b=iRRYE/CHLdg+Nu2ZKg1+KkcUiyJo5q/Dv70ApZheJf2FXMu8ohuAMSqPqEBKZXrxLW
-         1i1urwbrC38JW8nL/kj+Id/tQl4+fIB/BtNEi3oyVDo/B57hf+TYk8kPi7poqa19axqI
-         iv1ORSp6op4QeDUaSiQsZSOfHGOqCvb9klhyQ=
-In-Reply-To: <4E5C07B7.4050907-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1314711391-7149-1-git-send-email-leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 29.08.2011 23:42, John Reiser wrote:
-> The local variable _mpargs in function instmods() in file dracut-functions
-> looks peculiar.  The documentation is non-existent, but still ...
-> 
-> First, $_mpargs is not passed to modprobe via for_each_kmod_dep.
-> This is strange because my guess is that "_mpargs" means
-> "extra arguments for modprobe".
-> 
-> Second, the leading "--" will be lopped when a leading pathname
-> is stripped via
-> 	_mod=${_mod##*/}
-> It seems to me that a leading "--" should inhibit modification.
-> 
-> Here's the corresponding patch to current HEAD (from dracut-013.)
-> 
-> diff --git a/dracut-functions b/dracut-functions
-> index a3340e4..c28766e 100755
-> --- a/dracut-functions
-> +++ b/dracut-functions
-> @@ -919,7 +919,6 @@ instmods() {
->                  fi
->                  ;;
->              --*)
-> -                _mod=${_mod##*/}
->                  _mpargs+=" $_mod";;
->              i2o_scsi) shift; continue;; # Do not load this diagnostic-only module
->              *)  _mod=${_mod##*/}
-> @@ -942,7 +941,7 @@ instmods() {
->                  # ok, load the module, all its dependencies, and any firmware
->                  # it may require
->                  for_each_kmod_dep install_kmod_with_fw $_mod \
-> -                    --set-version $kernel ${_moddirname}
-> +                    --set-version $kernel ${_moddirname} $_mpargs
->                  ((_ret+=$?))
->                  ;;
->          esac
-> 
+Combining $keydev and $keypath should result in a unique, re-usable keydev
+mountpoint. mkuniqdir doesn't seem to have any an advantage here and lacks
+reusability. Is there ever a use case where these are true:
 
-git blame was my friend to find out, what the original intention of $_mpargs was:
+ * there are more than one rd.luks.key=$keypath:$keydev
+ * one is actually different from the other
+---
+ modules.d/90crypt/crypt-lib.sh |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
 
-modprobe $mpargs --set-version $kernel --show-depends $mod
-
-so, your patch seems to be correct!
-
-Thanks!
+diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
+index 75b74a8..b04512f 100755
+--- a/modules.d/90crypt/crypt-lib.sh
++++ b/modules.d/90crypt/crypt-lib.sh
+@@ -202,8 +202,15 @@ readkey() {
+     local keydev="$2"
+     local device="$3"
+ 
+-    local mntp=$(mkuniqdir /mnt keydev)
+-    mount -r "$keydev" "$mntp" || die 'Mounting rem. dev. failed!'
++    # This creates a unique single mountpoint for *, or several for explicitly
++    # given LUKS devices. It accomplishes unlocking multiple LUKS devices with
++    # a single password entry.
++    local mntp="/mnt/$(str_replace "keydev-$keydev-$keypath" '/' '-')"
++
++    if [ ! -d "$mntp" ]; then
++        mkdir "$mntp"
++        mount -r "$keydev" "$mntp" || die 'Mounting rem. dev. failed!'
++    fi
+ 
+     case "${keypath##*.}" in
+         gpg)
+@@ -225,6 +232,8 @@ readkey() {
+         *) cat "$mntp/$keypath" ;;
+     esac
+ 
++    # General unmounting mechanism, modules doing custom cleanup should return earlier
++    # and install a pre-pivot cleanup hook
+     umount "$mntp"
+     rmdir "$mntp"
+ }
+-- 
+1.7.6
