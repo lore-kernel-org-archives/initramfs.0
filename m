@@ -1,10 +1,8 @@
 From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/4] 90crypt: recognize .img as loop key container
-Date: Tue, 30 Aug 2011 16:36:29 +0300
-Message-ID: <1314711391-7149-2-git-send-email-leho@kraav.com>
-References: <1314711391-7149-1-git-send-email-leho@kraav.com>
+Subject: [PATCH 1/4] 91crypt-loop: open root device with a key inside encrypted loop container
+Date: Tue, 30 Aug 2011 16:36:28 +0300
+Message-ID: <1314711391-7149-1-git-send-email-leho@kraav.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1314711391-7149-1-git-send-email-leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -13,27 +11,77 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 ---
- modules.d/90crypt/crypt-lib.sh |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+ modules.d/91crypt-loop/crypt-loop-lib.sh |   40 ++++++++++++++++++++++++++++++
+ modules.d/91crypt-loop/module-setup.sh   |   14 ++++++++++
+ 2 files changed, 54 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/91crypt-loop/crypt-loop-lib.sh
+ create mode 100644 modules.d/91crypt-loop/module-setup.sh
 
-diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
-index 69f14d0..75b74a8 100755
---- a/modules.d/90crypt/crypt-lib.sh
-+++ b/modules.d/90crypt/crypt-lib.sh
-@@ -214,6 +214,14 @@ readkey() {
-                 die "No GPG support to decrypt '$keypath' on '$keydev'."
-             fi
-             ;;
-+        img)
-+            if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
-+                . /lib/dracut-crypt-loop-lib.sh
-+                loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
-+            else
-+                die "No loop file support to decrypt '$keypath' on '$keydev'."
-+            fi
-+            ;;
-         *) cat "$mntp/$keypath" ;;
-     esac
- 
+diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
+new file mode 100644
+index 0000000..63a553c
+--- /dev/null
++++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
+@@ -0,0 +1,40 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=4 sw=4 sts=0 et filetype=sh
++
++command -v ask_for_password >/dev/null || . /lib/dracut-crypt-lib.sh
++
++# loop_decrypt mnt_point keypath keydev device
++#
++# Decrypts symmetrically encrypted key to standard output.
++#
++# mnt_point - mount point where <keydev> is already mounted
++# keypath - LUKS encrypted loop file path relative to <mnt_point>
++# keydev - device on which key resides; only to display in prompt
++# device - device to be opened by cryptsetup; only to display in prompt
++loop_decrypt() {
++    local mntp="$1"
++    local keypath="$2"
++    local keydev="$3"
++    local device="$4"
++
++    local key="/dev/mapper/$(basename $mntp)"
++
++    if [ ! -b $key ]; then
++        info "Keyfile has .img suffix, treating it as LUKS-encrypted loop keyfile container to unlock $device"
++
++        local loopdev=$(losetup -f "${mntp}/${keypath}" --show)
++        local opts="-d - luksOpen $loopdev $(basename $key)"
++
++        ask_for_password \
++            --cmd "cryptsetup $opts" \
++            --prompt "Password ($keypath on $keydev for $device)" \
++            --tty-echo-off
++
++        [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
++    else
++        info "Existing keyfile found, re-using it for $device"
++    fi
++
++    cat $key
++}
+diff --git a/modules.d/91crypt-loop/module-setup.sh b/modules.d/91crypt-loop/module-setup.sh
+new file mode 100644
+index 0000000..8170694
+--- /dev/null
++++ b/modules.d/91crypt-loop/module-setup.sh
+@@ -0,0 +1,14 @@
++check() {
++	type -P losetup >/dev/null || return 1
++	
++	return 255
++}
++
++depends() {
++	echo crypt
++}
++
++install() {
++	dracut_install losetup
++	inst "$moddir/crypt-loop-lib.sh" "/lib/dracut-crypt-loop-lib.sh"
++}
 -- 
 1.7.6
