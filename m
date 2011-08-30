@@ -1,7 +1,7 @@
 From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Subject: build initramfs: .hmac symlink not preserved
-Date: Tue, 30 Aug 2011 15:18:25 -0700
-Message-ID: <4E5D61B1.2040602@bitwagon.com>
+Subject: build initramfs: explain modprobe?
+Date: Tue, 30 Aug 2011 15:48:00 -0700
+Message-ID: <4E5D68A0.8020006@bitwagon.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,23 +10,18 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Building an initramfs does not preserve symlinks for .hmac files.
+What properties of modprobe are essential for building initramfs?
+Modprobe works for only one kernel module at a time, and this is
+a cause of slowness.  For instance, computing the transitive
+closure of the Requires relationship over a non-small set of modules
+can be performed faster by loading modules.dep into a bash associative
+array, then processing in bash.  Also, modinfo now is invoked once per
+module to find firmware, but this can be sped up by invoking on batches
+of modules, using "split -C 32000" to avoid the argsize limit of execve.
 
-For instance on Fedora 16 the symlink
-   /lib64/.libcrypto.so.10.hmac -> .libcrypto.so.1.0.0d.hmac
-becomes a separate regular file:
------
-$ lsinitrd test.img | grep hmac
--rw-r--r--   1 root     root           65 Jul 26 04:10 usr/lib64/.libssl.so.1.0.0d.hmac
--rw-r--r--   1 root     root           65 Jul 26 04:10 usr/lib64/.libssl.so.10.hmac
--rw-r--r--   1 root     root           65 Jul 26 04:10 lib64/.libcrypto.so.10.hmac
--rw-r--r--   1 root     root           65 Aug 14 22:09 lib64/.libgcrypt.so.11.hmac
--rw-r--r--   1 root     root           65 Jul 26 04:10 lib64/.libcrypto.so.1.0.0d.hmac
-$ ls -l /lib64/.*.hmac
--rw-r--r--. 1 root root 65 Jul 26 04:10 /lib64/.libcrypto.so.1.0.0d.hmac
-lrwxrwxrwx. 1 root root 25 Aug 25 10:31 /lib64/.libcrypto.so.10.hmac -> .libcrypto.so.1.0.0d.hmac
--rw-r--r--. 1 root root 65 Aug 14 22:09 /lib64/.libgcrypt.so.11.hmac
-$
------
+Invoking modprobe with --ignore-install seems to remove any effects
+due to (possibly host-specific) /etc/modules.d/*.conf.  Is there anything
+else that modprobe does for building initramfs, other than transitive
+closure of Requires?
 
 -- 
