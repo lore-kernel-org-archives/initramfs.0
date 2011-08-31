@@ -1,41 +1,74 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/8] build initramfs: speedup
-Date: Wed, 31 Aug 2011 15:09:30 +0200
-Message-ID: <4E5E328A.5030604@redhat.com>
-References: <4E5DBAE4.2000205@bitwagon.com>
+Subject: Re: build initramfs: .hmac symlink not preserved
+Date: Wed, 31 Aug 2011 15:21:51 +0200
+Message-ID: <4E5E356F.4050503@redhat.com>
+References: <4E5D61B1.2040602@bitwagon.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="------------060106040504020407030002"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4E5DBAE4.2000205-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <4E5D61B1.2040602-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 31.08.2011 06:39, John Reiser wrote:
-> This patch series saves 50% (a factor of 2) in real time before final gzip
-> when building initramfs for Fedora 16.
+This is a multi-part message in MIME format.
+--------------060106040504020407030002
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+
+On 31.08.2011 00:18, John Reiser wrote:
+> Building an initramfs does not preserve symlinks for .hmac files.
 >
-> Probably you should apply only the first six patches (1,2,3,4,5,6)
-> because directory symlinks and permissions aren't right after patch 7.
-> [I don't care about directory symlinks now; permissions are 775 instead of 755.]
-> I'm working on a different approach for those; it's not ready.
-> However, the first six patches save 25% (a factor of 4/3),
-> and patch 7 saves another 25% by replacing most /bin/cp with cpio.
+> For instance on Fedora 16 the symlink
+>     /lib64/.libcrypto.so.10.hmac ->  .libcrypto.so.1.0.0d.hmac
+> becomes a separate regular file:
+> -----
+> $ lsinitrd test.img | grep hmac
+> -rw-r--r--   1 root     root           65 Jul 26 04:10 usr/lib64/.libssl.so.1.0.0d.hmac
+> -rw-r--r--   1 root     root           65 Jul 26 04:10 usr/lib64/.libssl.so.10.hmac
+> -rw-r--r--   1 root     root           65 Jul 26 04:10 lib64/.libcrypto.so.10.hmac
+> -rw-r--r--   1 root     root           65 Aug 14 22:09 lib64/.libgcrypt.so.11.hmac
+> -rw-r--r--   1 root     root           65 Jul 26 04:10 lib64/.libcrypto.so.1.0.0d.hmac
+> $ ls -l /lib64/.*.hmac
+> -rw-r--r--. 1 root root 65 Jul 26 04:10 /lib64/.libcrypto.so.1.0.0d.hmac
+> lrwxrwxrwx. 1 root root 25 Aug 25 10:31 /lib64/.libcrypto.so.10.hmac ->  .libcrypto.so.1.0.0d.hmac
+> -rw-r--r--. 1 root root 65 Aug 14 22:09 /lib64/.libgcrypt.so.11.hmac
+> $
+> -----
 >
 
-Thanks for your work, but your patches are kind of broken.
+fixed with the attached patch. Thanks!
 
-Either your mail program scrambled them, or you have a weird git or patch 
-implementation.
+--------------060106040504020407030002
+Content-Type: text/plain;
+ name="hmac.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="hmac.patch"
 
-e.g. first diff hunk in patch 4 says
-@@ -863,49 +863,63 @@ filter_kernel_modules_by_path () (
+diff --git a/dracut-functions b/dracut-functions
+index c28766e..3edd4c7 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -320,7 +320,7 @@ inst_simple() {
+     fi
+     # install checksum files also
+     if [[ -e "${_src%/*}/.${_src##*/}.hmac" ]]; then
+-        inst_simple "${_src%/*}/.${_src##*/}.hmac" "${target%/*}/.${target##*/}.hmac"
++        inst "${_src%/*}/.${_src##*/}.hmac" "${target%/*}/.${target##*/}.hmac"
+     fi
+     ddebug "Installing $_src"
+     cp -pfL "$_src" "${initdir}$target" 
+@@ -360,7 +360,7 @@ inst_library() {
+     if [[ -L $_src ]]; then
+         # install checksum files also
+         if [[ -e "${_src%/*}/.${_src##*/}.hmac" ]]; then
+-            inst_simple "${_src%/*}/.${_src##*/}.hmac" "${_dest%/*}/.${_dest##*/}.hmac"
++            inst "${_src%/*}/.${_src##*/}.hmac" "${_dest%/*}/.${_dest##*/}.hmac"
+         fi
+         _reallib=$(readlink -f "$_src")
+         inst_simple "$_reallib" "$_reallib"
 
-but in fact it should be s.th. like
-@@ -863,45 +863,59 @@ filter_kernel_modules_by_path () (
-
-All blank lines are missing in the hunks!
-
-Care to resend?
+--------------060106040504020407030002--
