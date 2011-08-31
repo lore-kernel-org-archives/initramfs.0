@@ -1,100 +1,64 @@
-From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: [PATCH 4/4] 91crypt-loop: use initqueue for cleanup strategy
-Date: Wed, 31 Aug 2011 11:29:48 +0200
-Message-ID: <1314782941-sup-2236@raeviah>
-References: <1314711391-7149-1-git-send-email-leho@kraav.com> <1314711391-7149-4-git-send-email-leho@kraav.com> <1314780315-sup-5456@raeviah>
-Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pgp-signature"; boundary="=-1314782989-138439-18958-4287-1-="
-Content-Transfer-Encoding: 8bit
+From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] 91crypt-loop: replace basename calls with string matching
+Date: Wed, 31 Aug 2011 13:03:45 +0300
+Message-ID: <1314785025-11727-1-git-send-email-leho@kraav.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <1314780315-sup-5456@raeviah>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+---
+ modules.d/90crypt/crypt-lib.sh           |    2 +-
+ modules.d/91crypt-loop/crypt-loop-lib.sh |    8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
---=-1314782989-138439-18958-4287-1-=
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-
-Excerpts from Amadeusz =C5=BBo=C5=82nowski's message of 2011-08-31 10:51:=
-37 +0200:
-> Excerpts from Leho Kraav's message of 2011-08-30 15:36:31 +0200:
-> > ---
-> >  modules.d/90crypt/crypt-lib.sh           |    3 +++
-> >  modules.d/91crypt-loop/crypt-loop-lib.sh |    5 +++++
-> >  2 files changed, 8 insertions(+), 0 deletions(-)
-> > =
-
-> > diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt=
--lib.sh
-> > index b04512f..3095774 100755
-> > --- a/modules.d/90crypt/crypt-lib.sh
-> > +++ b/modules.d/90crypt/crypt-lib.sh
-> > @@ -225,6 +225,9 @@ readkey() {
-> >              if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
-> >                  . /lib/dracut-crypt-loop-lib.sh
-> >                  loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
-> > +                initqueue --onetime --finished --unique --name "cryp=
-t-loop-cleanup-99-$(basename $mntp)" \
-> > +                    $(command -v umount) "$mntp; " $(command -v rmdi=
-r) "$mntp"
-> > +                return 0
-> >              else
-> >                  die "No loop file support to decrypt '$keypath' on '=
-$keydev'."
-> >              fi
-> > diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91c=
-rypt-loop/crypt-loop-lib.sh
-> > index 63a553c..6774e7d 100644
-> > --- a/modules.d/91crypt-loop/crypt-loop-lib.sh
-> > +++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
-> > @@ -32,6 +32,11 @@ loop_decrypt() {
-> >              --tty-echo-off
-> >  =
-
-> >          [ -b $key ] || die "Tried setting it up, but keyfile block d=
-evice was still not found!" =
-
-> > +
-> > +        initqueue --onetime --finished --unique --name "crypt-loop-c=
-leanup-10-$(basename $key)" \
-> > +            $(command -v cryptsetup) "luksClose $key"
-> > +        initqueue --onetime --finished --unique --name "crypt-loop-c=
-leanup-20-$(basename $loopdev)" \
-> > +            $(command -v losetup) "-d $loopdev"
-> >      else
-> >          info "Existing keyfile found, re-using it for $device"
-> >      fi
-> =
-
-> Always a bit better to use built-ins:
-> =
-
-> basename "$x" =3D=3D echo "${x#**/}"
-
-Ups.  echo ${x##*/}, of course :-)
-
--- =
-
-Amadeusz =C5=BBo=C5=82nowski
-
-PGP key fpr: C700 CEDE 0C18 212E 49DA  4653 F013 4531 E1DB FAB5
-
---=-1314782989-138439-18958-4287-1-=
-Content-Disposition: attachment; filename="signature.asc"
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQEcBAEBAgAGBQJOXf8NAAoJEPATRTHh2/q1i/cIAJzGZzaNdn2jOAYWH+eNtcP8
-RjKKsK690rqkzD7qex7t38EF09gXsGoi0pwYBGdEnZj5Z5kREw2VC4ZS/vVK687+
-+ts5aS02R5bsdgdnFlaO4jJWIHVPzh1pI5NpMFX2lAsfsDMrMYv+loqhQX5Wfx47
-HHxgI7Lq2iyjnIpBRCwHl/SJZqxwgrljiQKA1tmudqggmYW/lrYMH93/i3E4V5xn
-h3z2k0KxDyB7Orq+h/J6FWbxNCLQVsqcnpjo+vLT/F+GCm511BME2/WOyTofSnla
-MEHMydUizNwp+3qeEJpHHjxaDOPmL++SZCHRJpQ1slMMme1JAaa48VlIx3Wsbe4=
-=wmkh
------END PGP SIGNATURE-----
-
---=-1314782989-138439-18958-4287-1-=--
+diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
+index 3095774..16d9cdd 100755
+--- a/modules.d/90crypt/crypt-lib.sh
++++ b/modules.d/90crypt/crypt-lib.sh
+@@ -225,7 +225,7 @@ readkey() {
+             if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
+                 . /lib/dracut-crypt-loop-lib.sh
+                 loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
+-                initqueue --onetime --finished --unique --name "crypt-loop-cleanup-99-$(basename $mntp)" \
++                initqueue --onetime --finished --unique --name "crypt-loop-cleanup-99-${mntp##*/}" \
+                     $(command -v umount) "$mntp; " $(command -v rmdir) "$mntp"
+                 return 0
+             else
+diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
+index 6774e7d..244b6ce 100644
+--- a/modules.d/91crypt-loop/crypt-loop-lib.sh
++++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
+@@ -18,13 +18,13 @@ loop_decrypt() {
+     local keydev="$3"
+     local device="$4"
+ 
+-    local key="/dev/mapper/$(basename $mntp)"
++    local key="/dev/mapper/${mntp##*/}"
+ 
+     if [ ! -b $key ]; then
+         info "Keyfile has .img suffix, treating it as LUKS-encrypted loop keyfile container to unlock $device"
+ 
+         local loopdev=$(losetup -f "${mntp}/${keypath}" --show)
+-        local opts="-d - luksOpen $loopdev $(basename $key)"
++        local opts="-d - luksOpen $loopdev ${key##*/}"
+ 
+         ask_for_password \
+             --cmd "cryptsetup $opts" \
+@@ -33,9 +33,9 @@ loop_decrypt() {
+ 
+         [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
+ 
+-        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-10-$(basename $key)" \
++        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-10-${key##*/}" \
+             $(command -v cryptsetup) "luksClose $key"
+-        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-20-$(basename $loopdev)" \
++        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-20-${loopdev##*/}" \
+             $(command -v losetup) "-d $loopdev"
+     else
+         info "Existing keyfile found, re-using it for $device"
+-- 
+1.7.6
