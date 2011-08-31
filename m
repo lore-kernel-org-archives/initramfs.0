@@ -1,41 +1,41 @@
-From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: build initramfs: explain modprobe?
-Date: Wed, 31 Aug 2011 14:15:22 +0200
-Message-ID: <4E5E25DA.4060802@gmail.com>
-References: <4E5D68A0.8020006@bitwagon.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/8] build initramfs: speedup
+Date: Wed, 31 Aug 2011 15:09:30 +0200
+Message-ID: <4E5E328A.5030604@redhat.com>
+References: <4E5DBAE4.2000205@bitwagon.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=message-id:date:from:user-agent:mime-version:to:cc:subject
-         :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=9nmYqXuVnp8WelnB9mErqKGmWfFcX9B3jRUDFNf1ywQ=;
-        b=VBlYaEkSadj+eUPE0Dr6DvW9FWHkVhiAMqOUeDICVsFCQweIr+tnI9CfTFI3UlrU3K
-         4bSrRpmWs1pWwKUch3tyDMYKb4p80c6+35LQdhbhenBqKCese2zFe+040uXFU9LNJ1O5
-         tXnlBESueDZbUYk+cDmvsdKKTVpJpLZrx/bXk=
-In-Reply-To: <4E5D68A0.8020006-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <4E5DBAE4.2000205-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 31.08.2011 00:48, John Reiser wrote:
-> What properties of modprobe are essential for building initramfs?
-> Modprobe works for only one kernel module at a time, and this is
-> a cause of slowness.  For instance, computing the transitive
-> closure of the Requires relationship over a non-small set of modules
-> can be performed faster by loading modules.dep into a bash associative
-> array, then processing in bash.  Also, modinfo now is invoked once per
-> module to find firmware, but this can be sped up by invoking on batches
-> of modules, using "split -C 32000" to avoid the argsize limit of execve.
+On 31.08.2011 06:39, John Reiser wrote:
+> This patch series saves 50% (a factor of 2) in real time before final gzip
+> when building initramfs for Fedora 16.
 >
-> Invoking modprobe with --ignore-install seems to remove any effects
-> due to (possibly host-specific) /etc/modules.d/*.conf.  Is there anything
-> else that modprobe does for building initramfs, other than transitive
-> closure of Requires?
+> Probably you should apply only the first six patches (1,2,3,4,5,6)
+> because directory symlinks and permissions aren't right after patch 7.
+> [I don't care about directory symlinks now; permissions are 775 instead of 755.]
+> I'm working on a different approach for those; it's not ready.
+> However, the first six patches save 25% (a factor of 4/3),
+> and patch 7 saves another 25% by replacing most /bin/cp with cpio.
 >
 
-Hmm, you are right. Modules loaded in "/etc/modules.d/*.conf" are not honored.
-And yes, "modprobe" is only used to easily get the requirements.
+Thanks for your work, but your patches are kind of broken.
+
+Either your mail program scrambled them, or you have a weird git or patch 
+implementation.
+
+e.g. first diff hunk in patch 4 says
+@@ -863,49 +863,63 @@ filter_kernel_modules_by_path () (
+
+but in fact it should be s.th. like
+@@ -863,45 +863,59 @@ filter_kernel_modules_by_path () (
+
+All blank lines are missing in the hunks!
+
+Care to resend?
