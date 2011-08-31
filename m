@@ -1,64 +1,41 @@
-From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] 91crypt-loop: replace basename calls with string matching
-Date: Wed, 31 Aug 2011 13:03:45 +0300
-Message-ID: <1314785025-11727-1-git-send-email-leho@kraav.com>
+From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: build initramfs: explain modprobe?
+Date: Wed, 31 Aug 2011 14:15:22 +0200
+Message-ID: <4E5E25DA.4060802@gmail.com>
+References: <4E5D68A0.8020006@bitwagon.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=9nmYqXuVnp8WelnB9mErqKGmWfFcX9B3jRUDFNf1ywQ=;
+        b=VBlYaEkSadj+eUPE0Dr6DvW9FWHkVhiAMqOUeDICVsFCQweIr+tnI9CfTFI3UlrU3K
+         4bSrRpmWs1pWwKUch3tyDMYKb4p80c6+35LQdhbhenBqKCese2zFe+040uXFU9LNJ1O5
+         tXnlBESueDZbUYk+cDmvsdKKTVpJpLZrx/bXk=
+In-Reply-To: <4E5D68A0.8020006-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
----
- modules.d/90crypt/crypt-lib.sh           |    2 +-
- modules.d/91crypt-loop/crypt-loop-lib.sh |    8 ++++----
- 2 files changed, 5 insertions(+), 5 deletions(-)
+On 31.08.2011 00:48, John Reiser wrote:
+> What properties of modprobe are essential for building initramfs?
+> Modprobe works for only one kernel module at a time, and this is
+> a cause of slowness.  For instance, computing the transitive
+> closure of the Requires relationship over a non-small set of modules
+> can be performed faster by loading modules.dep into a bash associative
+> array, then processing in bash.  Also, modinfo now is invoked once per
+> module to find firmware, but this can be sped up by invoking on batches
+> of modules, using "split -C 32000" to avoid the argsize limit of execve.
+>
+> Invoking modprobe with --ignore-install seems to remove any effects
+> due to (possibly host-specific) /etc/modules.d/*.conf.  Is there anything
+> else that modprobe does for building initramfs, other than transitive
+> closure of Requires?
+>
 
-diff --git a/modules.d/90crypt/crypt-lib.sh b/modules.d/90crypt/crypt-lib.sh
-index 3095774..16d9cdd 100755
---- a/modules.d/90crypt/crypt-lib.sh
-+++ b/modules.d/90crypt/crypt-lib.sh
-@@ -225,7 +225,7 @@ readkey() {
-             if [ -f /lib/dracut-crypt-loop-lib.sh ]; then
-                 . /lib/dracut-crypt-loop-lib.sh
-                 loop_decrypt "$mntp" "$keypath" "$keydev" "$device"
--                initqueue --onetime --finished --unique --name "crypt-loop-cleanup-99-$(basename $mntp)" \
-+                initqueue --onetime --finished --unique --name "crypt-loop-cleanup-99-${mntp##*/}" \
-                     $(command -v umount) "$mntp; " $(command -v rmdir) "$mntp"
-                 return 0
-             else
-diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
-index 6774e7d..244b6ce 100644
---- a/modules.d/91crypt-loop/crypt-loop-lib.sh
-+++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
-@@ -18,13 +18,13 @@ loop_decrypt() {
-     local keydev="$3"
-     local device="$4"
- 
--    local key="/dev/mapper/$(basename $mntp)"
-+    local key="/dev/mapper/${mntp##*/}"
- 
-     if [ ! -b $key ]; then
-         info "Keyfile has .img suffix, treating it as LUKS-encrypted loop keyfile container to unlock $device"
- 
-         local loopdev=$(losetup -f "${mntp}/${keypath}" --show)
--        local opts="-d - luksOpen $loopdev $(basename $key)"
-+        local opts="-d - luksOpen $loopdev ${key##*/}"
- 
-         ask_for_password \
-             --cmd "cryptsetup $opts" \
-@@ -33,9 +33,9 @@ loop_decrypt() {
- 
-         [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
- 
--        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-10-$(basename $key)" \
-+        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-10-${key##*/}" \
-             $(command -v cryptsetup) "luksClose $key"
--        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-20-$(basename $loopdev)" \
-+        initqueue --onetime --finished --unique --name "crypt-loop-cleanup-20-${loopdev##*/}" \
-             $(command -v losetup) "-d $loopdev"
-     else
-         info "Existing keyfile found, re-using it for $device"
--- 
-1.7.6
+Hmm, you are right. Modules loaded in "/etc/modules.d/*.conf" are not honored.
+And yes, "modprobe" is only used to easily get the requirements.
