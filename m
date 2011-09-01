@@ -1,53 +1,64 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/8] build initramfs: speedup
-Date: Thu, 01 Sep 2011 11:09:42 +0200
-Message-ID: <4E5F4BD6.8090901@redhat.com>
-References: <4E5DBAE4.2000205@bitwagon.com>
+From: Pierre Jean Schweitzer <pierre.jean.schweitzer-vJEk5272eHo@public.gmane.org>
+Subject: NFS root on FUSE
+Date: Thu, 1 Sep 2011 13:56:59 +0000
+Message-ID: <2C830DE44569424E90F3600349931247117A99F9@PLOXCHG03.cern.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="_002_2C830DE44569424E90F3600349931247117A99F9PLOXCHG03cernch_"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4E5DBAE4.2000205-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Content-Language: en-GB
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+
+--_002_2C830DE44569424E90F3600349931247117A99F9PLOXCHG03cernch_
 Content-Type: text/plain; charset="us-ascii"
-To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: quoted-printable
 
-On 31.08.2011 06:39, John Reiser wrote:
-> This patch series saves 50% (a factor of 2) in real time before final gzip
-> when building initramfs for Fedora 16.
-> 
-> Probably you should apply only the first six patches (1,2,3,4,5,6)
-> because directory symlinks and permissions aren't right after patch 7.
-> [I don't care about directory symlinks now; permissions are 775 instead of 755.]
-> I'm working on a different approach for those; it's not ready.
-> However, the first six patches save 25% (a factor of 4/3),
-> and patch 7 saves another 25% by replacing most /bin/cp with cpio.
-> 
+Hi,
 
-Regarding path 7 and 8:
+attached to this message, you will find a patch that addresses an issue tha=
+t raise under the following conditions:
+- You have a diskless system that boots from the network (using something l=
+ike root=3Dnfs:... in its command line)
+- The exported file system on which the system will boot is actually a FUSE=
+ file system (then you had to put a fsid in /etc/exports/
 
-directory permissions could be copied with:
+Then, you will experience /proc and /sys being empty (not really umounted),=
+ followed closely by /dev. The system then becomes unusable.
+I searched and tried several things to prevent this issue to happen. Only o=
+ne worked (all credits go to that guy: http://swik.net/zfs-fuse/linux+root+=
+filesystem+on+zfs-fuse).
+I modified the system-config-netboot initscript to get it on diskless clien=
+ts and it indeed work. Since those tools are deprecated coming with RHEL6, =
+I've ported this solution to dracut.
 
-inst_simple()
-....
+I don't really know where from this issue comes. I even don't know if that'=
+s a proper fix, or just a hackfix. This is open to discussion.
+Moreover, I've not been able to test yet that fix on non-diskless system (i=
+f there are un-measured side effects).
 
--        echo "$1" >&${cpio_stdin}
-+        local _part=$1
-+        while [[ "$_part" != "${_part%/*}" ]]; do
-+            echo "$_part" >&${cpio_stdin}
-+            _part=${_part%/*}
-+        done
-         return 0
+With my best regards,
+P. Schweitzer=
 
-...
+--_002_2C830DE44569424E90F3600349931247117A99F9PLOXCHG03cernch_
+Content-Type: text/x-patch; name="fuse.diff"
+Content-Description: fuse.diff
+Content-Disposition: attachment; filename="fuse.diff"; size=604;
+	creation-date="Thu, 01 Sep 2011 13:56:19 GMT";
+	modification-date="Thu, 01 Sep 2011 13:56:19 GMT"
+Content-Transfer-Encoding: base64
 
-BUT, there is a general problem with this.
-1. the check, if the file is already present fails. This changes behaviour for
-e.g. install "bash" if /bin/sh is not yet there. In our case, of the "dash"
-dracut module is installed, bash will not be installed.
-So, we would have to bookkeep, what we already sent to cpio.
+ZGlmZiAtLWdpdCBhL21vZHVsZXMuZC85OWJhc2UvaW5pdCBiL21vZHVsZXMuZC85OWJhc2UvaW5p
+dAppbmRleCBiNjY2ZDNlLi40Y2RkMmMyIDEwMDc1NQotLS0gYS9tb2R1bGVzLmQvOTliYXNlL2lu
+aXQKKysrIGIvbW9kdWxlcy5kLzk5YmFzZS9pbml0CkBAIC00NTIsNiArNDUyLDE2IEBAIFNXSVRD
+SF9ST09UPSQoY29tbWFuZCAtdiBzd2l0Y2hfcm9vdCkKIFBBVEg9JE9MRFBBVEgKIGV4cG9ydCBQ
+QVRICiAKKyMgTWFrZSBzcGVjaWFsIG1vdW50IHBvaW50cyBwZXJzaXN0YW50IG92ZXIgc3dpdGNo
+IHJvb3QKK21vdW50IC0tbWFrZS1yc2hhcmVkIC9kZXYKK21vdW50IC0tYmluZCAvZGV2ICIkTkVX
+Uk9PVC9kZXYiCisKK21vdW50IC0tbWFrZS1yc2hhcmVkIC9zeXMKK21vdW50IC0tYmluZCAvc3lz
+ICIkTkVXUk9PVC9zeXMiCisKK21vdW50IC0tbWFrZS1yc2hhcmVkIC9wcm9jCittb3VudCAtLWJp
+bmQgL3Byb2MgIiRORVdST09UL3Byb2MiCisKIGlmIFsgLWYgL2V0Yy9jYXBzZHJvcCBdOyB0aGVu
+CiAgICAgLiAvZXRjL2NhcHNkcm9wCiAgICAgaW5mbyAiQ2FsbGluZyAkSU5JVCB3aXRoIGNhcGFi
+aWxpdGllcyAkQ0FQU19JTklUX0RST1AgZHJvcHBlZC4iCg==
 
-2. postprocessing of installed files. E.g. the lvm modules changes
-/etc/lvm/lvm.conf. This could be prevented, by pulling out all post processing
-and call all modules-setup.sh with install_post() after cpio copying.
+--_002_2C830DE44569424E90F3600349931247117A99F9PLOXCHG03cernch_--
