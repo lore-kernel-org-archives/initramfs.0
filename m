@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [RFC 6/6] 90mdraid: fix/adjust 65-md* rules and related scripts
-Date: Tue,  6 Sep 2011 00:17:28 +0200
-Message-ID: <1315261048-19544-7-git-send-email-soltys@ziu.info>
+Subject: [RFC 2/6] 90(md|dm)raid: recognize ddf container
+Date: Tue,  6 Sep 2011 00:17:24 +0200
+Message-ID: <1315261048-19544-3-git-send-email-soltys@ziu.info>
 References: <1315261048-19544-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1315261048-19544-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
@@ -12,200 +12,140 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Reworked the flow of the rules file a bit, removed redundant tests, also
-should be easier to follow. It's much shorter now as well, a bit more
-similar to 90lvm script - both revolve around same concepts after all.
-
-There's no reason to treat conf-assembled arrays differently from
-incremental ones. Once we hit timeout in init's udev loop, we can use
-common script (mdraid_start.sh) to try force inactive arrays
-into degraded mode.
-
-md-finished.sh was kind-of out of place - it didn't really wait for any
-particular device(s) to show up, just watched if onetime mdadm scripts
-are still in place. Furthermore, after moving mdraid_start to --timeout
-initqueue, it didn't really have too much to watch at all, besides
-mdadm_auto (and that served no purpose, as we do wait for concrete
-devices).
-
-Either way, with stock 64-md fixes, current version of 65-md*.rules does
-the following:
-
-- limits assembly to certain uuids, if specified
-- watch for no ddf/imsm
-- if mdadm.conf => setup onetime -As script, without forced --run option
-- if !mdadm.conf => incrementally assemble
-- for both cases, setup timeout script, run-forcing arrays as a last resort
+This patch adds ddf support, consistently with imsm/isw options.
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- modules.d/90mdraid/65-md-incremental-imsm.rules |   79 ++++++++---------------
- modules.d/90mdraid/md_finished.sh               |    9 ---
- modules.d/90mdraid/mdadm_auto.sh                |    2 +-
- modules.d/90mdraid/module-setup.sh              |    1 -
- modules.d/90mdraid/parse-md.sh                  |    8 ++-
- 5 files changed, 34 insertions(+), 65 deletions(-)
- delete mode 100755 modules.d/90mdraid/md_finished.sh
+ dracut.kernel.7.xml                             |    6 ++++++
+ modules.d/90dmraid/61-dmraid-imsm.rules         |    1 +
+ modules.d/90dmraid/parse-dm.sh                  |    4 ++++
+ modules.d/90mdraid/65-md-incremental-imsm.rules |    3 ++-
+ modules.d/90mdraid/md-noddf.sh                  |    5 +++++
+ modules.d/90mdraid/md-noimsm.sh                 |    2 +-
+ modules.d/90mdraid/module-setup.sh              |    6 +++++-
+ modules.d/90mdraid/parse-md.sh                  |    6 ++++++
+ 8 files changed, 30 insertions(+), 3 deletions(-)
+ create mode 100755 modules.d/90mdraid/md-noddf.sh
 
+diff --git a/dracut.kernel.7.xml b/dracut.kernel.7.xml
+index b6e59e6..8d50d94 100644
+--- a/dracut.kernel.7.xml
++++ b/dracut.kernel.7.xml
+@@ -343,6 +343,12 @@ This parameter can be specified multiple times.</para>
+           </listitem>
+         </varlistentry>
+         <varlistentry>
++          <term><envar>rd.md.ddf</envar>=0</term>
++          <listitem>
++            <para>disable MD RAID for SNIA ddf raids, use DM RAID instead</para>
++          </listitem>
++        </varlistentry>
++        <varlistentry>
+           <term>
+             <envar>rd.md.conf</envar>=0
+           </term>
+diff --git a/modules.d/90dmraid/61-dmraid-imsm.rules b/modules.d/90dmraid/61-dmraid-imsm.rules
+index d87fce7..73ba58e 100644
+--- a/modules.d/90dmraid/61-dmraid-imsm.rules
++++ b/modules.d/90dmraid/61-dmraid-imsm.rules
+@@ -10,6 +10,7 @@ ENV{ID_FS_TYPE}=="linux_raid_member", GOTO="dm_end"
+ ENV{ID_FS_TYPE}!="*_raid_member", , GOTO="dm_end"
+ 
+ ENV{ID_FS_TYPE}=="isw_raid_member", ENV{rd_NO_MDIMSM}!="?*", GOTO="dm_end"
++ENV{ID_FS_TYPE}=="ddf_raid_member", ENV{rd_NO_MDDDF}!="?*", GOTO="dm_end"
+ 
+ ENV{rd_NO_DM}=="?*", GOTO="dm_end"
+ 
+diff --git a/modules.d/90dmraid/parse-dm.sh b/modules.d/90dmraid/parse-dm.sh
+index 059c396..fe38d35 100755
+--- a/modules.d/90dmraid/parse-dm.sh
++++ b/modules.d/90dmraid/parse-dm.sh
+@@ -12,3 +12,7 @@ if  ! command -v mdadm >/dev/null || ! getargbool 1 rd.md.imsm -n rd_NO_MDIMSM |
+     udevproperty rd_NO_MDIMSM=1
+ fi
+ 
++if  ! command -v mdadm >/dev/null || ! getargbool 1 rd.md.ddf -n rd_NO_MDDDF || getarg noddfmd; then
++    info "rd.md.ddf=0: no MD RAID for SNIA ddf raids"
++    udevproperty rd_NO_MDDDF=1
++fi
 diff --git a/modules.d/90mdraid/65-md-incremental-imsm.rules b/modules.d/90mdraid/65-md-incremental-imsm.rules
-index bb030cf..209b17b 100644
+index 7c1d503..d02afee 100644
 --- a/modules.d/90mdraid/65-md-incremental-imsm.rules
 +++ b/modules.d/90mdraid/65-md-incremental-imsm.rules
-@@ -2,68 +2,45 @@
- # automatically cause mdadm to be run.
- # See udev(8) for syntax
+@@ -4,9 +4,10 @@
  
--ACTION!="add|change", GOTO="md_inc_end"
--SUBSYSTEM!="block", GOTO="md_inc_end"
--ENV{ID_FS_TYPE}!="*_raid_member", GOTO="md_inc_end"
--
--ENV{ID_FS_TYPE}=="isw_raid_member", ENV{rd_NO_MDIMSM}=="?*", GOTO="md_inc_end"
--ENV{ID_FS_TYPE}=="ddf_raid_member", ENV{rd_NO_MDDDF}=="?*", GOTO="md_inc_end"
--
--ENV{rd_NO_MD}=="?*", GOTO="md_inc_end"
--
--PROGRAM=="/bin/sh -c 'for i in $sys/$devpath/holders/md[0-9]*; do [ -e $$i ] && exit 0; done; exit 1;' ", \
--    GOTO="md_inc_end"
-+ACTION!="add|change", GOTO="md_end"
-+SUBSYSTEM!="block", GOTO="md_end"
-+ENV{rd_NO_MD}=="?*", GOTO="md_end"
-+KERNEL=="md*", GOTO="md_end"
-+
-+ENV{ID_FS_TYPE}!="*_raid_member", GOTO="md_end"
-+ENV{ID_FS_TYPE}=="isw_raid_member", ENV{rd_NO_MDIMSM}=="?*", GOTO="md_end"
-+ENV{ID_FS_TYPE}=="ddf_raid_member", ENV{rd_NO_MDDDF}=="?*", GOTO="md_end"
-+
-+# already done ?
-+PROGRAM="/bin/sh -c 'for i in $sys/$devpath/holders/md[0-9]*; do [ -e $$i ] && exit 0; done; exit 1;' ", \
-+    GOTO="md_end"
-+
-+# for native arrays - array's uuid has to be specified
-+# for containers - container's uuid has to be specified
-+# TODO : how to get embedded array's uuid having container's component ?
-+#
-+# UUID CHECK
+ ACTION!="add|change", GOTO="md_inc_end"
+ SUBSYSTEM!="block", GOTO="md_inc_end"
+-ENV{ID_FS_TYPE}!="linux_raid_member|isw_raid_member", GOTO="md_inc_end"
++ENV{ID_FS_TYPE}!="*_raid_member", GOTO="md_inc_end"
  
- ENV{DEVTYPE}!="partition", \
-     RUN+="/sbin/partx -d --nr 1-1024 $env{DEVNAME}"
+ ENV{ID_FS_TYPE}=="isw_raid_member", ENV{rd_NO_MDIMSM}=="?*", GOTO="md_inc_end"
++ENV{ID_FS_TYPE}=="ddf_raid_member", ENV{rd_NO_MDDDF}=="?*", GOTO="md_inc_end"
  
--KERNEL!="md*", IMPORT{program}="/sbin/mdadm --examine --export $tempnode"
--
--# UUID CHECK
--
--LABEL="do_md_inc"
-+RUN+="/sbin/initqueue --timeout --onetime --unique /sbin/mdraid_start"
+ ENV{rd_NO_MD}=="?*", GOTO="md_inc_end"
  
-+# if rd_MDADMCONF is set, do not assemble incrementally;
-+# defer conf-based assembly until the udev queue is settled
- #
--# if rd_MDADMCONF do not assemble incrementally
--# defer auto assembly until the udev queue is settled
--#
--ENV{rd_MDADMCONF}!="?*", GOTO="md_auto_end"
-+ENV{rd_MDADMCONF}!="?*", GOTO="md_incremental"
- 
--RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
- RUN+="/sbin/initqueue --settled --onetime --unique /sbin/mdadm_auto"
- 
--GOTO="md_inc_end"
--
--LABEL="md_auto_end"
-+GOTO="md_end"
- 
- #
--# Incrementally build the md array
-+# Incrementally build the md array; this will automatically assemble
-+# any eventual containers as well (imsm, ddf)
- #
--RUN+="/sbin/mdadm -I $env{DEVNAME}"
--
--RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
--
--LABEL="md_inc_end"
--
--#
--# Handle non-container raid arrays
--#
--ACTION=="add|change", \
--	KERNEL=="md[0-9]*|md/*", \
--	ENV{MD_LEVEL}!="container", \
--	ENV{MD_CONTAINER}!="?*", \
--        ENV{rd_MDADMCONF}!="?*", \
--        ENV{rd_NO_MD}!="?*", \
--	GOTO="do_raidstart"
-+LABEL="md_incremental"
- 
--GOTO="end_raidstart"
--
--LABEL="do_raidstart"
--
--# check if array is not inactive anymore
--TEST=="md/array_state", ATTR{md/array_state}!="|inactive", GOTO="end_raidstart"
--
--RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
--RUN+="/sbin/initqueue --timeout --onetime --unique /sbin/mdraid_start"
-+RUN+="/sbin/mdadm -I $env{DEVNAME}"
- 
--LABEL="end_raidstart"
-+LABEL="md_end"
-diff --git a/modules.d/90mdraid/md_finished.sh b/modules.d/90mdraid/md_finished.sh
-deleted file mode 100755
-index ce355be..0000000
---- a/modules.d/90mdraid/md_finished.sh
-+++ /dev/null
-@@ -1,9 +0,0 @@
--#!/bin/sh
--# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
--# ex: ts=8 sw=4 sts=4 et filetype=sh
--for f in $hookdir/initqueue/settled/mdraid_start* $hookdir/initqueue/settled/mdadm_auto*; do
--    [ -e $f ] && exit 1
--done
--
--$UDEV_QUEUE_EMPTY >/dev/null 2>&1 || exit 1
--exit 0
-diff --git a/modules.d/90mdraid/mdadm_auto.sh b/modules.d/90mdraid/mdadm_auto.sh
-index 915fb28..9b61bf5 100755
---- a/modules.d/90mdraid/mdadm_auto.sh
-+++ b/modules.d/90mdraid/mdadm_auto.sh
-@@ -4,4 +4,4 @@
- type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
- 
- info "Autoassembling MD Raid"
--mdadm -As --auto=yes --run 2>&1 | vinfo
-+mdadm -As --auto=yes 2>&1 | vinfo
+diff --git a/modules.d/90mdraid/md-noddf.sh b/modules.d/90mdraid/md-noddf.sh
+new file mode 100755
+index 0000000..bc46dd7
+--- /dev/null
++++ b/modules.d/90mdraid/md-noddf.sh
+@@ -0,0 +1,5 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++info "rd.md.ddf=0: no MD RAID for SNIA ddf raids"
++udevproperty rd_NO_MDDDF=1
+diff --git a/modules.d/90mdraid/md-noimsm.sh b/modules.d/90mdraid/md-noimsm.sh
+index bc9cf7f..8272f86 100755
+--- a/modules.d/90mdraid/md-noimsm.sh
++++ b/modules.d/90mdraid/md-noimsm.sh
+@@ -2,4 +2,4 @@
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ info "rd.md.imsm=0: no MD RAID for imsm/isw raids"
+-udevproperty rd_NO_MDIMSM=1
+\ No newline at end of file
++udevproperty rd_NO_MDIMSM=1
 diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index 5c526a0..12e6739 100755
+index 91a0769..ae432ba 100755
 --- a/modules.d/90mdraid/module-setup.sh
 +++ b/modules.d/90mdraid/module-setup.sh
-@@ -82,7 +82,6 @@ install() {
+@@ -20,7 +20,7 @@ check() {
+             check_block_and_slaves is_mdraid "$_rootdev" || return 1
+         else
+             # root is not on a block device, use the shotgun approach
+-            blkid | egrep -q '(linux|isw)_raid' || return 1
++            blkid | grep -q '"[^"]*_raid_member"' || return 1
+         fi
+     }
  
-     inst "$moddir/mdraid_start.sh" /sbin/mdraid_start
-     inst "$moddir/mdadm_auto.sh" /sbin/mdadm_auto
--    inst "$moddir/md_finished.sh" /sbin/md_finished.sh
-     inst_hook pre-trigger 30 "$moddir/parse-md.sh"
-     inst "$moddir/mdraid-cleanup.sh" /sbin/mdraid-cleanup
-     inst_hook shutdown 30 "$moddir/md-shutdown.sh"
+@@ -59,9 +59,13 @@ install() {
+ 
+     inst_rules "$moddir/65-md-incremental-imsm.rules"
+ 
++    # guard against pre-3.0 mdadm versions, that can't handle containers
+     if ! mdadm -Q -e imsm /dev/null &> /dev/null; then
+         inst_hook pre-trigger 30 "$moddir/md-noimsm.sh"
+     fi
++    if ! mdadm -Q -e ddf /dev/null &> /dev/null; then
++        inst_hook pre-trigger 30 "$moddir/md-noddf.sh"
++    fi
+ 
+     if [[ $hostonly ]] || [[ $mdadmconf = "yes" ]]; then
+         if [ -f /etc/mdadm.conf ]; then
 diff --git a/modules.d/90mdraid/parse-md.sh b/modules.d/90mdraid/parse-md.sh
-index 33d93dc..b85a3a3 100755
+index 6d1b615..adcc402 100755
 --- a/modules.d/90mdraid/parse-md.sh
 +++ b/modules.d/90mdraid/parse-md.sh
-@@ -13,12 +13,14 @@ else
-             [ -e "$f" ] || continue
-             while read line; do
-                 if [ "${line%%UUID CHECK}" != "$line" ]; then
-+                    printf 'IMPORT{program}="/sbin/mdadm --examine --export $tempnode"\n'
-                     for uuid in $MD_UUID; do
--                        printf 'ENV{MD_UUID}=="%s", GOTO="do_md_inc"\n' $uuid
-+                        printf 'ENV{MD_UUID}=="%s", GOTO="md_uuid_ok"\n' $uuid
-                     done;
--                    printf 'GOTO="md_inc_end"\n';
-+                    printf 'GOTO="md_end"\n'
-+                    printf 'LABEL="md_uuid_ok"\n'
-                 else
--                    echo $line;
-+                    echo "$line"
-                 fi
-             done < "${f}" > "${f}.new"
-             mv "${f}.new" "$f"
+@@ -42,3 +42,9 @@ if ! getargbool 1 rd.md.imsm -n rd_NO_MDIMSM || getarg noiswmd || getarg nodmrai
+     info "no MD RAID for imsm/isw raids"
+     udevproperty rd_NO_MDIMSM=1
+ fi
++
++# same thing with ddf containers
++if ! getargbool 1 rd.md.ddf -n rd_NO_MDDDF || getarg noddfmd || getarg nodmraid; then
++    info "no MD RAID for SNIA ddf raids"
++    udevproperty rd_NO_MDDDF=1
++fi
 -- 
 1.7.5.3
