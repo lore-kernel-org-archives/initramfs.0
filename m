@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [RFC 5/6] 90mdraid: fix/adjust force-run script
-Date: Tue,  6 Sep 2011 00:17:27 +0200
-Message-ID: <1315261048-19544-6-git-send-email-soltys@ziu.info>
+Subject: [RFC 6/6] 90mdraid: fix/adjust 65-md* rules and related scripts
+Date: Tue,  6 Sep 2011 00:17:28 +0200
+Message-ID: <1315261048-19544-7-git-send-email-soltys@ziu.info>
 References: <1315261048-19544-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1315261048-19544-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
@@ -12,136 +12,200 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-1) mdadm -As --auto=yes --run 2>&1 | vinfo (removed)
+Reworked the flow of the rules file a bit, removed redundant tests, also
+should be easier to follow. It's much shorter now as well, a bit more
+similar to 90lvm script - both revolve around same concepts after all.
 
-Currently such auto assembly will not complete or force-run partially
-assembled arrays. It might assemble "concurrent" separate array and
-force-run it, if possible (though the chances of suddenly showing
-missing components in this scenario - a script run after udev timeout -
-are pretty thin). See [1] for details. Also see #3 below.
+There's no reason to treat conf-assembled arrays differently from
+incremental ones. Once we hit timeout in init's udev loop, we can use
+common script (mdraid_start.sh) to try force inactive arrays
+into degraded mode.
 
-2) mdadm -Is --run 2>&1 (removed)
+md-finished.sh was kind-of out of place - it didn't really wait for any
+particular device(s) to show up, just watched if onetime mdadm scripts
+are still in place. Furthermore, after moving mdraid_start to --timeout
+initqueue, it didn't really have too much to watch at all, besides
+mdadm_auto (and that served no purpose, as we do wait for concrete
+devices).
 
-This will only force-run native arrays - arrays in containers will not
-be affected. See [1] for details. Also see #3 below.
+Either way, with stock 64-md fixes, current version of 65-md*.rules does
+the following:
 
-3) mdadm -R run loop (implicitly handles #1 & #2)
-
-This loop does everywthing that #1 & #2 are expected to do. Thus, the
-above invocations are simply redundant and this is the most safe and
-flexible option.
-
-Also, it shouldn't be necessary to go under md/ directory, as those are
-just symlinks to /dev/md[0-9]*.
-
-Certain checks were changed to strict ones (array state, degraded state)
-instead of relying on env tricks.
-
-'cat' was added explicitly to installed programs (it has been used
-implicitly in shutdown script either way)
-
-4) mdmon bug
-
-See [1] for details as well. In short - force-run arrays in containers
-will not have mdmon started, so we do that manually.
-
-5) stop/run queue magic
-
-Also removed. mdadm -R will only cause change events to the array
-itself, and they should not be an issue.
-
-[1] http://article.gmane.org/gmane.linux.raid/35133
+- limits assembly to certain uuids, if specified
+- watch for no ddf/imsm
+- if mdadm.conf => setup onetime -As script, without forced --run option
+- if !mdadm.conf => incrementally assemble
+- for both cases, setup timeout script, run-forcing arrays as a last resort
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- modules.d/90mdraid/mdraid_start.sh |   51 ++++++++++++++++++++++--------------
- modules.d/90mdraid/module-setup.sh |    2 +-
- modules.d/90mdraid/parse-md.sh     |    1 +
- 3 files changed, 33 insertions(+), 21 deletions(-)
+ modules.d/90mdraid/65-md-incremental-imsm.rules |   79 ++++++++---------------
+ modules.d/90mdraid/md_finished.sh               |    9 ---
+ modules.d/90mdraid/mdadm_auto.sh                |    2 +-
+ modules.d/90mdraid/module-setup.sh              |    1 -
+ modules.d/90mdraid/parse-md.sh                  |    8 ++-
+ 5 files changed, 34 insertions(+), 65 deletions(-)
+ delete mode 100755 modules.d/90mdraid/md_finished.sh
 
-diff --git a/modules.d/90mdraid/mdraid_start.sh b/modules.d/90mdraid/mdraid_start.sh
-index 4c0255e..be5a3ce 100755
---- a/modules.d/90mdraid/mdraid_start.sh
-+++ b/modules.d/90mdraid/mdraid_start.sh
-@@ -3,23 +3,34 @@
- # ex: ts=8 sw=4 sts=4 et filetype=sh
+diff --git a/modules.d/90mdraid/65-md-incremental-imsm.rules b/modules.d/90mdraid/65-md-incremental-imsm.rules
+index bb030cf..209b17b 100644
+--- a/modules.d/90mdraid/65-md-incremental-imsm.rules
++++ b/modules.d/90mdraid/65-md-incremental-imsm.rules
+@@ -2,68 +2,45 @@
+ # automatically cause mdadm to be run.
+ # See udev(8) for syntax
  
- type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
--# run mdadm if udev has settled
--info "Assembling MD RAID arrays"
--udevadm control --stop-exec-queue
--mdadm -As --auto=yes --run 2>&1 | vinfo
--mdadm -Is --run 2>&1 | vinfo
+-ACTION!="add|change", GOTO="md_inc_end"
+-SUBSYSTEM!="block", GOTO="md_inc_end"
+-ENV{ID_FS_TYPE}!="*_raid_member", GOTO="md_inc_end"
 -
--# there could still be some leftover devices
--# which have had a container added
--for md in /dev/md[0-9]* /dev/md/*; do
--    [ -b "$md" ] || continue
--    udevinfo="$(udevadm info --query=env --name=$md)"
--    strstr "$udevinfo" "MD_UUID=" && continue
--    strstr "$udevinfo" "MD_LEVEL=container" && continue
--    strstr "$udevinfo" "DEVTYPE=partition" && continue
--    mdadm --run "$md" 2>&1 | vinfo
+-ENV{ID_FS_TYPE}=="isw_raid_member", ENV{rd_NO_MDIMSM}=="?*", GOTO="md_inc_end"
+-ENV{ID_FS_TYPE}=="ddf_raid_member", ENV{rd_NO_MDDDF}=="?*", GOTO="md_inc_end"
+-
+-ENV{rd_NO_MD}=="?*", GOTO="md_inc_end"
+-
+-PROGRAM=="/bin/sh -c 'for i in $sys/$devpath/holders/md[0-9]*; do [ -e $$i ] && exit 0; done; exit 1;' ", \
+-    GOTO="md_inc_end"
++ACTION!="add|change", GOTO="md_end"
++SUBSYSTEM!="block", GOTO="md_end"
++ENV{rd_NO_MD}=="?*", GOTO="md_end"
++KERNEL=="md*", GOTO="md_end"
++
++ENV{ID_FS_TYPE}!="*_raid_member", GOTO="md_end"
++ENV{ID_FS_TYPE}=="isw_raid_member", ENV{rd_NO_MDIMSM}=="?*", GOTO="md_end"
++ENV{ID_FS_TYPE}=="ddf_raid_member", ENV{rd_NO_MDDDF}=="?*", GOTO="md_end"
++
++# already done ?
++PROGRAM="/bin/sh -c 'for i in $sys/$devpath/holders/md[0-9]*; do [ -e $$i ] && exit 0; done; exit 1;' ", \
++    GOTO="md_end"
++
++# for native arrays - array's uuid has to be specified
++# for containers - container's uuid has to be specified
++# TODO : how to get embedded array's uuid having container's component ?
++#
++# UUID CHECK
+ 
+ ENV{DEVTYPE}!="partition", \
+     RUN+="/sbin/partx -d --nr 1-1024 $env{DEVNAME}"
+ 
+-KERNEL!="md*", IMPORT{program}="/sbin/mdadm --examine --export $tempnode"
+-
+-# UUID CHECK
+-
+-LABEL="do_md_inc"
++RUN+="/sbin/initqueue --timeout --onetime --unique /sbin/mdraid_start"
+ 
++# if rd_MDADMCONF is set, do not assemble incrementally;
++# defer conf-based assembly until the udev queue is settled
+ #
+-# if rd_MDADMCONF do not assemble incrementally
+-# defer auto assembly until the udev queue is settled
+-#
+-ENV{rd_MDADMCONF}!="?*", GOTO="md_auto_end"
++ENV{rd_MDADMCONF}!="?*", GOTO="md_incremental"
+ 
+-RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
+ RUN+="/sbin/initqueue --settled --onetime --unique /sbin/mdadm_auto"
+ 
+-GOTO="md_inc_end"
+-
+-LABEL="md_auto_end"
++GOTO="md_end"
+ 
+ #
+-# Incrementally build the md array
++# Incrementally build the md array; this will automatically assemble
++# any eventual containers as well (imsm, ddf)
+ #
+-RUN+="/sbin/mdadm -I $env{DEVNAME}"
+-
+-RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
+-
+-LABEL="md_inc_end"
+-
+-#
+-# Handle non-container raid arrays
+-#
+-ACTION=="add|change", \
+-	KERNEL=="md[0-9]*|md/*", \
+-	ENV{MD_LEVEL}!="container", \
+-	ENV{MD_CONTAINER}!="?*", \
+-        ENV{rd_MDADMCONF}!="?*", \
+-        ENV{rd_NO_MD}!="?*", \
+-	GOTO="do_raidstart"
++LABEL="md_incremental"
+ 
+-GOTO="end_raidstart"
+-
+-LABEL="do_raidstart"
+-
+-# check if array is not inactive anymore
+-TEST=="md/array_state", ATTR{md/array_state}!="|inactive", GOTO="end_raidstart"
+-
+-RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
+-RUN+="/sbin/initqueue --timeout --onetime --unique /sbin/mdraid_start"
++RUN+="/sbin/mdadm -I $env{DEVNAME}"
+ 
+-LABEL="end_raidstart"
++LABEL="md_end"
+diff --git a/modules.d/90mdraid/md_finished.sh b/modules.d/90mdraid/md_finished.sh
+deleted file mode 100755
+index ce355be..0000000
+--- a/modules.d/90mdraid/md_finished.sh
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#!/bin/sh
+-# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+-# ex: ts=8 sw=4 sts=4 et filetype=sh
+-for f in $hookdir/initqueue/settled/mdraid_start* $hookdir/initqueue/settled/mdadm_auto*; do
+-    [ -e $f ] && exit 1
 -done
--unset udevinfo
 -
--ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
--udevadm control --start-exec-queue
-+_md_force_run() {
-+    local _udevinfo
-+    local _path_s
-+    local _path_d
-+    # try to force-run anything not running yet
-+    for md in /dev/md[0-9]*; do
-+        [ -b "$md" ] || continue
-+        _udevinfo="$(udevadm info --query=env --name="$md")"
-+        strstr "$_udevinfo" "MD_LEVEL=container" && continue
-+        strstr "$_udevinfo" "DEVTYPE=partition" && continue
-+
-+        _path_s="$(udevadm info -q path -n "$md")/md/array_state"
-+        [ ! -r "$_path_s" ] && continue
-+
-+        # inactive ?
-+        [ "$(cat "$_path_s")" != "inactive" ] && continue
-+
-+        mdadm -R "$md" 2>&1 | vinfo
-+
-+        # still inactive ?
-+        [ "$(cat "$_path_s")" = "inactive" ] && continue
-+
-+        _path_d="${_path_s%/*}/degraded"
-+        [ ! -r "$_path_d" ] && continue
-+
-+        # workaround for mdmon bug
-+        [ "$(cat "$_path_d")" -gt "0" ] && mdmon --takeover "$md"
-+    done
-+}
-+
-+_md_force_run
+-$UDEV_QUEUE_EMPTY >/dev/null 2>&1 || exit 1
+-exit 0
+diff --git a/modules.d/90mdraid/mdadm_auto.sh b/modules.d/90mdraid/mdadm_auto.sh
+index 915fb28..9b61bf5 100755
+--- a/modules.d/90mdraid/mdadm_auto.sh
++++ b/modules.d/90mdraid/mdadm_auto.sh
+@@ -4,4 +4,4 @@
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+ info "Autoassembling MD Raid"
+-mdadm -As --auto=yes --run 2>&1 | vinfo
++mdadm -As --auto=yes 2>&1 | vinfo
 diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index ccb4a0d..5c526a0 100755
+index 5c526a0..12e6739 100755
 --- a/modules.d/90mdraid/module-setup.sh
 +++ b/modules.d/90mdraid/module-setup.sh
-@@ -37,7 +37,7 @@ installkernel() {
- }
+@@ -82,7 +82,6 @@ install() {
  
- install() {
--    dracut_install mdadm partx
-+    dracut_install mdadm partx cat
- 
- 
-      # XXX: mdmon really needs to run as non-root?
+     inst "$moddir/mdraid_start.sh" /sbin/mdraid_start
+     inst "$moddir/mdadm_auto.sh" /sbin/mdadm_auto
+-    inst "$moddir/md_finished.sh" /sbin/md_finished.sh
+     inst_hook pre-trigger 30 "$moddir/parse-md.sh"
+     inst "$moddir/mdraid-cleanup.sh" /sbin/mdraid-cleanup
+     inst_hook shutdown 30 "$moddir/md-shutdown.sh"
 diff --git a/modules.d/90mdraid/parse-md.sh b/modules.d/90mdraid/parse-md.sh
-index adcc402..33d93dc 100755
+index 33d93dc..b85a3a3 100755
 --- a/modules.d/90mdraid/parse-md.sh
 +++ b/modules.d/90mdraid/parse-md.sh
-@@ -34,6 +34,7 @@ fi
- 
- if ! getargbool 1 rd.md.conf -n rd_NO_MDADMCONF; then
-     rm -f /etc/mdadm/mdadm.conf /etc/mdadm.conf
-+    ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
- fi
- 
- # noiswmd nodmraid for anaconda / rc.sysinit compatibility
+@@ -13,12 +13,14 @@ else
+             [ -e "$f" ] || continue
+             while read line; do
+                 if [ "${line%%UUID CHECK}" != "$line" ]; then
++                    printf 'IMPORT{program}="/sbin/mdadm --examine --export $tempnode"\n'
+                     for uuid in $MD_UUID; do
+-                        printf 'ENV{MD_UUID}=="%s", GOTO="do_md_inc"\n' $uuid
++                        printf 'ENV{MD_UUID}=="%s", GOTO="md_uuid_ok"\n' $uuid
+                     done;
+-                    printf 'GOTO="md_inc_end"\n';
++                    printf 'GOTO="md_end"\n'
++                    printf 'LABEL="md_uuid_ok"\n'
+                 else
+-                    echo $line;
++                    echo "$line"
+                 fi
+             done < "${f}" > "${f}.new"
+             mv "${f}.new" "$f"
 -- 
 1.7.5.3
