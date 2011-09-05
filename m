@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [RFC 3/6] 90mdraid: containers are not runnable
-Date: Tue,  6 Sep 2011 00:17:25 +0200
-Message-ID: <1315261048-19544-4-git-send-email-soltys@ziu.info>
+Subject: [RFC 4/6] 90mdraid: fix/adjust mdraid-cleanup
+Date: Tue,  6 Sep 2011 00:17:26 +0200
+Message-ID: <1315261048-19544-5-git-send-email-soltys@ziu.info>
 References: <1315261048-19544-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1315261048-19544-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
@@ -12,91 +12,66 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Remove whole "start a container logic".
-
-Containers once assembled, always remain in 'inactive' state.
-Any attempt to run a container with mdadm -IR is a no-op, and any
-attempt with just mdadm -R ends with an error.
+Stop both arrays (first pass) and containers (second pass).
+Loop only over /dev/md[0-9]*
+Call cleanup script only once, make sure it's after crypt cleanup.
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- modules.d/90mdraid/65-md-incremental-imsm.rules |   20 --------------------
- modules.d/90mdraid/md_finished.sh               |    2 +-
- modules.d/90mdraid/mdcontainer_start.sh         |   12 ------------
- modules.d/90mdraid/module-setup.sh              |    1 -
- 4 files changed, 1 insertions(+), 34 deletions(-)
- delete mode 100755 modules.d/90mdraid/mdcontainer_start.sh
+ modules.d/90mdraid/mdraid-cleanup.sh |   30 +++++++++++++++++-------------
+ modules.d/90mdraid/mdraid_start.sh   |    1 -
+ 2 files changed, 17 insertions(+), 14 deletions(-)
 
-diff --git a/modules.d/90mdraid/65-md-incremental-imsm.rules b/modules.d/90mdraid/65-md-incremental-imsm.rules
-index d02afee..bb030cf 100644
---- a/modules.d/90mdraid/65-md-incremental-imsm.rules
-+++ b/modules.d/90mdraid/65-md-incremental-imsm.rules
-@@ -67,23 +67,3 @@ RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.s
- RUN+="/sbin/initqueue --timeout --onetime --unique /sbin/mdraid_start"
- 
- LABEL="end_raidstart"
--
--#
--# Handle container raid arrays
--#
--ACTION=="add|change", \
--	KERNEL=="md[0-9]*|md/*", \
--	ENV{DEVTYPE}!="partition", \
--	ENV{MD_LEVEL}=="container", \
--        ENV{rd_MDADMCONF}!="?*", \
--        ENV{rd_NO_MD}!="?*", \
--	GOTO="do_container"
--
--GOTO="end_container"
--
--LABEL="do_container"
--
--RUN+="/sbin/initqueue --finished --unique --name md_finished /sbin/md_finished.sh"
--RUN+="/sbin/initqueue --timeout --onetime --unique --name mdcontainer_start-%k /sbin/mdcontainer_start $env{DEVNAME}"
--
--LABEL="end_container"
-diff --git a/modules.d/90mdraid/md_finished.sh b/modules.d/90mdraid/md_finished.sh
-index cde0966..ce355be 100755
---- a/modules.d/90mdraid/md_finished.sh
-+++ b/modules.d/90mdraid/md_finished.sh
-@@ -1,7 +1,7 @@
- #!/bin/sh
+diff --git a/modules.d/90mdraid/mdraid-cleanup.sh b/modules.d/90mdraid/mdraid-cleanup.sh
+index add02e0..8fc54e2 100755
+--- a/modules.d/90mdraid/mdraid-cleanup.sh
++++ b/modules.d/90mdraid/mdraid-cleanup.sh
+@@ -2,18 +2,22 @@
  # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
  # ex: ts=8 sw=4 sts=4 et filetype=sh
--for f in $hookdir/initqueue/settled/mdcontainer_start* $hookdir/initqueue/settled/mdraid_start* $hookdir/initqueue/settled/mdadm_auto*; do
-+for f in $hookdir/initqueue/settled/mdraid_start* $hookdir/initqueue/settled/mdadm_auto*; do
-     [ -e $f ] && exit 1
+ 
+-# stop everything which is not busy
+-for i in /dev/md* /dev/md/*; do
+-    [ -b $i ] || continue
++type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+-    mddetail=$(udevadm info --query=property --name=$i)
+-    case "$mddetail" in
+-        *MD_LEVEL=container*)
+-        ;;
+-        *DEVTYPE=partition*)
+-        ;;
+-        *)
+-            mdadm --stop $i >/dev/null 2>&1
+-            ;;
+-    esac
++containers=""
++for md in /dev/md[0-9]*; do
++    [ -b "$md" ] || continue
++    udevinfo="$(udevadm info --query=env --name=$md)"
++    strstr "$udevinfo" "DEVTYPE=partition" && continue
++    if strstr "$udevinfo" "MD_LEVEL=container"; then
++        containers="$containers $md"
++        continue
++    fi
++    mdadm -S "$md" >/dev/null 2>&1
  done
++
++for md in $containers; do
++    mdadm -S "$md" >/dev/null 2>&1
++done
++
++unset containers udevinfo
+diff --git a/modules.d/90mdraid/mdraid_start.sh b/modules.d/90mdraid/mdraid_start.sh
+index 4aa7f82..4c0255e 100755
+--- a/modules.d/90mdraid/mdraid_start.sh
++++ b/modules.d/90mdraid/mdraid_start.sh
+@@ -21,6 +21,5 @@ for md in /dev/md[0-9]* /dev/md/*; do
+ done
+ unset udevinfo
  
-diff --git a/modules.d/90mdraid/mdcontainer_start.sh b/modules.d/90mdraid/mdcontainer_start.sh
-deleted file mode 100755
-index e7dd3ef..0000000
---- a/modules.d/90mdraid/mdcontainer_start.sh
-+++ /dev/null
-@@ -1,12 +0,0 @@
--#!/bin/sh
--# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
--# ex: ts=8 sw=4 sts=4 et filetype=sh
--type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
--
--md=$1
--udevadm control --stop-exec-queue
--# and activate any containers
--mdadm -IR $md 2>&1 | vinfo
 -ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/30-mdraid-cleanup.sh 2>/dev/null
--ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
--udevadm control --start-exec-queue
-diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index ae432ba..ccb4a0d 100755
---- a/modules.d/90mdraid/module-setup.sh
-+++ b/modules.d/90mdraid/module-setup.sh
-@@ -81,7 +81,6 @@ install() {
-     inst_hook pre-udev 30 "$moddir/mdmon-pre-udev.sh"
- 
-     inst "$moddir/mdraid_start.sh" /sbin/mdraid_start
--    inst "$moddir/mdcontainer_start.sh" /sbin/mdcontainer_start
-     inst "$moddir/mdadm_auto.sh" /sbin/mdadm_auto
-     inst "$moddir/md_finished.sh" /sbin/md_finished.sh
-     inst_hook pre-trigger 30 "$moddir/parse-md.sh"
+ ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
+ udevadm control --start-exec-queue
 -- 
 1.7.5.3
