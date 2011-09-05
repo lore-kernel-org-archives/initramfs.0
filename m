@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [RFC 4/6] 90mdraid: fix/adjust mdraid-cleanup
-Date: Tue,  6 Sep 2011 00:17:26 +0200
-Message-ID: <1315261048-19544-5-git-send-email-soltys@ziu.info>
+Subject: [RFC 5/6] 90mdraid: fix/adjust force-run script
+Date: Tue,  6 Sep 2011 00:17:27 +0200
+Message-ID: <1315261048-19544-6-git-send-email-soltys@ziu.info>
 References: <1315261048-19544-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1315261048-19544-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
@@ -12,66 +12,136 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Stop both arrays (first pass) and containers (second pass).
-Loop only over /dev/md[0-9]*
-Call cleanup script only once, make sure it's after crypt cleanup.
+1) mdadm -As --auto=yes --run 2>&1 | vinfo (removed)
+
+Currently such auto assembly will not complete or force-run partially
+assembled arrays. It might assemble "concurrent" separate array and
+force-run it, if possible (though the chances of suddenly showing
+missing components in this scenario - a script run after udev timeout -
+are pretty thin). See [1] for details. Also see #3 below.
+
+2) mdadm -Is --run 2>&1 (removed)
+
+This will only force-run native arrays - arrays in containers will not
+be affected. See [1] for details. Also see #3 below.
+
+3) mdadm -R run loop (implicitly handles #1 & #2)
+
+This loop does everywthing that #1 & #2 are expected to do. Thus, the
+above invocations are simply redundant and this is the most safe and
+flexible option.
+
+Also, it shouldn't be necessary to go under md/ directory, as those are
+just symlinks to /dev/md[0-9]*.
+
+Certain checks were changed to strict ones (array state, degraded state)
+instead of relying on env tricks.
+
+'cat' was added explicitly to installed programs (it has been used
+implicitly in shutdown script either way)
+
+4) mdmon bug
+
+See [1] for details as well. In short - force-run arrays in containers
+will not have mdmon started, so we do that manually.
+
+5) stop/run queue magic
+
+Also removed. mdadm -R will only cause change events to the array
+itself, and they should not be an issue.
+
+[1] http://article.gmane.org/gmane.linux.raid/35133
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- modules.d/90mdraid/mdraid-cleanup.sh |   30 +++++++++++++++++-------------
- modules.d/90mdraid/mdraid_start.sh   |    1 -
- 2 files changed, 17 insertions(+), 14 deletions(-)
+ modules.d/90mdraid/mdraid_start.sh |   51 ++++++++++++++++++++++--------------
+ modules.d/90mdraid/module-setup.sh |    2 +-
+ modules.d/90mdraid/parse-md.sh     |    1 +
+ 3 files changed, 33 insertions(+), 21 deletions(-)
 
-diff --git a/modules.d/90mdraid/mdraid-cleanup.sh b/modules.d/90mdraid/mdraid-cleanup.sh
-index add02e0..8fc54e2 100755
---- a/modules.d/90mdraid/mdraid-cleanup.sh
-+++ b/modules.d/90mdraid/mdraid-cleanup.sh
-@@ -2,18 +2,22 @@
- # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
- # ex: ts=8 sw=4 sts=4 et filetype=sh
- 
--# stop everything which is not busy
--for i in /dev/md* /dev/md/*; do
--    [ -b $i ] || continue
-+type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
- 
--    mddetail=$(udevadm info --query=property --name=$i)
--    case "$mddetail" in
--        *MD_LEVEL=container*)
--        ;;
--        *DEVTYPE=partition*)
--        ;;
--        *)
--            mdadm --stop $i >/dev/null 2>&1
--            ;;
--    esac
-+containers=""
-+for md in /dev/md[0-9]*; do
-+    [ -b "$md" ] || continue
-+    udevinfo="$(udevadm info --query=env --name=$md)"
-+    strstr "$udevinfo" "DEVTYPE=partition" && continue
-+    if strstr "$udevinfo" "MD_LEVEL=container"; then
-+        containers="$containers $md"
-+        continue
-+    fi
-+    mdadm -S "$md" >/dev/null 2>&1
- done
-+
-+for md in $containers; do
-+    mdadm -S "$md" >/dev/null 2>&1
-+done
-+
-+unset containers udevinfo
 diff --git a/modules.d/90mdraid/mdraid_start.sh b/modules.d/90mdraid/mdraid_start.sh
-index 4aa7f82..4c0255e 100755
+index 4c0255e..be5a3ce 100755
 --- a/modules.d/90mdraid/mdraid_start.sh
 +++ b/modules.d/90mdraid/mdraid_start.sh
-@@ -21,6 +21,5 @@ for md in /dev/md[0-9]* /dev/md/*; do
- done
- unset udevinfo
+@@ -3,23 +3,34 @@
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
  
--ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/30-mdraid-cleanup.sh 2>/dev/null
- ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
- udevadm control --start-exec-queue
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+-# run mdadm if udev has settled
+-info "Assembling MD RAID arrays"
+-udevadm control --stop-exec-queue
+-mdadm -As --auto=yes --run 2>&1 | vinfo
+-mdadm -Is --run 2>&1 | vinfo
+-
+-# there could still be some leftover devices
+-# which have had a container added
+-for md in /dev/md[0-9]* /dev/md/*; do
+-    [ -b "$md" ] || continue
+-    udevinfo="$(udevadm info --query=env --name=$md)"
+-    strstr "$udevinfo" "MD_UUID=" && continue
+-    strstr "$udevinfo" "MD_LEVEL=container" && continue
+-    strstr "$udevinfo" "DEVTYPE=partition" && continue
+-    mdadm --run "$md" 2>&1 | vinfo
+-done
+-unset udevinfo
+-
+-ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
+-udevadm control --start-exec-queue
++_md_force_run() {
++    local _udevinfo
++    local _path_s
++    local _path_d
++    # try to force-run anything not running yet
++    for md in /dev/md[0-9]*; do
++        [ -b "$md" ] || continue
++        _udevinfo="$(udevadm info --query=env --name="$md")"
++        strstr "$_udevinfo" "MD_LEVEL=container" && continue
++        strstr "$_udevinfo" "DEVTYPE=partition" && continue
++
++        _path_s="$(udevadm info -q path -n "$md")/md/array_state"
++        [ ! -r "$_path_s" ] && continue
++
++        # inactive ?
++        [ "$(cat "$_path_s")" != "inactive" ] && continue
++
++        mdadm -R "$md" 2>&1 | vinfo
++
++        # still inactive ?
++        [ "$(cat "$_path_s")" = "inactive" ] && continue
++
++        _path_d="${_path_s%/*}/degraded"
++        [ ! -r "$_path_d" ] && continue
++
++        # workaround for mdmon bug
++        [ "$(cat "$_path_d")" -gt "0" ] && mdmon --takeover "$md"
++    done
++}
++
++_md_force_run
+diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
+index ccb4a0d..5c526a0 100755
+--- a/modules.d/90mdraid/module-setup.sh
++++ b/modules.d/90mdraid/module-setup.sh
+@@ -37,7 +37,7 @@ installkernel() {
+ }
+ 
+ install() {
+-    dracut_install mdadm partx
++    dracut_install mdadm partx cat
+ 
+ 
+      # XXX: mdmon really needs to run as non-root?
+diff --git a/modules.d/90mdraid/parse-md.sh b/modules.d/90mdraid/parse-md.sh
+index adcc402..33d93dc 100755
+--- a/modules.d/90mdraid/parse-md.sh
++++ b/modules.d/90mdraid/parse-md.sh
+@@ -34,6 +34,7 @@ fi
+ 
+ if ! getargbool 1 rd.md.conf -n rd_NO_MDADMCONF; then
+     rm -f /etc/mdadm/mdadm.conf /etc/mdadm.conf
++    ln -s $(command -v mdraid-cleanup) $hookdir/pre-pivot/31-mdraid-cleanup.sh 2>/dev/null
+ fi
+ 
+ # noiswmd nodmraid for anaconda / rc.sysinit compatibility
 -- 
 1.7.5.3
