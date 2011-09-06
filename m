@@ -1,35 +1,28 @@
-From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH] 99fs-lib: export FSTAB_FILE before fsck call
-Date: Tue,  6 Sep 2011 01:22:15 +0200
-Message-ID: <1315264935-20369-1-git-send-email-soltys@ziu.info>
+From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Subject: Re: build initramfs: explain modprobe?
+Date: Tue, 06 Sep 2011 08:34:32 -0700
+Message-ID: <4E663D88.7060603@bitwagon.com>
+References: <4E5D68A0.8020006@bitwagon.com> <4E5E25DA.4060802@gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4E5E25DA.4060802-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
----
- modules.d/99fs-lib/fs-lib.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+>> What properties of modprobe are essential for building initramfs?
+>> [snip]
 
-diff --git a/modules.d/99fs-lib/fs-lib.sh b/modules.d/99fs-lib/fs-lib.sh
-index f7b20dd..fdd3304 100755
---- a/modules.d/99fs-lib/fs-lib.sh
-+++ b/modules.d/99fs-lib/fs-lib.sh
-@@ -179,10 +179,10 @@ fsck_batch() {
-         info "    $_dev"
-     done
- 
-+    export FSTAB_FILE
-     _out="$(fsck -M -T "$@" -- -a)"
-     _ret=$?
- 
--    export FSTAB_FILE
-     fsck_tail
- 
-     return $_ret
+> And yes, "modprobe" is only used to easily get the requirements.
+
+Explicitly:
+  0) Expand short names: "pcmcia" ==> "kernel/drivers/pcmcia/pcmcia.ko".
+  1) Compute transitive closure of Requires from modules.dep.
+  2) Ignore modules listed in modules.builtin.
+  3) Handle aliasing of underscore and minus:
+     "usb_storage" ==> "usb-storage".
+
 -- 
-1.7.5.3
