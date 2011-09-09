@@ -1,44 +1,20 @@
-From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Subject: build initramfs: logging is slow
-Date: Tue, 06 Sep 2011 09:55:50 -0700
-Message-ID: <4E665096.3080308@bitwagon.com>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: question - minimal mdadm version
+Date: Fri, 09 Sep 2011 22:02:24 +0200
+Message-ID: <4E6A70D0.2030402@ziu.info>
+References: <1315261048-19544-1-git-send-email-soltys@ziu.info>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1315261048-19544-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Commenting out this line from inst_simple:
-    ddebug "Installing $_src"
-saves me about 10% real time (not counting final gzip) in build initramfs.
+I've been experimenting with a bit different approach, but trying to be 
+mdadm version-neutral kinda ties the hands.
 
-The low-level culprit is the extra _process_ [fork or clone] for $(_lvl2char ...) in:
------ dracut-logger
-_do_dlog() {
-    [ -z "$maxloglvl" ] && return 0
-    local lvl="$1"; shift
-    local lvlc=$(_lvl2char "$lvl") || return 0    ### SLOW!
-
-    [ $lvl -le $maxloglvl ] || return 0
------
-
-Instead, the level translation should be done using an indexed array
-(after an arithmetic check for index-out-of-range.)
-
-Even better, the level comparison should be hoisted into the definition
-of ddebug and dtrace, such as:
------
-ddebug() {
-    [ 5 -le $maxloglvl ] || return 0
-    set +x
-    dlog 5 "$@"
-}
------
-
-If bash could conditionally re-define a function, then dlog_init might:
-    [ 5 -le $maxloglvl ]  ||  eval "function ddebug() {}"
-but that did not work for me.
-
--- 
+Is there any minimal version that must be supported ? I was thinking 
+about 3.0, but that's probably far too new - and current code assumes 
+pre-udev/container version can be present.
