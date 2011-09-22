@@ -1,46 +1,44 @@
 From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
-Subject: Re: [PATCH] 99fs-lib: export FSTAB_FILE before fsck call
-Date: Thu, 22 Sep 2011 15:54:53 +0200
-Message-ID: <4E7B3E2D.8010207@harald-hoyer.de>
-References: <1315264935-20369-1-git-send-email-soltys@ziu.info>
+Subject: Re: [PATCH] dracut: create /dev besides /proc, /sys and so
+Date: Thu, 22 Sep 2011 15:55:00 +0200
+Message-ID: <4E7B3E34.3030809@harald-hoyer.de>
+References: <1315147115-18316-1-git-send-email-aidecoe@aidecoe.name>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090206010301080208080105"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms070601000707010004050502"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1315264935-20369-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
+In-Reply-To: <1315147115-18316-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 This is a cryptographically signed message in MIME format.
 
---------------ms090206010301080208080105
-Content-Type: text/plain; charset=ISO-8859-1
+--------------ms070601000707010004050502
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
-On 06.09.2011 01:22, Michal Soltys wrote:
-> Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+On 04.09.2011 16:38, Amadeusz =C5=BBo=C5=82nowski wrote:
+> How it worked without it?  The issue only manifests itself with
+> initramfs integrated into kernel.
 > ---
->  modules.d/99fs-lib/fs-lib.sh |    2 +-
+>  dracut |    2 +-
 >  1 files changed, 1 insertions(+), 1 deletions(-)
 >=20
-> diff --git a/modules.d/99fs-lib/fs-lib.sh b/modules.d/99fs-lib/fs-lib.s=
-h
-> index f7b20dd..fdd3304 100755
-> --- a/modules.d/99fs-lib/fs-lib.sh
-> +++ b/modules.d/99fs-lib/fs-lib.sh
-> @@ -179,10 +179,10 @@ fsck_batch() {
->          info "    $_dev"
+> diff --git a/dracut b/dracut
+> index fd36805..b317d70 100755
+> --- a/dracut
+> +++ b/dracut
+> @@ -510,7 +510,7 @@ if [[ $kernel_only !=3D yes ]]; then
+>          fi
 >      done
 > =20
-> +    export FSTAB_FILE
->      _out=3D"$(fsck -M -T "$@" -- -a)"
->      _ret=3D$?
-> =20
-> -    export FSTAB_FILE
->      fsck_tail
-> =20
->      return $_ret
+> -    for d in proc sys sysroot root run run/lock run/initramfs; do
+> +    for d in dev proc sys sysroot root run run/lock run/initramfs; do
+>          if [ -h "/$d" ]; then
+>              inst "/$d"
+>          else
+
 
 
 pushed to temporary http://git.surfsite.org/dracut.git
@@ -48,7 +46,7 @@ pushed to temporary http://git.surfsite.org/dracut.git
 Thanks!
 
 
---------------ms090206010301080208080105
+--------------ms070601000707010004050502
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -83,8 +81,8 @@ Ontf2+OqNS5EEu+gJoD3k4wLQNsWjaPD/Oi06I4VkO4VQgo9ddpDgTmEuoa5sOstzrRA+eBZ
 gYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3Jn
 MSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJz
 dXBwb3J0QGNhY2VydC5vcmcCAwn6mjAJBgUrDgMCGgUAoIIB6DAYBgkqhkiG9w0BCQMxCwYJ
-KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA5MjIxMzU0NTNaMCMGCSqGSIb3DQEJBDEW
-BBRedzP2Yzegebd1qFLubMuxR/FukzBfBgkqhkiG9w0BCQ8xUjBQMAsGCWCGSAFlAwQBAjAK
+KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA5MjIxMzU1MDBaMCMGCSqGSIb3DQEJBDEW
+BBQAmiYjPAPiF2rYV2QUYnbwWF6OvTBfBgkqhkiG9w0BCQ8xUjBQMAsGCWCGSAFlAwQBAjAK
 BggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYI
 KoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4w
 HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
@@ -92,9 +90,9 @@ ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDCfqaMIGT
 BgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRw
 Oi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkx
 ITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDCfqaMA0GCSqGSIb3DQEBAQUA
-BIIBAGNAJZ9NYv0AOvfERh4c6OSUChExSgfa8/YqY8xWIu3xmfSD8hZDhElIC6REf6UscEFg
-Na/98MJ1yU91FZ9R9wtXR04naDA8QCqcH8wqzsa+rQ/uc/r56aBEDvHJTqgir7EZjTMA7wPc
-7nB1jkAOH7KbZreAA/MYMLcPWm27lAHkpJoo6CB7o0fTr7ZcIEZAdlvwQsy5bClS3TvwjKZh
-Tpmk+kUhTlqyETYbB1zSeiGl4qjDbvlui/p6chFTNpW6zMxxrlca5HLeP7XOLvJvLjlus/ei
-krzRWYHY+r7b9rJNRcB1crcUw5QvtwzY3C90IFx6ySy4/g+fj03wHuQj3ooAAAAAAAA=
---------------ms090206010301080208080105--
+BIIBALjkhSkqL5CbSvB8iXPDse0RQsZl3VKVLAmP2alEufw9P1OJakk6cFi4635IPCKkNTac
+FOUl1K9A0hGDWpIhKUxF4YYjjNgUWAylF97A8SBGaXNsnDe4zTdHhiAPtyPwPbi6TEy0IWY+
+V3iKMWpx+6YODqArX/XlmtWXUdYUvYYQPPqXFR2BcHRHzQdcIhRavQ8mGjHBtN2cn/uTymsj
+/uab+M+EMLgkKb95jhW+eZqtHoNlSh9zLZ5mFP7eP41f51Pw7WxCqm2OhW10mVwSZQPtV8Ce
+KczcPMlRB/uPe8P+6sU6epK1tTuhlza4jbQ7Um6O3uvOwOJHa3iFupbTWikAAAAAAAA=
+--------------ms070601000707010004050502--
