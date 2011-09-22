@@ -1,10 +1,10 @@
 From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
 Subject: Re: [PATCH] 99fs-lib: export FSTAB_FILE before fsck call
-Date: Thu, 22 Sep 2011 15:54:44 +0200
-Message-ID: <4E7B3E24.10704@harald-hoyer.de>
+Date: Thu, 22 Sep 2011 15:54:53 +0200
+Message-ID: <4E7B3E2D.8010207@harald-hoyer.de>
 References: <1315264935-20369-1-git-send-email-soltys@ziu.info>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030907000809030205040608"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090206010301080208080105"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1315264935-20369-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
@@ -14,7 +14,7 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 This is a cryptographically signed message in MIME format.
 
---------------ms030907000809030205040608
+--------------ms090206010301080208080105
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: quoted-printable
 
@@ -42,12 +42,13 @@ h
 > =20
 >      return $_ret
 
+
 pushed to temporary http://git.surfsite.org/dracut.git
 
 Thanks!
 
 
---------------ms030907000809030205040608
+--------------ms090206010301080208080105
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -82,8 +83,8 @@ Ontf2+OqNS5EEu+gJoD3k4wLQNsWjaPD/Oi06I4VkO4VQgo9ddpDgTmEuoa5sOstzrRA+eBZ
 gYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3Jn
 MSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJz
 dXBwb3J0QGNhY2VydC5vcmcCAwn6mjAJBgUrDgMCGgUAoIIB6DAYBgkqhkiG9w0BCQMxCwYJ
-KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA5MjIxMzU0NDRaMCMGCSqGSIb3DQEJBDEW
-BBQMhBIbjz30oUn7iTI6HYEYKAHffTBfBgkqhkiG9w0BCQ8xUjBQMAsGCWCGSAFlAwQBAjAK
+KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMTA5MjIxMzU0NTNaMCMGCSqGSIb3DQEJBDEW
+BBRedzP2Yzegebd1qFLubMuxR/FukzBfBgkqhkiG9w0BCQ8xUjBQMAsGCWCGSAFlAwQBAjAK
 BggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYI
 KoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4w
 HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
@@ -91,9 +92,9 @@ ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDCfqaMIGT
 BgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRw
 Oi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkx
 ITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDCfqaMA0GCSqGSIb3DQEBAQUA
-BIIBAE/KiTdH1ic4IblIU525M8IZ8oMqN1JUD0Wako/KZh5tbwnQJeJfrWtW8wXVCB22tLXM
-73S3fWUSJGa0aJHDKupYw8QqX3w/cpaGvKtGF1mP4uohl0QTie7m2U1zMRYxCqG+fwk6/PO3
-Wj+2gHbzQuEDA3H8Cfz5jIknFPdoboCrH0CAiD2s3bOoVWeiYMVXyjztu33KunMVvIW/Z+sY
-cvLkszXohwcFuEFHMHm8RXVoyOdy8TvrcpoO7awj3KP98wyiAc8Po4dtindM+Gkl9gc1V/xs
-Wz5X6FE8P1ymvGzSffRSOmIQVJlG5ZiSw3/0hpfplB6TuIfaAa1O/6647lUAAAAAAAA=
---------------ms030907000809030205040608--
+BIIBAGNAJZ9NYv0AOvfERh4c6OSUChExSgfa8/YqY8xWIu3xmfSD8hZDhElIC6REf6UscEFg
+Na/98MJ1yU91FZ9R9wtXR04naDA8QCqcH8wqzsa+rQ/uc/r56aBEDvHJTqgir7EZjTMA7wPc
+7nB1jkAOH7KbZreAA/MYMLcPWm27lAHkpJoo6CB7o0fTr7ZcIEZAdlvwQsy5bClS3TvwjKZh
+Tpmk+kUhTlqyETYbB1zSeiGl4qjDbvlui/p6chFTNpW6zMxxrlca5HLeP7XOLvJvLjlus/ei
+krzRWYHY+r7b9rJNRcB1crcUw5QvtwzY3C90IFx6ySy4/g+fj03wHuQj3ooAAAAAAAA=
+--------------ms090206010301080208080105--
