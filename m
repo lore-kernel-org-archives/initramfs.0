@@ -1,8 +1,8 @@
 From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: build initramfs: bad path in inst_rules when --local
-Date: Thu, 22 Sep 2011 15:45:03 +0200
-Message-ID: <4E7B3BDF.30104@gmail.com>
-References: <4E73E5BB.90208@bitwagon.com>
+Subject: Re: [RFC 0/6] Update 90mdraid
+Date: Thu, 22 Sep 2011 15:45:41 +0200
+Message-ID: <4E7B3C05.9060905@gmail.com>
+References: <1315261048-19544-1-git-send-email-soltys@ziu.info>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,41 +10,70 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
         h=message-id:date:from:user-agent:mime-version:to:cc:subject
          :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=lYCWJk0H9KjCTGjYkades6rdimNLmUhBCmtIzD2dleE=;
-        b=o4lu1HBK3oM4qggbmRfey89Jq2fO8wCZR1tN+KkBbMEmZwA/d+4x6QVBjXXP+qYKm7
-         kNxjL5/lWledBIzDJMwuIYaOy9kttUswQOfT4rrMVt2yJd9QoTyUFZ6+N4BR3PEc5X87
-         kWj1YL10j4Zlvc4ep98AT4mV7Y1GQ3iKspvi4=
-In-Reply-To: <4E73E5BB.90208-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+        bh=KPEeTtCaO17AKx0glAu33GDiuEbLPRmKqZZlgMoiVqQ=;
+        b=BIyznsQTyjYyPdtjXhJx5lUPxsvkL7Kj6T9SdCeFNWTEGdcwTl0k/rWCLU1OIblZEs
+         a4POq9nWGGHQ/3szjymDwU7b5cCvUEnxhoppMPoxr7zUQkP5iSnu22n2V1C3i5slTkyA
+         tctTxl5N/30IOjDbO5O+o7HeJ0LKphVEutCoA=
+In-Reply-To: <1315261048-19544-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 17.09.2011 02:11, John Reiser wrote:
-> When dracut-013 --local, then inst_rules tests for a pathname such as
->      [[ -f /etc/udev/rules.d//ext4/dracut/modules.d/10i18n/10-console.rules ]]
-> which obviously is bogus: there are two "root" there: /etc and /ext4
-> [The "/ext4/dracut" is where my --local versions live.]
-> Such a path never can exist, so something is wrong with the intent.
+On 06.09.2011 00:17, Michal Soltys wrote:
+> This is a set of patches simplifying mdraid module, with a few fixes along the way.
 > 
-> Analysis:
-> modules.d/10i18n/module-setup.sh: install_base() calls
->         inst_rules ${moddir}/10-console.rules
-> Note no underscore '_' in "${moddir}".
+> 1)	90mdraid: adjust stock mdadm udev rules
+> 2)	90(md|dm)raid: recognize ddf container
+> 3)	90mdraid: containers are not runnable
+> 4)	90mdraid: fix/adjust mdraid-cleanup
+> 5)	90mdraid: fix/adjust force-run script
+> 6)	90mdraid: fix/adjust 65-md* rules and related scripts
 > 
-> moddir is a global variable that is set by dracut:
->      for moddir in "$dracutbasedir/modules.d"/[0-9][0-9]*; do
-> When --local, then dracutbasedir is set in dracut:
->     dracutbasedir="$(readlink -f ${0%/*})"
+> First 4 patches are pretty simple and could likely go in. In particular, 1st
+> one has a fix for stock mdadm rules, which originally cause unconditional
+> incremental assembly of all native+imsm components.
 > 
-> Based on both of these, then inst_rules() in dracut-functions does:
->     for _rule in "$@"; do
->         <<snip>>
->         for r in /lib/udev/rules.d /etc/udev/rules.d; do
->             if [[ -f $r/$_rule ]]; then
-> which leads to testing a pathname such as
->      [[ -f /etc/udev/rules.d//ext4/dracut/modules.d/10i18n/10-console.rules ]]
+> #4 - I'm still not sure, why exactly raid cleanup was called twice.
+> 
+> #5 and #6 are main part with more changes resulting with, subjecitvely,
+> cleaner and shorter code. All the details and rationale are in respective
+> commit messages.
+> 
+> It looks solid, but it's still work in progress and requires some
+> testing. Comment if you have any objections or questions.
+> 
+> For convenience, it can be also pulled from:
+>   git://git.hasevolq.net/dracut.git mdraid-fix-v1
+> 
+> 
+> Michal Soltys (6):
+>   90mdraid: adjust stock mdadm udev rules
+>   90(md|dm)raid: recognize ddf container
+>   90mdraid: containers are not runnable
+>   90mdraid: fix/adjust mdraid-cleanup
+>   90mdraid: fix/adjust force-run script
+>   90mdraid: fix/adjust 65-md* rules and related scripts
+> 
+>  dracut.kernel.7.xml                             |    6 ++
+>  modules.d/90dmraid/61-dmraid-imsm.rules         |    1 +
+>  modules.d/90dmraid/parse-dm.sh                  |    4 +
+>  modules.d/90mdraid/65-md-incremental-imsm.rules |   92 ++++++----------------
+>  modules.d/90mdraid/md-noddf.sh                  |    5 +
+>  modules.d/90mdraid/md-noimsm.sh                 |    2 +-
+>  modules.d/90mdraid/md_finished.sh               |    9 --
+>  modules.d/90mdraid/mdadm_auto.sh                |    2 +-
+>  modules.d/90mdraid/mdcontainer_start.sh         |   12 ---
+>  modules.d/90mdraid/mdraid-cleanup.sh            |   30 ++++---
+>  modules.d/90mdraid/mdraid_start.sh              |   52 ++++++++-----
+>  modules.d/90mdraid/module-setup.sh              |   15 +++-
+>  modules.d/90mdraid/parse-md.sh                  |   15 +++-
+>  13 files changed, 114 insertions(+), 131 deletions(-)
+>  create mode 100755 modules.d/90mdraid/md-noddf.sh
+>  delete mode 100755 modules.d/90mdraid/md_finished.sh
+>  delete mode 100755 modules.d/90mdraid/mdcontainer_start.sh
 > 
 
-http://git.surfsite.org/?p=dracut.git;a=commitdiff;h=76f5fa549c483a7a38e4757578480096b94615ac
+
+pushed to temporary git: http://git.surfsite.org/dracut.git
