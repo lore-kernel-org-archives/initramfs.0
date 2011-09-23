@@ -1,45 +1,64 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: small 90mdraid fixups, v2 info update
-Date: Fri, 23 Sep 2011 09:34:35 +0200
-Message-ID: <4E7C368B.5040903@redhat.com>
-References: <1316733173-21157-1-git-send-email-soltys@ziu.info>
+From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Subject: dracut [PATCH] Parameter expansion occurs before command evaluation.
+Date: Fri, 23 Sep 2011 08:02:23 -0700
+Message-ID: <4E7C9F7F.7010601@bitwagon.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="------------060307090703080701070709"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1316733173-21157-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+To: harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 23.09.2011 01:12, Michal Soltys wrote:
-> Before v2 (which is in large part a rewrite), these 3 fixes:
-> 
-> 1) *_raid_member checks are too generic, as blkid can report many more than
->    just ddf/isw/linux native raid members - so go back to older approach
-> 2) more thorough removal of incremental assembly from stock
->    rules
-> 3) include md_d devices in loops
-> 
-> The following changes since commit 08769b7f8a9efc57cd95d1f81e8aaf1a48db0d28:
-> 
->   dracut-functions: inst_rules() add missing "" (2011-09-22 16:14:38 +0200)
-> 
-> are available in the git repository at:
->   git://git.hasevolq.net/dracut.git fixup
-> 
-> Michal Soltys (3):
->       90mdraid: check precisely for supported contaiers
->       90mdraid: more thorough 64-md-raid.rules edit
->       90mdraid: adjust /dev/md loops
-> 
->  modules.d/90mdraid/65-md-incremental-imsm.rules |    7 +++++--
->  modules.d/90mdraid/mdraid-cleanup.sh            |    2 +-
->  modules.d/90mdraid/mdraid_start.sh              |    2 +-
->  modules.d/90mdraid/module-setup.sh              |    4 ++--
->  4 files changed, 9 insertions(+), 6 deletions(-)
-> 
-> 
+This is a multi-part message in MIME format.
+--------------060307090703080701070709
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 
-all sane and pushed...
+Bash shell expands all ${parameter} before evaluating a command.
+For multiple declarations and assignments within the same 'local' command,
+then new variables or new values that appear towards the left
+do not affect parameter expansion towards the right.
+
+-- 
+John Reiser, jreiser-L8/tzxVKHrlWk0Htik3J/w@public.gmane.org
+
+--------------060307090703080701070709
+Content-Type: text/plain;
+ name="0001-Parameter-expansion-occurs-before-command-evaluation.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename*0="0001-Parameter-expansion-occurs-before-command-evaluation.pa";
+ filename*1="tch"
+
+From 507ad6f66fc66f868a9e5fdd3806e012c4022baa Mon Sep 17 00:00:00 2001
+From: John Reiser <jreiser-L8/tzxVKHrlWk0Htik3J/w@public.gmane.org>
+Date: Fri, 23 Sep 2011 07:37:43 -0700
+Subject: [PATCH] Parameter expansion occurs before command evaluation.
+
+${parameter} on the right is expanded before evaluating "local var=value"
+on the left.
+
+---
+ dracut-functions |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/dracut-functions b/dracut-functions
+index 5508809..c4f7f61 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -272,7 +272,7 @@ check_vol_slaves() {
+ inst_dir() {
+     [[ -e ${initdir}"$1" ]] && return 0  # already there
+ 
+-    local _dir="$1" _part=${_dir%/*} _file
++    local _dir="$1" _part="${1%/*}" _file
+     while [[ "$_part" != "${_part%/*}" ]] && ! [[ -e "${initdir}${_part}" ]]; do
+         _dir="$_part $_dir"
+         _part=${_part%/*}
+-- 
+1.7.6
+
+
+--------------060307090703080701070709--
