@@ -1,26 +1,36 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: mount other than rootfs problem
-Date: Thu, 29 Sep 2011 10:55:47 +0800
-Message-ID: <4E83DE33.4020204@redhat.com>
+Subject: rdshell and rdbreak
+Date: Thu, 29 Sep 2011 14:43:50 +0800
+Message-ID: <4E8413A6.2090804@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: kexec-kdump-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 Hi,
 
-In current dracut modules there's still fstab-sys for mount something
-other than root, So how about add a similar module ie. fstab-kdump which
-contains the kdump target device/fstype, add mount-kdump.sh to mount all
-the stuff. For rootfs we can use dracut mount point.
+For kernel developers sometimes boot-test need a minimal initrd, so just
+drop into a shell is a nice feature.
 
-As discussion in mail archive I see nfs is a main problem for this
-issue. I did not understand why nfs is special, could someone explain a bit?
+The first impression of param 'rdshell' to me is it will drop me into a
+shell, but It doesn't. It drop into shell only when initramfs fails.
 
+The rdbreak is more near what I want, but it still fails when no root
+args set in cmdline.
+
+IMO initrd can provide such options at least: dropping into shell
+without mount rootfs, user can mount by himself or do other things.
+
+Thus, if it make sense how about add a:
+rdbreak=force
+
+OTOH, rdshell can be merged into rdbreak as:
+rdbreak=fail
+
+Any comments about this?
 -- 
 Thanks
 Dave
