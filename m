@@ -1,48 +1,37 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: mount other than rootfs problem
-Date: Thu, 29 Sep 2011 23:18:32 +0800
-Message-ID: <4E848C48.6050506@redhat.com>
-References: <4E83DE33.4020204@redhat.com>
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Subject: Making fsck optional
+Date: Thu, 29 Sep 2011 16:34:39 +0100
+Message-ID: <CAMLZHHRk5ObnsSHDL3ZBAiPqPPvvG=R41O=ybahjhtxWke4vWw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4E83DE33.4020204-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=mime-version:sender:date:x-google-sender-auth:message-id:subject
+         :from:to:content-type;
+        bh=QMiZ5fePGyjMKdWUvaFV/D7UXdjhhuUNzu8zmC5Otj0=;
+        b=NkdB+rbMRH35hjLrN2k1ThwK9rIw7mb5vEViWL8fjUO8ZLGFXBWWfu1UcOjy1i8LYJ
+         IVDvTq4dfSmRl2BV/PpafrkK63/BJyBYbQqPgCTkXMbKwChhuI+9wgwQD461l+sQP9aD
+         0DhVDinu2/e7TS5XFJ8WMF4vYRPj9Bl3qBVdQ=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: kexec-kdump-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-=E4=BA=8E 2011=E5=B9=B409=E6=9C=8829=E6=97=A5 10:55, Dave Young =E5=86=99=
-=E9=81=93:
-> Hi,
->
-> In current dracut modules there's still fstab-sys for mount something
-> other than root, So how about add a similar module ie. fstab-kdump wh=
-ich
-> contains the kdump target device/fstype, add mount-kdump.sh to mount =
-all
-> the stuff. For rootfs we can use dracut mount point.
+Hi,
 
-I doubt fstab-sys module could mount all kinds of block devices, e.g.
-LVM or RAID, because I see no code to detect/handle LVM/RAID in fstab-s=
-ys
-or fs-lib module.
+Recent versions of dracut have added many flavours fsck as standard to
+the initramfs (depending on what is installed on the host system).
+We'd like to avoid this for OLPC's embedded systems (for now) and
+return to having a nice slim dracut initramfs.
 
->
-> As discussion in mail archive I see nfs is a main problem for this
-> issue. I did not understand why nfs is special, could someone explain=
- a bit?
->
+Happy to code this, but looking for a little guidance on the best way
+to do this. Any implementation suggestions for how we can make fsck
+installation optional?
 
-Yeah, one reason that I can remember is that it depends on network modu=
-le
-which handles root device per nic.
+Would it be acceptable to make fs-lib's module-setup.sh look at an
+environment variable NO_FSCK=1 and in that case avoid installing fsck,
+or something like that?
 
-But, we certainly want to find a way to handle non-root devices no matt=
-er
-which kind it is, and a generic interface to express that we want to mo=
-unt
-some specific devices and let dracut to handle the module dependencies.
-
-Thanks.
+cheers
+Daniel
