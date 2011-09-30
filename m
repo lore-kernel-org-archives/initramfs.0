@@ -1,37 +1,59 @@
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: Making fsck optional
-Date: Thu, 29 Sep 2011 16:34:39 +0100
-Message-ID: <CAMLZHHRk5ObnsSHDL3ZBAiPqPPvvG=R41O=ybahjhtxWke4vWw@mail.gmail.com>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: some $prefix issues
+Date: Fri, 30 Sep 2011 03:03:15 +0200
+Message-ID: <4E851553.6050806@ziu.info>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=mime-version:sender:date:x-google-sender-auth:message-id:subject
-         :from:to:content-type;
-        bh=QMiZ5fePGyjMKdWUvaFV/D7UXdjhhuUNzu8zmC5Otj0=;
-        b=NkdB+rbMRH35hjLrN2k1ThwK9rIw7mb5vEViWL8fjUO8ZLGFXBWWfu1UcOjy1i8LYJ
-         IVDvTq4dfSmRl2BV/PpafrkK63/BJyBYbQqPgCTkXMbKwChhuI+9wgwQD461l+sQP9aD
-         0DhVDinu2/e7TS5XFJ8WMF4vYRPj9Bl3qBVdQ=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi,
+Current code allows customization of $prefix, but init still has 
+hardcoded /run/initramfs path - so outside of setting prefix to that 
+particular path its use is kinda limited (without making init aware of 
+$prefix).
 
-Recent versions of dracut have added many flavours fsck as standard to
-the initramfs (depending on what is installed on the host system).
-We'd like to avoid this for OLPC's embedded systems (for now) and
-return to having a nice slim dracut initramfs.
+Another thing is, that inst*() family of functions have no notion of 
+$prefix at all, so - especially subsequent - calls to those functions 
+will not really care. This could in certain cases lead to frictions, for 
+example:
 
-Happy to code this, but looking for a little guidance on the best way
-to do this. Any implementation suggestions for how we can make fsck
-installation optional?
+Suppose we have (on host):
+/bin -> usr/bin
 
-Would it be acceptable to make fs-lib's module-setup.sh look at an
-environment variable NO_FSCK=1 and in that case avoid installing fsck,
-or something like that?
+We run dracut with:
+--prefix=/run/intiramfs
 
-cheers
-Daniel
+In part of the code preparing basic directory layout:
+...
+$initdir/usr -> run/initramfs/usr
+...
+will be pre-created (and dangling at this point)
+
+As bin is a symlink on the host (and dracut tries to mimic host's layout 
+(?), we will have):
+inst() /bin $prefix/bin
+which will call inst_symlink() with same arguments, effectively leading to:
+src: /bin
+realsrc: /usr/bin
+target: $initdir$prefix/bin
+
+There will be attempt to create $initdir/usr/bin, but there's already 
+(dangling) symlink and mkdir attempt (after readlink) will fail.
+
+This can be easily verified by making on the host:
+/binn -> usr/binn
+And adding binn to the relevant layout-creating loops, which will lead 
+to something like:
+mkdir: cannot create directory `/var/tmp/initramfs.C2ifhw/usr': File exists
+
+Last thing - /run remains mounted inside intramfs after mount --bind 
+currently. With simple /run symlink to movable mount and without being 
+forced to care if it suddenly loses binaries - it could be cleanly moved 
+to real root almost atomically.
+
+It's all fixable in one or the other way, but is --prefix functionality 
+actually needed for something specific ? after pivot peeking/extracting 
+is just a matter of cat/cpio or lsinitrd, or anything similar.
