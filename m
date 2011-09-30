@@ -1,47 +1,34 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: mktemp in slackware
-Date: Fri, 30 Sep 2011 18:02:11 +0800
-Message-ID: <4E8593A3.3090300@redhat.com>
-References: <4E852172.9090208@redhat.com> <j63v7o$r0p$2@dough.gmane.org>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: Re: Making fsck optional
+Date: Fri, 30 Sep 2011 12:55:07 +0200
+Message-ID: <4E85A00B.50203@ziu.info>
+References: <CAMLZHHRk5ObnsSHDL3ZBAiPqPPvvG=R41O=ybahjhtxWke4vWw@mail.gmail.com> <j63tj6$r0p$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <j63v7o$r0p$2@dough.gmane.org>
+In-Reply-To: <j63tj6$r0p$1@dough.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 09/30/2011 04:39 PM, WANG Cong wrote:
+I'll prep patches to make it all configurable, essentially:
 
-> On Fri, 30 Sep 2011 09:54:58 +0800, Dave Young wrote:
-> 
->> Hi,
->>
->> The mktemp in slackware is from "bin" package, the mktemp-gnu is from
->> coreutils instead, so it will fail to create initramfs
->>
->> I think there's maybe such problem in other distribution as well, So how
->> to deal with this? Adding a option or giving out a warning on install?
-> 
-> What is the difference between mktemp-gnu and mktemp on slackware?
+in config file:
+fscks - list exact program names you want installed
+nofscks - to inhibit installation of any such programs
 
+The latter option takes precedence over the first one
 
-mktemp-gnu is from coreutils, mktemp is not.
+and from commandline:
 
-In my case there's no --tmpdir in mktemp options, so it will fail,
-change to mktemp-gnu, it will success.
+--fscks [LIST] - additional programs to install
+--nofscks - inhibit
 
->
+similar precedence as in config
+(option names subject to change ;)
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Thanks
-Dave
+If the fsck_helpers list is empty and nofsck is not set, dracut will 
+opportunistically try to install any helper it might need, otherwise it 
+will limit itself to only specified programs, or to none at all.
