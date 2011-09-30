@@ -1,59 +1,23 @@
-From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: some $prefix issues
-Date: Fri, 30 Sep 2011 03:03:15 +0200
-Message-ID: <4E851553.6050806@ziu.info>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: mktemp in slackware
+Date: Fri, 30 Sep 2011 09:54:58 +0800
+Message-ID: <4E852172.9090208@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Current code allows customization of $prefix, but init still has 
-hardcoded /run/initramfs path - so outside of setting prefix to that 
-particular path its use is kinda limited (without making init aware of 
-$prefix).
+Hi,
 
-Another thing is, that inst*() family of functions have no notion of 
-$prefix at all, so - especially subsequent - calls to those functions 
-will not really care. This could in certain cases lead to frictions, for 
-example:
+The mktemp in slackware is from "bin" package, the mktemp-gnu is from
+coreutils instead, so it will fail to create initramfs
 
-Suppose we have (on host):
-/bin -> usr/bin
+I think there's maybe such problem in other distribution as well, So how
+to deal with this? Adding a option or giving out a warning on install?
 
-We run dracut with:
---prefix=/run/intiramfs
-
-In part of the code preparing basic directory layout:
-...
-$initdir/usr -> run/initramfs/usr
-...
-will be pre-created (and dangling at this point)
-
-As bin is a symlink on the host (and dracut tries to mimic host's layout 
-(?), we will have):
-inst() /bin $prefix/bin
-which will call inst_symlink() with same arguments, effectively leading to:
-src: /bin
-realsrc: /usr/bin
-target: $initdir$prefix/bin
-
-There will be attempt to create $initdir/usr/bin, but there's already 
-(dangling) symlink and mkdir attempt (after readlink) will fail.
-
-This can be easily verified by making on the host:
-/binn -> usr/binn
-And adding binn to the relevant layout-creating loops, which will lead 
-to something like:
-mkdir: cannot create directory `/var/tmp/initramfs.C2ifhw/usr': File exists
-
-Last thing - /run remains mounted inside intramfs after mount --bind 
-currently. With simple /run symlink to movable mount and without being 
-forced to care if it suddenly loses binaries - it could be cleanly moved 
-to real root almost atomically.
-
-It's all fixable in one or the other way, but is --prefix functionality 
-actually needed for something specific ? after pivot peeking/extracting 
-is just a matter of cat/cpio or lsinitrd, or anything similar.
+-- 
+Thanks
+Dave
