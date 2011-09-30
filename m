@@ -1,39 +1,39 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: mount other than rootfs problem
-Date: Fri, 30 Sep 2011 15:03:11 -0400
-Message-ID: <20110930190311.GH25891@redhat.com>
-References: <4E83DE33.4020204@redhat.com>
- <4E848C48.6050506@redhat.com>
- <4E8526A6.30003@redhat.com>
- <4E85370A.7020509@redhat.com>
- <4E853A1C.5070905@redhat.com>
- <20110930183839.GF25891@redhat.com>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: [PATCH 0/4] options to configure fs-lib (fsck) and two unrelated
+ fixes
+Date: Fri, 30 Sep 2011 23:45:00 +0200
+Message-ID: <4E86385C.6040706@ziu.info>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110930183839.GF25891-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, kexec-kdump-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, Sep 30, 2011 at 02:38:39PM -0400, Vivek Goyal wrote:
-> On Fri, Sep 30, 2011 at 11:40:12AM +0800, Dave Young wrote:
-> 
-> [..]
-> > 
-> > Add lvm_scan in mount-sys.sh also works, so if we can make lvm_scan
-> > being called automaticlly via dependencies it will be good. OTOH fstab
-> > is better than cmdlines as an interface for multi-target dumping
-> 
-> Agreed that fstab.sys looks like a good interface to mouting non-root devices.
+First two patches are unreleated fixups, the other two
+implement options to configure fs-lib (which fscks
+to include in the image).
 
-Having said that, looks like dracut builds all the state using command
-line options. All the lvms, iscsi root, fcoe targets etc. So they might
-expect everything to be passed on command line. In that case it will
-become hard from kdump perspective.
 
-Thanks
-Vivek
+The following changes since commit d23159a69c818274486f1287ba6267b96f3febb7:
+
+  dracut [PATCH]es: parallelize block_module filter and net_module_filter (2011-09-30 09:40:49 +0200)
+
+are available in the git repository at:
+  git://git.hasevolq.net/dracut.git fixup
+
+Michal Soltys (4):
+      convert_abs_rel() fixups
+      dracut.8: add missing lvmconf info
+      fs-lib: add ability to choose fsck tools
+      manuals: add info about fs-lib (fsck) configuration
+
+ dracut                             |   13 ++++++++++++-
+ dracut-functions                   |   18 +++++++++++-------
+ dracut.8.xml                       |   36 ++++++++++++++++++++++++++++++++++++
+ dracut.conf                        |    9 +++++++++
+ dracut.conf.5.xml                  |   22 ++++++++++++++++++++++
+ modules.d/99fs-lib/fs-lib.sh       |    6 +++---
+ modules.d/99fs-lib/module-setup.sh |   23 ++++++++++++++++-------
+ 7 files changed, 109 insertions(+), 18 deletions(-)
