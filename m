@@ -1,39 +1,44 @@
-From: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Making fsck optional
-Date: Tue, 4 Oct 2011 02:23:43 +0000 (UTC)
-Message-ID: <j6dqnf$ab7$1@dough.gmane.org>
-References: <CAMLZHHRk5ObnsSHDL3ZBAiPqPPvvG=R41O=ybahjhtxWke4vWw@mail.gmail.com>
-	<j63tj6$r0p$1@dough.gmane.org> <4E85A00B.50203@ziu.info>
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: mount other than rootfs problem
+Date: Tue, 04 Oct 2011 11:13:16 +0800
+Message-ID: <4E8A79CC.3080109@redhat.com>
+References: <4E83DE33.4020204@redhat.com> <4E848C48.6050506@redhat.com> <4E8526A6.30003@redhat.com> <4E85370A.7020509@redhat.com> <4E853A1C.5070905@redhat.com> <20110930183839.GF25891@redhat.com> <20110930190311.GH25891@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20110930190311.GH25891-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, kexec-kdump-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On Fri, 30 Sep 2011 12:55:07 +0200, Michal Soltys wrote:
+=E4=BA=8E 2011=E5=B9=B410=E6=9C=8801=E6=97=A5 03:03, Vivek Goyal =E5=86=
+=99=E9=81=93:
+> On Fri, Sep 30, 2011 at 02:38:39PM -0400, Vivek Goyal wrote:
+>> On Fri, Sep 30, 2011 at 11:40:12AM +0800, Dave Young wrote:
+>>
+>> [..]
+>>>
+>>> Add lvm_scan in mount-sys.sh also works, so if we can make lvm_scan
+>>> being called automaticlly via dependencies it will be good. OTOH fs=
+tab
+>>> is better than cmdlines as an interface for multi-target dumping
+>>
+>> Agreed that fstab.sys looks like a good interface to mouting non-roo=
+t devices.
+>
+> Having said that, looks like dracut builds all the state using comman=
+d
+> line options. All the lvms, iscsi root, fcoe targets etc. So they mig=
+ht
+> expect everything to be passed on command line. In that case it will
+> become hard from kdump perspective.
 
-> I'll prep patches to make it all configurable, essentially:
-> 
-> in config file:
-> fscks - list exact program names you want installed nofscks - to inhibit
-> installation of any such programs
-> 
-> The latter option takes precedence over the first one
-> 
-> and from commandline:
-> 
-> --fscks [LIST] - additional programs to install --nofscks - inhibit
-> 
-> similar precedence as in config
-> (option names subject to change ;)
-> 
-> If the fsck_helpers list is empty and nofsck is not set, dracut will
-> opportunistically try to install any helper it might need, otherwise it
-> will limit itself to only specified programs, or to none at all.
+Yeah, the problem is that we still need to detect which module is neede=
+d
+to mount some specified device, which is duplicated, as the code is alr=
+eady
+in these modules (e.g. is_lvm()).
 
-Michal, this makes sense to me. But Daniel wants to have no fscks,
-so probably he wants to have an cmd option to prevent all fsck's
-installed, with your design, he has to specify all fsck's after
---nofscks, right?
+Thanks.
