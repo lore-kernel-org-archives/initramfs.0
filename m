@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH 4/4] manuals: add info about fs-lib (fsck) configuration
-Date: Fri,  7 Oct 2011 22:23:52 +0200
-Message-ID: <1318019032-12787-4-git-send-email-soltys@ziu.info>
+Subject: [PATCH 2/4] dracut.8: add missing lvmconf info
+Date: Fri,  7 Oct 2011 22:23:50 +0200
+Message-ID: <1318019032-12787-2-git-send-email-soltys@ziu.info>
 References: <4E86385C.6040706@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <4E86385C.6040706-R61QfzASbfY@public.gmane.org>
@@ -12,37 +12,38 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-in dracut.8.xml & dracut.conf.5.xml
-
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- dracut.8.xml      |   19 +++++++++++++++++++
- dracut.conf.5.xml |   22 ++++++++++++++++++++++
- 2 files changed, 41 insertions(+), 0 deletions(-)
+ dracut.8.xml |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
 diff --git a/dracut.8.xml b/dracut.8.xml
-index 7e5a6d6..a7ce5ab 100644
+index 11ea8c3..7e5a6d6 100644
 --- a/dracut.8.xml
 +++ b/dracut.8.xml
-@@ -246,6 +246,25 @@ include in the generic initramfs. This parameter can be specified multiple times
+@@ -1,5 +1,6 @@
+ <?xml version='1.0' encoding='UTF-8'?>
+ <!-- This document was created with Syntext Serna Free. --><!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" []>
++<!-- vim: set ts=8 sts=2 sw=2 et: -->
+ <refentry id="dracut8">
+   <refentryinfo>
+     <title>dracut</title>
+@@ -229,6 +230,22 @@ include in the generic initramfs. This parameter can be specified multiple times
          </varlistentry>
          <varlistentry>
            <term>
-+            <option>--fscks [LIST]</option>
++            <option>--lvmconf</option>
 +          </term>
 +          <listitem>
-+            <para>add a space-separated list of fsck tools, in addition to
-+              <filename>dracut.conf</filename>'s specification; the
-+              installation is opportunistic (non-exisiting tools are ignored)
-+            </para>
++            <para>include local <filename>/etc/lvm/lvm.conf</filename></para>
 +          </listitem>
 +        </varlistentry>
 +        <varlistentry>
 +          <term>
-+            <option>--nofscks</option>
++            <option>--nolvmconf</option>
 +          </term>
 +          <listitem>
-+            <para>inhibit installation of any fsck tools</para>
++            <para>do not include local <filename>/etc/lvm/lvm.conf</filename></para>
 +          </listitem>
 +        </varlistentry>
 +        <varlistentry>
@@ -50,44 +51,5 @@ index 7e5a6d6..a7ce5ab 100644
              <option>--strip</option>
            </term>
            <listitem>
-diff --git a/dracut.conf.5.xml b/dracut.conf.5.xml
-index 697e655..dbcdb90 100644
---- a/dracut.conf.5.xml
-+++ b/dracut.conf.5.xml
-@@ -1,5 +1,6 @@
- <?xml version='1.0' encoding='UTF-8'?>
- <!-- This document was created with Syntext Serna Free. --><!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" []>
-+<!-- vim: set ts=8 sts=2 sw=2 et: -->
- <refentry id="dracutconf5">
-   <refentryinfo>
-     <title>dracut.conf</title>
-@@ -156,6 +157,27 @@ initramfs.</para>
-       </varlistentry>
-       <varlistentry>
-         <term>
-+          <envar>fscks=&quot;&nbsp;<replaceable>&lt;fsck tools&gt;</replaceable>&nbsp;&quot;</envar>
-+        </term>
-+        <listitem>
-+          <para>Add a space-separated list of fsck tools. If nothing is
-+            specified, the default is: &quot;<replaceable>umount mount
-+            /sbin/fsck* xfs_db xfs_check xfs_repair e2fsck jfs_fsck
-+            reiserfsck btrfsck</replaceable>&quot;
-+          </para>
-+          <para>The installation is opportunistic (non-exisiting tools are ignored).<para>
-+        </listitem>
-+      </varlistentry>
-+      <varlistentry>
-+        <term>
-+          <envar>nofscks=&quot;<replaceable>{yes}</replaceable>&quot;</envar>
-+        </term>
-+        <listitem>
-+          <para>If specified, inhibit installation of any fsck tools.</para>
-+        </listitem>
-+      </varlistentry>
-+      <varlistentry>
-+        <term>
-           <envar>kernel_only=&quot;<replaceable>{yes|no}</replaceable>&quot;</envar>
-         </term>
-         <listitem>
 -- 
 1.7.5.3
