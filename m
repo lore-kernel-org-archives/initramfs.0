@@ -1,66 +1,23 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] update the documentation of '--[no]prefix'
-Date: Fri, 07 Oct 2011 10:15:20 +0200
-Message-ID: <4E8EB518.3010004@redhat.com>
-References: <1317973450-356-1-git-send-email-xiyou.wangcong@gmail.com>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: Re: [PATCH 0/4] options to configure fs-lib (fsck) and two unrelated
+ fixes
+Date: Fri, 07 Oct 2011 22:06:17 +0200
+Message-ID: <4E8F5BB9.2090405@ziu.info>
+References: <4E86385C.6040706@ziu.info> <j6mau8$h18$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1317973450-356-1-git-send-email-xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <j6mau8$h18$1@dough.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07.10.2011 09:44, WANG Cong wrote:
-> In
-> 
-> commit fd786adcf515d9d3ee77eb29fa4c6b60020c7209
-> Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Date:   Wed Apr 20 16:47:40 2011 +0200
-> 
->     dracut: make prefix configurable
-> 
-> Harald changed the meaning of --prefix/--noprefix, but
-> forgot to update their documentation. This patch
-> fixes that.
-> 
-> Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> 
-> ---
-> diff --git a/dracut.8.xml b/dracut.8.xml
-> index 11ea8c3..709f1a6 100644
-> --- a/dracut.8.xml
-> +++ b/dracut.8.xml
-> @@ -245,10 +245,10 @@ include in the generic initramfs. This parameter can be specified multiple times
->          </varlistentry>
->          <varlistentry>
->            <term>
-> -            <option>--prefix</option>
-> +            <option>--prefix&nbsp;<replaceable>&lt;dir&gt;</replaceable></option>
->            </term>
->            <listitem>
-> -            <para>prefix initramfs files with /run/initramfs/</para>
-> +            <para>prefix initramfs files with the specified directory</para>
->            </listitem>
->          </varlistentry>
->          <varlistentry>
-> @@ -256,7 +256,7 @@ include in the generic initramfs. This parameter can be specified multiple times
->              <option>--noprefix</option>
->            </term>
->            <listitem>
-> -            <para>do not prefix initramfs files with /run/initramfs/ (default)</para>
-> +            <para>do not prefix initramfs files (default)</para>
->            </listitem>
->          </varlistentry>
->          <varlistentry>
-> 
+On 11-10-07 09:49, WANG Cong wrote:
+>
+> But I only saw patch 0/4, where are the rest? :-/
+>
 
-
-pushed to
-
-git://dracut.git.sourceforge.net/gitroot/dracut/dracut
-git://git.surfsite.org/pub/git/dracut.git
-
-thanks!
+I prepared it as a remote branch (git fetch git:// etc.). I'll send 
+normal mails in a moment.
