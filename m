@@ -1,61 +1,36 @@
 From: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] update the documentation of '--[no]prefix'
-Date: Fri,  7 Oct 2011 15:44:10 +0800
-Message-ID: <1317973450-356-1-git-send-email-xiyou.wangcong@gmail.com>
+Subject: Re: [PATCH 0/4] options to configure fs-lib (fsck) and two
+ unrelated fixes
+Date: Fri, 7 Oct 2011 07:49:28 +0000 (UTC)
+Message-ID: <j6mau8$h18$1@dough.gmane.org>
+References: <4E86385C.6040706@ziu.info>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=from:to:cc:subject:date:message-id:x-mailer;
-        bh=CXiVUGq6/44fm5474IzMC5lHeTOoHf6zvwWJ7LpF+C0=;
-        b=FMRFCaSwhkFE6rzKjJUZ464B3ik7hhbHMBG8pNAl2z5JkF6E32xyj7vnhHNxHpLU7x
-         PUY//P1Ot0kbuZi9RPUaIPqwoJWhdMO0FISq4XVGunBX39rLUNz6iVztdg5Y/M+ys0Mq
-         uZQnCWRua5iIc9uT9zMpKX+ILh3nISvNDU40o=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-In
+On Fri, 30 Sep 2011 23:45:00 +0200, Michal Soltys wrote:
 
-commit fd786adcf515d9d3ee77eb29fa4c6b60020c7209
-Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Wed Apr 20 16:47:40 2011 +0200
+> First two patches are unreleated fixups, the other two implement options
+> to configure fs-lib (which fscks to include in the image).
+> 
+> 
+> The following changes since commit
+> d23159a69c818274486f1287ba6267b96f3febb7:
+> 
+>   dracut [PATCH]es: parallelize block_module filter and
+>   net_module_filter (2011-09-30 09:40:49 +0200)
+> 
+> are available in the git repository at:
+>   git://git.hasevolq.net/dracut.git fixup
+> 
+> Michal Soltys (4):
+>       convert_abs_rel() fixups
+>       dracut.8: add missing lvmconf info
+>       fs-lib: add ability to choose fsck tools manuals: add info about
+>       fs-lib (fsck) configuration
 
-    dracut: make prefix configurable
-
-Harald changed the meaning of --prefix/--noprefix, but
-forgot to update their documentation. This patch
-fixes that.
-
-Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
----
-diff --git a/dracut.8.xml b/dracut.8.xml
-index 11ea8c3..709f1a6 100644
---- a/dracut.8.xml
-+++ b/dracut.8.xml
-@@ -245,10 +245,10 @@ include in the generic initramfs. This parameter can be specified multiple times
-         </varlistentry>
-         <varlistentry>
-           <term>
--            <option>--prefix</option>
-+            <option>--prefix&nbsp;<replaceable>&lt;dir&gt;</replaceable></option>
-           </term>
-           <listitem>
--            <para>prefix initramfs files with /run/initramfs/</para>
-+            <para>prefix initramfs files with the specified directory</para>
-           </listitem>
-         </varlistentry>
-         <varlistentry>
-@@ -256,7 +256,7 @@ include in the generic initramfs. This parameter can be specified multiple times
-             <option>--noprefix</option>
-           </term>
-           <listitem>
--            <para>do not prefix initramfs files with /run/initramfs/ (default)</para>
-+            <para>do not prefix initramfs files (default)</para>
-           </listitem>
-         </varlistentry>
-         <varlistentry>
+But I only saw patch 0/4, where are the rest? :-/
