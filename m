@@ -1,44 +1,61 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: mount other than rootfs problem
-Date: Tue, 04 Oct 2011 11:13:16 +0800
-Message-ID: <4E8A79CC.3080109@redhat.com>
-References: <4E83DE33.4020204@redhat.com> <4E848C48.6050506@redhat.com> <4E8526A6.30003@redhat.com> <4E85370A.7020509@redhat.com> <4E853A1C.5070905@redhat.com> <20110930183839.GF25891@redhat.com> <20110930190311.GH25891@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+From: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] update the documentation of '--[no]prefix'
+Date: Fri,  7 Oct 2011 15:44:10 +0800
+Message-ID: <1317973450-356-1-git-send-email-xiyou.wangcong@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20110930190311.GH25891-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=from:to:cc:subject:date:message-id:x-mailer;
+        bh=CXiVUGq6/44fm5474IzMC5lHeTOoHf6zvwWJ7LpF+C0=;
+        b=FMRFCaSwhkFE6rzKjJUZ464B3ik7hhbHMBG8pNAl2z5JkF6E32xyj7vnhHNxHpLU7x
+         PUY//P1Ot0kbuZi9RPUaIPqwoJWhdMO0FISq4XVGunBX39rLUNz6iVztdg5Y/M+ys0Mq
+         uZQnCWRua5iIc9uT9zMpKX+ILh3nISvNDU40o=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, kexec-kdump-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-=E4=BA=8E 2011=E5=B9=B410=E6=9C=8801=E6=97=A5 03:03, Vivek Goyal =E5=86=
-=99=E9=81=93:
-> On Fri, Sep 30, 2011 at 02:38:39PM -0400, Vivek Goyal wrote:
->> On Fri, Sep 30, 2011 at 11:40:12AM +0800, Dave Young wrote:
->>
->> [..]
->>>
->>> Add lvm_scan in mount-sys.sh also works, so if we can make lvm_scan
->>> being called automaticlly via dependencies it will be good. OTOH fs=
-tab
->>> is better than cmdlines as an interface for multi-target dumping
->>
->> Agreed that fstab.sys looks like a good interface to mouting non-roo=
-t devices.
->
-> Having said that, looks like dracut builds all the state using comman=
-d
-> line options. All the lvms, iscsi root, fcoe targets etc. So they mig=
-ht
-> expect everything to be passed on command line. In that case it will
-> become hard from kdump perspective.
+In
 
-Yeah, the problem is that we still need to detect which module is neede=
-d
-to mount some specified device, which is duplicated, as the code is alr=
-eady
-in these modules (e.g. is_lvm()).
+commit fd786adcf515d9d3ee77eb29fa4c6b60020c7209
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Apr 20 16:47:40 2011 +0200
 
-Thanks.
+    dracut: make prefix configurable
+
+Harald changed the meaning of --prefix/--noprefix, but
+forgot to update their documentation. This patch
+fixes that.
+
+Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+---
+diff --git a/dracut.8.xml b/dracut.8.xml
+index 11ea8c3..709f1a6 100644
+--- a/dracut.8.xml
++++ b/dracut.8.xml
+@@ -245,10 +245,10 @@ include in the generic initramfs. This parameter can be specified multiple times
+         </varlistentry>
+         <varlistentry>
+           <term>
+-            <option>--prefix</option>
++            <option>--prefix&nbsp;<replaceable>&lt;dir&gt;</replaceable></option>
+           </term>
+           <listitem>
+-            <para>prefix initramfs files with /run/initramfs/</para>
++            <para>prefix initramfs files with the specified directory</para>
+           </listitem>
+         </varlistentry>
+         <varlistentry>
+@@ -256,7 +256,7 @@ include in the generic initramfs. This parameter can be specified multiple times
+             <option>--noprefix</option>
+           </term>
+           <listitem>
+-            <para>do not prefix initramfs files with /run/initramfs/ (default)</para>
++            <para>do not prefix initramfs files (default)</para>
+           </listitem>
+         </varlistentry>
+         <varlistentry>
