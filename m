@@ -1,39 +1,42 @@
-From: =?UTF-8?Q?Am=C3=A9rico_Wang?= <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/4] options to configure fs-lib (fsck) and two unrelated fixes
-Date: Sat, 8 Oct 2011 19:44:17 +0800
-Message-ID: <CAM_iQpX_9T92ZeKzGVusG41_i+a4HmMHJvYm9UOrjBPgtHRKAw@mail.gmail.com>
-References: <4E86385C.6040706@ziu.info>
-	<j6mau8$h18$1@dough.gmane.org>
-	<4E8F5BB9.2090405@ziu.info>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: check mktemp return value
+Date: Mon, 10 Oct 2011 17:35:43 +0800
+Message-ID: <4E92BC6F.3070805@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :cc:content-type;
-        bh=d9zoiJAMxQ5LKg2/bCjzNSaqgcJAJwxCtxPW8ObV08k=;
-        b=el/oZS4AA2UWcq+YhKREUIFvA0TuuZeqQ1onGg8RF+q7Euvay2KPqtl07d7hkNv5Cj
-         FZudiZeICvZNHNoo+UmCv1IZH0KgdA2zBwc0pnzh+wLRpGx7/W/yfmdk701g38zXyQOv
-         tS4AHZGHMbrialZCJEG2t3Xazu3EbfF+xhpuo=
-In-Reply-To: <4E8F5BB9.2090405-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Sat, Oct 8, 2011 at 4:06 AM, Michal Soltys <soltys-R61QfzASbfY@public.gmane.org> wrote:
-> On 11-10-07 09:49, WANG Cong wrote:
->>
->> But I only saw patch 0/4, where are the rest? :-/
->>
->
-> I prepared it as a remote branch (git fetch git:// etc.). I'll send normal
-> mails in a moment.
->
 
-Please. If you don't send patches to this mailing list,
-it is not convenient for people to review them.
+in slackware the default mktemp is not from coreutils.
+A simply make in test directory mangled my rootfs due
+to initdir is blank
 
-Thanks.
+Also mktemp could failed with other reason like ENOSPC or EPERM
+
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/dracut b/dracut
+index c9329bd..8237f7a 100755
+--- a/dracut
++++ b/dracut
+@@ -472,6 +472,10 @@ fi
+
+ readonly TMPDIR=/var/tmp
+ readonly initdir=$(mktemp --tmpdir=/var/tmp/ -d -t initramfs.XXXXXX)
++[ -z $initdir ] && {
++    dfatal "mktemp failed."
++    exit 1
++}
+
+ # clean up after ourselves no matter how we die.
+ trap 'ret=$?;[[ $keep ]] && echo "Not removing $initdir." >&2 || rm -rf
+"$initdir";exit $ret;' EXIT
+-- 
+1.7.4.4
