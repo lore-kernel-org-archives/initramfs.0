@@ -1,10 +1,8 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH 1/2] bash3 compat patch
-Date: Mon, 10 Oct 2011 23:58:04 +0200
-Message-ID: <1318283885-1792-2-git-send-email-soltys@ziu.info>
-References: <1318283885-1792-1-git-send-email-soltys@ziu.info>
+Subject: [PATCH 0/2] minimum bash version
+Date: Mon, 10 Oct 2011 23:58:03 +0200
+Message-ID: <1318283885-1792-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1318283885-1792-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -12,169 +10,35 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This patch replaces:
+I'm not sure what is current policy on bash version, but with 2 small
+adjustments, dracut can be easily made bash 3.1 compatible (if I haven't missed
+anything).
 
-- {var}>... redirections with functionally identical eval construct +
-  explicit FDs
-- ^^ and ,, case modifiers with temporary shopt
+If this is desirable, the first patch adjusts {var}>& redirections with eval
+and explicit FDs, and ^^/,, case-modifiers with temporary shopt ajustment.
 
-This allows us to lower minimum required bash version
-to at least 3.1 (with current code).
+If it's not necessary, then 2nd patch can be adjusted to simply require at least
+bash 4.0.
 
-Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
----
+Also pullable from:
+The following changes since commit 450f5d66944e4a4ae005c75a818c3cccd28836f3:
+
+  95udev-rules/module-setup.s: fixed symlink for udevd to initdir (2011-10-10 20:17:16 +0200)
+
+  are available in the git repository at:
+    git://git.hasevolq.net/dracut.git bashfix
+
+
+Michal Soltys (2):
+  bash3 compat patch
+  explicitly verify bash version
+
+ dracut                                     |    7 +++++++
  dracut-functions                           |   11 +++++++----
  modules.d/10i18n/module-setup.sh           |    8 +++++---
  modules.d/40network/module-setup.sh        |   19 ++++++++++++-------
  modules.d/90kernel-modules/module-setup.sh |   19 ++++++++++++-------
- 4 files changed, 36 insertions(+), 21 deletions(-)
+ 5 files changed, 43 insertions(+), 21 deletions(-)
 
-diff --git a/dracut-functions b/dracut-functions
-index ce593c9..1ef5269 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -821,10 +821,11 @@ install_kmod_with_fw() {
- #      It will be passed the full path to the found kernel module
- # $2 = module to get dependencies for
- # rest of args = arguments to modprobe
-+# _fderr specifies FD passed from surrounding scope
- for_each_kmod_dep() {
-     local _func=$1 _kmod=$2 _cmd _modpath _options _found=0
-     shift 2
--    modprobe "$@" --ignore-install --show-depends $_kmod 2>&$modprobe_stderr | (
-+    modprobe "$@" --ignore-install --show-depends $_kmod 2>&${_fderr} | (
-         while read _cmd _modpath _options; do
-             [[ $_cmd = insmod ]] || continue
-             $_func ${_modpath} || exit $?
-@@ -885,6 +886,8 @@ find_kernel_modules () {
- # install kernel modules along with all their dependencies.
- instmods() {
-     [[ $no_kernel = yes ]] && return
-+    # called [sub]functions inherit _fderr
-+    local _fderr=9
- 
-     function inst1mod() {
-         local _mod="$1"
-@@ -949,9 +952,9 @@ instmods() {
-         return $_ret
-     }
- 
--    # Capture all stderr from modprobe onto a new fd $modprobe_stderr,
--    # and pipe it into egrep.  See REDIRECTION in bash manpage.
--    ( instmods_1 "$@" ) {modprobe_stderr}>&1 \
-+    # Capture all stderr from modprobe to _fderr. We could use {var}>...
-+    # redirections, but that would make dracut require bash4 at least.
-+    eval "( instmods_1 \"\$@\" ) ${_fderr}>&1" \
-     | egrep -v 'FATAL: Module .* not found.' | derror
-     return $?
- }
-diff --git a/modules.d/10i18n/module-setup.sh b/modules.d/10i18n/module-setup.sh
-index 5c09100..6248607 100755
---- a/modules.d/10i18n/module-setup.sh
-+++ b/modules.d/10i18n/module-setup.sh
-@@ -150,22 +150,24 @@ install() {
-             inst_simple ${kbddir}/unimaps/${FONT_UNIMAP}.uni
-         fi
- 
-+        shopt -q -s nocasematch
-         if [[ ${UNICODE} ]]
-         then
--            if [[ ${UNICODE^^} = YES || ${UNICODE} = 1 ]]
-+            if [[ ${UNICODE} = YES || ${UNICODE} = 1 ]]
-             then
-                 UNICODE=1
--            elif [[ ${UNICODE^^} = NO || ${UNICODE} = 0 ]]
-+            elif [[ ${UNICODE} = NO || ${UNICODE} = 0 ]]
-             then
-                 UNICODE=0
-             else
-                 UNICODE=''
-             fi
-         fi
--        if [[ ! ${UNICODE} && ${LANG^^} =~ .*\.UTF-?8 ]]
-+        if [[ ! ${UNICODE} && ${LANG} =~ .*\.UTF-?8 ]]
-         then
-             UNICODE=1
-         fi
-+        shopt -q -u nocasematch
- 
-         mksubdirs ${initdir}${I18N_CONF}
-         mksubdirs ${initdir}${VCONFIG_CONF}
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index 03684f1..eb7ef9b 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -27,6 +27,8 @@ installkernel() {
-     net_module_filter() {
-         local _net_drivers='eth_type_trans|register_virtio_device'
-         local _unwanted_drivers='/(wireless|isdn|uwb)/'
-+        # subfunctions inherit following FDs
-+        local _merge=8 _side2=9
-         function nmf1() {
-             local _fname _fcont
-             while read _fname; do
-@@ -40,14 +42,17 @@ installkernel() {
-                 && echo "$_fname"
-             done
-         }
-+        function rotor() {
-+            local _f1 _f2
-+            while read _f1; do
-+                echo "$_f1"
-+                if read _f2; then
-+                    echo "$_f2" 1>&${_side2}
-+                fi
-+            done | nmf1 1>&${_merge}
-+        }
-         # Use two parallel streams to filter alternating modules.
--        local merge side2
--        ( ( local _f1 _f2
--            while  read _f1; do   echo "$_f1"
--                if read _f2; then echo "$_f2" 1>&${side2}; fi
--            done \
--            | nmf1     1>&${merge}    ) {side2}>&1 \
--            | nmf1  )      {merge}>&1
-+        eval "( ( rotor ) ${_side2}>&1 | nmf1 ) ${_merge}>&1"
-     }
- 
-     find_kernel_modules_by_path drivers/net | net_module_filter | instmods
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index 09bd87e..6e3a918 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -11,6 +11,8 @@ installkernel() {
-         }
-         block_module_filter() {
-             local _blockfuncs='ahci_init_controller|ata_scsi_ioctl|scsi_add_host|blk_init_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device'
-+            # subfunctions inherit following FDs
-+            local _merge=8 _side2=9
-             function bmf1() {
-                 local _f
-                 while read _f; do case "$_f" in
-@@ -19,14 +21,17 @@ installkernel() {
-                     esac
-                 done
-             }
-+            function rotor() {
-+                local _f1 _f2
-+                while read _f1; do
-+                    echo "$_f1"
-+                    if read _f2; then
-+                        echo "$_f2" 1>&${_side2}
-+                    fi
-+                done | bmf1 1>&${_merge}
-+            }
-             # Use two parallel streams to filter alternating modules.
--            local merge side2
--            ( ( local _f1 _f2
--                while  read _f1; do   echo "$_f1"
--                    if read _f2; then echo "$_f2" 1>&${side2}; fi
--                done \
--                | bmf1     1>&${merge}    ) {side2}>&1 \
--                | bmf1  )      {merge}>&1
-+            eval "( ( rotor ) ${_side2}>&1 | bmf1 ) ${_merge}>&1"
-         }
-         hostonly='' instmods sr_mod sd_mod scsi_dh scsi_dh_rdac scsi_dh_emc
-         hostonly='' instmods pcmcia firewire-ohci
 -- 
 1.7.5.3
