@@ -1,57 +1,76 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: check mktemp return value
-Date: Mon, 10 Oct 2011 17:53:09 +0800
-Message-ID: <4E92C085.7080001@redhat.com>
-References: <4E92BC6F.3070805@redhat.com> <4E92BE8F.20001@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/4] dracut-functions: conv/normalize minor corrections
+Date: Mon, 10 Oct 2011 11:57:47 +0200
+Message-ID: <4E92C19B.4000307@redhat.com>
+References: <1318026050-5891-1-git-send-email-soltys@ziu.info> <1318026050-5891-2-git-send-email-soltys@ziu.info>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4E92BE8F.20001-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1318026050-5891-2-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10/10/2011 05:44 PM, Harald Hoyer wrote:
-
-> On 10.10.2011 11:35, Dave Young wrote:
->>
->> in slackware the default mktemp is not from coreutils.
->> A simply make in test directory mangled my rootfs due
->> to initdir is blank
->>
->> Also mktemp could failed with other reason like ENOSPC or EPERM
->>
->> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> ---
->>  dracut |    4 ++++
->>  1 files changed, 4 insertions(+), 0 deletions(-)
->>
->> diff --git a/dracut b/dracut
->> index c9329bd..8237f7a 100755
->> --- a/dracut
->> +++ b/dracut
->> @@ -472,6 +472,10 @@ fi
->>
->>  readonly TMPDIR=/var/tmp
->>  readonly initdir=$(mktemp --tmpdir=/var/tmp/ -d -t initramfs.XXXXXX)
->> +[ -z $initdir ] && {
->> +    dfatal "mktemp failed."
->> +    exit 1
->> +}
->>
->>  # clean up after ourselves no matter how we die.
->>  trap 'ret=$?;[[ $keep ]] && echo "Not removing $initdir." >&2 || rm -rf
->> "$initdir";exit $ret;' EXIT
+On 08.10.2011 00:20, Michal Soltys wrote:
+> mostly with reference to earlier commit:
 > 
-> pushed...
+> - bash doesn't need unsetting locals
+> - make normalize_path() a bit faster, also make sure we remove all
+>   trailing slashes
+> - normalize paths before tests
 > 
-> had to hand edit, because your mailer automatically broke the line.
+> Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+> ---
+>  dracut-functions |   22 ++++++++++------------
+>  1 files changed, 10 insertions(+), 12 deletions(-)
+> 
+> diff --git a/dracut-functions b/dracut-functions
+> index 12dfa70..ce593c9 100755
+> --- a/dracut-functions
+> +++ b/dracut-functions
+> @@ -83,31 +83,29 @@ print_vars() {
+>  }
+>  
+>  normalize_path() {
+> -    p=$1
+> -    while [[ ${p#*//*} != $p ]]; do
+> -        p=${p/\/\///}
+> -    done
+> -    echo $p
+> +    shopt -q -s extglob
+> +    set -- "${1//+(\/)//}"
+> +    shopt -q -u extglob
+> +    echo "${1%/}"
+>  }
+>  
+>  convert_abs_rel() {
+> -    local __current __absolute __abssize __cursize __newpath="" __oldifs
+> -    local -i __i __level=0
+> +    local __current __absolute __abssize __cursize __newpath __oldifs
+> +    local -i __i __level
+>  #    PS4='${BASH_SOURCE}@${LINENO}(${FUNCNAME[0]}): ';
+>  
+> +    set -- "$(normalize_path "$1")" "$(normalize_path "$2")"
+> +
+>      # corner case #1 - self looping link
+>      [[ "$1" == "$2" ]] && { echo "${1##*/}"; return; }
+>  
+>      # corner case #2 - own dir link
+>      [[ "${1%/*}" == "$2" ]] && { echo "."; return; }
+>  
+> -    __current=$(normalize_path "$1")
+> -    __absolute=$(normalize_path "$2")
+> -
+>      __oldifs="$IFS"
+>      IFS="/"
+> -    __current=($__current)
+> -    __absolute=($__absolute)
+> +    __current=($1)
+> +    __absolute=($2)
+>      IFS="$__oldifs"
+>  
+>      __abssize=${#__absolute[@]}
 
-
-Sorry about that, I think I have to return to mutt for patch sending
-
--- 
-Thanks
-Dave
+pushed all 5
