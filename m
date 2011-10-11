@@ -1,43 +1,32 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] explicitly verify bash version
-Date: Tue, 11 Oct 2011 09:39:13 +0200
-Message-ID: <4E93F2A1.3060802@redhat.com>
-References: <1318283885-1792-1-git-send-email-soltys@ziu.info> <1318283885-1792-3-git-send-email-soltys@ziu.info>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: Re: [PATCH 1/2] bash3 compat patch
+Date: Tue, 11 Oct 2011 10:53:44 +0200
+Message-ID: <4E940418.6080102@ziu.info>
+References: <1318283885-1792-1-git-send-email-soltys@ziu.info> <1318283885-1792-2-git-send-email-soltys@ziu.info> <j70q7d$ldn$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1318283885-1792-3-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
+In-Reply-To: <j70q7d$ldn$1@dough.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10.10.2011 23:58, Michal Soltys wrote:
-> A simple check in main dracut script.
-> 
-> Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-> ---
->  dracut |    7 +++++++
->  1 files changed, 7 insertions(+), 0 deletions(-)
-> 
-> diff --git a/dracut b/dracut
-> index 63d4ea6..205f5d1 100755
-> --- a/dracut
-> +++ b/dracut
-> @@ -418,6 +418,13 @@ else
->      exit 1
->  fi
->  
-> +# Verify bash version, curret minimum is 3.1
-> +if (( ${BASH_VERSINFO[0]} < 3 ||
-> +    ( ${BASH_VERSINFO[0]} == 3 && ${BASH_VERSINFO[1]} < 1 ) )); then
-> +    dfatal 'You need at least Bash 3.1 to use dracut, sorry.'
-> +    exit 1
-> +fi
-> +
->  dracutfunctions=$dracutbasedir/dracut-functions
->  export dracutfunctions
->  
+On 11.10.2011 09:11, WANG Cong wrote:
+>
+> Interesting function, if i understand it correctly, it parallelizes
+> the stream into two so that can speed up the pattern filtering?
+>
+> My brain spins...
+>
+It was added by John Reiser (see commit 
+d23159a69c818274486f1287ba6267b96f3febb7).
 
-pushed
+I just moved the main body into a function, so it's easily eval'able - 
+in order to avoid {var}>& construct. As a side effect, it's 
+(subjectively) a bit easier to read.
+
+ From what I can see, the outermost parentheses along with related 
+_merge fd could probably be removed. Not tested that though, no big 
+difference either.
