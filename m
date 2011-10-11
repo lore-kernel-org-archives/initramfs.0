@@ -1,48 +1,182 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut.conf.5.xml: tag mismatch fix
-Date: Tue, 11 Oct 2011 09:38:46 +0200
-Message-ID: <4E93F286.40909@redhat.com>
-References: <20111011032653.GA29342@darkstar>
+Subject: Re: [PATCH 1/2] bash3 compat patch
+Date: Tue, 11 Oct 2011 09:39:01 +0200
+Message-ID: <4E93F295.6040309@redhat.com>
+References: <1318283885-1792-1-git-send-email-soltys@ziu.info> <1318283885-1792-2-git-send-email-soltys@ziu.info>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20111011032653.GA29342@darkstar>
+In-Reply-To: <1318283885-1792-2-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11.10.2011 05:26, Dave Young wrote:
-> build failed with:
-> xsltproc -o dracut.conf.5 -nonet http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl dracut.conf.5.xml
-> dracut.conf.5.xml:169: parser error : Opening and ending tag mismatch: para line 168 and listitem
->         </listitem>
-> 
-> Fix it by change to </para> at the end
-> 
-> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  dracut.conf.5.xml |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/dracut.conf.5.xml b/dracut.conf.5.xml
-> index 6909a4a..169e11b 100644
-> --- a/dracut.conf.5.xml
-> +++ b/dracut.conf.5.xml
-> @@ -165,7 +165,7 @@ initramfs.</para>
->              /sbin/fsck* xfs_db xfs_check xfs_repair e2fsck jfs_fsck
->              reiserfsck btrfsck</replaceable>&quot;
->            </para>
-> -          <para>The installation is opportunistic (non-existing tools are ignored).<para>
-> +          <para>The installation is opportunistic (non-existing tools are ignored).</para>
->          </listitem>
->        </varlistentry>
->        <varlistentry>
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
 pushed
+
+On 10.10.2011 23:58, Michal Soltys wrote:
+> This patch replaces:
+> 
+> - {var}>... redirections with functionally identical eval construct +
+>   explicit FDs
+> - ^^ and ,, case modifiers with temporary shopt
+> 
+> This allows us to lower minimum required bash version
+> to at least 3.1 (with current code).
+> 
+> Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+> ---
+>  dracut-functions                           |   11 +++++++----
+>  modules.d/10i18n/module-setup.sh           |    8 +++++---
+>  modules.d/40network/module-setup.sh        |   19 ++++++++++++-------
+>  modules.d/90kernel-modules/module-setup.sh |   19 ++++++++++++-------
+>  4 files changed, 36 insertions(+), 21 deletions(-)
+> 
+> diff --git a/dracut-functions b/dracut-functions
+> index ce593c9..1ef5269 100755
+> --- a/dracut-functions
+> +++ b/dracut-functions
+> @@ -821,10 +821,11 @@ install_kmod_with_fw() {
+>  #      It will be passed the full path to the found kernel module
+>  # $2 = module to get dependencies for
+>  # rest of args = arguments to modprobe
+> +# _fderr specifies FD passed from surrounding scope
+>  for_each_kmod_dep() {
+>      local _func=$1 _kmod=$2 _cmd _modpath _options _found=0
+>      shift 2
+> -    modprobe "$@" --ignore-install --show-depends $_kmod 2>&$modprobe_stderr | (
+> +    modprobe "$@" --ignore-install --show-depends $_kmod 2>&${_fderr} | (
+>          while read _cmd _modpath _options; do
+>              [[ $_cmd = insmod ]] || continue
+>              $_func ${_modpath} || exit $?
+> @@ -885,6 +886,8 @@ find_kernel_modules () {
+>  # install kernel modules along with all their dependencies.
+>  instmods() {
+>      [[ $no_kernel = yes ]] && return
+> +    # called [sub]functions inherit _fderr
+> +    local _fderr=9
+>  
+>      function inst1mod() {
+>          local _mod="$1"
+> @@ -949,9 +952,9 @@ instmods() {
+>          return $_ret
+>      }
+>  
+> -    # Capture all stderr from modprobe onto a new fd $modprobe_stderr,
+> -    # and pipe it into egrep.  See REDIRECTION in bash manpage.
+> -    ( instmods_1 "$@" ) {modprobe_stderr}>&1 \
+> +    # Capture all stderr from modprobe to _fderr. We could use {var}>...
+> +    # redirections, but that would make dracut require bash4 at least.
+> +    eval "( instmods_1 \"\$@\" ) ${_fderr}>&1" \
+>      | egrep -v 'FATAL: Module .* not found.' | derror
+>      return $?
+>  }
+> diff --git a/modules.d/10i18n/module-setup.sh b/modules.d/10i18n/module-setup.sh
+> index 5c09100..6248607 100755
+> --- a/modules.d/10i18n/module-setup.sh
+> +++ b/modules.d/10i18n/module-setup.sh
+> @@ -150,22 +150,24 @@ install() {
+>              inst_simple ${kbddir}/unimaps/${FONT_UNIMAP}.uni
+>          fi
+>  
+> +        shopt -q -s nocasematch
+>          if [[ ${UNICODE} ]]
+>          then
+> -            if [[ ${UNICODE^^} = YES || ${UNICODE} = 1 ]]
+> +            if [[ ${UNICODE} = YES || ${UNICODE} = 1 ]]
+>              then
+>                  UNICODE=1
+> -            elif [[ ${UNICODE^^} = NO || ${UNICODE} = 0 ]]
+> +            elif [[ ${UNICODE} = NO || ${UNICODE} = 0 ]]
+>              then
+>                  UNICODE=0
+>              else
+>                  UNICODE=''
+>              fi
+>          fi
+> -        if [[ ! ${UNICODE} && ${LANG^^} =~ .*\.UTF-?8 ]]
+> +        if [[ ! ${UNICODE} && ${LANG} =~ .*\.UTF-?8 ]]
+>          then
+>              UNICODE=1
+>          fi
+> +        shopt -q -u nocasematch
+>  
+>          mksubdirs ${initdir}${I18N_CONF}
+>          mksubdirs ${initdir}${VCONFIG_CONF}
+> diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+> index 03684f1..eb7ef9b 100755
+> --- a/modules.d/40network/module-setup.sh
+> +++ b/modules.d/40network/module-setup.sh
+> @@ -27,6 +27,8 @@ installkernel() {
+>      net_module_filter() {
+>          local _net_drivers='eth_type_trans|register_virtio_device'
+>          local _unwanted_drivers='/(wireless|isdn|uwb)/'
+> +        # subfunctions inherit following FDs
+> +        local _merge=8 _side2=9
+>          function nmf1() {
+>              local _fname _fcont
+>              while read _fname; do
+> @@ -40,14 +42,17 @@ installkernel() {
+>                  && echo "$_fname"
+>              done
+>          }
+> +        function rotor() {
+> +            local _f1 _f2
+> +            while read _f1; do
+> +                echo "$_f1"
+> +                if read _f2; then
+> +                    echo "$_f2" 1>&${_side2}
+> +                fi
+> +            done | nmf1 1>&${_merge}
+> +        }
+>          # Use two parallel streams to filter alternating modules.
+> -        local merge side2
+> -        ( ( local _f1 _f2
+> -            while  read _f1; do   echo "$_f1"
+> -                if read _f2; then echo "$_f2" 1>&${side2}; fi
+> -            done \
+> -            | nmf1     1>&${merge}    ) {side2}>&1 \
+> -            | nmf1  )      {merge}>&1
+> +        eval "( ( rotor ) ${_side2}>&1 | nmf1 ) ${_merge}>&1"
+>      }
+>  
+>      find_kernel_modules_by_path drivers/net | net_module_filter | instmods
+> diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+> index 09bd87e..6e3a918 100755
+> --- a/modules.d/90kernel-modules/module-setup.sh
+> +++ b/modules.d/90kernel-modules/module-setup.sh
+> @@ -11,6 +11,8 @@ installkernel() {
+>          }
+>          block_module_filter() {
+>              local _blockfuncs='ahci_init_controller|ata_scsi_ioctl|scsi_add_host|blk_init_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device'
+> +            # subfunctions inherit following FDs
+> +            local _merge=8 _side2=9
+>              function bmf1() {
+>                  local _f
+>                  while read _f; do case "$_f" in
+> @@ -19,14 +21,17 @@ installkernel() {
+>                      esac
+>                  done
+>              }
+> +            function rotor() {
+> +                local _f1 _f2
+> +                while read _f1; do
+> +                    echo "$_f1"
+> +                    if read _f2; then
+> +                        echo "$_f2" 1>&${_side2}
+> +                    fi
+> +                done | bmf1 1>&${_merge}
+> +            }
+>              # Use two parallel streams to filter alternating modules.
+> -            local merge side2
+> -            ( ( local _f1 _f2
+> -                while  read _f1; do   echo "$_f1"
+> -                    if read _f2; then echo "$_f2" 1>&${side2}; fi
+> -                done \
+> -                | bmf1     1>&${merge}    ) {side2}>&1 \
+> -                | bmf1  )      {merge}>&1
+> +            eval "( ( rotor ) ${_side2}>&1 | bmf1 ) ${_merge}>&1"
+>          }
+>          hostonly='' instmods sr_mod sd_mod scsi_dh scsi_dh_rdac scsi_dh_emc
+>          hostonly='' instmods pcmcia firewire-ohci
