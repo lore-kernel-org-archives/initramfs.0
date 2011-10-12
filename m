@@ -1,42 +1,45 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: mount other than rootfs problem
-Date: Wed, 12 Oct 2011 11:22:34 +0200
-Message-ID: <4E955C5A.1010406@redhat.com>
-References: <4E83DE33.4020204@redhat.com> <4E848C48.6050506@redhat.com> <4E8526A6.30003@redhat.com> <4E85370A.7020509@redhat.com> <4E853A1C.5070905@redhat.com> <20110930183839.GF25891@redhat.com> <20110930190311.GH25891@redhat.com> <4E9557F2.2060209@redhat.com>
+From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Subject: Re: [PATCH 1/2] bash3 compat patch
+Date: Wed, 12 Oct 2011 09:09:40 -0700
+Message-ID: <4E95BBC4.2010106@bitwagon.com>
+References: <1318283885-1792-1-git-send-email-soltys@ziu.info> <1318283885-1792-2-git-send-email-soltys@ziu.info> <j70q7d$ldn$1@dough.gmane.org> <4E940418.6080102@ziu.info>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4E9557F2.2060209-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4E940418.6080102-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Cc: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 12.10.2011 11:03, Dave Young wrote:
-> On 10/01/2011 03:03 AM, Vivek Goyal wrote:
-> 
->> On Fri, Sep 30, 2011 at 02:38:39PM -0400, Vivek Goyal wrote:
->>> On Fri, Sep 30, 2011 at 11:40:12AM +0800, Dave Young wrote:
->>>
->>> [..]
->>>>
->>>> Add lvm_scan in mount-sys.sh also works, so if we can make lvm_scan
->>>> being called automaticlly via dependencies it will be good. OTOH fstab
->>>> is better than cmdlines as an interface for multi-target dumping
->>>
->>> Agreed that fstab.sys looks like a good interface to mouting non-root devices.
+On 10/11/2011 01:53 AM, Michal Soltys wrote:
+> On 11.10.2011 09:11, WANG Cong wrote:
 >>
->> Having said that, looks like dracut builds all the state using command
->> line options. All the lvms, iscsi root, fcoe targets etc. So they might
->> expect everything to be passed on command line. In that case it will
->> become hard from kdump perspective.
+>> Interesting function, if i understand it correctly, it parallelizes
+>> the stream into two so that can speed up the pattern filtering?
+>>
+>> My brain spins...
+>>
+> It was added by John Reiser (see commit d23159a69c818274486f1287ba6267b96f3febb7).
 > 
-> 
-> There's file injection feature in dracut, if the kdump.conf params can
-> move to cmdline params we can just inject /etc/cmdline instead of pass
-> them to kexec
-> 
+> I just moved the main body into a function, so it's easily eval'able - in order to avoid {var}>& construct. As a side effect, it's (subjectively) a bit easier to read.
 
-I will add /etc/cmdline.d/ as a drop in for configs. This can also be used
-easily for combined initramfs images.
+It may be easier to read the latest version "in the small",
+but the re-formatting has destroyed the visual parallelism of the code.
+The two-dimensional presentation highlights both the similarities
+and differences of the two sides, and this can be essential
+for easy understanding of the global situation.  In particular,
+the 2-D presentation makes it easier to trace the pipes
+and to see the similarities of the two sides:
+-----
+       local merge side2
+       ( ( local _f1 _f2
+           while  read _f1; do   echo "$_f1"
+               if read _f2; then echo "$_f2" 1>&${side2}; fi
+           done \
+           | nmf1     1>&${merge}    )           {side2}>&1 \
+           | nmf1  )      {merge}>&1
+-----
+
+-- 
