@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH] dracut: remove duplicate options
-Date: Mon, 17 Oct 2011 23:01:49 +0200
-Message-ID: <1318885310-12535-1-git-send-email-soltys@ziu.info>
+Subject: [PATCH] check root candidates more carefully
+Date: Mon, 17 Oct 2011 23:36:33 +0200
+Message-ID: <1318887393-13037-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,26 +10,61 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-'-I' and '--fwdir' were both read_arg and push_arg, and the latter has
-priority.
+This is from the following thread:
+
+http://thread.gmane.org/gmane.linux.raid/35753/focus=35795
+
+Additional tests + more specific info.
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- dracut |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+ modules.d/99base/dracut-lib.sh |   11 +++++++++++
+ modules.d/99base/init          |   12 ++++++++++--
+ 2 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/dracut b/dracut
-index 205f5d1..4bc0db3 100755
---- a/dracut
-+++ b/dracut
-@@ -212,8 +212,6 @@ while (($# > 0)); do
-         -c|--conf)     read_arg conffile             "$@" || shift;;
-         --confdir)     read_arg confdir              "$@" || shift;;
-         -L|--stdlog)   read_arg stdloglvl_l          "$@" || shift;;
--        -I|--install)  read_arg install_items        "$@" || shift;;
--        --fwdir)       read_arg fw_dir_l             "$@" || shift;;
-         --compress)    read_arg compress_l           "$@" || shift;;
-         --prefix)      read_arg prefix_l             "$@" || shift;;
-         -f|--force)    force=yes;;
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 62c3bf5..cf5aae6 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -544,3 +544,14 @@ foreach_uuid_until() (
+ 
+     return 1
+ )
++
++usable_root() {
++    local _d
++    [ -d $1 ] || return 1
++    for _d in "$1"/{etc,proc,sys,dev,tmp,usr,var}; do
++        [ -e $_d ] || return 1
++    done
++    [ -e "$1/bin" -o -e "$1/sbin" ] || return 1
++    [ -e "$1/lib" -o -e "$1/lib64" ] || return 1
++    return 0
++}
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index 1b62582..54d5281 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -292,10 +292,18 @@ getarg 'rd.break=mount' 'rdbreak=mount' && emergency_shell -n mount "Break mount
+ # be sourced any number of times. As soon as one suceeds, no more are sourced.
+ i=0
+ while :; do
+-    [ -d "$NEWROOT/proc" ] && break;
++    if ismounted "$NEWROOT"; then
++        usable_root "$NEWROOT" && break;
++        umount "$NEWROOT"
++    fi
+     for f in $hookdir/mount/*.sh; do
+         [ -f "$f" ] && . "$f"
+-        [ -d "$NEWROOT/proc" ] && break;
++        if ismounted "$NEWROOT"; then
++            usable_root "$NEWROOT" && break;
++            warn "$NEWROOT has no proper rootfs layout, ignoring and removing offending mount hook"
++            umount "$NEWROOT"
++            rm -f "$f"
++        fi
+     done
+ 
+     i=$(($i+1))
 -- 
 1.7.5.3
