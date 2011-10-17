@@ -1,10 +1,10 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH] job control fixup
-Date: Tue, 18 Oct 2011 00:02:13 +0200
-Message-ID: <1318888933-13440-1-git-send-email-soltys@ziu.info>
-References: <1318885310-12535-2-git-send-email-soltys@ziu.info>
+Subject: [PATCH] features: RUNDIR, imgdir, ... [update 1]
+Date: Tue, 18 Oct 2011 00:40:18 +0200
+Message-ID: <1318891218-5603-1-git-send-email-soltys@ziu.info>
+References: <1318463387-31868-2-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1318885310-12535-2-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
+In-Reply-To: <1318463387-31868-2-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -12,61 +12,80 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-- in case no ctty was provided, shell was spawned without caring about
-  /dev/console
+Make sure we actually mimic host's structure to not end with duplicate
+files (harmless but wasteful) on hosts, where lib and lib64 point to the
+same place.
 
-Also, the ctty is more opportunistic. If the image was generated with
---ctty, we will fallback to /dev/tty1 if rc.ctty is invalid or missing.
-Otherwise we spawn standard shell on /dev/console
+We detect symlink/dir presence in the creation loop, so we don't have to
+worry about $[usr]libdir.
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- modules.d/99base/init         |    8 +++++---
- modules.d/99shutdown/shutdown |    9 +++++----
- 2 files changed, 10 insertions(+), 7 deletions(-)
+ dracut |   30 ++++++++++++++++--------------
+ 1 files changed, 16 insertions(+), 14 deletions(-)
 
-diff --git a/modules.d/99base/init b/modules.d/99base/init
-index 54d5281..76c6957 100755
---- a/modules.d/99base/init
-+++ b/modules.d/99base/init
-@@ -59,11 +59,13 @@ emergency_shell()
-         echo
-         export PS1="$_rdshell_name:\${PWD}# "
-         [ -e /.profile ] || >/.profile
--        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
--        if type setsid >/dev/null 2>&1 && [ -c "$_ctty" ] ; then
-+        _ctty=/dev/console
-+        if type setsid >/dev/null 2>&1; then
-+            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
-+            [ -c "$_ctty" ] || _ctty=/dev/tty1
-             setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
-         else
--            sh -i -l
-+            sh -i -l 0<$_ctty 1>$_ctty 2>&1
+diff --git a/dracut b/dracut
+index 1d5f2f4..191998a 100755
+--- a/dracut
++++ b/dracut
+@@ -530,9 +530,13 @@ export initdir dracutbasedir dracutmodules drivers \
+ 
+ # initial directory layout + host safe symlinks
+ if [[ $kernel_only != yes ]]; then
++    for d in /{bin,sbin,etc,lib{,64},var,usr{,/{bin,sbin,lib{,64}}}}; do
++        if [[ -h $d ]]; then inst_symlink $d
++        elif [[ -d $d ]]; then inst_dir $d; fi
++    done
++
+     mkdir -m 0755 -p \
+-        "${initdir}${imgdir}"/{bin,etc,lib,${libdir#/},sbin,var,usr/{bin,sbin}} \
+-        "${initdir}"/{dev,proc,sys,${newroot#/},root,run/{lock,initramfs},tmp}
++        "${initdir}"/{dev,proc,sys,${newroot#/},root,run{,/{lock,initramfs}},tmp}
+ 
+     # host safe symlinks (will be adjusted later), needed during inst*() calls
+     ln -sfn "${initdir}"/tmp      "${initdir}${imgdir}"/tmp
+@@ -540,18 +544,16 @@ if [[ $kernel_only != yes ]]; then
+     ln -sfn "${initdir}"/run      "${initdir}${imgdir}"/run
+     ln -sfn "${initdir}"/run      "${initdir}${imgdir}"/var/run
+     ln -sfn "${initdir}"/run/lock "${initdir}${imgdir}"/var/lock
+-    # initial sewing pass
+-    for d in bin etc lib "${libdir#/}" sbin var usr; do
+-        ln -sfn "${imgdir#/}/$d" "${initdir}/$d"
+-    done
+ else
+-    mkdir -m 0755 -p "${initdir}${imgdir}/"{lib,${libdir#/}}
+-
+-    # initial sewing pass
+-    for d in lib "${libdir#/}"; do
+-        ln -sfn "${imgdir#/}/$d" "${initdir}/$d"
++    for d in /lib{,64}; do
++        if [[ -h $d ]]; then inst_symlink $d
++        elif [[ -d $d ]]; then inst_dir $d; fi
+     done
+ fi
++# initial sewing pass
++for d in "${initdir}${imgdir}"/*; do
++    ln -sfn "${imgdir#/}/${d##*/}" "${initdir}/${d##*/}"
++done
+ 
+ # check all our modules to see if they should be sourced.
+ # This builds a list of modules that we will install next.
+@@ -686,13 +688,13 @@ for d in "${initdir}${imgdir}"/*; do
+     s="${initdir}/${d##*/}"
+     if [[ -h ${s} ]]; then
+         # verify if everything is fine
+-        t=$(readlink -e "${s}")
+-        if [[ $t != $d ]]; then
++        t=$(readlink "${s}")
++        if [[ $t != ${d#${initdir}/} ]]; then
+             dfatal "dracut: symlink mismatch ${d##*/} -/-> ${d#${initdir}/}"
+             exit 1
          fi
      else
-         warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
-diff --git a/modules.d/99shutdown/shutdown b/modules.d/99shutdown/shutdown
-index 9473b5b..21bb37f 100755
---- a/modules.d/99shutdown/shutdown
-+++ b/modules.d/99shutdown/shutdown
-@@ -31,12 +31,13 @@ emergency_shell()
-         echo
-         export PS1="$_rdshell_name:\${PWD}# "
-         [ -e /.profile ] || >/.profile
--        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
--        if type setsid >/dev/null 2>&1 && [ -c "$_ctty" ] ; then
--            _ctty=/dev/${_ctty##*/}
-+        _ctty=/dev/console
-+        if type setsid >/dev/null 2>&1; then
-+            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
-+            [ -c "$_ctty" ] || _ctty=/dev/tty1
-             setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
-         else
--            sh -i -l
-+            sh -i -l 0<$_ctty 1>$_ctty 2>&1
-         fi
-     else
-         exec /lib/systemd/systemd-shutdown "$@"
+-        ln -sfn "${imgdir#/}/${d##*/}" "${s}"
++        ln -sfn "${d#${initdir}/}" "${s}"
+     fi
+ done
+ 
 -- 
 1.7.5.3
