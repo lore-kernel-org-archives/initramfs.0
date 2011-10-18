@@ -1,7 +1,7 @@
 From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
-Subject: [PATCH 03/10] minor changes
-Date: Tue, 18 Oct 2011 20:33:19 +0200
-Message-ID: <1318962806-24000-4-git-send-email-soltys@ziu.info>
+Subject: [PATCH 07/10] introduce optional job control
+Date: Tue, 18 Oct 2011 20:33:23 +0200
+Message-ID: <1318962806-24000-8-git-send-email-soltys@ziu.info>
 References: <1318962806-24000-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1318962806-24000-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
@@ -12,38 +12,108 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-- in 10i18n - do stty -iutf8 on non-utf8 consoles, for consistency with
-  iutf8 on utf8 ones
-- vim modeline in xml file
+Option --ctty will optionally add setsid binary to dracut's image.
+
+During runtime, if rd.ctty is set and is a character device,
+emergency shells will be spawned with job control.
 
 Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
 ---
- dracut.kernel.7.xml           |    1 +
- modules.d/10i18n/console_init |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ dracut                           |    3 ++-
+ modules.d/99base/init            |   10 ++++++++--
+ modules.d/99base/module-setup.sh |    1 +
+ modules.d/99shutdown/shutdown    |   11 +++++++++--
+ 4 files changed, 20 insertions(+), 5 deletions(-)
 
-diff --git a/dracut.kernel.7.xml b/dracut.kernel.7.xml
-index 8d50d94..0571031 100644
---- a/dracut.kernel.7.xml
-+++ b/dracut.kernel.7.xml
-@@ -1,5 +1,6 @@
- <?xml version='1.0' encoding='UTF-8'?>
- <!-- This document was created with Syntext Serna Free. --><!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" []>
-+<!-- vim: set ts=8 sts=2 sw=2 et: -->
- <refentry id="dracutkernel7">
-   <refentryinfo>
-     <title>dracut.kernel</title>
-diff --git a/modules.d/10i18n/console_init b/modules.d/10i18n/console_init
-index 110cb0a..b46046b 100755
---- a/modules.d/10i18n/console_init
-+++ b/modules.d/10i18n/console_init
-@@ -22,6 +22,7 @@ set_terminal() {
-         stty -F ${dev} iutf8
-     else
-         printf '\033%%@' >&7
-+        stty -F ${dev} -iutf8
-     fi
- }
+diff --git a/dracut b/dracut
+index 115f1c4..4cfcab8 100755
+--- a/dracut
++++ b/dracut
+@@ -231,6 +231,7 @@ while (($# > 0)); do
+         --nolvmconf)   lvmconf_l="no";;
+         --debug)       debug="yes";;
+         --profile)     profile="yes";;
++        --ctty)        cttyhack="yes";;
+         -v|--verbose)  ((verbosity_mod_l++));;
+         -q|--quiet)    ((verbosity_mod_l--));;
+         -l|--local)    allowlocal="yes" ;;
+@@ -514,7 +515,7 @@ chmod 755 "$initdir"
+ export initdir dracutbasedir dracutmodules drivers \
+     fw_dir drivers_dir debug no_kernel kernel_only \
+     add_drivers mdadmconf lvmconf filesystems \
+-    use_fstab libdir usrlibdir fscks nofscks \
++    use_fstab libdir usrlibdir fscks nofscks cttyhack \
+     stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
+     debug imgdir prefix prefix_mnt newroot
  
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index bc5d2ba..e532bfe 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -40,6 +40,7 @@ wait_for_loginit()
+ 
+ emergency_shell()
+ {
++    local _ctty
+     set +e
+     if [ "$1" = "-n" ]; then
+         _rdshell_name=$2
+@@ -57,8 +58,13 @@ emergency_shell()
+         echo "Dropping to debug shell."
+         echo
+         export PS1="$_rdshell_name:\${PWD}# "
+-        [ -e /.profile ] || echo "exec 0<>/dev/console 1<>/dev/console 2<>/dev/console" > /.profile
+-        sh -i -l
++        [ -e /.profile ] || >/.profile
++        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
++        if type setsid >/dev/null 2>&1 && [ -c "$_ctty" ] ; then
++            setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
++        else
++            sh -i -l
++        fi
+     else
+         warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
+         # cause a kernel panic
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index 2a9b643..4c64bca 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -16,6 +16,7 @@ install() {
+     dracut_install mount mknod mkdir modprobe pidof sleep chroot \
+         sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink
+     dracut_install -o less
++    [[ $cttyhack = yes ]] && dracut_install -o setsid
+     if [ ! -e "${initdir}/bin/sh" ]; then
+         dracut_install bash
+         (ln -s bash "${initdir}/bin/sh" || :)
+diff --git a/modules.d/99shutdown/shutdown b/modules.d/99shutdown/shutdown
+index a31a95d..9473b5b 100755
+--- a/modules.d/99shutdown/shutdown
++++ b/modules.d/99shutdown/shutdown
+@@ -13,6 +13,7 @@ export TERM=linux
+ 
+ emergency_shell()
+ {
++    local _ctty
+     set +e
+     if [ "$1" = "-n" ]; then
+         _rdshell_name=$2
+@@ -29,8 +30,14 @@ emergency_shell()
+         echo "Dropping to debug shell."
+         echo
+         export PS1="$_rdshell_name:\${PWD}# "
+-        [ -e /.profile ] || echo "exec 0<>/dev/console 1<>/dev/console 2<>/dev/console" > /.profile
+-        sh -i -l
++        [ -e /.profile ] || >/.profile
++        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
++        if type setsid >/dev/null 2>&1 && [ -c "$_ctty" ] ; then
++            _ctty=/dev/${_ctty##*/}
++            setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
++        else
++            sh -i -l
++        fi
+     else
+         exec /lib/systemd/systemd-shutdown "$@"
+         warn "Shutdown has failed. To debug this issue add \"rdshell\" to the kernel command line."
 -- 
 1.7.5.3
