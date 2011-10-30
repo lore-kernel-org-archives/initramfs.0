@@ -1,47 +1,36 @@
-From: Renjun Qu <renjunqu.kernel-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: (unknown)
-Date: Tue, 25 Oct 2011 13:55:53 +0800
-Message-ID: <CAPu47WTjxrrF+tHGRJOgKohD-sijBvX8iC-gBUnbsRw_KS4K5g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: [PATCH] init: /dev/.initramfs symlink fixup
+Date: Mon, 31 Oct 2011 00:02:25 +0100
+Message-ID: <1320015745-9557-1-git-send-email-soltys@ziu.info>
+References: <1318962806-24000-1-git-send-email-soltys@ziu.info>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=mime-version:date:message-id:subject:from:to:content-type
-         :content-transfer-encoding;
-        bh=h1mOAlUp8IMIs/dIDv9guJ9VW4ZALFfsejFDEqamauo=;
-        b=QCPV/myHnUW8mnc7rDd9tb1QVPyhfp5WTFqQojZCwDinlJqMlmsKMZSX/82KzXxi2T
-         TT8Mk3BAj8ZqWzAGC4nH3p6ZChLMtwpvuVUl8R95R3qYS0EGekGmZEZOh9EOcuLgtBoO
-         0xqZJzVcRaDMozZ2f7trvzstlGfE3tIM0FQUo=
-Subject: 
+In-Reply-To: <1318962806-24000-1-git-send-email-soltys-R61QfzASbfY@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="windows-1252"
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello everyone:
-         I am building a small embedded linux system right now. I
-confused that why the default rootfs must has a "dev/console" node. I
-have made a experiment as follow:
-        1st, configure the kernel(2.6.32) to support the initramfs
-and initrd, and set the source of the initramfs to a directory which
-only has a "root" node.
-        2nd, configure the kernel to support the root file system on
-nfs, and rebuild the kernel. I have created all necessary files and
-directories in the directory exported by the nfs server.
-        3rd,  set the appropriate boot parameter, and boot my kernel.
-        The result is, the kernel can successfully mount the root
-file system, but the "/sbin/init" program can not print any
-information to me. My "sbin/init" program is just a hello world
-program which only print some greeting information.There is a
-"dev/console" device node in the nfs exported directory.
-        But if i set the source of the initramfs to empty, and redo
-my experiment from the 2nd step,everything will be ok. So, i think
-there must be a =93dev/console=94 node in the rootfs. The real root fil=
-e
-system already has a "dev/console" node, why default rootfs must have
-a dev/console node. Please help me.
+It's not related to $PREFIX being set or not (anymore).
 
-                         Best regards,
+Signed-off-by: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+---
+ modules.d/99base/init |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-                            Ren jun Qu
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index c109ae4..0ce8ed8 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -380,7 +380,7 @@ if [ -d "$NEWROOT/run" ]; then
+ else
+     NEWRUN=/dev/.run
+     mkdir -p -m 0755 "$NEWRUN"
+-    [ -n "$PREFIX" ] && ln -sfn .run/initramfs /dev/.initramfs
++    ln -sfn .run/initramfs /dev/.initramfs
+     # if initramfs's udev uses /run by default, but the host is
+     # still /run-less, we should copy udev's data to legacy
+     # /dev/.udev, so the necessary info is available for the host
+-- 
+1.7.7.1
