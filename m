@@ -1,44 +1,55 @@
-From: Anton Blanchard <anton-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>
-Subject: [PATCH] ip= server-id should be server-IP
-Date: Mon, 31 Oct 2011 22:30:55 +1100
-Message-ID: <20111031223055.42fb2d6f@kryten>
+From: yajosev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Subject: [PATCH] exit 255 documentation.
+Date: Mon, 31 Oct 2011 12:45:33 -0600
+Message-ID: <1320086733-3949-1-git-send-email-yajosev@gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=from:to:cc:subject:date:message-id:x-mailer:mime-version
+         :content-type:content-transfer-encoding;
+        bh=oBUeoQcpXKwuhmZxlpItHl++tv0KiwGBnABAp76zppM=;
+        b=fb4Xjwr38CzYnhlpjQjhuKnOByOx7nSNFbiaYkrwJ/V2hua5AKwNQKvmLM64QAI2Zu
+         YMQhN+6NiWrwDXdtG2gzTHFOuHSacrE+H6KxREnpi6vRnS2AQdQFLvJAKHxFw+wXH1vs
+         b8lM6dg5A4XgbyLSDu+6vliafRg4p9M28lkp8=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="macroman"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org, yajosev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 
+=46rom: Yader Vel=C3=A1squez <yajosev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-From looking at the code it seems like server-id should really
-be named server-IP.
-
+Add documentation about the exit 255 in check script that
+indicates that the modules should only be included when
+explicitly requested by the configuration.
 ---
+ README.modules |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-Index: dracut/dracut.kernel.7.xml
-===================================================================
---- dracut.orig/dracut.kernel.7.xml	2011-10-31 21:12:55.371535209 +1100
-+++ dracut/dracut.kernel.7.xml	2011-10-31 21:13:32.100192208 +1100
-@@ -445,7 +445,7 @@ with a valid DHCP root-path.</para>
-         </varlistentry>
-         <varlistentry>
-           <term><envar>ip=</envar><replaceable>&lt;client-IP&gt;</replaceable>:
--              <replaceable>&lt;server-id&gt;</replaceable>
-+              <replaceable>&lt;server-IP&gt;</replaceable>
-             :<replaceable>&lt;gateway-IP&gt;</replaceable>:<replaceable>&lt;netmask&gt;</replaceable>:<replaceable>&lt;client_hostname&gt;</replaceable>:<replaceable>&lt;interface&gt;</replaceable>:<replaceable>{none|off}</replaceable></term>
-           <listitem>
-             <para>explicit network configuration. If you want do define a IPv6 address, put it in brackets (e.g. [2001:DB8::1]).
-Index: dracut/modules.d/40network/parse-ip-opts.sh
-===================================================================
---- dracut.orig/modules.d/40network/parse-ip-opts.sh	2011-10-31 21:12:59.875615777 +1100
-+++ dracut/modules.d/40network/parse-ip-opts.sh	2011-10-31 21:13:38.132300111 +1100
-@@ -7,7 +7,7 @@
- #
- #       ip=<interface>:[dhcp|on|any]
- #
--#       ip=<client-IP-number>:<server-id>:<gateway-IP-number>:<netmask>:<client-hostname>:<interface>:[dhcp|on|any|none|off]
-+#       ip=<client-IP-number>:<server-IP-number>:<gateway-IP-number>:<netmask>:<client-hostname>:<interface>:[dhcp|on|any|none|off]
- #
- # When supplying more than only ip= line, <interface> is mandatory and
- # bootdev= must contain the name of the primary interface to use for
+diff --git a/README.modules b/README.modules
+index 21461de..932db29 100644
+--- a/README.modules
++++ b/README.modules
+@@ -43,8 +43,9 @@ check():
+=20
+        When called without options, check should check to make sure th=
+at
+        any files it needs to install into the initrd from the host sys=
+tem
+-       are present.  It should exit with a 0 if they are, and a 1 if t=
+hey are
+-       not.
++       are present. It should exit with a 0 if they are, a 1 if they a=
+re
++       not, and a 255 if the module should only be included when expli=
+citly
++       requested by the configuration or command line options.
+=20
+        When called with $hostonly set, it should perform the same chec=
+k
+        that it would without it set, and it should also check to see i=
+f the
+--=20
+1.7.6.4
