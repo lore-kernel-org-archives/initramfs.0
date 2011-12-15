@@ -1,40 +1,85 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH] Makefile: Append target files names for man pages.
-Date: Wed, 16 Nov 2011 15:17:35 +0100
-Message-ID: <1321453055-373-1-git-send-email-aidecoe@aidecoe.name>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCE] dracut 014 release
+Date: Thu, 15 Dec 2011 13:40:32 +0100
+Message-ID: <4EE9EAC0.4060700@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
----
- Makefile |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-diff --git a/Makefile b/Makefile
-index 80173a3..454cd8e 100644
---- a/Makefile
-+++ b/Makefile
-@@ -40,11 +40,11 @@ install: doc
- 	install -m 0755 dracut-functions $(DESTDIR)$(pkglibdir)/dracut-functions
- 	install -m 0755 dracut-logger $(DESTDIR)$(pkglibdir)/dracut-logger
- 	cp -arx modules.d $(DESTDIR)$(pkglibdir)
--	install -m 0644 dracut.8 $(DESTDIR)$(mandir)/man8
--	install -m 0644 dracut-catimages.8 $(DESTDIR)$(mandir)/man8
--	install -m 0644 dracut-gencmdline.8 $(DESTDIR)$(mandir)/man8
--	install -m 0644 dracut.conf.5 $(DESTDIR)$(mandir)/man5
--	install -m 0644 dracut.kernel.7 $(DESTDIR)$(mandir)/man7
-+	install -m 0644 dracut.8 $(DESTDIR)$(mandir)/man8/dracut.8 
-+	install -m 0644 dracut-catimages.8 $(DESTDIR)$(mandir)/man8/dracut-catimages.8 
-+	install -m 0644 dracut-gencmdline.8 $(DESTDIR)$(mandir)/man8/dracut-gencmdline.8 
-+	install -m 0644 dracut.conf.5 $(DESTDIR)$(mandir)/man5/dracut.conf.5 
-+	install -m 0644 dracut.kernel.7 $(DESTDIR)$(mandir)/man7/dracut.kernel.7 
- 
- clean:
- 	$(RM) *~
--- 
-1.7.8.rc1
+The tarball can be found here:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/
+	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+
+Git:
+	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+
+Git Web:
+	http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+	http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+
+
+dracut-014
+==========
+- new dracut arguments:
+  --lvmconf
+  --nolvmconf
+  --fscks [LIST]
+  --nofscks
+- new .conf options:
+  install_items
+  fscks
+  nofscks
+- new kernel options:
+  rd.md.ddf
+  rd.md.waitclean
+  plymouth.enable
+- dracut move from /sbin to /usr/bin
+- dracut modules dir moved from /usr/share/dracut to /usr/lib/dracut
+- profiling with "dracut --profile"
+- new TEST-16-DMSQUASH, test for Fedora LiveCDs
+- speedup of initramfs creation
+- ask_for_password fallback to CLI
+- mdraid completely switched to incremental assembly
+- no more cdrom polling
+- "switch_root" breakpoint is now very late
+- /dev/live is gone
+- /dev/root is gone
+- fs-lib dracut module for fscks added
+- xen dracut module removed
+- usb mass storage kernel drivers now included
+- usrmount dracut module added:
+  mount /usr if found in /sysroot/etc/fstab
+- only include fsck helper needed for hostonly
+- fcoe: support for bnx2fc
+- support iSCSI drivers: qla4xxx, cxgb3i, cxgb4i, bnx2i, be2iscsi
+- fips-aesni dracut module added
+- add install_items to dracut.conf
+    install_items+=" <file>[ <file> ...] "
+- speedup internal testsuite
+- internal testsuite: store temporary data in a temporary dir
+
+dracut-013
+==========
+- speedup of initramfs creation
+- fixed inst_dir for symbolic links
+- add unix kernel module
