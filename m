@@ -1,41 +1,36 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/6] nfs: fix regex patterns in check()
-Date: Tue, 20 Dec 2011 14:10:00 +0800
-Message-ID: <1324361401-6908-6-git-send-email-amwang@redhat.com>
-References: <1324361401-6908-1-git-send-email-amwang@redhat.com>
+From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Create a symlink for the live image's base loop device
+Date: Tue, 20 Dec 2011 14:22:33 -0800
+Message-ID: <1324419753-14324-1-git-send-email-bcl@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1324361401-6908-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+It is useful to know that loop device that the live image's / is mounted
+from. Make a /dev/live-baseloop symlink that points to it.
 ---
- modules.d/95nfs/module-setup.sh |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ modules.d/90dmsquash-live/dmsquash-live-root |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
-index 641d917..6778f28 100755
---- a/modules.d/95nfs/module-setup.sh
-+++ b/modules.d/95nfs/module-setup.sh
-@@ -9,9 +9,9 @@ check() {
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-root b/modules.d/90dmsquash-live/dmsquash-live-root
+index b704139..cb104e4 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-root
++++ b/modules.d/90dmsquash-live/dmsquash-live-root
+@@ -200,6 +200,9 @@ if [ -n "$ROOTFLAGS" ]; then
+     ROOTFLAGS="-o $ROOTFLAGS"
+ fi
  
-     [[ $hostonly ]] || [[ $mount_needs ]] && {
-         for fs in ${host_fs_types[@]}; do
--            strstr "$fs" "|nfs"  && return 0
--            strstr "$fs" "|nfs3" && return 0
--            strstr "$fs" "|nfs4" && return 0
-+            strstr "$fs" "\|nfs"  && return 0
-+            strstr "$fs" "\|nfs3" && return 0
-+            strstr "$fs" "\|nfs4" && return 0
-         done
-         return 255
-     }
++if [ -b "$BASE_LOOPDEV" ]; then
++    ln -s $BASE_LOOPDEV /dev/live-baseloop
++fi
+ ln -s /dev/mapper/live-rw /dev/root
+ printf '/bin/mount %s /dev/mapper/live-rw %s\n' "$ROOTFLAGS" "$NEWROOT" > $hookdir/mount/01-$$-live.sh
+ 
 -- 
-1.7.7.4
+1.7.6.4
