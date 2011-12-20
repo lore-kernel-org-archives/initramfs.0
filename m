@@ -1,85 +1,93 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 014 release
-Date: Thu, 15 Dec 2011 13:40:32 +0100
-Message-ID: <4EE9EAC0.4060700@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 4/6] Pass device name instead of major:minor in for_each_host_dev_fs()
+Date: Tue, 20 Dec 2011 14:09:59 +0800
+Message-ID: <1324361401-6908-5-git-send-email-amwang@redhat.com>
+References: <1324361401-6908-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1324361401-6908-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Here comes a new dracut version. Thanks to all who have contributed to
-this release.
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-The tarball can be found here:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/
-	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ dracut           |   11 +++++------
+ dracut-functions |   11 ++++++-----
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-Git:
-	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
-
-Git Web:
-	http://git.kernel.org/?p=boot/dracut/dracut.git
-
-Git Web RSS Feed:
-	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-	http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
-
-
-dracut-014
-==========
-- new dracut arguments:
-  --lvmconf
-  --nolvmconf
-  --fscks [LIST]
-  --nofscks
-- new .conf options:
-  install_items
-  fscks
-  nofscks
-- new kernel options:
-  rd.md.ddf
-  rd.md.waitclean
-  plymouth.enable
-- dracut move from /sbin to /usr/bin
-- dracut modules dir moved from /usr/share/dracut to /usr/lib/dracut
-- profiling with "dracut --profile"
-- new TEST-16-DMSQUASH, test for Fedora LiveCDs
-- speedup of initramfs creation
-- ask_for_password fallback to CLI
-- mdraid completely switched to incremental assembly
-- no more cdrom polling
-- "switch_root" breakpoint is now very late
-- /dev/live is gone
-- /dev/root is gone
-- fs-lib dracut module for fscks added
-- xen dracut module removed
-- usb mass storage kernel drivers now included
-- usrmount dracut module added:
-  mount /usr if found in /sysroot/etc/fstab
-- only include fsck helper needed for hostonly
-- fcoe: support for bnx2fc
-- support iSCSI drivers: qla4xxx, cxgb3i, cxgb4i, bnx2i, be2iscsi
-- fips-aesni dracut module added
-- add install_items to dracut.conf
-    install_items+=" <file>[ <file> ...] "
-- speedup internal testsuite
-- internal testsuite: store temporary data in a temporary dir
-
-dracut-013
-==========
-- speedup of initramfs creation
-- fixed inst_dir for symbolic links
-- add unix kernel module
+diff --git a/dracut b/dracut
+index 452067d..85228b8 100755
+--- a/dracut
++++ b/dracut
+@@ -528,9 +528,8 @@ chmod 755 "$initdir"
+ for line in "${fstab_lines[@]}"; do
+     set -- $line
+     #dev mp fs fsopts
+-    dev="$(get_maj_min $1)"
+-    push host_devs "${dev:-$1}"
+-    push host_fs_types "$dev|$3"
++    push host_devs "$1"
++    push host_fs_types "$1|$3"
+ done
+ 
+ for f in $add_fstab; do
+@@ -556,13 +555,13 @@ if [[ $hostonly ]]; then
+ 
+     for mp in "${host_mp[@]}"; do
+         mountpoint "$mp" >/dev/null 2>&1 || continue
+-        push host_devs $(find_block_device "$mp")
++        push host_devs $(readlink -f "/dev/block/$(find_block_device "$mp")")
+     done
+ fi
+ 
+ _get_fs_type() (
+     [[ $1 ]] || return
+-    if [[ -b /dev/block/$1 ]] && get_fs_env /dev/block/$1; then
++    if [[ -b $1 ]] && get_fs_env $1; then
+         echo "$1|$ID_FS_TYPE"
+         return 1
+     fi
+@@ -576,7 +575,7 @@ _get_fs_type() (
+ for dev in "${host_devs[@]}"; do
+     unset fs_type
+     for fstype in $(_get_fs_type $dev) \
+-        $(check_block_and_slaves _get_fs_type $dev); do
++        $(check_block_and_slaves _get_fs_type $(get_maj_min $dev)); do
+         if ! strstr " ${host_fs_types[*]} " " $fstype ";then
+             push host_fs_types "$fstype"
+         fi
+diff --git a/dracut-functions b/dracut-functions
+index 618e884..3dd72e9 100755
+--- a/dracut-functions
++++ b/dracut-functions
+@@ -247,16 +247,17 @@ find_root_block_device() { find_block_device /; }
+ for_each_host_dev_fs()
+ {
+     local _func="$1"
++    local _dev
++    local _fs
+     for f in ${host_fs_types[@]}; do
+         OLDIFS="$IFS"
+         IFS="|"
+         set -- $f
+         IFS="$OLDIFS"
+-        dev=$1
+-        [[ -b /dev/block/$dev ]] && dev="/dev/block/$dev"
+-        [[ -b $dev ]] || continue
+-        fs="$2"
+-        $_func $dev $fs
++        _dev="$1"
++        [[ -b "$_dev" ]] || continue
++        _fs="$2"
++        $_func $_dev $_fs
+     done
+ }
+ 
+-- 
+1.7.7.4
