@@ -1,9 +1,8 @@
 From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 1/4 branch usrmove] deal common part of etc passwd in
- 99base
-Date: Sun, 25 Dec 2011 11:49:20 +0000 (UTC)
-Message-ID: <jd72k0$rf9$1@dough.gmane.org>
-References: <20111223080420.GA12664@darkstar.nay.redhat.com>
+Subject: Re: [PATCH 4/4 branch usrmove] Add ssh client module code
+Date: Sun, 25 Dec 2011 11:57:12 +0000 (UTC)
+Message-ID: <jd732n$rf9$2@dough.gmane.org>
+References: <20111223080430.GA12670@darkstar.nay.redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -13,9 +12,19 @@ Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 On Fri, 23 Dec 2011 at 08:04 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> ssh module will need root user in /etc/passwd, so add root and nobody
-> to /etc/passwd in 99base instead of nfs module
+> Add ssh-client module, which support ssh key mode and interactive mode.
+> with --sshkey option you can provide the ssh key to be installed
+>
+> Usage:
+> 1. sshkey mode:
+> transfer your public key to remote machine with ssh-copy-id or do it mannaully
+> example of options:
+> ./dracut -l -H -a ssh-client --sshkey /root/.ssh/id_rsa i.img
+> 2. interactive mode:
+> need use --ctty option, ie.:
+> ./dracut -l -H -a ssh-client --ctty i.img
 
-Huh? Even for who don't use either ssh module or nfs module??
+Seems --sshkey and --ctty are only for ssh-client module,
+so, what if the user specifies -sshkey or --ctty but doesn't
+use ssh-client module?
 
-I think you just need to copy these two lines into your ssh module...
