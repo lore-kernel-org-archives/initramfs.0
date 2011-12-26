@@ -1,158 +1,35 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/5 branch usrmove v2] Add ssh client module code
-Date: Mon, 26 Dec 2011 14:29:21 +0800
-Message-ID: <20111226062920.GA3147@darkstar.nay.redhat.com>
+Subject: Re: [PATCH 5/5 branch usrmove v2] --ctty: add help line in usage
+Date: Mon, 26 Dec 2011 14:42:18 +0800
+Message-ID: <20111226064218.GA3213@darkstar.nay.redhat.com>
+References: <20111226062923.GA3149@darkstar.nay.redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20111226062923.GA3149-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, soltys-R61QfzASbfY@public.gmane.org
 
-Add ssh client module which support ssh key mode and interactive mode.
-with --sshkey option you can provide the ssh key to be installed
-
->why not call it "ssh" module?
-ssh-client is better, maybe future there will be ssh-server come in.
-In debian these are also two different packages.
-
-Usage:
-1. sshkey mode:
-transfer your public key to remote machine with ssh-copy-id or do it mannaully
-example of options:
-./dracut -l -H -a ssh-client --sshkey /root/.ssh/id_rsa i.img
-2. interactive mode:
-need use --ctty option, ie.:
-./dracut -l -H -a ssh-client --ctty i.img
-
-[v2 changes]:
-per wangcong: add patch description about module name
-add help line in usage()
-remove useless comment
+Adding missed help line in usage
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut                                 |    4 ++-
- dracut.8.xml                           |    8 ++++
- modules.d/95ssh-client/module-setup.sh |   60 ++++++++++++++++++++++++++++++++
- 3 files changed, 71 insertions(+), 1 deletions(-)
- create mode 100644 modules.d/95ssh-client/module-setup.sh
+[please use this one instead, remove git formatted patch head line]
+ dracut |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
 diff --git a/dracut b/dracut
-index 24a89e6..b0a8e24 100755
+index b0a8e24..5343866 100755
 --- a/dracut
 +++ b/dracut
-@@ -118,6 +118,7 @@ Creates initial ramdisk images for preloading modules
-   -M, --show-modules    Print included module's name to standard output during
+@@ -119,6 +119,7 @@ Creates initial ramdisk images for preloading modules
                           build.
    --keep                Keep the temporary initramfs for debugging purposes
-+  --sshkey [SSHKEY]     Add ssh key to initramfs (use with ssh-client module)
+   --sshkey [SSHKEY]     Add ssh key to initramfs (use with ssh-client module)
++  --ctty                Add control tty for emergency shells
  EOF
  }
  
-@@ -233,6 +234,7 @@ while (($# > 0)); do
-         --debug)       debug="yes";;
-         --profile)     profile="yes";;
-         --ctty)        cttyhack="yes";;
-+        --sshkey)      read_arg sshkey   "$@" || shift;;
-         -v|--verbose)  ((verbosity_mod_l++));;
-         -q|--quiet)    ((verbosity_mod_l--));;
-         -l|--local)    allowlocal="yes" ;;
-@@ -590,7 +592,7 @@ export initdir dracutbasedir dracutmodules drivers \
-     add_drivers mdadmconf lvmconf filesystems \
-     use_fstab libdir usrlibdir fscks nofscks cttyhack \
-     stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
--    debug host_fs_types host_devs
-+    debug host_fs_types host_devs sshkey
- 
- # Create some directory structure first
- [[ $prefix ]] && mkdir -m 0755 -p "${initdir}${prefix}"
-diff --git a/dracut.8.xml b/dracut.8.xml
-index a46fc04..a88fe16 100644
---- a/dracut.8.xml
-+++ b/dracut.8.xml
-@@ -370,6 +370,14 @@ Default:
-         </varlistentry>
-         <varlistentry>
-           <term>
-+            <option>--sshkey&nbsp;<replaceable>&lt;sshkey file&gt;</replaceable></option>
-+          </term>
-+          <listitem>
-+            <para>ssh key file used with ssh-client module.</para>
-+          </listitem>
-+        </varlistentry>
-+        <varlistentry>
-+          <term>
-             <option>-l</option>
-           </term>
-           <term>
-diff --git a/modules.d/95ssh-client/module-setup.sh b/modules.d/95ssh-client/module-setup.sh
-new file mode 100644
-index 0000000..0ffc298
---- /dev/null
-+++ b/modules.d/95ssh-client/module-setup.sh
-@@ -0,0 +1,60 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+# fixme: assume user is root
-+
-+check() {
-+    # If our prerequisites are not met, fail.
-+    type -P ssh >/dev/null || return 1
-+    type -P scp >/dev/null || return 1
-+    if [[ $sshkey ]]; then
-+        [ ! -f $sshkey ] && {
-+            derror "sshkey is not found!"
-+            return 1
-+        }
-+        [[ ! $cttyhack = yes ]] && {
-+            dinfo "--ctty is not used, you should make sure the machine is knowhost and copy the sshkey to remote machine!"
-+        }
-+    else
-+        [[ ! $cttyhack = yes ]] && {
-+            derror "ssh interactive mode need option --ctty!"
-+            return 1
-+        }
-+    fi
-+
-+    return 0
-+}
-+
-+depends() {
-+    # We depend on network modules being loaded
-+    echo network
-+}
-+
-+inst_sshenv()
-+{
-+    if [ -d /root/.ssh ]; then
-+        inst_dir /root/.ssh
-+        chmod 700 ${initdir}/root/.ssh
-+    fi
-+
-+    # Copy over ssh key and knowhosts if needed
-+    [[ $sshkey ]] && {
-+        inst $sshkey
-+        [[ -f /root/.ssh/known_hosts ]] && inst /root/.ssh/known_hosts
-+        [[ -f /etc/ssh/ssh_known_hosts ]] && inst /etc/ssh/ssh_known_hosts
-+    }
-+
-+    # Copy over root and system-wide ssh configs.
-+    [[ -f /root/.ssh/config ]] && inst /root/.ssh/config
-+    [[ -f /etc/ssh/ssh_config ]] && inst /etc/ssh/ssh_config
-+
-+    return 0
-+}
-+
-+install() {
-+    inst ssh
-+    inst scp
-+    inst_sshenv
-+}
-+
--- 
-1.7.1
