@@ -1,42 +1,48 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/4 branch usrmove] Add ssh client module code
-Date: Mon, 26 Dec 2011 09:52:24 +0800
-Message-ID: <4EF7D358.10905@redhat.com>
-References: <20111223080430.GA12670@darkstar.nay.redhat.com> <CAGi==UVyoOjY3vFJ2RbCmYZOkdfQMFYXAr_5JXEeb45i9wQTHg@mail.gmail.com>
+Subject: Re: [PATCH 1/4 branch usrmove] deal common part of etc passwd in
+ 99base
+Date: Mon, 26 Dec 2011 09:57:02 +0800
+Message-ID: <4EF7D46E.4000109@redhat.com>
+References: <20111223080420.GA12664@darkstar.nay.redhat.com> <jd72k0$rf9$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAGi==UVyoOjY3vFJ2RbCmYZOkdfQMFYXAr_5JXEeb45i9wQTHg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <jd72k0$rf9$1@dough.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Alan Pevec <apevec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, soltys-R61QfzASbfY@public.gmane.org
+To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 12/23/2011 07:17 PM, Alan Pevec wrote:
+On 12/25/2011 07:49 PM, Cong Wang wrote:
 
-> On Fri, Dec 23, 2011 at 9:04 AM, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> with --sshkey option you can provide the ssh key to be installed
->>
->> Usage:
->> 1. sshkey mode:
->> transfer your public key to remote machine with ssh-copy-id or do it mannaully
->> example of options:
->> ./dracut -l -H -a ssh-client --sshkey /root/.ssh/id_rsa i.img
-> ...
->> +    # Copy over ssh key and knowhosts if needed
->> +    [[ $sshkey ]] && {
->> +        inst $sshkey
+> On Fri, 23 Dec 2011 at 08:04 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>> ssh module will need root user in /etc/passwd, so add root and nobody
+>> to /etc/passwd in 99base instead of nfs module
 > 
-> This means value for sshkey option must include /root/.ssh/ otherwise
-> it won't end up in the correct place inside initramfs?
+> Huh? Even for who don't use either ssh module or nfs module??
+> 
+> I think you just need to copy these two lines into your ssh module...
 
 
-Thanks for your comment. Yes sshkey will be installed to same location
-as the param specified, For kdump we will use an option SSH_KEY_LOCATION
-which is defined in kdump.conf, by default it is
-/root/.ssh/kdump_id_rsa. In initrd we will use ssh -i SSH_KEY_LOCATION
-to connect to remote machine
+Thanks for your review.
+
+in 90mdraid module there's words in its comments about passwd, so there
+might be more modules need passwd.
+
+Dealing with same thing in multi module is not good, not only duplicate
+code, but also they could cause conflict. Ie. nfs set root home dir to /
+but we need /root, if nfs module added after ssh-client the home dir of
+root will be /.
+
+
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
 
 -- 
 Thanks
