@@ -1,35 +1,49 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/5 branch usrmove v2] --ctty: add help line in usage
-Date: Mon, 26 Dec 2011 14:42:18 +0800
-Message-ID: <20111226064218.GA3213@darkstar.nay.redhat.com>
-References: <20111226062923.GA3149@darkstar.nay.redhat.com>
-Mime-Version: 1.0
+From: Anton Blanchard <anton-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>
+Subject: [PATCH 1/3] Handle upper case MAC addresses in ifname option
+Date: Tue, 27 Dec 2011 09:08:27 +1100
+Message-ID: <20111226220903.564739340@samba.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20111226062923.GA3149-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
+Content-Disposition: inline; filename=udev_mac_lowercase.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, soltys-R61QfzASbfY@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Adding missed help line in usage
+While the documentation states that ifname MAC addresses must be
+lower case, we silently accept upper case ones and fail later on
+when udev doesn't rename the device.
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Instead of adding sanity checking on the MAC address just convert
+it to lower case and remove the requirement completely.
+
 ---
-[please use this one instead, remove git formatted patch head line]
- dracut |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/dracut b/dracut
-index b0a8e24..5343866 100755
---- a/dracut
-+++ b/dracut
-@@ -119,6 +119,7 @@ Creates initial ramdisk images for preloading modules
-                          build.
-   --keep                Keep the temporary initramfs for debugging purposes
-   --sshkey [SSHKEY]     Add ssh key to initramfs (use with ssh-client module)
-+  --ctty                Add control tty for emergency shells
- EOF
- }
- 
+Index: dracut/modules.d/40network/parse-ifname.sh
+===================================================================
+--- dracut.orig/modules.d/40network/parse-ifname.sh	2011-12-27 09:01:08.000000000 +1100
++++ dracut/modules.d/40network/parse-ifname.sh	2011-12-27 09:02:05.420745541 +1100
+@@ -25,7 +25,8 @@ parse_ifname_opts() {
+     case $# in
+         7)
+             ifname_if=$1
+-            ifname_mac=$2:$3:$4:$5:$6:$7
++            # udev requires MAC addresses to be lower case
++            ifname_mac=`echo $2:$3:$4:$5:$6:$7 | tr '[:upper:]' '[:lower:]'`
+             ;;
+         *)
+             die "Invalid arguments for ifname="
+Index: dracut/dracut.cmdline.7.xml
+===================================================================
+--- dracut.orig/dracut.cmdline.7.xml	2011-12-27 09:01:11.507776290 +1100
++++ dracut/dracut.cmdline.7.xml	2011-12-27 09:02:05.424745613 +1100
+@@ -464,7 +464,6 @@ This parameter can be specified multiple
+           <term><envar>ifname=</envar><replaceable>&lt;interface&gt;</replaceable>:<replaceable>&lt;MAC&gt;</replaceable></term>
+           <listitem>
+             <para>Assign network device name &lt;interface&gt; (ie eth0) to the NIC with MAC &lt;MAC&gt;.
+-Note letters in the MAC-address must be lowercase!
+ <remark>Note: If you use this option you <emphasis remap="B">must</emphasis> specify an ifname= argument for all interfaces used in ip= or fcoe= arguments.</remark>
+ This parameter can be specified multiple times.</para>
+           </listitem>
+
