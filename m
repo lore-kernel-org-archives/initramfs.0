@@ -1,62 +1,60 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/4 branch usrmove] Add ssh client module code
-Date: Mon, 26 Dec 2011 13:26:43 +0800
-Message-ID: <4EF80593.1060801@redhat.com>
-References: <20111223080430.GA12670@darkstar.nay.redhat.com>	<jd732n$rf9$2@dough.gmane.org>	<4EF7D604.9080500@redhat.com> <CAM_iQpVonkSXUDhVyrFiqam2Rgtogzt=FYSn1-q8h1uE6BTvPw@mail.gmail.com>
+Subject: Re: [PATCH 1/4 branch usrmove] deal common part of etc passwd in
+ 99base
+Date: Mon, 26 Dec 2011 13:42:40 +0800
+Message-ID: <4EF80950.5040700@redhat.com>
+References: <20111223080420.GA12664@darkstar.nay.redhat.com>	<jd72k0$rf9$1@dough.gmane.org>	<4EF7D46E.4000109@redhat.com> <CAM_iQpW2FH_ob3u22nii3tAe-yUX-iPctDb2KEPwptrugdQbsw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAM_iQpVonkSXUDhVyrFiqam2Rgtogzt=FYSn1-q8h1uE6BTvPw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <CAM_iQpW2FH_ob3u22nii3tAe-yUX-iPctDb2KEPwptrugdQbsw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 12/26/2011 01:06 PM, Cong Wang wrote:
+On 12/26/2011 12:58 PM, Cong Wang wrote:
 
-> On Mon, Dec 26, 2011 at 10:03 AM, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> On 12/25/2011 07:57 PM, Cong Wang wrote:
+> On Mon, Dec 26, 2011 at 9:57 AM, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>> On 12/25/2011 07:49 PM, Cong Wang wrote:
 >>
 >>> On Fri, 23 Dec 2011 at 08:04 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->>>> Add ssh-client module, which support ssh key mode and interactive mode.
->>>> with --sshkey option you can provide the ssh key to be installed
->>>>
->>>> Usage:
->>>> 1. sshkey mode:
->>>> transfer your public key to remote machine with ssh-copy-id or do it mannaully
->>>> example of options:
->>>> ./dracut -l -H -a ssh-client --sshkey /root/.ssh/id_rsa i.img
->>>> 2. interactive mode:
->>>> need use --ctty option, ie.:
->>>> ./dracut -l -H -a ssh-client --ctty i.img
+>>>> ssh module will need root user in /etc/passwd, so add root and nobody
+>>>> to /etc/passwd in 99base instead of nfs module
 >>>
->>> Seems --sshkey and --ctty are only for ssh-client module,
->>> so, what if the user specifies -sshkey or --ctty but doesn't
->>> use ssh-client module?
+>>> Huh? Even for who don't use either ssh module or nfs module??
+>>>
+>>> I think you just need to copy these two lines into your ssh module...
 >>
 >>
->> Thanks for review.
->> --sshkey is for ssh module only, I have added param info in doc. --ctty
->> is not only for ssh, it can be used by other stuff. if use use --sshkey
->> but do not add ssh-client module it will just have one more global
->> variable sshkey, it will not add more file to initrd.
+>> Thanks for your review.
+>>
+>> in 90mdraid module there's words in its comments about passwd, so there
+>> might be more modules need passwd.
 > 
-> I am not objecting --sshkey, I am suggesting to print something
-> to say --sshkey has no effect when ssh-client module is not included.
+> But there are still more modules that don't need passwd, right?
+
+>
+
+>>
+>> Dealing with same thing in multi module is not good, not only duplicate
+>> code, but also they could cause conflict. Ie. nfs set root home dir to /
+>> but we need /root, if nfs module added after ssh-client the home dir of
+>> root will be /.
+> 
+> If you don't want to duplicate the code, make it a function (maybe in
+> dracut-function?),
+> putting it in base module is confusing.
 
 
-yes, print some info is better, will do
+Scratching head.. I'm feeling bad to add same user multi-times,  Yes not
+all modules need passwd, but I still think it is a base thing.
 
-> 
->>
->> As for the param, the ideal way is create generic way to add dracut
->> module param like something below:
->> ./dracut -a ssh-client,sshkey=xyz
->>
-> 
-> True, dracut does lack some way to pass a module specific parameter
-> from command line...
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 
