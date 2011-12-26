@@ -1,63 +1,53 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4 branch usrmove] deal common part of etc passwd in
+Subject: [PATCH 1/5 branch usrmove v2] deal common part of etc passwd in
  99base
-Date: Mon, 26 Dec 2011 13:42:40 +0800
-Message-ID: <4EF80950.5040700@redhat.com>
-References: <20111223080420.GA12664@darkstar.nay.redhat.com>	<jd72k0$rf9$1@dough.gmane.org>	<4EF7D46E.4000109@redhat.com> <CAM_iQpW2FH_ob3u22nii3tAe-yUX-iPctDb2KEPwptrugdQbsw@mail.gmail.com>
+Date: Mon, 26 Dec 2011 14:29:11 +0800
+Message-ID: <20111226062910.GA3141@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAM_iQpW2FH_ob3u22nii3tAe-yUX-iPctDb2KEPwptrugdQbsw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, soltys-R61QfzASbfY@public.gmane.org
 
-On 12/26/2011 12:58 PM, Cong Wang wrote:
+ssh module will need root user in /etc/passwd, so add root and nobody
+to /etc/passwd in 99base instead of nfs module
 
-> On Mon, Dec 26, 2011 at 9:57 AM, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> On 12/25/2011 07:49 PM, Cong Wang wrote:
->>
->>> On Fri, 23 Dec 2011 at 08:04 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->>>> ssh module will need root user in /etc/passwd, so add root and nobody
->>>> to /etc/passwd in 99base instead of nfs module
->>>
->>> Huh? Even for who don't use either ssh module or nfs module??
->>>
->>> I think you just need to copy these two lines into your ssh module...
->>
->>
->> Thanks for your review.
->>
->> in 90mdraid module there's words in its comments about passwd, so there
->> might be more modules need passwd.
-> 
-> But there are still more modules that don't need passwd, right?
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/95nfs/module-setup.sh  |    2 --
+ modules.d/99base/module-setup.sh |    4 ++++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
 
->
-
->>
->> Dealing with same thing in multi module is not good, not only duplicate
->> code, but also they could cause conflict. Ie. nfs set root home dir to /
->> but we need /root, if nfs module added after ssh-client the home dir of
->> root will be /.
-> 
-> If you don't want to duplicate the code, make it a function (maybe in
-> dracut-function?),
-> putting it in base module is confusing.
-
-
-Scratching head.. I'm feeling bad to add same user multi-times,  Yes not
-all modules need passwd, but I still think it is a base thing.
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
+index bb3b793..674a438 100755
+--- a/modules.d/95nfs/module-setup.sh
++++ b/modules.d/95nfs/module-setup.sh
+@@ -65,8 +65,6 @@ install() {
+ 
+     # Rather than copy the passwd file in, just set a user for rpcbind
+     # We'll save the state and restart the daemon from the root anyway
+-    egrep '^root:' "$initdir/etc/passwd" 2>/dev/null || echo  'root:x:0:0::/:/bin/sh' >> "$initdir/etc/passwd"
+-    egrep '^nobody:' /etc/passwd >> "$initdir/etc/passwd"
+     egrep '^nfsnobody:' /etc/passwd >> "$initdir/etc/passwd"
+     egrep '^rpc:' /etc/passwd >> "$initdir/etc/passwd"
+     egrep '^rpcuser:' /etc/passwd >> "$initdir/etc/passwd"
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index 5297a9d..f6c1209 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -20,6 +20,10 @@ install() {
+         dracut_install bash
+         (ln -s bash "${initdir}/bin/sh" || :)
+     fi
++
++    #add common users in /etc/passwd, it will be used by nfs/ssh currently
++    egrep '^root:' "$initdir/etc/passwd" 2>/dev/null || echo  'root:x:0:0::/:/bin/sh' >> "$initdir/etc/passwd"
++    egrep '^nobody:' /etc/passwd >> "$initdir/etc/passwd"
+     # install our scripts and hooks
+     inst "$moddir/init" "/init"
+     inst "$moddir/initqueue" "/sbin/initqueue"
 -- 
-Thanks
-Dave
+1.7.1
