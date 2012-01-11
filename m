@@ -1,114 +1,94 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] remove the global --sshkey parameter
-Date: Wed, 11 Jan 2012 11:40:25 +0800
-Message-ID: <4F0D04A9.4010406@redhat.com>
-References: <1326208786-24344-1-git-send-email-xiyou.wangcong@gmail.com> <1326208786-24344-2-git-send-email-xiyou.wangcong@gmail.com> <4F0CFB08.6030800@redhat.com>
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH v2] allow ifup bring up network manually even without
+ netroot
+Date: Wed, 11 Jan 2012 17:48:14 +0800
+Message-ID: <4F0D5ADE.4020800@gmail.com>
+References: <20111230083858.GA13018@darkstar.nay.redhat.com> <jehm6n$7q8$1@dough.gmane.org> <4F0CEE74.6020102@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F0CFB08.6030800-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=dcKfio9K44kBx73l+ZcNxpNoTEJ4iegpABq/OB6XfkM=;
+        b=XnwlE+TTfIhk0fxN8ZYVO4mDOTJ8BQdoIMR/oQ9iRs9S8FMjhbFd6vlx5UB/0mWJpx
+         LkP0ZkCdtfqbGNeem5TpHy5Sj0LcPaq+L06MWuISG+dZ8yHhFrACC34XcYfSj59R/AOD
+         DtLe5es8JFZRbHldpu0AjRHiGl2F/ktLj3HrE=
+In-Reply-To: <4F0CEE74.6020102-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01/11/2012 10:59 AM, Dave Young wrote:
-
-> On 01/10/2012 11:19 PM, xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org wrote:
-> 
->> From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+On 01/11/2012 10:05 AM, Dave Young wrote:
+> Hi, I have some additional comments
+>
+> On 01/10/2012 11:41 PM, Cong Wang wrote:
+>
+>> On Fri, 30 Dec 2011 at 08:38 GMT, Dave Young<dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>  wrote:
+>>> For kdump we need scp vmcore to remote machine, the nic to be used is
+>>> not limited to netroot one. we need a feature for manually bringing up
+>>>   network interface. Also it is useful for emergency shell with
+>>> ssh-client for recovery or test purpose
+>>>
+>>> I implement this by adding one argument to ifup script, user can use
+>>> `/sbin/ifup eth0 -m` to bring up eth0, note ifup will regard it a
+>>> manual operation for the nic specified in 1st argument if there's
+>>> the 2nd argument.
+>>>
+>>> If same nic is used for netroot the 2nd argument will be ignored,
+>>> in this case we will leave netroot bring up it automatically to
+>>> avoid side effect. And in this case hooks such as kdump will need to
+>>> execute after netroot mounted.
+>>>
+>>> `ifup eth0 -m` will create /tmp/net.eth0.manualup stamp file,
+>>> later dhclient-script can check this and pass $2 to netroot,
+>>> then netroot script will bring eth0 up
+>>>
 >>
->> Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->> ---
->>  dracut       |    4 +---
->>  dracut.8.xml |    8 --------
->>  2 files changed, 1 insertions(+), 11 deletions(-)
+>> As we talked on IRC, we still need to discuss if this is really
+>> needed, from kdump perspective.
+>
+>
+> manually ifup nic also benefit to emergency shell use case. I want to
+> use dracut initramfs as a minimal system without real root for kernel
+> testing
+
+
+For emergency shell, yeah, it make senses.
+
+>
+>> If we need to invoke `ifup` by
+>> ourselves, then we also need to determine which NIC we should bring
+>> up, this will make kdump code larger.
 >>
->> diff --git a/dracut b/dracut
->> index f3fa257..58c4fde 100755
->> --- a/dracut
->> +++ b/dracut
->> @@ -118,7 +118,6 @@ Creates initial ramdisk images for preloading modules
->>    -M, --show-modules    Print included module's name to standard output during
->>                           build.
->>    --keep                Keep the temporary initramfs for debugging purposes
->> -  --sshkey [SSHKEY]     Add ssh key to initramfs (use with ssh-client module)
->>    --ctty                Add control tty for emergency shells
->>  EOF
->>  }
->> @@ -242,7 +241,6 @@ while (($# > 0)); do
->>          --debug)       debug="yes";;
->>          --profile)     profile="yes";;
->>          --ctty)        cttyhack="yes";;
->> -        --sshkey)      read_arg sshkey   "$@" || shift;;
->>          -v|--verbose)  ((verbosity_mod_l++));;
->>          -q|--quiet)    ((verbosity_mod_l--));;
->>          -l|--local)    allowlocal="yes" ;;
->> @@ -613,7 +611,7 @@ export initdir dracutbasedir dracutmodules drivers \
->>      add_drivers mdadmconf lvmconf filesystems \
->>      use_fstab libdir usrlibdir fscks nofscks cttyhack \
->>      stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
->> -    debug host_fs_types host_devs sshkey dracut_module_args
->> +    debug host_fs_types host_devs dracut_module_args
->>  
->>  # Create some directory structure first
->>  [[ $prefix ]] && mkdir -m 0755 -p "${initdir}${prefix}"
->> diff --git a/dracut.8.xml b/dracut.8.xml
->> index ea24764..0dc6225 100644
->> --- a/dracut.8.xml
->> +++ b/dracut.8.xml
->> @@ -371,14 +371,6 @@ Default:
->>          </varlistentry>
->>          <varlistentry>
->>            <term>
->> -            <option>--sshkey&nbsp;<replaceable>&lt;sshkey file&gt;</replaceable></option>
->> -          </term>
->> -          <listitem>
->> -            <para>ssh key file used with ssh-client module.</para>
->> -          </listitem>
->> -        </varlistentry>
->> -        <varlistentry>
->> -          <term>
->>              <option>-l</option>
->>            </term>
->>            <term>
-> 
-> 
-> Hi,
-> 
-> After removing --sshkey we need to parse dracut_module_args for module
-> use. Maybe in a general function of dracut-lib will be fine.
-> 
-> Also need consider the multi-param case like below:
-> module:a=b,c=d,e=f,...
-> 
-> Ie. in ssh-client module we need to parse "sshkey=/root/.ssh/id_rsa" for
-> installing sshkey
-> 
+>> So, I hope, we can have some kernel cmdline (like ip=...) to tell
+>> dracut which NIC we want to bring up in the second kernel, provided by
+>> either ssh-client module or nfs module.
+>
+>
+> If we need to pass the nic name to cmdline then we still need to
+> determine which one should be use.
 
 
-Seems $sshkey is only limited to check() function, so it will be not
-available in install(), should add something like below:
+Sure, but this will go to ssh-client or nfs module, not kdump.
 
-diff --git a/modules.d/95ssh-client/module-setup.sh
-b/modules.d/95ssh-client/module-setup.sh
-index ef8effe..352817c 100755
---- a/modules.d/95ssh-client/module-setup.sh
-+++ b/modules.d/95ssh-client/module-setup.sh
-@@ -39,7 +39,10 @@ inst_sshenv()
-     fi
-
-     # Copy over ssh key and knowhosts if needed
-+    ssharg=${dracut_module_args["ssh-client"]}
-+    sshkey=`echo $ssharg|cut --fields=2 -d '='`
-     [[ $sshkey ]] && {
-+        echo "installing sshkey"
-         inst $sshkey
-         [[ -f /root/.ssh/known_hosts ]] && inst /root/.ssh/known_hosts
-         [[ -f /etc/ssh/ssh_known_hosts ]] && inst /etc/ssh/ssh_known_hosts
+>
+> If we just bring up all nics, then use the manual ifup is also easy.
+>
 
 
--- 
-Thanks
-Dave
+If there are lots of NIC, and we only use one (for remote kdump),
+bringing all NIC up is a waste. Nor to say when we only use eth0, you 
+also bring up bond0, br0 etc...
+
+> current dracut udev rules is: if there's no nic specified it will ifup
+> all possible nics, but all will be put in initqueue which finally be
+> brought up by netroot script.
+
+
+We need to specify at least one, the one that reach the remote dump server.
+
+Thanks.
