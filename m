@@ -1,52 +1,71 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH] 98usrmount: don't pass fstab fs options as fsck options
-Date: Thu, 12 Jan 2012 12:48:25 +0100
-Message-ID: <1326368905-29873-1-git-send-email-aidecoe@aidecoe.name>
+From: "Li, David" <LiD-H5gcd31RMI4yhQnFlXSU7w@public.gmane.org>
+Subject: RE: Q: mount initramfs as the final root fs
+Date: Thu, 12 Jan 2012 07:17:56 -0800
+Message-ID: <A0D5581BE022624487D06FF31DA39EAC46DBF15B81@cs-mail.cloudshield.com>
+References: <CAADET=cG8mdu-Je_MUGyKOP_G9sfU6sR3KHxybFMREjvexrKmg@mail.gmail.com>
+ <4F0E3E0B.2080702@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8BIT
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4F0E3E0B.2080702-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Language: en-US
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Li <w.david.li-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-For example for line in /etc/fstab:
+Dave,
 
-  /dev/vg/usr  /usr  ext4  nosuid,nodev  0 2
+I am not familiar with dracut internals. Two questions:
 
-fsck_single is called as follows:
+1. Will rd.break=cmdline cause the kernel to mount initramfs before dropping into the shell?  I tried before "rdinit=/bin/sh". This forced the kernel to drop into a simple dash shell before /init was even started so not much useful. 
 
-  fsck_single /dev/vg/usr ext4 nosuid,nodev
+2. Just saw you committed another patch in fstab-sys. You mentioned about mounting initramfs with --mount Dracut option. Is that the solution for the problem? 
 
-and this eventually resolves to:
+Thanks.
 
-  e2fsck -a nosuid,nodev /dev/vg/usr
+David
 
-which causes e2fsck usage error.
----
- modules.d/98usrmount/mount-usr.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/modules.d/98usrmount/mount-usr.sh b/modules.d/98usrmount/mount-usr.sh
-index a61f935..fc205d5 100755
---- a/modules.d/98usrmount/mount-usr.sh
-+++ b/modules.d/98usrmount/mount-usr.sh
-@@ -19,7 +19,7 @@ mount_usr()
- 
-     if [ "x$_usr_found" != "x" ]; then
-         # we have to mount /usr
--        fsck_single "$_dev" "$_fs" "$_opts"
-+        fsck_single "$_dev" "$_fs"
-         _ret=$?
-         echo $_ret >/run/initramfs/usr-fsck
-         if [ $_ret -ne 255 ]; then
-@@ -29,4 +29,4 @@ mount_usr()
-     fi
- }
- 
--mount_usr
-\ No newline at end of file
-+mount_usr
--- 
-1.7.8.3
+>-----Original Message-----
+>From: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org [mailto:initramfs-
+>owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org] On Behalf Of Dave Young
+>Sent: Wednesday, January 11, 2012 5:58 PM
+>To: David Li
+>Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>Subject: Re: Q: mount initramfs as the final root fs
+>
+>On 01/12/2012 08:54 AM, David Li wrote:
+>
+>> Hi Everyone,
+>>
+>> I need to let the kernel to mount the initramfs (created by dracut) as
+>> the final root filesystem. No disk and no NFS either!
+>>
+>> I tried kernel option root=/dev/ram0 (the initrd way to mount init ram
+>> disk) but dracut didn't recognize this option. What should I use to
+>> accomplish this?
+>
+>
+>initramfs use root=xxx for switch_root to real rootfs. I also want this feature
+>but currently I can only use such as "rdbreak=cmdline" in kernel cmdline to
+>drop into shell
+>
+>>
+>> Thanks.
+>>
+>> David
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe initramfs"
+>> in the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org More majordomo
+>> info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+>--
+>Thanks
+>Dave
+>--
+>To unsubscribe from this list: send the line "unsubscribe initramfs" in the body
+>of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org More majordomo info at
+>http://vger.kernel.org/majordomo-info.html
