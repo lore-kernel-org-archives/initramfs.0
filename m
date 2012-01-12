@@ -1,42 +1,52 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH usrmove branch] fstab-sys: mount it in initramfs instead of
- newroot if mount point is not found
-Date: Thu, 12 Jan 2012 16:00:31 +0800
-Message-ID: <20120112080031.GA32416@darkstar.nay.redhat.com>
-Mime-Version: 1.0
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] 98usrmount: don't pass fstab fs options as fsck options
+Date: Thu, 12 Jan 2012 12:48:25 +0100
+Message-ID: <1326368905-29873-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-fstab-sys now also handles device passed by dracut argument "--mount"
-The "--mount" mount point is possible not exist in $NEWROOT. Thus mount it
-in initramfs if mount point is not exist in real rootfs
+For example for line in /etc/fstab:
 
+  /dev/vg/usr  /usr  ext4  nosuid,nodev  0 2
+
+fsck_single is called as follows:
+
+  fsck_single /dev/vg/usr ext4 nosuid,nodev
+
+and this eventually resolves to:
+
+  e2fsck -a nosuid,nodev /dev/vg/usr
+
+which causes e2fsck usage error.
 ---
- modules.d/95fstab-sys/mount-sys.sh |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+ modules.d/98usrmount/mount-usr.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/modules.d/95fstab-sys/mount-sys.sh b/modules.d/95fstab-sys/mount-sys.sh
-index a8fbd50..4de7285 100755
---- a/modules.d/95fstab-sys/mount-sys.sh
-+++ b/modules.d/95fstab-sys/mount-sys.sh
-@@ -20,7 +20,12 @@ fstab_mount() {
-         fi
-         _fs=$(det_fs "$_dev" "$_fs")
-         info "Mounting $_dev"
--        mount -v -t $_fs -o $_opts $_dev $NEWROOT/$_mp 2>&1 | vinfo
-+        if [[ -d $NEWROOT/$_mp ]]; then
-+            mount -v -t $_fs -o $_opts $_dev $NEWROOT/$_mp 2>&1 | vinfo
-+        else
-+            mkdir -p "$_mp"
-+            mount -v -t $_fs -o $_opts $_dev $_mp 2>&1 | vinfo
-+        fi
-     done < $1
-     return 0
+diff --git a/modules.d/98usrmount/mount-usr.sh b/modules.d/98usrmount/mount-usr.sh
+index a61f935..fc205d5 100755
+--- a/modules.d/98usrmount/mount-usr.sh
++++ b/modules.d/98usrmount/mount-usr.sh
+@@ -19,7 +19,7 @@ mount_usr()
+ 
+     if [ "x$_usr_found" != "x" ]; then
+         # we have to mount /usr
+-        fsck_single "$_dev" "$_fs" "$_opts"
++        fsck_single "$_dev" "$_fs"
+         _ret=$?
+         echo $_ret >/run/initramfs/usr-fsck
+         if [ $_ret -ne 255 ]; then
+@@ -29,4 +29,4 @@ mount_usr()
+     fi
  }
+ 
+-mount_usr
+\ No newline at end of file
++mount_usr
 -- 
-1.7.7.5
+1.7.8.3
