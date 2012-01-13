@@ -1,86 +1,65 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Q: mount initramfs as the final root fs
-Date: Fri, 13 Jan 2012 09:40:07 +0800
-Message-ID: <4F0F8B77.1000307@redhat.com>
-References: <CAADET=cG8mdu-Je_MUGyKOP_G9sfU6sR3KHxybFMREjvexrKmg@mail.gmail.com> <4F0E3E0B.2080702@redhat.com> <A0D5581BE022624487D06FF31DA39EAC46DBF15B81@cs-mail.cloudshield.com>
+Subject: Re: [PATCH 3/3] allow network setup without netroot
+Date: Fri, 13 Jan 2012 10:04:54 +0800
+Message-ID: <4F0F9146.1090301@redhat.com>
+References: <1326304109-32652-1-git-send-email-wwoods@redhat.com> <1326304109-32652-3-git-send-email-wwoods@redhat.com> <20120111210614.GB14024@metroid.usersys.redhat.com> <4F0E3CB1.3080607@redhat.com> <20120112170611.GA26875@metroid.usersys.redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <A0D5581BE022624487D06FF31DA39EAC46DBF15B81-XBe2CvUQ4tsfmBx3fVEwjjKFCcWVdJTv@public.gmane.org>
+In-Reply-To: <20120112170611.GA26875-s6BhOCdKmxS3M6m420IelR/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: "Li, David" <LiD-H5gcd31RMI4yhQnFlXSU7w@public.gmane.org>
-Cc: David Li <w.david.li-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01/12/2012 11:17 PM, Li, David wrote:
+Hi,
 
-> Dave,
+Thanks for explanation.
+
+On 01/13/2012 01:06 AM, Will Woods wrote:
+
+> On Thu, Jan 12, 2012 at 09:51:45AM +0800, Dave Young wrote:
+>>> Maybe a 'dummyroot' netroot "handler" that doesn't do anything would be
+>>> better - that way anything that wants to trigger when the network is up
+>>> can just add items to the 'netroot' hook, and they'll run like normal
+>>> netroot hooks.
+> [...]
+>> Yes, dummy netroot is a reasonable idea for automatically bring up
+>> network, but I still do not want to lose the manual setup option.
+>> I'd like to have both :)
 > 
-> I am not familiar with dracut internals. Two questions:
-> 
-> 1. Will rd.break=cmdline cause the kernel to mount initramfs before dropping into the shell?  I tried before "rdinit=/bin/sh". This forced the kernel to drop into a simple dash shell before /init was even started so not much useful.
+> Right - they're different problems with different solutions.
+
+>
+
+> I'm looking into automatic network setup for non-netroot systems because
+> I'm trying to replicate a lot of the stuff that anaconda (the RH/Fedora
+> installer) used to do in its own custom initramfs system - like fetching
+> updates, driver disks, and the runtime root filesystem image from the
+> network.
 
 
-initramfs is not need mount specially, it's supported in kernel
-
-You can try different rd.break point. see dracut docs.
-One thing is even if you don't need rootfs you still have to
-add valid root= cmdline, or dracut init will fail
-
-> 
-> 2. Just saw you committed another patch in fstab-sys. You mentioned about mounting initramfs with --mount Dracut option. Is that the solution for the problem? 
-
-
-I think It's not related to your problem.
+For kdump automatic network setup for non-netroot systems is also a good
+solution, I'd like to see the feature doesn't depend on "livenet"
 
 > 
-> Thanks.
+> Fetching the runtime image is already done - see modules.d/90livenet.
 > 
-> David
+> I've got nearly-finished code for the "rd.live.updates" argument,
+> which would let us push out (or test) bugfixes for LiveCDs after
+> they've been burned/released. (Which would be nice!)
 > 
->> -----Original Message-----
->> From: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org [mailto:initramfs-
->> owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org] On Behalf Of Dave Young
->> Sent: Wednesday, January 11, 2012 5:58 PM
->> To: David Li
->> Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->> Subject: Re: Q: mount initramfs as the final root fs
->>
->> On 01/12/2012 08:54 AM, David Li wrote:
->>
->>> Hi Everyone,
->>>
->>> I need to let the kernel to mount the initramfs (created by dracut) as
->>> the final root filesystem. No disk and no NFS either!
->>>
->>> I tried kernel option root=/dev/ram0 (the initrd way to mount init ram
->>> disk) but dracut didn't recognize this option. What should I use to
->>> accomplish this?
->>
->>
->> initramfs use root=xxx for switch_root to real rootfs. I also want this feature
->> but currently I can only use such as "rdbreak=cmdline" in kernel cmdline to
->> drop into shell
->>
->>>
->>> Thanks.
->>>
->>> David
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe initramfs"
->>> in the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org More majordomo
->>> info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
->> --
->> Thanks
->> Dave
->> --
->> To unsubscribe from this list: send the line "unsubscribe initramfs" in the body
->> of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org More majordomo info at
->> http://vger.kernel.org/majordomo-info.html
+> Driver disks I'm still working on, but that'll be coming soon too.
+> 
+> Anyway, that stuff is all pretty separate from what it sounds like you're
+> working on - so I think there's definitely room for both. No worries.
+> 
+> -w
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 
