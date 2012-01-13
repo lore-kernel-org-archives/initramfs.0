@@ -1,26 +1,26 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH usrmove branch] fstab-sys: mount it in initramfs instead
- of newroot if mount point is not found
-Date: Fri, 13 Jan 2012 11:51:09 +0100
-Message-ID: <4F100C9D.5080408@redhat.com>
-References: <20120112080031.GA32416@darkstar.nay.redhat.com>
+Subject: Re: [PATCH 2/3] minor cleanups in parsing for dmsquash-live and livenet
+Date: Fri, 13 Jan 2012 11:51:24 +0100
+Message-ID: <4F100CAC.30208@redhat.com>
+References: <1326304109-32652-1-git-send-email-wwoods@redhat.com> <1326304109-32652-2-git-send-email-wwoods@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120112080031.GA32416-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
+In-Reply-To: <1326304109-32652-2-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 12.01.2012 09:00, Dave Young wrote:
-> fstab-sys now also handles device passed by dracut argument "--mount"
-> The "--mount" mount point is possible not exist in $NEWROOT. Thus mount it
-> in initramfs if mount point is not exist in real rootfs
+On 11.01.2012 18:48, Will Woods wrote:
+> - use wait_for_dev in livenet
+> - clarify log message and fix missing newline in dmsquash-live
 > 
+> Signed-off-by: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > ---
->  modules.d/95fstab-sys/mount-sys.sh |    7 ++++++-
->  1 files changed, 6 insertions(+), 1 deletions(-)
+>  modules.d/90dmsquash-live/parse-dmsquash-live.sh |    4 ++--
+>  modules.d/90livenet/parse-livenet.sh             |    2 +-
+>  2 files changed, 3 insertions(+), 3 deletions(-)
 
 applied
