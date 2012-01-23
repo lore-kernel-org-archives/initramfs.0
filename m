@@ -1,47 +1,56 @@
-From: "Li, David" <LiD-H5gcd31RMI4yhQnFlXSU7w@public.gmane.org>
-Subject: RE: Q: mount initramfs as the final root fs
-Date: Tue, 17 Jan 2012 07:12:21 -0800
-Message-ID: <A0D5581BE022624487D06FF31DA39EAC46DBF15F3F@cs-mail.cloudshield.com>
-References: <CAADET=cG8mdu-Je_MUGyKOP_G9sfU6sR3KHxybFMREjvexrKmg@mail.gmail.com>
- <jepo04$nc5$1@dough.gmane.org>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/5 branch usrmove v2] deal common part of etc passwd
+ in 99base
+Date: Mon, 23 Jan 2012 12:03:22 +0100
+Message-ID: <4F1D3E7A.9050806@redhat.com>
+References: <20111226062910.GA3141@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <jepo04$nc5$1@dough.gmane.org>
-Content-Language: en-US
+In-Reply-To: <20111226062910.GA3141-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, soltys-R61QfzASbfY@public.gmane.org
 
-I am not familiar with dracut internals. Can you or someone be a little more specific on how it's not supported to mount initramfs itself as final root fs? What are my options or alternatives?
+Am 26.12.2011 07:29, schrieb Dave Young:
+> ssh module will need root user in /etc/passwd, so add root and nobody
+> to /etc/passwd in 99base instead of nfs module
+> 
+> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/95nfs/module-setup.sh  |    2 --
+>  modules.d/99base/module-setup.sh |    4 ++++
+>  2 files changed, 4 insertions(+), 2 deletions(-)
+> 
+> diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
+> index bb3b793..674a438 100755
+> --- a/modules.d/95nfs/module-setup.sh
+> +++ b/modules.d/95nfs/module-setup.sh
+> @@ -65,8 +65,6 @@ install() {
+>  
+>      # Rather than copy the passwd file in, just set a user for rpcbind
+>      # We'll save the state and restart the daemon from the root anyway
+> -    egrep '^root:' "$initdir/etc/passwd" 2>/dev/null || echo  'root:x:0:0::/:/bin/sh' >> "$initdir/etc/passwd"
+> -    egrep '^nobody:' /etc/passwd >> "$initdir/etc/passwd"
+>      egrep '^nfsnobody:' /etc/passwd >> "$initdir/etc/passwd"
+>      egrep '^rpc:' /etc/passwd >> "$initdir/etc/passwd"
+>      egrep '^rpcuser:' /etc/passwd >> "$initdir/etc/passwd"
+> diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+> index 5297a9d..f6c1209 100755
+> --- a/modules.d/99base/module-setup.sh
+> +++ b/modules.d/99base/module-setup.sh
+> @@ -20,6 +20,10 @@ install() {
+>          dracut_install bash
+>          (ln -s bash "${initdir}/bin/sh" || :)
+>      fi
+> +
+> +    #add common users in /etc/passwd, it will be used by nfs/ssh currently
+> +    egrep '^root:' "$initdir/etc/passwd" 2>/dev/null || echo  'root:x:0:0::/:/bin/sh' >> "$initdir/etc/passwd"
+> +    egrep '^nobody:' /etc/passwd >> "$initdir/etc/passwd"
+>      # install our scripts and hooks
+>      inst "$moddir/init" "/init"
+>      inst "$moddir/initqueue" "/sbin/initqueue"
 
-David
-
->-----Original Message-----
->From: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org [mailto:initramfs-
->owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org] On Behalf Of Cong Wang
->Sent: Friday, January 13, 2012 9:01 AM
->To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->Subject: Re: Q: mount initramfs as the final root fs
->
->On Thu, 12 Jan 2012 at 00:54 GMT, David Li <w.david.li-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->> Hi Everyone,
->>
->> I need to let the kernel to mount the initramfs (created by dracut) as
->> the final root filesystem. No disk and no NFS either!
->>
->> I tried kernel option root=/dev/ram0 (the initrd way to mount init ram
->> disk) but dracut didn't recognize this option. What should I use to
->> accomplish this?
->>
->
->AFAIK, drauct doesn't support this currently. Think about that, who will mkfs
->your /dev/ram0? Dracut has to do that if you want this working. It would not
->be hard to make a patch for this, I think.
->
->
->--
->To unsubscribe from this list: send the line "unsubscribe initramfs" in the body
->of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org More majordomo info at
->http://vger.kernel.org/majordomo-info.html
+pushed
