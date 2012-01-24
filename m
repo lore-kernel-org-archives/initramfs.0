@@ -1,50 +1,37 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC PATCH 1/2] support adding module-specific parameters
-Date: Mon, 23 Jan 2012 12:14:51 +0100
-Message-ID: <4F1D412B.1060801@redhat.com>
-References: <1326208786-24344-1-git-send-email-xiyou.wangcong@gmail.com>
+Date: Tue, 24 Jan 2012 23:23:51 +0800
+Message-ID: <4F1ECD07.9050102@gmail.com>
+References: <1326208786-24344-1-git-send-email-xiyou.wangcong@gmail.com> <4F1D412B.1060801@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1326208786-24344-1-git-send-email-xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=iRFdnDhGkZxGK8jgsfN7Uu3ivlSVZbh5ztLxKY5LiLo=;
+        b=gu9ICe6dKTxjsfS1x3452E3YQjB895iKTt34pT8Fk0bx2lG2/CDAEo7TDyu6PgUyZ3
+         ziHOCmt1eJaAnt3wddjN5Gw1SMK2HVzxGQGgfCMkY9Sn6Rk9/h5lRfus47zA+98klsHa
+         +ilQ/v9g/dm4n9oXaufuf/rx1iGy2woFVz+CA=
+In-Reply-To: <4F1D412B.1060801-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 10.01.2012 16:19, schrieb xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org:
-> From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> 
-> ssh-client module needs a specific parameter, --ssh-key, but
-> this parameter is totally useless for other modules. So, introduce
-> a way to let users to pass module-specific parameters, that is,
-> using colons to separate module name and its parameters, like,
-> 
-> 	--add ssh-client:sshkey=/root/.ssh/kdump_id_rsa.pub
-> 
-> Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->  dracut           |   30 ++++++++++++++++++++++++++----
->  dracut-functions |   14 ++++++++++++--
->  dracut.8.xml     |   22 ++++++++++++++++++----
->  3 files changed, 56 insertions(+), 10 deletions(-)
+On 01/23/2012 07:14 PM, Harald Hoyer wrote:
+>
+> Hmm, I would envision another strategy here. Modules could provide a function
+> for command line parsing.
+>
+> We could source each module-setup.sh and rename the functions prefixed with the
+> module name and store them in an array.
 
 
-Hmm, I would envision another strategy here. Modules could provide a function
-for command line parsing.
+Sorry, I don't quite understand. For this case, you mean ssh-client
+module should provide a function like ssh-client_getopt() to parse the
+command line --add ssh-client:sshkey=/root/.ssh/kdump_id_rsa.pub ?
 
-We could source each module-setup.sh and rename the functions prefixed with the
-module name and store them in an array.
-
-Function renaming could be done via:
-
-$ theirfunc() { echo "do their thing"; }
-$ eval "$(echo "orig_theirfunc()"; declare -f theirfunc | tail -n +2)"
-$ theirfunc() { echo "do my thing"; orig_theirfunc; }
-$ theirfunc
-do my thing
-do their thing
-
-What do you think?
+Thanks.
