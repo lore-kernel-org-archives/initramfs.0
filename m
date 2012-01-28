@@ -1,7 +1,8 @@
 From: Kaya Saman <kayasaman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Using dracut to build a new initramfs in order to boot from USB HD
-Date: Sat, 28 Jan 2012 18:40:51 +0000
-Message-ID: <4F244133.6030208@gmail.com>
+Subject: Using dracut to build a new initramfs in order to boot from USB hard
+ disk
+Date: Sat, 28 Jan 2012 18:54:22 +0000
+Message-ID: <4F24445E.5010401@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,9 +11,9 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         h=message-id:date:from:user-agent:mime-version:to:subject
          :content-type:content-transfer-encoding;
         bh=Z4eERhU1wQdnQ1rCFWwsq0kk+/+uo4UKE0jdgHbYGig=;
-        b=H7u1bPwV0abDupxdD51DuA8ysqGEvNknWpSmqQN+fTZ4OXE7UBndzg7AjHkZhS+mgh
-         lk8JoqNsm0Fc2RZsETfnE2WaLLnCbAvS90nmWb02pWl4T6oxpPjk+Mb5Z26Jz/DStnW7
-         0NktIxfQycgioLjgpgECyTJcGOdicPPtIaD2w=
+        b=Joo6UmxS4SEGxEkjfp2a2JsX7JhCWAqlnY3HzwjzvVkdkzGF+3wHpVNUIatFBwdoSF
+         UOzXphHBsweh6ON4NQm3FbVFRDz5fGR4wVVzxwkPHhs/UAM8tawYAm/Gw7yqHNi4ueNZ
+         KXqoMbgH4/ogZBFljaTq9AMAsufAh01jZ0+aU=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
