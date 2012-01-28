@@ -1,55 +1,67 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [Patch] invoke kill-dhclient.sh and kernel-cleanup.sh later
-Date: Fri, 27 Jan 2012 22:54:03 +0800
-Message-ID: <1327676043-18431-1-git-send-email-xiyou.wangcong@gmail.com>
+From: Kaya Saman <kayasaman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Using dracut to build a new initramfs in order to boot from USB HD
+Date: Sat, 28 Jan 2012 18:40:51 +0000
+Message-ID: <4F244133.6030208@gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=from:to:cc:subject:date:message-id:x-mailer;
-        bh=BSGWaZQiO61gozwzWoLX67RHg20OxkA3QXI8lR15m5U=;
-        b=wwQsz4Ip2cDuYk8QaUWQ0Kq2H6bWIY2zhtwUwZYvWGo/Zyl0L99sipQlV/s3X9Mz7e
-         G7NQHoJl/ItHWliCi2ipxUkmtmWEDykQnaV/KktdJwADGzgVRf23UtyYeMEtvgTf2MUn
-         LmOCgfx9BZYmxMeP2THMbERfKD6fhzlqwtDbY=
+        h=message-id:date:from:user-agent:mime-version:to:subject
+         :content-type:content-transfer-encoding;
+        bh=Z4eERhU1wQdnQ1rCFWwsq0kk+/+uo4UKE0jdgHbYGig=;
+        b=H7u1bPwV0abDupxdD51DuA8ysqGEvNknWpSmqQN+fTZ4OXE7UBndzg7AjHkZhS+mgh
+         lk8JoqNsm0Fc2RZsETfnE2WaLLnCbAvS90nmWb02pWl4T6oxpPjk+Mb5Z26Jz/DStnW7
+         0NktIxfQycgioLjgpgECyTJcGOdicPPtIaD2w=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-In kdump module, we install our kdump hook in pre-pivot,
-for kdump over network, we also need network modules, e.g. nfs module,
-so kernel modules can't be cleaned before that. Invoke these two cleanup
-scripts as late as possible.
+Hi,
 
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+I'm hoping some can help me...
 
----
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index ef7818a..fa61994 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -84,7 +84,7 @@ install() {
-     inst_hook cmdline 97 "$moddir/parse-bridge.sh"
-     inst_hook cmdline 98 "$moddir/parse-ip-opts.sh"
-     inst_hook cmdline 99 "$moddir/parse-ifname.sh"
--    inst_hook pre-pivot 10 "$moddir/kill-dhclient.sh"
-+    inst_hook pre-pivot 97 "$moddir/kill-dhclient.sh"
- 
-     _arch=$(uname -m)
- 
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index 88f0e2d..e81476c 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -75,7 +75,7 @@ install() {
-         inst_simple "$i"
-     done
-     inst_hook cmdline 01 "$moddir/parse-kernel.sh"
--    inst_hook pre-pivot 20 "$moddir/kernel-cleanup.sh"
-+    inst_hook pre-pivot 98 "$moddir/kernel-cleanup.sh"
-     inst_simple "$moddir/insmodpost.sh" /sbin/insmodpost.sh
- 
-     for _f in modules.builtin.bin modules.builtin; do
+I am trying to get the hard disk that was in my old laptop working as an 
+external drive on my new one. The old machine doesn't work any more and 
+the new machine uses a slim version of the 2.5" disk so the old disk 
+doesn't fit.
+
+The old system is Fedora 15 x64.
+
+Since I have never done this before I spent a few days trying and 
+failing already to get this working.
+
+I am not sure even how to check that I have all the necessary modules 
+even though I did run:
+
+yum install kernel-headers kernel-devel previously
+
+
+So far I ran:
+
+
+dracut -d "jdb ext4 scsi_mod sd_mod usb-storage usb-uhci usbcore 
+ehci-hcd uhci-hcd ohci-hcd" initramfs-2.6.41.10-3.fc15.x86_64.img 
+2.6.41.10-3
+
+in order to create the new initramfs then backed the original one up and 
+simply moved this one into the originals place.
+
+However I'm still getting the error of:
+
+hd1 cannot get C/H/S values
+
+???
+
+The disk works perfectly as am able to mount it through the USB 
+enclosure and it's running USB 3.0 so speed shouldn't be an issue either.
+
+
+Can anyone offer any assistance?
+
+
+Many thanks,
+
+
+Kaya
