@@ -1,68 +1,40 @@
-From: Kaya Saman <kayasaman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Using dracut to build a new initramfs in order to boot from USB hard
- disk
-Date: Sat, 28 Jan 2012 18:54:22 +0000
-Message-ID: <4F24445E.5010401@gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [Patch] lsinitrd: do not display "test" on terminal
+Date: Mon, 30 Jan 2012 14:27:26 +0800
+Message-ID: <1327904846-11897-1-git-send-email-xiyou.wangcong@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=gamma;
-        h=message-id:date:from:user-agent:mime-version:to:subject
-         :content-type:content-transfer-encoding;
-        bh=Z4eERhU1wQdnQ1rCFWwsq0kk+/+uo4UKE0jdgHbYGig=;
-        b=Joo6UmxS4SEGxEkjfp2a2JsX7JhCWAqlnY3HzwjzvVkdkzGF+3wHpVNUIatFBwdoSF
-         UOzXphHBsweh6ON4NQm3FbVFRDz5fGR4wVVzxwkPHhs/UAM8tawYAm/Gw7yqHNi4ueNZ
-         KXqoMbgH4/ogZBFljaTq9AMAsufAh01jZ0+aU=
+        h=from:to:cc:subject:date:message-id:x-mailer;
+        bh=dNcG9u1vCx6IkEjHA0zmxi264YkP8ymPIk72cXabM5w=;
+        b=XuEGHXwLyAeEFWYOms1KK45wNbL4MlMw+aoTkQpPbTGaKEdXLZSRPhgWpEqwPAAX0m
+         6ZX+08Dg079kpYYIRkpSZXQY6Es+RUKDwYUBiFhojMk+eiN39RWQGIML6pZBKspuiSOP
+         rTPbtuLFzwtGjoLZYg3gUgJCSVWnh6ffeCISQ=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Hi,
+`echo "test"|xz|xz -dc --single-stream` will display "test" on terminal,
+redirect it to /dev/null.
 
-I'm hoping some can help me...
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-I am trying to get the hard disk that was in my old laptop working as an 
-external drive on my new one. The old machine doesn't work any more and 
-the new machine uses a slim version of the 2.5" disk so the old disk 
-doesn't fit.
-
-The old system is Fedora 15 x64.
-
-Since I have never done this before I spent a few days trying and 
-failing already to get this working.
-
-I am not sure even how to check that I have all the necessary modules 
-even though I did run:
-
-yum install kernel-headers kernel-devel previously
-
-
-So far I ran:
-
-
-dracut -d "jdb ext4 scsi_mod sd_mod usb-storage usb-uhci usbcore 
-ehci-hcd uhci-hcd ohci-hcd" initramfs-2.6.41.10-3.fc15.x86_64.img 
-2.6.41.10-3
-
-in order to create the new initramfs then backed the original one up and 
-simply moved this one into the originals place.
-
-However I'm still getting the error of:
-
-hd1 cannot get C/H/S values
-
-???
-
-The disk works perfectly as am able to mount it through the USB 
-enclosure and it's running USB 3.0 so speed shouldn't be an issue either.
-
-
-Can anyone offer any assistance?
-
-
-Many thanks,
-
-
-Kaya
+---
+diff --git a/lsinitrd b/lsinitrd
+index 1d953b7..fb3769c 100755
+--- a/lsinitrd
++++ b/lsinitrd
+@@ -36,7 +36,7 @@ image="${1:-/boot/initramfs-$(uname -r).img}"
+ CAT=zcat
+ FILE_T=$(file "$image")
+ 
+-if echo "test"|xz|xz -dc --single-stream; then
++if echo "test"|xz|xz -dc --single-stream >/dev/null; then
+     XZ_SINGLE_STREAM="--single-stream"
+ fi
+ 
