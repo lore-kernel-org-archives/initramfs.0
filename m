@@ -1,55 +1,42 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] auto setup network without netroot
-Date: Mon, 30 Jan 2012 17:49:24 +0800
-Message-ID: <4F2667A4.4080203@redhat.com>
-References: <20120130064305.GA7108@darkstar.nay.redhat.com> <jg5kl4$3qk$4@dough.gmane.org> <4F265A0B.1000402@redhat.com> <4F265A22.2090407@gmail.com> <4F265C01.4010701@redhat.com> <4F265CDB.7070204@gmail.com> <4F266004.5080501@redhat.com> <4F266389.70303@gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [Patch] btrfs: fix two bugs in module-setup.sh
+Date: Mon, 30 Jan 2012 17:58:55 +0800
+Message-ID: <1327917535-31293-1-git-send-email-xiyou.wangcong@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F266389.70303-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=from:to:cc:subject:date:message-id:x-mailer;
+        bh=ABKusXcNBufEuZLn+NgbX+WmWJLu+9byV4f3qO/nKlI=;
+        b=W/4PxC2ZApYC+KjpxxSJZfXYeTrxVGL8bLct0VARctHxHCFHfGxK6kngIlfix8XtW0
+         w9/DVgTsW43zHY5ImHDD27DnNbS7J6whO1+LkxVdnusIqLOmk7T+lL/hHDEydUXN+MCh
+         LCfEd65k6J/N8TmL4SdJyYtaHfqLs/E7zthSc=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On 01/30/2012 05:31 PM, Cong Wang wrote:
+First, $host_fs_types is an array.
+Second, use strstr to match btrfs type.
 
-> On 01/30/2012 05:16 PM, Dave Young wrote:
->>
->> How to say...
->> There's many different configs for network like:
->> 1. ip={dhcp|on|any|dhcp6|auto6|ibft}
->> 2. ip=<interface>:{dhcp|on|any|dhcp6|auto6}
->> 3. ip=<client-IP>:[<server-id>
->> ]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:{none|off}
->> 4. ifname=
->> 5. bootdev=
->> 6. root=nfs:[snip]
->>
->> They are all possibly be used, IHMO they are not good options for this
->> patch using. For example there's no NIC specified in 1 and 3, we will
->> still have to bring up the default
-> 
-> 
-> Kdump module can make sure that at least one NIC will be specified, if
-> there is ip=.
-> 
->>
->> Also this is a general feature, maybe it will be used by users other
->> than kdump. For kdump I think we can use proper ip= plus rd.neednet=1
->>
-> 
-> Why? If we can re-use ip=, it will imply rd.neednet=1, so again,
-> rd.neednet is not needed.
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-
-why choose ip=? what if user pass ifname= or bootdev= without ip=? I
-want to benefit to other user as well, from semantic point of view one
-global switch like rd.neednet is more clear then reuse the various other
-options.
-
-
--- 
-Thanks
-Dave
+---
+diff --git a/modules.d/90btrfs/module-setup.sh b/modules.d/90btrfs/module-setup.sh
+index a141dda..135abc6 100755
+--- a/modules.d/90btrfs/module-setup.sh
++++ b/modules.d/90btrfs/module-setup.sh
+@@ -13,8 +13,8 @@ check() {
+ 
+     [[ $hostonly ]] || [[ $mount_needs ]] && {
+         local _found
+-        for fs in $host_fs_types; do
+-            [[ "$fs" = "|btrfs" ]] && _found="1"
++        for fs in ${host_fs_types[@]}; do
++            strstr "$fs" "\|btrfs" && _found="1"
+         done
+         [[ $_found ]] || return 1
+         unset _found
