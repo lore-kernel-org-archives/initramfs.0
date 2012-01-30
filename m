@@ -1,28 +1,78 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] auto setup network without netroot
-Date: Mon, 30 Jan 2012 08:33:40 +0000 (UTC)
-Message-ID: <jg5kl4$3qk$4@dough.gmane.org>
-References: <20120130064305.GA7108@darkstar.nay.redhat.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] split out nfs rpc process startup
+Date: Mon, 30 Jan 2012 16:39:10 +0800
+Message-ID: <4F26572E.7030806@redhat.com>
+References: <20120130064350.GA7114@darkstar.nay.redhat.com> <jg5jov$3qk$2@dough.gmane.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <jg5jov$3qk$2@dough.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 30 Jan 2012 at 06:43 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> Current dracut network only will be setup when netroot is used. But there are
-> some cases we need network even without netroot. For example kdump will need
-> copy vmcore to remote machine via scp or nfs mount. OTOH, if we use dracut as
-> a recovery system the network is helpful even root is not a network device.
->
-> This implementation is based on the manually bring up method. Here add a kernel
-> cmdline argument rd.neednet. If rd.neednet is set dracut will bring up network
-> with ifup $INTERFACE -m. If netroot is used we still keep original behavior.
->
+On 01/30/2012 04:18 PM, Cong Wang wrote:
 
-I don't think we really need to introduce a new cmdline, I think we
-can re-use ip= cmdline. Currently, if ip= is specified but netroot is
-not, ip= will be ignored. We can change this, let dracut bring up
-network as long as we have ip=, even we don't have netroot.
+> On Mon, 30 Jan 2012 at 06:43 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>> Index: dracut/modules.d/95nfs/nfs-start-rpc
+>> ===================================================================
+>> --- /dev/null
+>> +++ dracut/modules.d/95nfs/nfs-start-rpc
+>> @@ -0,0 +1,22 @@
+>> +#!/bin/sh
+>> +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+>> +# ex: ts=8 sw=4 sts=4 et filetype=sh
+>> +
+>> +nfsstart() {
+>> +    # Start rpcbind or rpcbind
+>> +    # FIXME occasionally saw 'rpcbind: fork failed: No such device' -- why?
+>> +    command -v portmap >/dev/null && [ -z "$(pidof portmap)" ] && portmap
+>> +    command -v rpcbind >/dev/null && [ -z "$(pidof rpcbind)" ] && rpcbind
+>> +
+>> +    if [ "$1" = "nfs4" ]; then
+>> +        [ ! -d /var/lib/nfs/rpc_pipefs/nfs ] && \
+>> +             mount -t rpc_pipefs rpc_pipefs /var/lib/nfs/rpc_pipefs
+>> +
+>> +        # Start rpc.statd as mount won't let us use locks on a NFSv4
+>> +        # filesystem without talking to it. NFSv4 does locks internally,
+>> +        # rpc.lockd isn't needed
+>> +        [ -z "$(pidof rpc.statd)" ] && rpc.statd
+>> +
+>> +        [ -z "$(pidof rpc.idmapd)" ] && rpc.idmapd
+>> +    fi
+>> +}
+>> Index: dracut/modules.d/95nfs/nfsroot
+>> ===================================================================
+>> --- dracut.orig/modules.d/95nfs/nfsroot
+>> +++ dracut/modules.d/95nfs/nfsroot
+>> @@ -84,22 +84,10 @@ getarg rw && nfsrw=rw
+>>  
+>>  options=${options:+$options,}$nfsrw
+>>  
+>> -# Start rpcbind or rpcbind
+>> -# FIXME occasionally saw 'rpcbind: fork failed: No such device' -- why?
+>> -command -v portmap >/dev/null && [ -z "$(pidof portmap)" ] && portmap
+>> -command -v rpcbind >/dev/null && [ -z "$(pidof rpcbind)" ] && rpcbind
+>> +. /sbin/nfs-start-rpc
+>> +nfsstart $nfs
+> 
+> Huh? Why making nfsstart a function and source it here?
+> Why not just make nfsstart as a script and invoke that script here?
+> This reads odd to me.
+
+
+no special reason for this, I'm fine to make it a script
+
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Thanks
+Dave
