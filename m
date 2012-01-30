@@ -1,7 +1,7 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] fix fstab-sys module check
-Date: Mon, 30 Jan 2012 14:44:22 +0800
-Message-ID: <20120130064422.GA7120@darkstar.nay.redhat.com>
+Subject: [PATCH] deal with nfs in fstab-sys
+Date: Mon, 30 Jan 2012 14:44:51 +0800
+Message-ID: <20120130064451.GA7125@darkstar.nay.redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
@@ -11,38 +11,39 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-If /etc/fstab.sys does not exist installing fstab-sys module will fail.
-Fix this by checking use_fstab and fstab_lines as well
+If we need to mount nonroot nfs in fstab we also need to launch rpc processes
+Add nfs-start-rpc code, also do not check and fsck $_dev in this case
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut                                |    2 +-
- modules.d/95fstab-sys/module-setup.sh |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ modules.d/95fstab-sys/mount-sys.sh |   17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-Index: dracut/dracut
+Index: dracut/modules.d/95fstab-sys/mount-sys.sh
 ===================================================================
---- dracut.orig/dracut
-+++ dracut/dracut
-@@ -598,7 +598,7 @@ done
- export initdir dracutbasedir dracutmodules drivers \
-     fw_dir drivers_dir debug no_kernel kernel_only \
-     add_drivers mdadmconf lvmconf filesystems \
--    use_fstab libdir usrlibdir fscks nofscks cttyhack \
-+    use_fstab fstab_lines libdir usrlibdir fscks nofscks cttyhack \
-     stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
-     debug host_fs_types host_devs sshkey
- 
-Index: dracut/modules.d/95fstab-sys/module-setup.sh
-===================================================================
---- dracut.orig/modules.d/95fstab-sys/module-setup.sh
-+++ dracut/modules.d/95fstab-sys/module-setup.sh
-@@ -3,7 +3,7 @@
- # ex: ts=8 sw=4 sts=4 et filetype=sh
- 
- check() {
--    test -f /etc/fstab.sys
-+    test -f /etc/fstab.sys || [[ -n $use_fstab  ||  -n $fstab_lines ]]
- }
- 
- depends() {
+--- dracut.orig/modules.d/95fstab-sys/mount-sys.sh
++++ dracut/modules.d/95fstab-sys/mount-sys.sh
+@@ -11,12 +11,17 @@ fstab_mount() {
+     info "Mounting from $1"
+     while read _dev _mp _fs _opts _dump _pass _rest; do
+         [ -z "${_dev%%#*}" ] && continue # Skip comment lines
+-        if [ ! -e "$_dev" ]; then
+-            warn "Device $_dev doesn't exist, skipping mount."
+-            continue
+-        fi
+-        if [ "$_pass" -gt 0 ] && ! strstr "$_opts" _netdev; then
+-            fsck_single "$_dev" "$_fs"
++        if [[ ! "$_fs" =~ "nfs" ]]; then
++            if [ ! -e "$_dev" ]; then
++                warn "Device $_dev doesn't exist, skipping mount."
++                continue
++            fi
++            if [ "$_pass" -gt 0 ] && ! strstr "$_opts" _netdev; then
++                fsck_single "$_dev" "$_fs"
++            fi
++        else
++            . /sbin/nfs-start-rpc
++            nfsstart $_fs
+         fi
+         _fs=$(det_fs "$_dev" "$_fs")
+         info "Mounting $_dev"
