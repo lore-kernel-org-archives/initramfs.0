@@ -1,61 +1,68 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [Patch] dracut-functions: use braces for function
-Date: Tue, 31 Jan 2012 15:11:12 +0800
-Message-ID: <1327993872-25808-1-git-send-email-xiyou.wangcong@gmail.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] deal with nfs in fstab-sys
+Date: Tue, 31 Jan 2012 17:56:18 +0800
+Message-ID: <4F27BAC2.1000103@redhat.com>
+References: <20120130064451.GA7125@darkstar.nay.redhat.com> <jg5jri$3qk$3@dough.gmane.org> <4F2657B4.3030200@redhat.com> <4F26581B.4040305@gmail.com> <4F265CAA.2080804@redhat.com> <4F265EE1.7010505@gmail.com> <4F2660DB.8030105@redhat.com> <4F266282.8040204@gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=from:to:cc:subject:date:message-id:x-mailer;
-        bh=yYZ1tHj/ByADpofsbpu9G0bBSGvCuT6ZVmus0xKDC7A=;
-        b=RSSh9PTPHXykopOcUw8XMhPrcKEwMI1ZP5hBr/vhrAZoX2rqB8KZO0hRm9JLmmhqCR
-         ZVofy12PzXxsBrvquRpbHwxcEvfB/hG0esSB/tDdQhBDmhPrFoLgB60suHaVm6hSKlRA
-         g8rutEbi6tZXq5firnwOjghGGE1fXQ2+t6rys=
+In-Reply-To: <4F266282.8040204-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Although parenthesis probably also works, it is normal to use
-braces.
+On 01/30/2012 05:27 PM, Cong Wang wrote:
 
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> On 01/30/2012 05:20 PM, Dave Young wrote:
+>> On 01/30/2012 05:12 PM, Cong Wang wrote:
+>>
+>>> On 01/30/2012 05:02 PM, Dave Young wrote:
+>>>> On 01/30/2012 04:43 PM, Cong Wang wrote:
+>>>>
+>>>>> On 01/30/2012 04:41 PM, Dave Young wrote:
+>>>>>> On 01/30/2012 04:20 PM, Cong Wang wrote:
+>>>>>>
+>>>>>>> On Mon, 30 Jan 2012 at 06:44 GMT, Dave Young<dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>>>>>> wrote:
+>>>>>>>> If we need to mount nonroot nfs in fstab we also need to launch rpc
+>>>>>>>> processes
+>>>>>>>> Add nfs-start-rpc code, also do not check and fsck $_dev in this
+>>>>>>>> case
+>>>>>>>
+>>>>>>> Isn't it nfs module's responsibility to call nfs-start-rpc code?
+>>>>>>> Why do you put it in fs-systab?
+>>>>>>
+>>>>>>
+>>>>>> nfs know nothing about fstab mount, it only deal with nfsroot
+>>>>>> thing. So
+>>>>>> I have to do this in fstab-sys
+>>>>>
+>>>>> Sure, but nfs module knows it needs to start rpc before mounting NFS.
+>>>>>
+>>>>> So, what's the problem if we call nfs-start-rpc script in pre-pivot
+>>>>> hook
+>>>>> of nfs module (before mount-sys.sh, of course)?
+>>>>
+>>>>
+>>>> Actually nfs-start-rpc need to know the fs is nfs or nfs4, If add it as
+>>>> a hook, how does it accept the argument?
+>>>
+>>> I think you can start rpc daemons unconditionally, no matter if it is
+>>> nfs4 or nfs.
+>>
+>>
+>> This will means once nfs module is installed in initramfs, the rpc
+>> daemons will be started even if no nfs mount options in fstab or nfsroot
+> 
+> Sure, but they will be killed soon, by nfsroot-cleanup.sh. :)
 
----
-diff --git a/dracut-functions b/dracut-functions
-index e04b16d..97094db 100755
---- a/dracut-functions
-+++ b/dracut-functions
-@@ -979,7 +979,7 @@ for_each_kmod_dep() {
- # If it is, we will only look at modules that are already in memory.
- # If it is not, we will look at all kernel modules
- # This function returns the full filenames of modules that match $1
--filter_kernel_modules_by_path () (
-+filter_kernel_modules_by_path () {
-     local _modname _filtercmd
-     if ! [[ $hostonly ]]; then
-         _filtercmd='find "$srcmods/kernel/$1" "$srcmods/extra"'
-@@ -1003,8 +1003,9 @@ filter_kernel_modules_by_path () (
-                 ;;
-         esac
-     done
--)
--find_kernel_modules_by_path () (
-+}
-+
-+find_kernel_modules_by_path () {
-     if ! [[ $hostonly ]]; then
-         find "$srcmods/kernel/$1" "$srcmods/extra" "$srcmods/weak-updates" \
-           -name "*.ko" -o -name "*.ko.gz" -o -name "*.ko.xz" 2>/dev/null
-@@ -1012,7 +1013,7 @@ find_kernel_modules_by_path () (
-         cut -d " " -f 1 </proc/modules \
-         | xargs modinfo -F filename -k $kernel 2>/dev/null
-     fi
--)
-+}
- 
- filter_kernel_modules () {
-     filter_kernel_modules_by_path  drivers  "$1"
+
+Rethink about this, unconditionally start rpc daemons make more sense
+than do it in fstab-sys. Will change in v2
+
+
+-- 
+Thanks
+Dave
