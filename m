@@ -1,71 +1,48 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2 v2] split nfsroot rpc start code
-Date: Wed, 01 Feb 2012 16:44:20 +0800
-Message-ID: <4F28FB64.2090309@redhat.com>
-References: <20120201020054.GA9567@darkstar.nay.redhat.com> <jgaqo7$n39$1@dough.gmane.org> <4F28F017.3030908@redhat.com> <4F28F01C.4020208@gmail.com> <4F28F123.4050807@redhat.com> <4F28F21D.4070509@gmail.com> <4F28F4F0.205@redhat.com> <4F28F5BC.8090000@gmail.com>
+From: Felix Blanke <felixblanke-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: dracut and fstab.sys problem
+Date: Thu, 02 Feb 2012 00:45:33 +0100
+Message-ID: <4F29CE9D.1070604@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F28F5BC.8090000-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=message-id:date:from:user-agent:mime-version:to:subject
+         :content-type:content-transfer-encoding;
+        bh=lxLDC0B/4dAI9R5GXTyMHtFVj5qTVBWr27UdgsJbH+E=;
+        b=MBjvjiV+RGWP2EZIeQRS8prc/6831PYSvy4p/flpjTLGETanIJMfoNCRzKYrTrf3Ix
+         CrgZKayTMzU/Yey6TthuFHd2LnkBjmduP9eQxdSS0ZwIhLjJUh+W53/ZUKobUtjwuOhN
+         L+0UoRdSVeiMqOiYId7qTnQOil83GEOb0q958=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 02/01/2012 04:20 PM, Cong Wang wrote:
+Hello,
 
-> On 02/01/2012 04:16 PM, Dave Young wrote:
->> On 02/01/2012 04:04 PM, Cong Wang wrote:
->>
->>> On 02/01/2012 04:00 PM, Dave Young wrote:
->>>> On 02/01/2012 03:56 PM, Cong Wang wrote:
->>>>
->>>>> On 02/01/2012 03:56 PM, Dave Young wrote:
->>>>>> On 02/01/2012 03:48 PM, Cong Wang wrote:
->>>>>>> On Wed, 01 Feb 2012 at 02:00 GMT, Dave Young<dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>>>>>> wrote:
->>>>>>>> Index: dracut/modules.d/95nfs/module-setup.sh
->>>>>>>> ===================================================================
->>>>>>>> --- dracut.orig/modules.d/95nfs/module-setup.sh
->>>>>>>> +++ dracut/modules.d/95nfs/module-setup.sh
->>>>>>>> @@ -57,6 +57,7 @@ install() {
->>>>>>>>         dracut_install $(for _i in $(ls {/usr,}$libdir/libnss*.so
->>>>>>>> 2>/dev/null); do echo $_i;done | egrep "$_nsslibs")
->>>>>>>>
->>>>>>>>         inst_hook cmdline 90 "$moddir/parse-nfsroot.sh"
->>>>>>>> +    inst_hook cmdline 91 "$moddir/nfs-start-rpc.sh"
->>>>>>>
->>>>>>> I am sure this is wrong. You need pre-pivot.
->>>>>>
->>>>>>
->>>>>> I want to start them as early as we can, I always think about user
->>>>>> use
->>>>>> dracut as a minimal recovery system, they need do something manually.
->>>>>>
->>>>>
->>>>> Then install it as pre-pivot 00.
->>>>
->>>>
->>>> What if I use rdbreak=point which is before pre-pivot?
->>>>
->>>
->>> Take a look at all existing cmdline hooks, all of them handle cmdline,
->>> but nfs-start-rpc doesn't, so not cmdline hook please. You are abusing
->>> cmdline hooks.
->>
->>
->>
->> Maybe current cmdline hooks all deal with cmdline things, but as my
->> understand cmdline hook point is just a point for injecting anything we
->> need to handle at this point.
-> 
-> If you think pre-pivot is too late, then try other hooks, e.g.
-> pre-mount, pre-udev. Anyhow, cmdline is definitely not the place.
-> 
+I'm using dracut since tonight and really like this kind of approach. 
+Makes the life a lot more easy. So thanks for this piece of software.
 
-Sigh, Ok. I will test pre-udev
+My problem:
 
--- 
-Thanks
-Dave
+I'm using btrfs as my root fs. I have subvolumes for better snapshot 
+control, like /etc, /var, /root and so on. In etc is a lot of stuff need 
+during boot time (like fstab, inittab). Therefore it must be mounted 
+before dracut is starting the real boot.
+
+I tried to put it /etc into the fstab.sys. But whenever I boot I get a 
+msg like "/dev/sda3 is allready mounted or /sysroot/etc is busy". Ofc. 
+/dev/sda3 is allready mounted, I just want to mount a subvolume from 
+that disk.
+Is there a way to force the mount? I tried the "force" option in the 
+fstab.sys (like "mount -o force"), but I does not work.
+
+Any thoughts?
+
+
+Please CC me as I'm not subscribed to the list. Thanks a lot in advice.
+
+
+
+Kind regards,
+Felix Blanke
