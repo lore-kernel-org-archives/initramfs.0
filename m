@@ -1,68 +1,45 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] deal with nfs in fstab-sys
-Date: Tue, 31 Jan 2012 17:56:18 +0800
-Message-ID: <4F27BAC2.1000103@redhat.com>
-References: <20120130064451.GA7125@darkstar.nay.redhat.com> <jg5jri$3qk$3@dough.gmane.org> <4F2657B4.3030200@redhat.com> <4F26581B.4040305@gmail.com> <4F265CAA.2080804@redhat.com> <4F265EE1.7010505@gmail.com> <4F2660DB.8030105@redhat.com> <4F266282.8040204@gmail.com>
+Subject: [PATCH 2/2 v2] deal with nfs in fstab-sys
+Date: Wed, 1 Feb 2012 10:00:58 +0800
+Message-ID: <20120201020058.GA9573@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F266282.8040204-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01/30/2012 05:27 PM, Cong Wang wrote:
+Do not check and fsck $_dev for nfs mount in mount-sys.sh
 
-> On 01/30/2012 05:20 PM, Dave Young wrote:
->> On 01/30/2012 05:12 PM, Cong Wang wrote:
->>
->>> On 01/30/2012 05:02 PM, Dave Young wrote:
->>>> On 01/30/2012 04:43 PM, Cong Wang wrote:
->>>>
->>>>> On 01/30/2012 04:41 PM, Dave Young wrote:
->>>>>> On 01/30/2012 04:20 PM, Cong Wang wrote:
->>>>>>
->>>>>>> On Mon, 30 Jan 2012 at 06:44 GMT, Dave Young<dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>>>>>> wrote:
->>>>>>>> If we need to mount nonroot nfs in fstab we also need to launch rpc
->>>>>>>> processes
->>>>>>>> Add nfs-start-rpc code, also do not check and fsck $_dev in this
->>>>>>>> case
->>>>>>>
->>>>>>> Isn't it nfs module's responsibility to call nfs-start-rpc code?
->>>>>>> Why do you put it in fs-systab?
->>>>>>
->>>>>>
->>>>>> nfs know nothing about fstab mount, it only deal with nfsroot
->>>>>> thing. So
->>>>>> I have to do this in fstab-sys
->>>>>
->>>>> Sure, but nfs module knows it needs to start rpc before mounting NFS.
->>>>>
->>>>> So, what's the problem if we call nfs-start-rpc script in pre-pivot
->>>>> hook
->>>>> of nfs module (before mount-sys.sh, of course)?
->>>>
->>>>
->>>> Actually nfs-start-rpc need to know the fs is nfs or nfs4, If add it as
->>>> a hook, how does it accept the argument?
->>>
->>> I think you can start rpc daemons unconditionally, no matter if it is
->>> nfs4 or nfs.
->>
->>
->> This will means once nfs module is installed in initramfs, the rpc
->> daemons will be started even if no nfs mount options in fstab or nfsroot
-> 
-> Sure, but they will be killed soon, by nfsroot-cleanup.sh. :)
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/95fstab-sys/mount-sys.sh |   14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-
-Rethink about this, unconditionally start rpc daemons make more sense
-than do it in fstab-sys. Will change in v2
-
-
--- 
-Thanks
-Dave
+Index: dracut/modules.d/95fstab-sys/mount-sys.sh
+===================================================================
+--- dracut.orig/modules.d/95fstab-sys/mount-sys.sh
++++ dracut/modules.d/95fstab-sys/mount-sys.sh
+@@ -11,12 +11,14 @@ fstab_mount() {
+     info "Mounting from $1"
+     while read _dev _mp _fs _opts _dump _pass _rest; do
+         [ -z "${_dev%%#*}" ] && continue # Skip comment lines
+-        if [ ! -e "$_dev" ]; then
+-            warn "Device $_dev doesn't exist, skipping mount."
+-            continue
+-        fi
+-        if [ "$_pass" -gt 0 ] && ! strstr "$_opts" _netdev; then
+-            fsck_single "$_dev" "$_fs"
++        if [[ ! "$_fs" =~ "nfs" ]]; then
++            if [ ! -e "$_dev" ]; then
++                warn "Device $_dev doesn't exist, skipping mount."
++                continue
++            fi
++            if [ "$_pass" -gt 0 ] && ! strstr "$_opts" _netdev; then
++                fsck_single "$_dev" "$_fs"
++            fi
+         fi
+         _fs=$(det_fs "$_dev" "$_fs")
+         info "Mounting $_dev"
