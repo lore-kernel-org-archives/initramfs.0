@@ -1,48 +1,31 @@
-From: Felix Blanke <felixblanke-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: dracut and fstab.sys problem
-Date: Thu, 02 Feb 2012 00:45:33 +0100
-Message-ID: <4F29CE9D.1070604@gmail.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 0/7 respin] network,nfs,fstab-sys stuff
+Date: Thu, 2 Feb 2012 15:59:44 +0800
+Message-ID: <20120202075944.GA12408@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=message-id:date:from:user-agent:mime-version:to:subject
-         :content-type:content-transfer-encoding;
-        bh=lxLDC0B/4dAI9R5GXTyMHtFVj5qTVBWr27UdgsJbH+E=;
-        b=MBjvjiV+RGWP2EZIeQRS8prc/6831PYSvy4p/flpjTLGETanIJMfoNCRzKYrTrf3Ix
-         CrgZKayTMzU/Yey6TthuFHd2LnkBjmduP9eQxdSS0ZwIhLjJUh+W53/ZUKobUtjwuOhN
-         L+0UoRdSVeiMqOiYId7qTnQOil83GEOb0q958=
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-Hello,
+This series deal with network startup without netroot and nfsmount
+in fstab-sys. Patch 1/7, 2/7 and 3/7 is same with previous ones,
+I just send them for easily tracking.
 
-I'm using dracut since tonight and really like this kind of approach. 
-Makes the life a lot more easy. So thanks for this piece of software.
+[PATCH 1/7] allow ifup bring up network manually even without netroot
+[PATCH 2/7] auto setup network without netroot
+[PATCH 3/7] fix fstab-sys module check
+[PATCH 4/7] add nobody group for rpc.idmapd
+[PATCH 5/7] source dracut-lib.sh in nfs cleanup script
+[PATCH 6/7] split nfs rpc daemons startup script
+[PATCH 7/7] do not check dev node exist for fstab-sys mounting
 
-My problem:
-
-I'm using btrfs as my root fs. I have subvolumes for better snapshot 
-control, like /etc, /var, /root and so on. In etc is a lot of stuff need 
-during boot time (like fstab, inittab). Therefore it must be mounted 
-before dracut is starting the real boot.
-
-I tried to put it /etc into the fstab.sys. But whenever I boot I get a 
-msg like "/dev/sda3 is allready mounted or /sysroot/etc is busy". Ofc. 
-/dev/sda3 is allready mounted, I just want to mount a subvolume from 
-that disk.
-Is there a way to force the mount? I tried the "force" option in the 
-fstab.sys (like "mount -o force"), but I does not work.
-
-Any thoughts?
-
-
-Please CC me as I'm not subscribed to the list. Thanks a lot in advice.
-
-
-
-Kind regards,
-Felix Blanke
+Changes from last version are:
+4/7: new fix for nfs
+5/7: new fix for nfs
+6/7: start nfs-start-rpc.sh in pre-udev hook
+7/7: remove fsck check for nfs due to fsck_able already do this for us.
