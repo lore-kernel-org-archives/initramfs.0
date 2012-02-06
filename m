@@ -1,41 +1,46 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [Patch] s/usrmove/convertfs/ in dracut.spec
-Date: Sun,  5 Feb 2012 23:17:45 +0800
-Message-ID: <1328455065-2162-1-git-send-email-xiyou.wangcong@gmail.com>
+From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+Subject: Re: [PATCH 2/7] auto setup network without netroot
+Date: Mon, 06 Feb 2012 01:45:22 -0500
+Message-ID: <1328510722.10153.13.camel@obelisk.thedillows.org>
+References: <20120202075952.GA12412@darkstar.nay.redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=from:to:cc:subject:date:message-id:x-mailer;
-        bh=N7ydXJuNIQDn0Ja+5MK9py/R99FPrVXRkCl8a+RtXnY=;
-        b=c9dJcarH5r5mhCx6l7Ep5mgGWvaaSa7C9Mg26NZAfHdNECCeif0eVvohRKm5oxcu/f
-         vcidqXqVi+1RIPP7/Q17Pg6IiauZX41V5r5XnUDRuv1g7B3KRFmBqnPZg6Z8sPoEvPOT
-         sQfGoT/rya6ZlHJUuaD/jzkVoyjZUpr4dwwhg=
+In-Reply-To: <20120202075952.GA12412-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-commit 2cf328ad0ae7fb5ee7de8fac5652e4cd58adca1a (renamed
-usrmove to convertfs) renamed usrmove, but forgot to change
-dracut.spec.
+On Thu, 2012-02-02 at 15:59 +0800, Dave Young wrote:
+> Current dracut network only will be setup when netroot is used. But there are
+> some cases we need network even without netroot. For example kdump will need
+> copy vmcore to remote machine via scp or nfs mount. OTOH, if we use dracut as
+> a recovery system the network is helpful even root is not a network device.
+> 
+> This implementation is based on the manually bring up method. Here add a kernel
+> cmdline argument rd.neednet. If rd.neednet is set dracut will bring up network
+> with ifup $INTERFACE -m. If netroot is used we still keep original behavior.
 
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+I'm sorry to keep pitching comments over the fence and running off, but
+$DAYJOB is keeping me busy these days.
 
----
-diff --git a/dracut.spec b/dracut.spec
-index 10556d0..50c6af7 100644
---- a/dracut.spec
-+++ b/dracut.spec
-@@ -232,7 +232,7 @@ rm -rf $RPM_BUILD_ROOT
- %{dracutlibdir}/modules.d/05busybox
- %{dracutlibdir}/modules.d/10i18n
- %{dracutlibdir}/modules.d/10rpmversion
--%{dracutlibdir}/modules.d/30usrmove
-+%{dracutlibdir}/modules.d/30convertfs
- %{dracutlibdir}/modules.d/50plymouth
- %{dracutlibdir}/modules.d/90btrfs
- %{dracutlibdir}/modules.d/90crypt
+As one of the guys behind the netroot code -- though it's been a long
+while since I've been active on it -- I think you're trying to bandaid
+your needs on top of it, when restructuring is probably needed. We
+didn't really consider other modules needing network access before the
+root is mounted, so there is a bit of melding of the steps.
+
+I think you'd have a much cleaner solution splitting out the
+configuration of the network from the network root handling. Both
+netroot and kdump could then signal that they need network services, and
+you could handle it as it is now -- use ip= if available, fall back to
+dhcp. If no NIC is specified, we try all of them until we can talk to
+our {root,kdump} server. Cong Wang is correct, I seen no reason to add
+new command line arguments.
+
+It's been years since I've really been involved, so I suspect the
+netroot code is due for a cleanup anyway.
+
+
