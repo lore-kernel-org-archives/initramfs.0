@@ -1,55 +1,43 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 015 release
-Date: Tue, 07 Feb 2012 21:56:11 +0100
-Message-ID: <4F318FEB.8070704@redhat.com>
+From: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Subject: dracut: ordering of modules
+Date: Fri, 10 Feb 2012 10:01:55 -0500
+Message-ID: <1328886121.2472.19.camel@falcor>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs@vger.kernel.org
+Cc: Harald Hoyer <harald@redhat.com>, linux-kernel@vger.kernel.org, Roberto Sassu <roberto.sassu@polito.it>
 
-Here comes a new dracut version. Thanks to all who have contributed to
-this release.
+Hi Harald,
 
-The tarball can be found here:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/
-	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Originally, 98integrity/ima-policy-load.sh didn't start executing before
+98selinux/selinux-loadpolicy.sh finished, but unfortunately it now does.
 
-Git:
-	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+inst_hook pre-pivot 50 "$moddir/selinux-loadpolicy.sh"
+inst_hook pre-pivot 62 "$moddir/ima-policy-load.sh"
 
-Git Web:
-	http://git.kernel.org/?p=boot/dracut/dracut.git
+As the IMA policy could be dependent on LSM runtime info, this is a
+problem.
 
-Git Web RSS Feed:
-	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+[   10.040574] type=1805 audit(1328865524.387:2): action="dont_measure" fsmagic="0x9fa0" res=0
+[   10.040663] type=1805 audit(1328865524.387:3): action="dont_appraise" fsmagic="0x9fa0" res=0
+[   10.040729] type=1805 audit(1328865524.387:4): action="dont_measure" fsmagic="0x62656572" res=0
+[   10.040792] type=1805 audit(1328865524.387:5): action="dont_appraise" fsmagic="0x62656572" res=0
+[   10.040857] type=1805 audit(1328865524.387:6): action="dont_measure" fsmagic="0x64626720" res=0
+[   10.040921] type=1805 audit(1328865524.387:7): action="dont_appraise" fsmagic="0x64626720" res=0
+[   10.040985] type=1805 audit(1328865524.387:8): action="dont_measure" fsmagic="0x01021994" res=0
+[   10.041047] type=1805 audit(1328865524.387:9): action="dont_appraise" fsmagic="0x01021994" res=0
+[   10.041113] type=1805 audit(1328865524.387:10): action="dont_measure" fsmagic="0x73636673" res=0
+[   10.041177] type=1805 audit(1328865524.387:11): action="dont_appraise" fsmagic="0x73636673" res=0
+[   11.898956] SELinux:  Completing initialization.
 
-Project Page:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+I've tried adding a depend for selinux, but it doesn't seem to resolve
+the problem, nor does delaying 98integrity to later.  Any suggestions
+would be appreciated.
 
-Project Wiki:
-	http://dracut.wiki.kernel.org
+thanks,
 
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
-
-
-dracut-015
-==========
-- hostonly mode automatically adds command line options for root and /usr
-- --add-fstab --mount parameters
-- ssh-client module
-- --ctty option: add job control
-- openvte: add job control via openvte, if installed
-- cleanup /run/initramfs
-- convertfs module
-- /sbin/ifup can be called directly
-- support kernel modules compressed with xz
-- s390 iscsi modules added
-- terminfo module
-- lsinitrd can handle concatened images
-- lsinitrd can sort by size
+Mimi
