@@ -1,63 +1,73 @@
-From: Mimi Zohar <zohar@linux.vnet.ibm.com>
+From: Harald Hoyer <harald@redhat.com>
 Subject: Re: dracut: ordering of modules
-Date: Sat, 11 Feb 2012 19:17:25 -0500
-Message-ID: <1329005846.4201.39.camel@falcor>
-References: <1328886121.2472.19.camel@falcor> <4F353840.8050505@polito.it>
-	<20120210181413.GA13111@tango.0pointer.de>
+Date: Mon, 13 Feb 2012 10:59:12 +0100
+Message-ID: <4F38DEF0.8010202@redhat.com>
+References: <1328886121.2472.19.camel@falcor>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
-In-Reply-To: <20120210181413.GA13111@tango.0pointer.de>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-To: Lennart Poettering <mzerqung@0pointer.de>
-Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, selinux@lists.fedoraproject.org, linux-kernel@vger.kernel.org, Harald@freedesktop.org, Roberto Sassu <roberto.sassu@polito.it>, Hoyer <harald@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1328886121.2472.19.camel@falcor>
+Sender: linux-kernel-owner@vger.kernel.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Cc: initramfs@vger.kernel.org, linux-kernel@vger.kernel.org, Roberto Sassu <roberto.sassu@polito.it>
 
-On Fri, 2012-02-10 at 19:14 +0100, Lennart Poettering wrote:
-> On Fri, 10.02.12 16:31, Roberto Sassu (roberto.sassu@polito.it) wrote:
+Am 10.02.2012 16:01, schrieb Mimi Zohar:
+> Hi Harald,
 > 
-> > 
-> > Hi Mimi
-> > 
-> > i'm CCing the systemd and Fedora SELinux mailing lists.
-> > 
-> > Unfortunately, the SELinux policy initialization (at least
-> > in Fedora 16) has been moved to systemd, so, now, loading an
-> > IMA policy cannot be done in the initial ramdisk.
-> > 
-> > Further, the SELinux policy loading code is not in a unit file
-> > but embedded in the main binary, which means that the new code for
-> > loading IMA policies must be added just after that point.
-> > 
-> > I already wrote a patch for this. I need some time to test it
-> > and will post in the systemd mailing list at the beginning of
-> > the next week.
-
-Thanks Roberto!
- 
-> Hmm, what is this about? You need a place to load additional security
-> policies into the kernel at early boot? For SELinux that indeed takes
-> place from within PID 1 now in systemd. I'd expect that other security
-> technologies like AppArmor should work the same.
-
-The IMA measurement/appraisal policy, which is described in
-Documentation/ABI/testing/ima_policy, can be based on a number
-of criteria.  One of these criteria are LSM subj/obj labels. The IMA
-measurement/appraisal policy should be loaded as early as possible, but
-only after the LSM policy has been loaded.
-
-Mimi
-
-> If you want to hack on this basing your work on selinux-setup.c in the
-> systemd tree should be fairly easy.
+> Originally, 98integrity/ima-policy-load.sh didn't start executing before
+> 98selinux/selinux-loadpolicy.sh finished, but unfortunately it now does.
 > 
-> Lennart
+> inst_hook pre-pivot 50 "$moddir/selinux-loadpolicy.sh"
+> inst_hook pre-pivot 62 "$moddir/ima-policy-load.sh"
+> 
+> As the IMA policy could be dependent on LSM runtime info, this is a
+> problem.
+> 
+> [   10.040574] type=1805 audit(1328865524.387:2): action="dont_measure" fsmagic="0x9fa0" res=0
+> [   10.040663] type=1805 audit(1328865524.387:3): action="dont_appraise" fsmagic="0x9fa0" res=0
+> [   10.040729] type=1805 audit(1328865524.387:4): action="dont_measure" fsmagic="0x62656572" res=0
+> [   10.040792] type=1805 audit(1328865524.387:5): action="dont_appraise" fsmagic="0x62656572" res=0
+> [   10.040857] type=1805 audit(1328865524.387:6): action="dont_measure" fsmagic="0x64626720" res=0
+> [   10.040921] type=1805 audit(1328865524.387:7): action="dont_appraise" fsmagic="0x64626720" res=0
+> [   10.040985] type=1805 audit(1328865524.387:8): action="dont_measure" fsmagic="0x01021994" res=0
+> [   10.041047] type=1805 audit(1328865524.387:9): action="dont_appraise" fsmagic="0x01021994" res=0
+> [   10.041113] type=1805 audit(1328865524.387:10): action="dont_measure" fsmagic="0x73636673" res=0
+> [   10.041177] type=1805 audit(1328865524.387:11): action="dont_appraise" fsmagic="0x73636673" res=0
+> [   11.898956] SELinux:  Completing initialization.
+> 
+> I've tried adding a depend for selinux, but it doesn't seem to resolve
+> the problem, nor does delaying 98integrity to later.  Any suggestions
+> would be appreciated.
+> 
+> thanks,
+> 
+> Mimi
+> 
+
+In Fedora the selinux dracut module is disabled by default. You have to enable
+it manually.
+
+echo 'add_dracutmodules+=" selinux "' >> /etc/dracut.conf.d/99-my.conf
+
+although, this also should do the thing:
+
+$ git diff modules.d/98integrity/module-setup.sh
+diff --git a/modules.d/98integrity/module-setup.sh
+b/modules.d/98integrity/module-setup.sh
+index 7d5771c..ff1b4aa 100755
+--- a/modules.d/98integrity/module-setup.sh
++++ b/modules.d/98integrity/module-setup.sh
+@@ -7,7 +7,7 @@ check() {
+ }
+
+ depends() {
+-    echo masterkey securityfs
++    echo masterkey securityfs selinux
+     return 0
+ }
+
+
+
+
