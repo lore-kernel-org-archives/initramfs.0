@@ -1,42 +1,88 @@
-From: Daniel J Walsh <dwalsh@redhat.com>
-Subject: Re: dracut: ordering of modules
-Date: Mon, 13 Feb 2012 12:00:18 -0500
-Message-ID: <4F3941A2.3040205@redhat.com>
-References: <1328886121.2472.19.camel@falcor> <4F38DEF0.8010202@redhat.com>
-	<4F38E337.7030200@polito.it> <4F38E5F4.9070009@redhat.com>
+From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
+Subject: initramfs-tools 0.100 release
+Date: Tue, 14 Feb 2012 14:57:12 +0100
+Message-ID: <2012-02-14T14-51-29@devnull.michael-prokop.at>
 Mime-Version: 1.0
-Content-Transfer-Encoding: base64
-Return-path: <selinux-bounces@lists.fedoraproject.org>
-In-Reply-To: <4F38E5F4.9070009@redhat.com>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://admin.fedoraproject.org/mailman/options/selinux>,
-	<mailto:selinux-request@lists.fedoraproject.org?subject=unsubscribe>
-List-Archive: <http://lists.fedoraproject.org/pipermail/selinux/>
-List-Post: <mailto:selinux@lists.fedoraproject.org>
-List-Help: <mailto:selinux-request@lists.fedoraproject.org?subject=help>
-List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/selinux>,
-	<mailto:selinux-request@lists.fedoraproject.org?subject=subscribe>
-Sender: selinux-bounces@lists.fedoraproject.org
-Errors-To: selinux-bounces@lists.fedoraproject.org
-Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald@redhat.com>
-Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, selinux@lists.fedoraproject.org, linux-kernel@vger.kernel.org, Roberto Sassu <roberto.sassu@polito.it>, Mimi Zohar <zohar@linux.vnet.ibm.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="vk/v8fjDPiDepTtA"
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-LS0tLS1CRUdJTiBQR1AgU0lHTkVEIE1FU1NBR0UtLS0tLQpIYXNoOiBTSEExCgpPbiAwMi8xMy8y
-MDEyIDA1OjI5IEFNLCBIYXJhbGQgSG95ZXIgd3JvdGU6Cj4gQW0gMTMuMDIuMjAxMiAxMToxNywg
-c2NocmllYiBSb2JlcnRvIFNhc3N1Ogo+PiBIaSBIYXJhbGQKPj4gCj4+IHRoaXMgZnVuY3Rpb25h
-bGl0eSBzZWVtcyB0byBiZSBicm9rZW4gaW4gZHJhY3V0IGR1ZSB0byBhIGNoYW5nZQo+PiBpbiB0
-aGUgU0VMaW51eCBsb2FkX3BvbGljeSB0b29sLiBBZnRlciBlbmFibGluZyB0aGUgc2VsaW51eAo+
-PiBtb2R1bGUgaW4gZHJhY3V0LCBpIG9idGFpbjoKPj4gCj4+IFsgICAgMy4zNjkwNTldIGRyYWN1
-dDogTG9hZGluZyBTRUxpbnV4IHBvbGljeSBbICAgIDMuNDQ5ODUwXQo+PiBkcmFjdXQ6IC9zYmlu
-L2xvYWRfcG9saWN5OiBDYW4ndCBsb2FkIHBvbGljeTogTm8gc3VjaCBmaWxlIG9yIAo+PiBkaXJl
-Y3RvcnkgWyAgICAzLjY1OTg5OV0gZHJhY3V0OiBTd2l0Y2hpbmcgcm9vdAo+PiAKPiAKPiBUaGlz
-IGVycm9yIGNhbiBoYXZlIG11bHRpcGxlIGNhdXNlcy4uLiBEYW4/CgpXZWxsIGxpa2VsaWVzdCB3
-b3VsZCBiZSBzZWxpbnV4LXBvbGljeSBwYWNrYWdlIGlzIG5vdCBpbnN0YWxsZWQuCi0tLS0tQkVH
-SU4gUEdQIFNJR05BVFVSRS0tLS0tClZlcnNpb246IEdudVBHIHYxLjQuMTIgKEdOVS9MaW51eCkK
-Q29tbWVudDogVXNpbmcgR251UEcgd2l0aCBNb3ppbGxhIC0gaHR0cDovL2VuaWdtYWlsLm1vemRl
-di5vcmcvCgppRVlFQVJFQ0FBWUZBazg1UWFJQUNna1FybFl2RTRNcG9iTU5id0NnaThKRzBmbWxR
-c252bzJITm5BK09yeHpyClVZY0FvS3FIajArTGw4bGZiWXB2R3pBTnhjazRNQXdQCj1nZUlyCi0t
-LS0tRU5EIFBHUCBTSUdOQVRVUkUtLS0tLQotLQpzZWxpbnV4IG1haWxpbmcgbGlzdApzZWxpbnV4
-QGxpc3RzLmZlZG9yYXByb2plY3Qub3JnCmh0dHBzOi8vYWRtaW4uZmVkb3JhcHJvamVjdC5vcmcv
-bWFpbG1hbi9saXN0aW5mby9zZWxpbnV4
+
+--vk/v8fjDPiDepTtA
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+Hi,
+
+we just released initramfs-tools v0.100, with a bunch of bugfixes.
+
+The shortlog at the end of this mail has the details, find the git
+stuff at the usual place:
+
+* Git repository: git://git.debian.org/kernel/initramfs-tools.git
+* Git web: http://git.debian.org/?p=kernel/initramfs-tools.git;a=summary
+
+regards,
+-mika-
+
+Git shortlog:
+
+Alkis Georgopoulos (1):
+      configure_networking() wait for udev to populate available nics
+
+Colin Watson (1):
+      mark Multi-Arch: foreign
+
+Harald Hoyer (1):
+      MODULES=dep: awk free version for root dev search
+
+Martin Pitt (1):
+      hooks/busybox: Fix 2.99 busybox breakage
+
+Michael Prokop (5):
+      lsinitramfs: support xz/lzma, bzip2 and lzop as compress methods.
+      set_initlist: redirect warning messages to stderr.
+      Alternate Recommends on busybox-static
+      warn user if directory is present in confdir
+      Releasing version 0.100
+
+Sven Joachim (1):
+      copy_exec: Handle optimized libraries under multiarch paths
+
+Timo Juhani Lindfors (2):
+      panic(): print the name of each module before loading it
+      panic: Load modules for highly probable USB keyboard
+
+maximilian attems (13):
+      manual_add_modules: No longer add firmware.agent too.
+      mkinitramfs: Use version comparison for xz or other compression tools
+      initramfs-tools: rephrase description
+      mkinitramfs: Check if TMPDIR is writable
+      mkinitramfs: Use /var/tmp rather then /tmp for space reasons
+      Revert "Revert "mkinitramfs: Nuke MIN_VERSION handling.""
+      MODULES=dep: Use /sys again to decide for libata or ide
+      debian/control: Drop versioned depend on pre-Etch udev version
+      debian/control: Tighten dep on klibc-utils 1.5.23-2
+      init: Prepare for switch_root(8) usage
+      update-initramfs: Cleanup nowadays unused run_lilo()
+      update-initramfs: run_bootloader() hooks on create too
+      preinst: get rid of awk usage
+
+--vk/v8fjDPiDepTtA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAk86aDgACgkQ2N9T+zficuh45QCfQsU50Zf6xd+soIi4U5NFYRHk
+F84An2oIMvQPqc8HDs1arm+lYt56m19y
+=DQil
+-----END PGP SIGNATURE-----
+
+--vk/v8fjDPiDepTtA--
