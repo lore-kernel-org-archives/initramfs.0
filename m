@@ -1,88 +1,57 @@
-From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
-Subject: initramfs-tools 0.100 release
-Date: Tue, 14 Feb 2012 14:57:12 +0100
-Message-ID: <2012-02-14T14-51-29@devnull.michael-prokop.at>
+From: Roberto Sassu <roberto.sassu@polito.it>
+Subject: Re: dracut: ordering of modules
+Date: Tue, 14 Feb 2012 16:53:18 +0100
+Message-ID: <4F3A836E.1020208@polito.it>
+References: <1328886121.2472.19.camel@falcor> <4F38DEF0.8010202@redhat.com>
+	<4F38E337.7030200@polito.it> <4F38E5F4.9070009@redhat.com>
+	<4F3941A2.3040205@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="vk/v8fjDPiDepTtA"
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Transfer-Encoding: base64
+Return-path: <selinux-bounces@lists.fedoraproject.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=gamma;
+	h=sender:message-id:date:from:organization:user-agent:mime-version:to
+	:cc:subject:references:in-reply-to:content-type
+	:content-transfer-encoding;
+	bh=zruFWLoRN8GT7FI65VsxI8Sh4n0eRzGZeyiGF1HEeM0=;
+	b=AFRFtB9gpG8UKCxGsSp4BsZbloErIm2UJlllYMki6CFunwDwSy3cZv0+o+9hDENeAX
+	fxO1ackHGM8RmoHOjNwZMCQAnmNgupyb2Rnx9mLm515EHp6iSFQOUBPnooAZhyWOZM/n
+	c2Zjw6pjnt1ZC0Nq0zA/M0wbUkOVLQMycFkFU=
+In-Reply-To: <4F3941A2.3040205@redhat.com>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <https://admin.fedoraproject.org/mailman/options/selinux>,
+	<mailto:selinux-request@lists.fedoraproject.org?subject=unsubscribe>
+List-Archive: <http://lists.fedoraproject.org/pipermail/selinux/>
+List-Post: <mailto:selinux@lists.fedoraproject.org>
+List-Help: <mailto:selinux-request@lists.fedoraproject.org?subject=help>
+List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/selinux>,
+	<mailto:selinux-request@lists.fedoraproject.org?subject=subscribe>
+Sender: selinux-bounces@lists.fedoraproject.org
+Errors-To: selinux-bounces@lists.fedoraproject.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Daniel J Walsh <dwalsh@redhat.com>
+Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, selinux@lists.fedoraproject.org, linux-kernel@vger.kernel.org, Mimi Zohar <zohar@linux.vnet.ibm.com>, Harald Hoyer <harald@redhat.com>
 
-
---vk/v8fjDPiDepTtA
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-Hi,
-
-we just released initramfs-tools v0.100, with a bunch of bugfixes.
-
-The shortlog at the end of this mail has the details, find the git
-stuff at the usual place:
-
-* Git repository: git://git.debian.org/kernel/initramfs-tools.git
-* Git web: http://git.debian.org/?p=kernel/initramfs-tools.git;a=summary
-
-regards,
--mika-
-
-Git shortlog:
-
-Alkis Georgopoulos (1):
-      configure_networking() wait for udev to populate available nics
-
-Colin Watson (1):
-      mark Multi-Arch: foreign
-
-Harald Hoyer (1):
-      MODULES=dep: awk free version for root dev search
-
-Martin Pitt (1):
-      hooks/busybox: Fix 2.99 busybox breakage
-
-Michael Prokop (5):
-      lsinitramfs: support xz/lzma, bzip2 and lzop as compress methods.
-      set_initlist: redirect warning messages to stderr.
-      Alternate Recommends on busybox-static
-      warn user if directory is present in confdir
-      Releasing version 0.100
-
-Sven Joachim (1):
-      copy_exec: Handle optimized libraries under multiarch paths
-
-Timo Juhani Lindfors (2):
-      panic(): print the name of each module before loading it
-      panic: Load modules for highly probable USB keyboard
-
-maximilian attems (13):
-      manual_add_modules: No longer add firmware.agent too.
-      mkinitramfs: Use version comparison for xz or other compression tools
-      initramfs-tools: rephrase description
-      mkinitramfs: Check if TMPDIR is writable
-      mkinitramfs: Use /var/tmp rather then /tmp for space reasons
-      Revert "Revert "mkinitramfs: Nuke MIN_VERSION handling.""
-      MODULES=dep: Use /sys again to decide for libata or ide
-      debian/control: Drop versioned depend on pre-Etch udev version
-      debian/control: Tighten dep on klibc-utils 1.5.23-2
-      init: Prepare for switch_root(8) usage
-      update-initramfs: Cleanup nowadays unused run_lilo()
-      update-initramfs: run_bootloader() hooks on create too
-      preinst: get rid of awk usage
-
---vk/v8fjDPiDepTtA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAk86aDgACgkQ2N9T+zficuh45QCfQsU50Zf6xd+soIi4U5NFYRHk
-F84An2oIMvQPqc8HDs1arm+lYt56m19y
-=DQil
------END PGP SIGNATURE-----
-
---vk/v8fjDPiDepTtA--
+SGkgRGFuCgppIGNvbmZpcm0gdGhpcyBpc3N1ZSBoYXBwZW5zIGluIGEgRmVkb3JhIDE2IHN5c3Rl
+bSB3aXRoIHRoZQpzZWxpbnV4LXBvbGljeSBwYWNrYWdlIGluc3RhbGxlZC4KClRoZSBzZWxpbnV4
+IGRyYWN1dCBtb2R1bGUgdHJpZXMgdG8gbG9hZCB0aGUgcG9saWN5IGJ1dCByZXR1cm5zCndpdGgg
+dGhlIGVycm9yIGJlbG93LiBBZnRlciBzd2l0Y2hpbmcgcm9vdCwgdGhlIHBvbGljeSBpcwpzdWNj
+ZXNzZnVsbHkgbG9hZGVkIGJ5IFN5c3RlbWQuCgpUaGFua3MKClJvYmVydG8gU2Fzc3UKCgpPbiAw
+Mi8xMy8yMDEyIDA2OjAwIFBNLCBEYW5pZWwgSiBXYWxzaCB3cm90ZToKPiAtLS0tLUJFR0lOIFBH
+UCBTSUdORUQgTUVTU0FHRS0tLS0tCj4gSGFzaDogU0hBMQo+Cj4gT24gMDIvMTMvMjAxMiAwNToy
+OSBBTSwgSGFyYWxkIEhveWVyIHdyb3RlOgo+PiBBbSAxMy4wMi4yMDEyIDExOjE3LCBzY2hyaWVi
+IFJvYmVydG8gU2Fzc3U6Cj4+PiBIaSBIYXJhbGQKPj4+Cj4+PiB0aGlzIGZ1bmN0aW9uYWxpdHkg
+c2VlbXMgdG8gYmUgYnJva2VuIGluIGRyYWN1dCBkdWUgdG8gYSBjaGFuZ2UKPj4+IGluIHRoZSBT
+RUxpbnV4IGxvYWRfcG9saWN5IHRvb2wuIEFmdGVyIGVuYWJsaW5nIHRoZSBzZWxpbnV4Cj4+PiBt
+b2R1bGUgaW4gZHJhY3V0LCBpIG9idGFpbjoKPj4+Cj4+PiBbICAgIDMuMzY5MDU5XSBkcmFjdXQ6
+IExvYWRpbmcgU0VMaW51eCBwb2xpY3kgWyAgICAzLjQ0OTg1MF0KPj4+IGRyYWN1dDogL3NiaW4v
+bG9hZF9wb2xpY3k6IENhbid0IGxvYWQgcG9saWN5OiBObyBzdWNoIGZpbGUgb3IKPj4+IGRpcmVj
+dG9yeSBbICAgIDMuNjU5ODk5XSBkcmFjdXQ6IFN3aXRjaGluZyByb290Cj4+Pgo+Pgo+PiBUaGlz
+IGVycm9yIGNhbiBoYXZlIG11bHRpcGxlIGNhdXNlcy4uLiBEYW4/Cj4KPiBXZWxsIGxpa2VsaWVz
+dCB3b3VsZCBiZSBzZWxpbnV4LXBvbGljeSBwYWNrYWdlIGlzIG5vdCBpbnN0YWxsZWQuCj4gLS0t
+LS1CRUdJTiBQR1AgU0lHTkFUVVJFLS0tLS0KPiBWZXJzaW9uOiBHbnVQRyB2MS40LjEyIChHTlUv
+TGludXgpCj4gQ29tbWVudDogVXNpbmcgR251UEcgd2l0aCBNb3ppbGxhIC0gaHR0cDovL2VuaWdt
+YWlsLm1vemRldi5vcmcvCj4KPiBpRVlFQVJFQ0FBWUZBazg1UWFJQUNna1FybFl2RTRNcG9iTU5i
+d0NnaThKRzBmbWxRc252bzJITm5BK09yeHpyCj4gVVljQW9LcUhqMCtMbDhsZmJZcHZHekFOeGNr
+NE1Bd1AKPiA9Z2VJcgo+IC0tLS0tRU5EIFBHUCBTSUdOQVRVUkUtLS0tLQoKLS0Kc2VsaW51eCBt
+YWlsaW5nIGxpc3QKc2VsaW51eEBsaXN0cy5mZWRvcmFwcm9qZWN0Lm9yZwpodHRwczovL2FkbWlu
+LmZlZG9yYXByb2plY3Qub3JnL21haWxtYW4vbGlzdGluZm8vc2VsaW51eA==
