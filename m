@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/9] 40network: add net-lib.sh
-Date: Tue, 14 Feb 2012 12:38:02 -0500
-Message-ID: <1329241090-26908-2-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 5/9] 90livenet: port to url-lib
+Date: Tue, 14 Feb 2012 12:38:06 -0500
+Message-ID: <1329241090-26908-6-git-send-email-wwoods@redhat.com>
 References: <1329241090-26908-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1329241090-26908-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -12,67 +12,137 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-net-lib.sh is a library of useful functions for network stuff.
-
-More things may get added/moved here in the future.
+This makes the livenetroot module use url-lib for fetching its root
+image/filesystem. There's also some minor tweaks for POSIX compliance.
 
 Signed-off-by: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/40network/module-setup.sh |    1 +
- modules.d/40network/net-lib.sh      |   33 +++++++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+), 0 deletions(-)
- create mode 100644 modules.d/40network/net-lib.sh
+ modules.d/90livenet/livenetroot      |   37 ++++++++++-----------------------
+ modules.d/90livenet/module-setup.sh  |   13 +-----------
+ modules.d/90livenet/parse-livenet.sh |   19 ++++++++++-------
+ 3 files changed, 23 insertions(+), 46 deletions(-)
 
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index ef7818a..2f4d93d 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -76,6 +76,7 @@ install() {
-     inst "$moddir/ifup" "/sbin/ifup"
-     inst "$moddir/netroot" "/sbin/netroot"
-     inst "$moddir/dhclient-script" "/sbin/dhclient-script"
-+    inst "$moddir/net-lib.sh" "/lib/net-lib.sh"
-     inst_simple "$moddir/dhclient.conf" "/etc/dhclient.conf"
-     inst_hook pre-udev 50 "$moddir/ifname-genrules.sh"
-     inst_hook pre-udev 60 "$moddir/net-genrules.sh"
-diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
-new file mode 100644
-index 0000000..0ed80b8
---- /dev/null
-+++ b/modules.d/40network/net-lib.sh
-@@ -0,0 +1,33 @@
-+#!/bin/bash
+diff --git a/modules.d/90livenet/livenetroot b/modules.d/90livenet/livenetroot
+index 1e8e34e..bc62760 100755
+--- a/modules.d/90livenet/livenetroot
++++ b/modules.d/90livenet/livenetroot
+@@ -1,41 +1,26 @@
+ #!/bin/bash
+ # livenetroot - fetch a live image from the network and run it
+-#
+-# TODO:
+-# * HTTPS: arg to use --no-check-certificate with https (boo)
+-#          args for --certificate, --ca-certificate
+-# * NFS support?
+ 
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ [ -f /tmp/root.info ] && . /tmp/root.info
+ 
++. /lib/url-lib.sh
 +
-+get_ip() {
-+    local iface="$1" ip=""
-+    ip=$(ip -o -f inet addr show $iface)
-+    ip=${ip%%/*}
-+    ip=${ip##* }
-+}
+ PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ 
+ # args get passed from 40network/netroot
+-netroot=$2
+-
+-liveurl=${netroot#livenet:}
+-
+-if [ ${liveurl##*.} == "iso" ]; then
+-    imgfile="/run/live.iso"
+-else
+-    imgfile="/run/rootfs.img"
+-fi
+-
+-
+-case "$liveurl" in
+-  http://*|https://*|ftp://*)
+-    wget -O $imgfile "$liveurl"
+-  ;;
+-  *) die "don't know how to handle URL: $liveurl" ;;
+-esac
+-[ $? == 0 ] || die "failed to download live image"
+-
+-
+-if [ ${imgfile##*.} == "iso" ]; then
++netroot="$2"
++liveurl="${netroot#livenet:}"
++info "fetching $liveurl"
++imgfile=$(fetch_url "$liveurl")
++[ $? = 0 ] || die "failed to download live image: error $?"
 +
-+iface_for_remote_addr() {
-+    set -- $(ip -o route get to $1)
-+    echo $5
-+}
++# TODO: couldn't dmsquash-live-root handle this?
++if [ ${imgfile##*.} = "iso" ]; then
+     root=$(losetup -f)
+     losetup $root $imgfile
+ else
+     root=$imgfile
+ fi
 +
-+iface_for_mac() {
-+    local interface="" mac="$(echo $1 | tr '[:upper:]' '[:lower:]')"
-+    for interface in /sys/class/net/*; do
-+        if [ $(cat $interface/address) = "$mac" ]; then
-+            echo ${interface##*/}
-+        fi
-+    done
-+}
-+
-+iface_has_link() {
-+    local interface="$1" flags=""
-+    [ -n "$interface" ] || return 2
-+    interface="/sys/class/net/$interface"
-+    [ -d "$interface" ] || return 2
-+    flags=$(cat $interface/flags)
-+    echo $(($flags|0x41)) > $interface/flags # 0x41: IFF_UP|IFF_RUNNING
-+    [ "$(cat $interface/carrier)" = 1 ] || return 1
-+    # XXX Do we need to reset the flags here? anaconda never bothered..
-+}
+ exec /sbin/dmsquash-live-root $root
+diff --git a/modules.d/90livenet/module-setup.sh b/modules.d/90livenet/module-setup.sh
+index 5cfbb75..31164fd 100755
+--- a/modules.d/90livenet/module-setup.sh
++++ b/modules.d/90livenet/module-setup.sh
+@@ -2,26 +2,15 @@
+ # module-setup.sh for livenet
+ 
+ check() {
+-    # a live, host-only image doesn't really make a lot of sense
+-    [[ $hostonly ]] && return 1
+-    command -v wget >/dev/null || return 1
+     return 255
+ }
+ 
+ depends() {
+-    echo network dmsquash-live
++    echo network url-lib dmsquash-live
+     return 0
+ }
+ 
+ install() {
+-    dracut_install wget
+-    mkdir -m 0755 -p "$initdir/etc/ssl/certs"
+-    if ! inst_any -t /etc/ssl/certs/ca-bundle.crt \
+-            /etc/ssl/certs/ca-bundle.crt \
+-            /etc/ssl/certs/ca-certificates.crt; then
+-        dwarn "Couldn't find SSL CA cert bundle; HTTPS won't work."
+-    fi
+-
+     inst_hook cmdline 29 "$moddir/parse-livenet.sh"
+     inst "$moddir/livenetroot" "/sbin/livenetroot"
+ }
+diff --git a/modules.d/90livenet/parse-livenet.sh b/modules.d/90livenet/parse-livenet.sh
+index 2e6bc4b..042cc51 100755
+--- a/modules.d/90livenet/parse-livenet.sh
++++ b/modules.d/90livenet/parse-livenet.sh
+@@ -3,17 +3,20 @@
+ # root=live:[url-to-backing-file]
+ 
+ [ -z "$root" ] && root=$(getarg root=)
++. /lib/url-lib.sh
+ 
+-str_starts $root "live:" && liveurl=$root
+-str_starts $liveurl "live:" || return
++str_starts "$root" "live:" && liveurl="$root"
++str_starts "$liveurl" "live:" || return
+ liveurl="${liveurl#live:}"
+ 
+ # setting netroot to "livenet:..." makes "livenetroot" get run after ifup
+-case "$liveurl" in
+-    http://*|https://*|ftp://*)
+-        netroot="livenet:$liveurl"
+-        root="livenet" # quiet complaints from init
+-        rootok=1 ;;
+-esac
++if get_url_handler "$liveurl" >/dev/null; then
++    info "livenet: root image at $liveurl"
++    netroot="livenet:$liveurl"
++    root="livenet" # quiet complaints from init
++    rootok=1
++else
++    info "livenet: no url handler for $liveurl"
++fi
+ 
+ wait_for_dev /dev/root
 -- 
 1.7.7.6
