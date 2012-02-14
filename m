@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/9] add module 45url-lib
-Date: Tue, 14 Feb 2012 12:38:05 -0500
-Message-ID: <1329241090-26908-5-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 8/9] add img-lib: a library for handling filesystem images
+Date: Tue, 14 Feb 2012 12:38:09 -0500
+Message-ID: <1329241090-26908-9-git-send-email-wwoods@redhat.com>
 References: <1329241090-26908-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1329241090-26908-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -12,121 +12,126 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-url-lib adds some functions for dealing with URLs (mostly for fetching
-files, for the moment).
+img-lib handles identifying and unpacking archives (uncompressed or
+compressed) and filesystem images.
 
-It uses curl to handle http/https/ftp URLs, but it can be extended by other
-modules at runtime by using the "add_url_handler" function.
+Currently tar and gzip are required; cpio and xz are optional, and bzip2
+is supported but unused.
 
 Signed-off-by: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/45url-lib/module-setup.sh |   24 +++++++++++++
- modules.d/45url-lib/url-lib.sh      |   66 +++++++++++++++++++++++++++++++++++
- 2 files changed, 90 insertions(+), 0 deletions(-)
- create mode 100755 modules.d/45url-lib/module-setup.sh
- create mode 100755 modules.d/45url-lib/url-lib.sh
+ modules.d/99img-lib/img-lib.sh      |   72 +++++++++++++++++++++++++++++++++++
+ modules.d/99img-lib/module-setup.sh |   23 +++++++++++
+ 2 files changed, 95 insertions(+), 0 deletions(-)
+ create mode 100755 modules.d/99img-lib/img-lib.sh
+ create mode 100755 modules.d/99img-lib/module-setup.sh
 
-diff --git a/modules.d/45url-lib/module-setup.sh b/modules.d/45url-lib/module-setup.sh
+diff --git a/modules.d/99img-lib/img-lib.sh b/modules.d/99img-lib/img-lib.sh
 new file mode 100755
-index 0000000..eab9f25
+index 0000000..582b416
 --- /dev/null
-+++ b/modules.d/45url-lib/module-setup.sh
-@@ -0,0 +1,24 @@
++++ b/modules.d/99img-lib/img-lib.sh
+@@ -0,0 +1,72 @@
 +#!/bin/bash
-+# module-setup for url-lib
++# img-lib.sh: utilities for dealing with archives and filesystem images.
++#
++# TODO: identify/unpack rpm, deb?
++
++
++# super-simple "file" that only identifies archives.
++# works with stdin if $1 is not set.
++det_archive() {
++    local bz="BZh" xz="$(echo -e '\xfd7zXZ')" gz="$(echo -e '\x1f\x8b')"
++    local headerblock="$(dd ${1:+if=$1} bs=262 count=1 2>/dev/null)"
++    case "$headerblock" in
++        $xz*) echo "xz" ;;
++        $gz*) echo "gzip" ;;
++        $bz*) echo "bzip2" ;;
++        07070*) echo "cpio" ;;
++        *ustar) echo "tar" ;;
++    esac
++}
++
++# determine filesystem type for a filesystem image
++det_fs_img() {
++    local dev=$(losetup --find --show "$1") rv=""
++    det_fs $dev; rv=$?
++    losetup -d $dev
++    return $rv
++}
++
++# unpack_archive ARCHIVE OUTDIR
++# unpack a (possibly compressed) cpio/tar archive
++unpack_archive() {
++    local img="$1" outdir="$2" archiver="" decompr=""
++    local ft="$(det_archive $img)"
++    case "$ft" in
++        xz|gzip|bzip2) decompr="$decompr -dc" ;;
++        cpio|tar) decompr="cat";;
++        *) return 1 ;;
++    esac
++    ft="$($decompr $img | det_archive)"
++    case "$ft" in
++        cpio) archiver="cpio -iumd" ;;
++        tar) archiver="tar -xf -" ;;
++        *) return 2 ;;
++    esac
++    mkdir -p $outdir
++    ( cd $outdir; $decompr | $archiver 2>/dev/null ) < $img
++}
++
++# unpack_fs FSIMAGE OUTDIR
++# unpack a filesystem image
++unpack_fs() {
++    local img="$1" outdir="$2" mnt="$(mkuniqdir /tmp unpack_fs.)"
++    mount -o loop $img $mnt || { rmdir $mnt; return 1; }
++    mkdir -p $outdir; outdir="$(cd $outdir; pwd)"
++    ( cd $mnt; cp -a -t $outdir . )
++    umount $mnt
++    rmdir $mnt
++}
++
++# unpack an image file - compressed/uncompressed cpio/tar, filesystem, whatever
++# unpack_img IMAGEFILE OUTDIR
++unpack_img() {
++    local img="$1" outdir="$2"
++    [ -r "$img" ] || { warn "can't read img!"; return 1; }
++    [ -n "$outdir" ] || { warn "unpack_img: no output dir given"; return 1; }
++
++    if [ "$(det_img $img)" ]; then
++        unpack_archive "$@" || { warn "can't unpack archive file!"; return 1; }
++    else
++        unpack_fs "$@" || { warn "can't unpack filesystem image!"; return 1; }
++    fi
++}
+diff --git a/modules.d/99img-lib/module-setup.sh b/modules.d/99img-lib/module-setup.sh
+new file mode 100755
+index 0000000..eead2ab
+--- /dev/null
++++ b/modules.d/99img-lib/module-setup.sh
+@@ -0,0 +1,23 @@
++#!/bin/bash
++# module-setup for img-lib
 +
 +check() {
-+    command -v curl >/dev/null || return 1
++    for cmd in tar gzip dd; do
++        command -v $cmd >/dev/null || return 1
++    done
 +    return 255
 +}
 +
 +depends() {
-+    echo network
 +    return 0
 +}
 +
 +install() {
-+    inst "$moddir/url-lib.sh" "/lib/url-lib.sh"
-+    dracut_install curl
-+    mkdir -m 0755 -p "$initdir/etc/ssl/certs"
-+    if ! inst_any -t /etc/ssl/certs/ca-bundle.crt \
-+            /etc/ssl/certs/ca-bundle.crt \
-+            /etc/ssl/certs/ca-certificates.crt; then
-+        dwarn "Couldn't find SSL CA cert bundle; HTTPS won't work."
-+    fi
++    # NOTE/TODO: we require bash, but I don't know how to specify that..
++    dracut_install tar gzip dd
++    dracut_install -o cpio xz
++    # TODO: make this conditional on a cmdline flag / config option
++    # dracut_install -o bzip2
++    inst "$moddir/img-lib.sh" "/lib/img-lib.sh"
 +}
 +
-diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
-new file mode 100755
-index 0000000..51340d5
---- /dev/null
-+++ b/modules.d/45url-lib/url-lib.sh
-@@ -0,0 +1,66 @@
-+#!/bin/bash
-+# url-lib.sh - functions for handling URLs (file fetching etc.)
-+#
-+# Authors:
-+#   Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-+
-+type mkuniqdir >/dev/null 2>&1 || . /lib/dracut-lib.sh
-+
-+# fetch_url URL [OUTFILE]
-+#   fetch the given URL to a locally-visible location.
-+#   if OUTFILE is given, the URL will be fetched to that filename,
-+#   overwriting it if present.
-+#   the return values are as follows:
-+#   0: success
-+#   253: unknown error (file missing)
-+#   254: unhandled URL scheme / protocol
-+#   255: bad arguments / unparseable URLs
-+#   other: fetch command failure (whatever curl/mount/etc return)
-+fetch_url() {
-+    local url="$1" outloc="$2"
-+    local handler="$(get_url_handler $url)"
-+    [ -n "$handler" ] || return 254
-+    [ -n "$url" ] || return 255
-+    $handler "$url" "$outloc"
-+}
-+
-+# get_url_handler URL
-+#   returns the first HANDLERNAME corresponding to the URL's scheme
-+get_url_handler() {
-+    local scheme="${1%%:*}" item=""
-+    for item in $url_handler_map; do
-+        [ "$scheme" = "${item%%:*}" ] && echo "${item#*:}" && return 0
-+    done
-+    return 1
-+}
-+
-+# add_url_handler HANDLERNAME SCHEME [SCHEME...]
-+#   associate the named handler with the named scheme(s).
-+add_url_handler() {
-+    local handler="$1"; shift
-+    local schemes="$@" scheme=""
-+    set --
-+    for scheme in $schemes; do
-+        set -- "$@" "$scheme:$handler"
-+    done
-+    set -- $@ $url_handler_map # add new items to *front* of list
-+    url_handler_map="$@"
-+}
-+
-+curl_args="--location --retry 3 --fail --show-error"
-+curl_fetch_url() {
-+    local url="$1" outloc="$2"
-+    if [ -n "$outloc" ]; then
-+        curl $curl_args --output "$outloc" "$url" || return $?
-+    else
-+        local outdir="$(mkuniqdir /tmp curl_fetch_url)"
-+        local cwd="$(pwd)"
-+        cd "$outdir"
-+        curl $curl_args --remote-name "$url" || return $?
-+        cd "$cwd"
-+        outloc="$(echo $outdir/*)"
-+    fi
-+    [ -f "$outloc" ] || return 253
-+    echo "$outloc"
-+}
-+add_url_handler curl_fetch_url http https ftp
 -- 
 1.7.7.6
