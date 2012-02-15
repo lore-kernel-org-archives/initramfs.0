@@ -1,72 +1,50 @@
-From: Gustavo Sverzut Barbieri <barbieri-Y3ZbgMPKUGA34EUeqzHoZw@public.gmane.org>
-Subject: Re: [systemd-devel] [PATCH 2/2] main: added support for loading IMA
- custom policies
-Date: Wed, 15 Feb 2012 14:55:40 -0200
-Message-ID: <CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com>
-References: <1329312229-11856-1-git-send-email-roberto.sassu@polito.it>
-	<1329312229-11856-2-git-send-email-roberto.sassu@polito.it>
-	<CAPdpN3DjJ05z7xKa1oTt2NQt9Gy2bDFBJ2qMk3pj27bQFrQw5w@mail.gmail.com>
-	<4F3BDCAA.7040001@polito.it>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] add net-lib, nfs-lib, url-lib, and img-lib
+Date: Wed, 15 Feb 2012 17:56:01 +0100
+Message-ID: <4F3BE3A1.7000001@redhat.com>
+References: <1329241090-26908-1-git-send-email-wwoods@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F3BDCAA.7040001-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+In-Reply-To: <1329241090-26908-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mzerqung-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Feb 15, 2012 at 2:26 PM, Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org=
-> wrote:
->
-> On 02/15/2012 03:30 PM, Gustavo Sverzut Barbieri wrote:
->>
->> On Wed, Feb 15, 2012 at 11:23 AM, Roberto Sassu<roberto.sassu@polito=
-=2Eit> =C2=A0wrote:
->>>
->>> The new function ima_setup() loads an IMA custom policy from a file=
- in the
->>> default location '/etc/sysconfig/ima-policy', if present, and write=
-s it to
->>
->>
->> isn't /etc/sysconfig too specific to Fedora?
->>
->
-> Hi Gustavo
->
-> probably yes. I see the code in 'src/locale-setup.c' where the
-> the configuration directory depends on the target distribution.
-> I can implement something like that in my patch.
+Am 14.02.2012 18:38, schrieb Will Woods:
+> Hi all,
+> 
+> This set of patches adds a bunch of "libraries" to dracut:
+> - net-lib adds some utility functions to module 40network
+> - nfs-lib provides the special nfs handling that was in 95nfs/nfsroot
+> - url-lib is a new module for handling http{s}/ftp URLs with curl
+> - img-lib is a new module for dealing with archives & fs images.
+> 
+> They might need tweaking for style/GPL headers/etc - just let me know and
+> I'll fix up the patches.
+> 
+> Only patch 3 and 5 change existing code - the rest should be very low-risk.
+> 
+> Patch 3 ports the existing nfsroot to nfs-lib. This is kind of a
+> proof-of-concept (look how short it is! whee!) but it *has not been tested*.
+> Feel free to take or leave that patch - but if someone could apply it and
+> help test it, I would be *very* thankful!
+> 
+> Patch 5 moves 90livenet to url-lib, and I *have* tested this to confirm that
+> it works.
+> 
+> If these are accepted, some next steps might be:
+> - move things out of dracut-lib.sh to net-lib or nfs-lib
+>   (wait_for_if_up, nfs_root_to_var, ip_to_var, etc.)
+> - add rpm/deb support to img-lib
+>   (is there a way to do optional dependencies, specified in dracut.conf?)
+> - add support for live "updates" images to livenet
+> 
+> Thanks for looking these over,
+> 
+> -w
+> 
 
-Can't IMA be changed? Lennart seems to be pushing for distribution
-independent location files. If you can get IMA people to agree on
-something, just use this one instead.
-
-People that use IMA with systemd must use this location. Eventually
-this will happen with every configuration file we support.
-
-
->> Also, I certainly have no such things in my system and see no point =
-in
->> calling ima_setup() on it. Or even compiling the source file in such
->> case.
->>
->
-> Ok. I can enclose the code in ima-setup.c within an 'ifdef HAVE_IMA'
-> statement, as it happens for SELinux. However an issue is that there =
-is no a specific package for IMA that can be checked to set the HAVE_IM=
-A
-> definition to yes. Instead, the code can be enabled for example by
-> adding the parameter '--enable_ima' in the configure script.
-
-okay.
-
---
-Gustavo Sverzut Barbieri
-http://profusion.mobi embedded systems
---------------------------------------
-MSN: barbieri-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Skype: gsbarbieri
-Mobile: +55 (19) 9225-2202
+Pushed all of them and corrected nfs-lib.sh
