@@ -1,64 +1,43 @@
-From: Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut: ordering of modules
-Date: Tue, 14 Feb 2012 13:53:21 -0500
-Message-ID: <4F3AADA1.5090508@redhat.com>
-References: <1328886121.2472.19.camel@falcor> <4F38DEF0.8010202@redhat.com> <4F38E337.7030200@polito.it> <4F38E5F4.9070009@redhat.com> <4F3941A2.3040205@redhat.com> <4F3A836E.1020208@polito.it>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/3] ssh-client module install fix
+Date: Wed, 15 Feb 2012 14:40:24 +0800
+Message-ID: <20120215064024.GA30108@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F3A836E.1020208-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, selinux-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+commit 38164332e198f7cc8f339b42d555796918de04b3 try to
+disallow ssh-client install for without proper options.
+But ssh-client will fail installation with --sshkey for
+publickey mode
 
-On 02/14/2012 10:53 AM, Roberto Sassu wrote:
-> Hi Dan
-> 
-> i confirm this issue happens in a Fedora 16 system with the 
-> selinux-policy package installed.
-> 
-> The selinux dracut module tries to load the policy but returns with
-> the error below. After switching root, the policy is successfully
-> loaded by Systemd.
-> 
-> Thanks
-> 
-> Roberto Sassu
-> 
-> 
-Well in F16 dracut is not supposed to load the policy.
-> On 02/13/2012 06:00 PM, Daniel J Walsh wrote: On 02/13/2012 05:29
-> AM, Harald Hoyer wrote:
->>>> Am 13.02.2012 11:17, schrieb Roberto Sassu:
->>>>> Hi Harald
->>>>> 
->>>>> this functionality seems to be broken in dracut due to a
->>>>> change in the SELinux load_policy tool. After enabling the
->>>>> selinux module in dracut, i obtain:
->>>>> 
->>>>> [    3.369059] dracut: Loading SELinux policy [
->>>>> 3.449850] dracut: /sbin/load_policy: Can't load policy: No
->>>>> such file or directory [    3.659899] dracut: Switching
->>>>> root
->>>>> 
->>>> 
->>>> This error can have multiple causes... Dan?
-> 
-> Well likeliest would be selinux-policy package is not installed.
-> 
-> -- selinux mailing list selinux-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org 
-> https://admin.fedoraproject.org/mailman/listinfo/selinux
+Fix it by refusing to install only when both --ctty and --sshkey
+are not added in options.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/95ssh-client/module-setup.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-iEYEARECAAYFAk86rZ4ACgkQrlYvE4MpobPKXwCfbVdkQuaylTtHIASztazyokqN
-u4wAnR9bueXLrFH4vvDxSPYSNqBDYP19
-=W0oJ
------END PGP SIGNATURE-----
+diff --git a/modules.d/95ssh-client/module-setup.sh b/modules.d/95ssh-client/module-setup.sh
+index 4410e4e..8d62b2d 100755
+--- a/modules.d/95ssh-client/module-setup.sh
++++ b/modules.d/95ssh-client/module-setup.sh
+@@ -50,8 +50,8 @@ inst_sshenv()
+ }
+ 
+ install() {
+-    [[ ! $cttyhack = yes ]] && {
+-        derror "ssh interactive mode needs option --ctty!"
++    [[ ! $cttyhack = yes && ! $sshkey ]] && {
++        derror "ssh-client needs option --ctty or --sshkey!"
+         return 1
+     }
+ 
+-- 
+1.7.7.5
