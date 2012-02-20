@@ -1,52 +1,62 @@
-From: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
-Subject: Re: [systemd-devel] [Linux-ima-user] [PATCH 2/2] main: added
-  support for loading IMA custom policies
-Date: Mon, 20 Feb 2012 18:21:50 +0100
-Message-ID: <20120220172149.GF26356@tango.0pointer.de>
-References: <1329312229-11856-1-git-send-email-roberto.sassu@polito.it>
- <1329312229-11856-2-git-send-email-roberto.sassu@polito.it>
- <CAPdpN3DjJ05z7xKa1oTt2NQt9Gy2bDFBJ2qMk3pj27bQFrQw5w@mail.gmail.com>
- <4F3BDCAA.7040001@polito.it>
- <CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com>
- <4F3BE763.9060704@polito.it>
- <4F3C8C6F.4010708@gmail.com>
- <4F3D06D1.7000404@polito.it>
- <CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg@mail.gmail.com>
+From: Lennart Poettering <lennart@poettering.net>
+Subject: Re: [Linux-ima-user] [PATCH 2/2] main: added
+ support for loading IMA custom policies
+Date: Mon, 20 Feb 2012 18:24:18 +0100
+Message-ID: <20120220172418.GG26356@tango.0pointer.de>
+References: <1329312229-11856-2-git-send-email-roberto.sassu@polito.it>
+	<CAPdpN3DjJ05z7xKa1oTt2NQt9Gy2bDFBJ2qMk3pj27bQFrQw5w@mail.gmail.com>
+	<4F3BDCAA.7040001@polito.it>
+	<CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com>
+	<4F3BE763.9060704@polito.it> <4F3C8C6F.4010708@gmail.com>
+	<4F3D06D1.7000404@polito.it>
+	<CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg@mail.gmail.com>
+	<4F3D144D.3060102@polito.it>
+	<CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com>
 Mime-Version: 1.0
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
 Content-Disposition: inline
-In-Reply-To: <CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Gustavo Sverzut Barbieri <barbieri-Y3ZbgMPKUGA34EUeqzHoZw@public.gmane.org>
-Cc: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Michael Cassaniti <m.cassaniti-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org
+In-Reply-To: <CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+To: Gustavo Sverzut Barbieri <barbieri@profusion.mobi>
+Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, linux-ima-user@lists.sourceforge.net, Michael Cassaniti <m.cassaniti@gmail.com>, linux-security-module@vger.kernel.org, Roberto Sassu <roberto.sassu@polito.it>, harald@redhat.com, ramunno@polito.it
 
-On Thu, 16.02.12 12:30, Gustavo Sverzut Barbieri (barbieri-Y3ZbgMPKUGA34EUeqzHoZw@public.gmane.org) wrote:
+On Thu, 16.02.12 19:50, Gustavo Sverzut Barbieri (barbieri@profusion.mobi) =
+wrote:
 
-> > Since the policy loading can be implemented in different ways depending
-> > on the init system (systemd, upstart, ...), an user must identify the
-> > components to be measured for each case. Instead, if the IMA policy is
-> > loaded in the main Systemd executable, only this file must be measured
-> > by the boot loader.
-> 
-> Then I wonder: why not make an ima-init binary that:
->   - does ima_setup()
->   - exec systemd || upstart || ...
-> 
-> this way you only have to audit this very small file and not systemd
-> itself, it's very early and so on.
+> >> Then I wonder: why not make an ima-init binary that:
+> >> =A0 - does ima_setup()
+> >> =A0 - exec systemd || upstart || ...
+> >>
+> >> this way you only have to audit this very small file and not systemd
+> >> itself, it's very early and so on.
+> >>
+> >
+> > This does not work because SELinux is initialized inside Systemd and IMA
+> > requires it for parsing LSM rules in the policy.
+> =
 
-We worked really hard on being able to load the SELinux policy without
-any unnecessary (re-)execs. I don't think we should reopen that problem
-by loading IMA from a pre-init tool. Also, the management of such a
-thing would seriously suck (i.e. you'd probably need something like
-update-alternatives, and that sucks), especially since we now already
-taught the initrd to spawn /usr/lib/systemd/systemd directly, instead of
-/sbin/init.
+> initramfs may do it as well, no? then systemd will inherit it.
+
+We moved SELinux loading out of the initrd into systemd, in order to
+support fully featured initrd-less boots. I don't think we should reopen
+this problem set by having IMA in the initrd. I believe IMA should be
+treated pretty much exactly like SELinux here: the policy should be
+loaded from PID1 and it needs to be a compile time option, and it needs
+a kernel cmdline option to disable it (i.e. like selinux=3D0).
 
 Lennart
 
--- 
+-- =
+
 Lennart Poettering - Red Hat, Inc.
