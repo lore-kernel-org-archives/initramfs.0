@@ -1,67 +1,64 @@
-From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [systemd-devel] [PATCH 2/2] main: added support for loading IMA
- custom policies
-Date: Mon, 20 Feb 2012 20:11:03 +0100
-Message-ID: <4F429AC7.6020208@polito.it>
-References: <1329312229-11856-1-git-send-email-roberto.sassu@polito.it> <1329312229-11856-2-git-send-email-roberto.sassu@polito.it> <20120220171229.GB26356@tango.0pointer.de> <4F428FB0.3000200@polito.it> <20120220185236.GB360@tango.0pointer.de>
+From: Lennart Poettering <lennart@poettering.net>
+Subject: Re: [systemd-devel] [Linux-ima-user] [PATCH 2/2] main: added
+ support  for loading IMA custom policies
+Date: Mon, 20 Feb 2012 20:18:04 +0100
+Message-ID: <20120220191804.GD360@tango.0pointer.de>
+References: <4F3BDCAA.7040001@polito.it>
+ <CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com>
+ <4F3BE763.9060704@polito.it>
+ <4F3C8C6F.4010708@gmail.com>
+ <4F3D06D1.7000404@polito.it>
+ <CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg@mail.gmail.com>
+ <4F3D144D.3060102@polito.it>
+ <CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com>
+ <20120220172418.GG26356@tango.0pointer.de>
+ <4F4299C2.5040205@polito.it>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=sender:message-id:date:from:organization:user-agent:mime-version:to
-         :cc:subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=+LJzW1Q+4Rn1551cp0XZxkeW3ebIcf7n23u3prYSYRY=;
-        b=al6X2e5LJJMqXQTqjs59fK5WvZ+R4Zxk7Ffyhp9ic/Yc67HRpOCyrNQmqiKJEOUdhu
-         L5cvKc1+a8x89jwWodfmfos5Lsf/CIf4Ko8tmZlBpoEnXVo9Fb0EVk3a9yD8qUqYaEmG
-         a/mOJ7d7X0Jtk1o4P8MlZxvM6OLCTwkarcAnc=
-In-Reply-To: <20120220185236.GB360-kS5D54t9nk0aINubkmmoJbNAH6kLmebB@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <4F4299C2.5040205@polito.it>
+Sender: linux-security-module-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Roberto Sassu <roberto.sassu@polito.it>
+Cc: Gustavo Sverzut Barbieri <barbieri@profusion.mobi>, initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, linux-ima-user@lists.sourceforge.net, Michael Cassaniti <m.cassaniti@gmail.com>, linux-security-module@vger.kernel.org, harald@redhat.com, ramunno@polito.it
 
-On 02/20/2012 07:52 PM, Lennart Poettering wrote:
-> On Mon, 20.02.12 19:23, Roberto Sassu (roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org) wrote:
->
->>>> +               log_error("mmap() failed (%s), freezing", strerror(errno));
->>>> +               result = -errno;
->>>> +               goto out;
->>>> +       }
->>>> +
->>>> +       while(written<   policy_size) {
->>>> +               ssize_t len = write(imafd, policy + written,
->>>> +                                   policy_size - written);
->>>> +               if (len<= 0) {
->>>> +                         log_error("Failed to load the IMA custom policy "
->>>> +                                   "file %s (%s), ignoring.", IMA_POLICY_PATH,
->>>> +                                   strerror(errno));
->>>> +                         goto out_mmap;
->>>> +               }
->>>> +               written += len;
->>>> +       }
->>>
->>> It might make sense to use loop_write() here instead, which does more or
->>> less this loop, and is defined in util.c anyway.
->>
->> I briefly looked at the code and i'm not sure to use it, because i want
->> to add some extra information in the output message (for example the
->> line number of the rule in the policy file that was rejected by IMA).
->
-> Line number? The policy is text? Your code above doesn't print any line
-> numbers?
->
+On Mon, 20.02.12 20:06, Roberto Sassu (roberto.sassu@polito.it) wrote:
 
-Sorry, this is not done in the current patch. But i think it may be
-useful for a user to know what rule is being rejected by IMA.
-Yes, the policy is text.
+> >We moved SELinux loading out of the initrd into systemd, in order to
+> >support fully featured initrd-less boots. I don't think we should reopen
+> >this problem set by having IMA in the initrd. I believe IMA should be
+> >treated pretty much exactly like SELinux here: the policy should be
+> >loaded from PID1 and it needs to be a compile time option, and it needs
+> >a kernel cmdline option to disable it (i.e. like selinux=0).
+> >
+> 
+> If the SELinux module in dracut is to be considered definitively broken
+> probably also the IMA module should be removed, because it will not be
+> possible to load policies with LSM rules. But i don't know how this
+> feature can be supported by distributions without Systemd installed.
 
-Thanks
+Well, if the rumours I keep hearing are true Ubuntu might join the
+systemd camp too after their LTS release. Maybe the supporting
+non-systemd systems issues solves itself by that for you?
 
-Roberto Sassu
+> Regarding the kernel option, actually there is no a specific parameter
+> to disable IMA. However, it can be introduced in the patches proposed
+> by Mimi Zohar about the 'ima-appraisal' feature. This can allow to
+> disable IMA or to put it in permissive/enforce mode as it happens for
+> example in SELinux.
 
+Whether there is a kernel option to enable/disable IMA will not stop
+these patches from getting into systemd. But I am quite sure they will
+stop IMA from getting any wider coverage in the mainstream distributions
+(if you care for that).
 
-> Lennart
->
+Oh, and one more thing: it matters to me that this doesn't break my
+build. So it needs to allow me booting when enabled in configure, but
+without any IMA policy around.
+
+Lennart
+
+-- 
+Lennart Poettering - Red Hat, Inc.
