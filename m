@@ -1,62 +1,56 @@
-From: Lennart Poettering <lennart@poettering.net>
-Subject: Re: [Linux-ima-user] [PATCH 2/2] main: added
- support for loading IMA custom policies
-Date: Mon, 20 Feb 2012 18:24:18 +0100
-Message-ID: <20120220172418.GG26356@tango.0pointer.de>
-References: <1329312229-11856-2-git-send-email-roberto.sassu@polito.it>
-	<CAPdpN3DjJ05z7xKa1oTt2NQt9Gy2bDFBJ2qMk3pj27bQFrQw5w@mail.gmail.com>
-	<4F3BDCAA.7040001@polito.it>
-	<CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com>
-	<4F3BE763.9060704@polito.it> <4F3C8C6F.4010708@gmail.com>
-	<4F3D06D1.7000404@polito.it>
-	<CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg@mail.gmail.com>
-	<4F3D144D.3060102@polito.it>
-	<CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com>
+From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+Subject: Re: [systemd-devel] [PATCH 1/2] systemd: mount the securityfs filesystem
+ at early stage
+Date: Mon, 20 Feb 2012 19:02:41 +0100
+Message-ID: <4F428AC1.5090404@polito.it>
+References: <1329312229-11856-1-git-send-email-roberto.sassu@polito.it> <20120220170436.GA26356@tango.0pointer.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
-Content-Disposition: inline
-In-Reply-To: <CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-To: Gustavo Sverzut Barbieri <barbieri@profusion.mobi>
-Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, linux-ima-user@lists.sourceforge.net, Michael Cassaniti <m.cassaniti@gmail.com>, linux-security-module@vger.kernel.org, Roberto Sassu <roberto.sassu@polito.it>, harald@redhat.com, ramunno@polito.it
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=sender:message-id:date:from:organization:user-agent:mime-version:to
+         :cc:subject:references:in-reply-to:content-type
+         :content-transfer-encoding;
+        bh=9d050Rd9tszVKsMehoNMSZjH0Fwj1FqFD7hzNHoz6vA=;
+        b=X5hQeF7UFQACQgtG0hfnsgI/jtM9guimk/4Wk90h3jMLIyRZu1HgGoJduaTQCllSwk
+         /X4hftaIoESpRoXHuYy+5ppq2vEgD1aKeFXfDuWovtBpj4DeCrQmTlKHYWztuQELcgaJ
+         Kc6DzZUlhqWp+m4xp3bGTiFwV1yj4dUa0NcPs=
+In-Reply-To: <20120220170436.GA26356-kS5D54t9nk0aINubkmmoJbNAH6kLmebB@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org
 
-On Thu, 16.02.12 19:50, Gustavo Sverzut Barbieri (barbieri@profusion.mobi) =
-wrote:
+On 02/20/2012 06:04 PM, Lennart Poettering wrote:
+> On Wed, 15.02.12 14:23, Roberto Sassu (roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org) wrote:
+>
+>> The mount of the securityfs filesystem is now performed in the main systemd
+>> executable as it is used by IMA to provide the interface for loading custom
+>> policies. The unit file 'units/sys-kernel-security.mount' has been removed
+>> because it is not longer necessary.
+>>
+>> +#define SECURITYFS_MNTPOINT "/sys/kernel/security"
+>> +
+>
+> Just use the proper path name here. Not sure why we would want a macro
+> for this, as things are simpler with literal strings for this, the path
+> is unlikely to change and we generaly don't do this for any of the other
+> paths.
+>
 
-> >> Then I wonder: why not make an ima-init binary that:
-> >> =A0 - does ima_setup()
-> >> =A0 - exec systemd || upstart || ...
-> >>
-> >> this way you only have to audit this very small file and not systemd
-> >> itself, it's very early and so on.
-> >>
-> >
-> > This does not work because SELinux is initialized inside Systemd and IMA
-> > requires it for parsing LSM rules in the policy.
-> =
+Hi Lennart
 
-> initramfs may do it as well, no? then systemd will inherit it.
+thanks for the review! I'm starting to address issues now.
 
-We moved SELinux loading out of the initrd into systemd, in order to
-support fully featured initrd-less boots. I don't think we should reopen
-this problem set by having IMA in the initrd. I believe IMA should be
-treated pretty much exactly like SELinux here: the policy should be
-loaded from PID1 and it needs to be a compile time option, and it needs
-a kernel cmdline option to disable it (i.e. like selinux=3D0).
+I created the above macro to avoid that changing this path breaks
+other code, but probably yes, its value is unlikely to change.
+I will remove it.
 
-Lennart
 
--- =
+Roberto Sassu
 
-Lennart Poettering - Red Hat, Inc.
+
+> Lennart
+>
