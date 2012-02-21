@@ -1,55 +1,66 @@
-From: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [Linux-ima-user] [systemd-devel] [PATCH 2/2] main: added support
+From: Roberto Sassu <roberto.sassu@polito.it>
+Subject: Re: [systemd-devel] [Linux-ima-user] [PATCH 2/2] main: added support
  for loading IMA custom policies
-Date: Tue, 21 Feb 2012 19:07:05 +0100
-Message-ID: <4F43DD49.2040202@polito.it>
-References: <4F3BDCAA.7040001@polito.it> <CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com> <4F3BE763.9060704@polito.it> <4F3C8C6F.4010708@gmail.com> <4F3D06D1.7000404@polito.it> <CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg@mail.gmail.com> <4F3D144D.3060102@polito.it> <CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com> <20120220172418.GG26356@tango.0pointer.de> <4F4299C2.5040205@polito.it> <20120220191804.GD360@tango.0pointer.de> <4F436C7A.9020206@polito.it> <1329829311.2186.6.camel@falcor> <4F43A2F9.2030901@polito.it> <1329840934.2186.40.camel@falcor> <4F43D532.7070006@polito.it> <CAPXgP10zCVgj4gDTzkJ1+XqKSHhjrCHwkUazJ8caaeMF2j+mMg@mail.gmail.com>
+Date: Tue, 21 Feb 2012 19:25:10 +0100
+Message-ID: <4F43E186.1020108@polito.it>
+References: <4F3BDCAA.7040001@polito.it>  <CAPdpN3C0xDeVBrbDxesPdEV+owf-q_wxUHTmr4YDCHw=NgPV1Q@mail.gmail.com>  <4F3BE763.9060704@polito.it> <4F3C8C6F.4010708@gmail.com>  <4F3D06D1.7000404@polito.it>  <CAPdpN3AAwJ6s-fOgTCV4h4OCKCw3RhEav56LJaUXWVpuf4Jowg@mail.gmail.com>  <4F3D144D.3060102@polito.it>  <CAPdpN3Bj2u7YRYXEuyTX=1p9vcrnDdMOEO+VeHEHW2R_B4ar3g@mail.gmail.com>  <20120220172418.GG26356@tango.0pointer.de> <4F4299C2.5040205@polito.it>  <20120220191804.GD360@tango.0pointer.de> <4F436C7A.9020206@polito.it>  <ji08e6$8kc$1@dough.gmane.org>  <CAPXgP13c1B80u14E4FrhZEJ89NDvDP--ciWikz0j+m4En6zPRQ@mail.gmail.com> <1329840852.2186.39.camel@falcor>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=gamma;
-        h=sender:message-id:date:from:organization:user-agent:mime-version:to
-         :cc:subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=VHR82oT+ytNABbCYYigUWFxlUvmNJvPxAdPPHYQOhCI=;
-        b=O/M6NjSQarE5BbQskFXypBsRbrTooJyzMw/OsMAbqE2XR/I/nmlhT26e8E5AmvH8nA
-         ZJWFAvlJOux+vcDhEzq64U8TZXglqJZrFe8MAWR/U6H7Jgw2GugL4H5mfIUqB4ZPntNu
-         c1SgFywX3Wn75INokynJMF+GmF2p/K7lvrCa8=
-In-Reply-To: <CAPXgP10zCVgj4gDTzkJ1+XqKSHhjrCHwkUazJ8caaeMF2j+mMg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <1329840852.2186.39.camel@falcor>
+Sender: linux-security-module-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
-Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Gustavo Sverzut Barbieri <barbieri-Y3ZbgMPKUGA34EUeqzHoZw@public.gmane.org>, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
+To: linux-security-module@vger.kernel.org
+Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, systemd-devel@lists.freedesktop.org
 
-On 02/21/2012 06:56 PM, Kay Sievers wrote:
-> On Tue, Feb 21, 2012 at 18:32, Roberto Sassu<roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>  wrote:
+On 02/21/2012 05:14 PM, Mimi Zohar wrote:
+> On Tue, 2012-02-21 at 15:32 +0100, Kay Sievers wrote:
+>> On Tue, Feb 21, 2012 at 15:07, Colin Guthrie<gmane@colin.guthr.ie>  wrote:
+>>
+>>>> The code for loading IMA custom policies was placed in the initial
+>>>> ramdisk with the purpose to avoid distribution specific dependencies.
 >
->>   I meant we can create a new package called for example 'ima-utils'
->> that can be used by Systemd to determine, at compile time, whether
->> the IMA support for loading custom policies should be enabled or not.
->
-> That's not needed. There is no problem enabling ima support
-> conditionally in ./configure.
->
-> Build systems are unlikely to install ima in the buildroot anyway,
-> when there is no library or anything to link against, so
-> auto-detection is not really useful.
->
-> A default to off and requiring an explicit enable sounds sufficient here.
+> In a trusted-grub, or equivalent environment, the kernel, initramfs, and
+> kernel boot options are measured.  The main reason for loading the IMA
+> policy in the initramfs was that the policy would be included in the
+> initramfs measurement.
 >
 
-Hi Kay
-
-ok, that was because Systemd also checks for the presence of libselinux
-in order to enable the SELinux support. I will introduce in the next
-version of the patches only the new configure parameter '--enable_ima'
-without additional checks.
-
-Thanks
+Unfortunately not, the policy file is placed in the root filesystem.
+However, since trusted-grub supports the measurement of an user-defined
+list of files, it is possible to preserve the chain of trust by
+measuring the policy file and the Systemd main executable.
 
 Roberto Sassu
 
 
-> Kay
+> Mimi
+>
+>>>> However, since the SELinux initialization has been moved to Systemd
+>>>> and Systemd itself will be used by the major distributions, i think
+>>>> placing the IMA code here is the best solution, even if it is not the
+>>>> most general.
+>>>
+>>> Just for reference, not all distros use the same initrd generator
+>>> anyway. We're trying to move to dracut, but it's certainly not universal
+>>> at the moment. I think Suse use something else (maybe they plan to move
+>>> to dracut too?) and I've no idea about Ubuntu but I doubt they use dracut.
+>>>
+>>> So I'd suggest that at the moment, systemd will actually get you wider
+>>> coverage... although that's just a slightly ill-informed and hand-wave
+>>> analysis on my part. Either way, I think it's better in systemd :D
+>>
+>> Sounds right. The initramfs is definitely less generic than systemd
+>> is. Almost every distro has still its own here. The situation today
+>> with initramfs generators can probably not get more distro-specific;
+>> it is still almost at its maximum. :)
+>>
+>> So the thinking of moving anything to the initramfs to avoid the Linux
+>> distro balcanization problem will usually not work out.
+>>
+>> Kay
+>
+>
+
+
