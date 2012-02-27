@@ -1,42 +1,55 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
+From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
 Subject: Re: [PATCH] Use modinfo to gather module dependencies
-Date: Mon, 27 Feb 2012 12:33:15 +0000
-Message-ID: <jift6c$e4a$1@dough.gmane.org>
-References: <2369135.eJzU9GBXlg@ernie> <4F4B5A00.2060400@redhat.com> <jifpfl$hof$1@dough.gmane.org> <4F4B7237.6070005@redhat.com>
+Date: Mon, 27 Feb 2012 13:39:20 +0100
+Message-ID: <5302218.kzCNfpoIIU@samson>
+References: <2369135.eJzU9GBXlg@ernie> <CALAkbJMqL-p95Yb=jsP8BZAjhJkByHn-QZV=C0nmsTkMW1qZ1Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; boundary="nextPart8990860.hYRauKIK7L"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F4B7237.6070005-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <CALAkbJMqL-p95Yb=jsP8BZAjhJkByHn-QZV=C0nmsTkMW1qZ1Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-'Twas brillig, and Harald Hoyer at 27/02/12 12:08 did gyre and gimble:
-> Am 27.02.2012 12:29, schrieb Colin Guthrie:
->> I'd just like to understand the issue :)
+
+--nextPart8990860.hYRauKIK7L
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+
+Hi Harald!
+
+Am Samstag, 25. Februar 2012, 22:18:48 schrieben Sie:
+> Am 25.02.2012 22:09 schrieb "Dennis Schridde" <devurandom-hi6Y0CQ0nG0@public.gmane.org>:
+> > 
+> > Hence I wrote attached patch, switching from modprobe to modinfo, which
 > 
-> Have you replaced module-init-tools with kmod? If not, then this problem does
-> not affect you.
+> also
+> 
+> > seem to be the tool intended for the job. This method appears to work
+> 
+> reliable
+> 
+> > in kmod-5, but I have not tested with module-init-tools.
+> 
+> Just update kmod... modprobe --show-depends was fixed
+Thanks for the info.
 
-Gah, it seems not. I had it in my head that we'd switched, but on closer
-inspection it was just ldetect and few other bits and bobs that moved
-over... not module-init-tools yet.
+I would like know your reasons for using modprobe instead of modinfo to gather 
+information about modules, since it appears to be the wrong tool to me.
 
-Sorry for the noise.
+Kind regards,
+Dennis
+--nextPart8990860.hYRauKIK7L
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
 
-Col
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
+iEYEABECAAYFAk9LeXgACgkQjqfyF1DtJW4DvwCgga7fVu5Iy+sqoVZoHjojoNEL
+QYcAnRHHUNCDUZtge4i0Y5KWHXHiBy9x
+=RQx9
+-----END PGP SIGNATURE-----
 
--- 
-
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
-
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+--nextPart8990860.hYRauKIK7L--
