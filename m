@@ -1,52 +1,97 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
 Subject: Re: [PATCH] Use modinfo to gather module dependencies
-Date: Mon, 27 Feb 2012 11:25:04 +0100
-Message-ID: <4F4B5A00.2060400@redhat.com>
-References: <2369135.eJzU9GBXlg@ernie>
+Date: Mon, 27 Feb 2012 11:29:56 +0000
+Message-ID: <jifpfl$hof$1@dough.gmane.org>
+References: <2369135.eJzU9GBXlg@ernie> <4F4B5A00.2060400@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <2369135.eJzU9GBXlg@ernie>
+In-Reply-To: <4F4B5A00.2060400-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-Am 25.02.2012 22:09, schrieb Dennis Schridde:
-> Hello!
+'Twas brillig, and Harald Hoyer at 27/02/12 10:25 did gyre and gimble:
+> Am 25.02.2012 22:09, schrieb Dennis Schridde:
+>> Hello!
 > 
-> I just switched from module-init-tools to kmod and found dracut broken, 
-> because it uses modprobe --show-depends to find out about module locations
-> and dependencies, which apparently is not implemented in kmod.
+>> I just switched from module-init-tools to kmod and found dracut broken, 
+>> because it uses modprobe --show-depends to find out about module locations
+>> and dependencies, which apparently is not implemented in kmod.
 > 
-> Hence I wrote attached patch, switching from modprobe to modinfo, which
-> also seem to be the tool intended for the job. This method appears to work
-> reliable in kmod-5, but I have not tested with module-init-tools.
+>> Hence I wrote attached patch, switching from modprobe to modinfo, which
+>> also seem to be the tool intended for the job. This method appears to work
+>> reliable in kmod-5, but I have not tested with module-init-tools.
 > 
-> Kind regards, Dennis
+>> Kind regards, Dennis
+> 
+> You need this patch for kmod:
+> 
+> http://git.profusion.mobi/cgit.cgi/kmod.git/commit/?id=269de2e0bf5011072da2f40f4f2d4023fad696b9
 
-You need this patch for kmod:
+What does this patch add?
 
-http://git.profusion.mobi/cgit.cgi/kmod.git/commit/?id=269de2e0bf5011072da2f40f4f2d4023fad696b9
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+I seem to get modprobe working happily with kmod 5 even for non-loaded
+modules. With patch applied or not, the output was the same.
 
-iQIcBAEBAgAGBQJPS1nvAAoJEANOs3ABTfJwhbgP/iasuIv8UUjNT6GO6oGU5nPN
-CBulsqlfSyYHedi2mg6owI4sDb/UU6Ii5gs1fYI4pzlRGJwUTD0/eR2yAZ0Cpyht
-eEliTS9zb/UqZcXRvDQi245IvKD4cM1xKAQhwSzGwAEBEbuD10RXLkNm8x5LmwpW
-ZhjlMl58s1FjYC54Ezrqd2H3dD6d0oWEkDW6pU0wn34QQOemaZEgNcXXXn62qR1X
-j4Br8ambBaByTqhOBX8xZGXPa7K6Uz6BM5vvd5CTRpZ/uODJ1r6ngUz/hWS+zzwl
-iBjrM2DHBEJdg7HJjwn7Dt8FH5ifxWdIN42Pkp//NyozwBbbfSyeGczYn4tHQPs8
-W2EyiIkTwzp09UT5JmLCbULyrg12YgSI7jreW3Mb37Hyvzll1846rBSrUWP5Ujx2
-bqzajMiPXgZx9hJR6N3YxFlGw96ORbSfpnrbIlTrfN8qdCEeOx6IZRteM/Pkyzza
-1m+T08WwCzQE2MLkIStLX//zmHDRVZErBsUHp0rSu9ya68/N0lFlJvPrOc1HsNaF
-kcnnmOy9Anak21UCO4+QMIzhNG1C0wujZUiWu0W37eQLpCGBBUAZTXQSrJhmsNj+
-V2gx10+/W3mnKHbhdjGbcr0ds87oJFMIfT3XKdn1aJ88PtVtdfwd97ZA8gQ5omv5
-SVet9vwoaupvgfsaETqq
-=Oc+u
------END PGP SIGNATURE-----
+I'd just like to understand the issue :)
+
+Cheers
+
+Col
+
+
+(i915 is loaded, nouveau is not)
+
+
+[colin@jimmy dracut (master)]$ modprobe --ignore-install --show-depends i915
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/acpi/video.ko.xz
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/i2c/i2c-core.ko.xz
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/acpi/button.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/i2c/algos/i2c-algo-bit.ko.xz
+
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/drm.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/drm_kms_helper.ko.xz
+
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/i915/i915.ko.xz
+i915_enable_fbc=0
+[colin@jimmy dracut (master)]$ modprobe --ignore-install --show-depends
+nouveau
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/acpi/button.ko.xz
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/acpi/video.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/platform/x86/wmi.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/platform/x86/mxm-wmi.ko.xz
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/i2c/i2c-core.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/i2c/algos/i2c-algo-bit.ko.xz
+
+insmod /lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/drm.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/drm_kms_helper.ko.xz
+
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/ttm/ttm.ko.xz
+insmod
+/lib/modules/3.2.7-desktop-1.mga2/kernel/drivers/gpu/drm/nouveau/nouveau.ko.xz
+
+
+
+
+-- 
+
+Colin Guthrie
+gmane(at)colin.guthr.ie
+http://colin.guthr.ie/
+
+Day Job:
+  Tribalogic Limited http://www.tribalogic.net/
+Open Source:
+  Mageia Contributor http://www.mageia.org/
+  PulseAudio Hacker http://www.pulseaudio.org/
+  Trac Hacker http://trac.edgewall.org/
