@@ -1,209 +1,72 @@
-From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
-Subject: build initramfs faster
-Date: Tue, 28 Feb 2012 11:53:43 -0800
-Message-ID: <4F4D30C7.2030305@bitwagon.com>
+From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Subject: Re: build initramfs faster
+Date: Tue, 28 Feb 2012 21:20:42 +0100
+Message-ID: <1805855.DzVeY6ZoDO@ernie>
+References: <4F4D30C7.2030305@bitwagon.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; boundary="nextPart2398417.sEUU8MATgi"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4F4D30C7.2030305-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+To: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+
+--nextPart2398417.sEUU8MATgi
+Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Parallelism is the most promising opportunity for further reduction
-in wall-clock time when building initramfs.  Here's a picture with analysis.
+Hi John and list!
 
-Below is an 8KiB .png screenshot (11KiB after encoding in base64 to avoid
-binary attachment) of CPU usage cropped from gnome-system-monitor, taken after
-two runs of dracut "make testimage": the first with cold cache (filesystem and
-I/O buffers), the second with hot cache.  The machine is Intel Core2 Duo x86_64
-3.0GHz, 8GiB DDR2, SATA 3Gbit/s ext4 (137MiB/s observed), and is "otherwise idle".
-Software is dracut-17 + lazyinstall under Fedora 16.
+Am Dienstag, 28. Februar 2012, 11:53:43 schrieb John Reiser:
+> I suggest that modprobe could be extended with a command-line flag
+> to read driver names from stdin, and to label the output lines with
+> the input driver name (suggested syntax: a prefix line  :<driver>\n
+> before any output corresponding to an input <driver>.)  Then a single
+> invocation of modprobe could process all drivers.
+Since libkmod exists (I don't know how much of modprobe it implements), can't 
+you just write a small dedicated tool using it, that does the dependency 
+discovery? That should be as fast and small as you can get.
 
-From -60 to -31 seconds was the first run (cold cache); from -28 to -4 seconds
-was the second run (hot cache).  The blocks from -44 to -32, and -16 to -2,
-are pigz (parallel gzip) compressing the initramfs.  Both CPU are used 100%;
-no improvement is possible from dracut.
+In case modinfo could be used, I think it could also ease things a little, 
+since it already does formatted output:
+# modinfo unix doesnotexist btrfs
+filename:       /lib/modules/3.2.6-gentoo/kernel/net/unix/unix.ko
+alias:          net-pf-1
+license:        GPL
+depends:        
+intree:         Y
+vermagic:       3.2.6-gentoo SMP mod_unload modversions 
+ERROR: Module doesnotexist not found.
+filename:       /lib/modules/3.2.6-gentoo/kernel/fs/btrfs/btrfs.ko
+license:        GPL
+alias:          devname:btrfs-control
+alias:          char-major-10-234
+depends:        libcrc32c,zlib_deflate
+intree:         Y
+vermagic:       3.2.6-gentoo SMP mod_unload modversions 
 
-Before pigz, there are three interesting peaks and some interesting valleys.
-The peaks are at -57, -53, -51; and -26, -23, -21 [last two merged together].
-The valleys are the spaces in between.  I believe that the three peaks are
-console stuff (keymaps, etc.), network drivers, and storage drivers.
-These peaks have been well-parallelized.  The cold-cache case has shorter
-peaks: the CPUs are waiting on the disk.
+Dunno if that is enough error reporting for your case, but certainly you can 
+destinguish the different drivers by either a "filename:" line, or an ERROR 
+line. And since modinfo does not consider the /etc/modprobe.d files, as was 
+recently pointed out, you can maybe extend modinfo to do so based on a 
+commandline flag - code copied from modprobe (or maybe already existing in 
+libkmod)? That would still require you to write the read-from-stdin code, 
+though...
 
-The most interesting parts are startup (before the first peak) and the valley
-just before pigz.  Startup is unexplained, but shows opportunity for
-parallelism: on average one CPU is idle.  In the valley before pigz,
-I believe that modprobe is one significant factor.  modprobe is invoked
-once per kernel module.  modprobe allows multiple module arguments
-on the command line, but this cannot be used for two reasons.  First,
-on Fedora the complete list of all drivers (with pathname) exceeds 32KiB,
-so it won't fit on one execve command line.  Second, when an error occurs
-then the output of modprobe does not identify the culprit input driver name.
-Both of these problems are fatal, and require invoking modprobe once
-per kernel driver, which is expensive (over 400 drivers in Fedora.)
+--Dennis
+--nextPart2398417.sEUU8MATgi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
 
-I suggest that modprobe could be extended with a command-line flag
-to read driver names from stdin, and to label the output lines with
-the input driver name (suggested syntax: a prefix line  :<driver>\n
-before any output corresponding to an input <driver>.)  Then a single
-invocation of modprobe could process all drivers.  Also, the modprobe
-would be part of a pipeline, thus achieving at least 3-way parallelism
-(discover driver name, modprobe, process driver dependency.)
-This would reduce elapsed wall-clock time.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
 
-Further analysis is welcome!
+iEYEABECAAYFAk9NNx4ACgkQjqfyF1DtJW74YQCfWIuOyXclmm0n8GRKJnHIzIJJ
+0DoAoLTH9+As6B2ukocL0Lq3ac3A0FZb
+=+mqj
+-----END PGP SIGNATURE-----
 
------base64 encoding of lazy.png (original 8388 bytes);  decode with "base64 -d"
-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
-AElFTkSuQmCC
------
-
--- 
+--nextPart2398417.sEUU8MATgi--
