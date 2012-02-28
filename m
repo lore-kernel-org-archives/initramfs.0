@@ -1,39 +1,46 @@
-From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Testers wanted: dracut lazy install with cpio
-Date: Mon, 27 Feb 2012 13:55:34 -0800
-Message-ID: <4F4BFBD6.9050908@bitwagon.com>
+Date: Tue, 28 Feb 2012 12:43:14 +0000 (UTC)
+Message-ID: <jiii51$5mc$1@dough.gmane.org>
 References: <4F4BA634.5070804@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F4BA634.5070804-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+On Mon, 27 Feb 2012 at 15:50 GMT, Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> I am interested in:
+>
 > $ time sudo make testimage
 > $ time sudo make hostimage
-> 
+>
 > Both with and without the patch.
+>
 
-I get (for Fedora 16):
+[wangcong@cr0]~/dracut% git branch
+  lazyinstall
+  * master
+[wangcong@cr0]~/dracut% time sudo make testimage
+...
+sudo make testimage  38.20s user 8.04s system 95% cpu 48.509 total
 
-            with patch (lazy)     without patch
-   testimage:  24.3 real            25.8 real
-               30.2 user            30.7 user
-                4.5 sys              4.9 sys
+[wangcong@cr0]~/dracut% time sudo make hostimage
+...
+sudo make hostimage  11.69s user 4.00s system 101% cpu 15.401 total
 
-   hostimage:   8.4 real             9.3 real
-                8.1 user             8.4 user
-                1.5 sys              1.9 real
 
-Did the cpio run in parallel?  cpio reads from a pipe just fine.
+[wangcong@cr0]~/dracut% git checkout lazyinstall
+Switched to branch 'lazyinstall'
+[wangcong@cr0]~/dracut% git branch
+* lazyinstall
+  master
+[wangcong@cr0]~/dracut% time sudo make testimage
+...
+sudo make testimage  38.03s user 8.11s system 133% cpu 34.474 total
 
-cpio needs enhancement: a flag argument for "no overwrite",
-and another for "clone the ownership and permissions on
-created directories" [else a copied path "a/b/c/d/e" which
-must create any of a, b, c, or d will not reproduce the
-existing ownership and permissions on those directories.]
-
--- 
+[wangcong@cr0]~/dracut% time sudo make hostimage
+...
+sudo make hostimage  11.36s user 3.45s system 109% cpu 13.478 total
