@@ -1,34 +1,43 @@
-From: David Dillow <dave-i1Mk8JYDVaaSihdK6806/g@public.gmane.org>
+From: John Reiser <jreiser-Po6cBsTGB2ZWk0Htik3J/w@public.gmane.org>
 Subject: Re: Testers wanted: dracut lazy install with cpio
-Date: Tue, 28 Feb 2012 11:27:23 -0500
-Message-ID: <1330446443.1026.123.camel@obelisk.thedillows.org>
-References: <4F4BA634.5070804@gmail.com> <jiii51$5mc$1@dough.gmane.org>
-	 <4F4CEE33.3000906@bitwagon.com> <4F4CF2D1.8090704@redhat.com>
+Date: Tue, 28 Feb 2012 08:58:09 -0800
+Message-ID: <4F4D07A1.7010305@bitwagon.com>
+References: <4F4BA634.5070804@gmail.com> <jiii51$5mc$1@dough.gmane.org>	 <4F4CEE33.3000906@bitwagon.com> <4F4CF2D1.8090704@redhat.com> <1330446443.1026.123.camel@obelisk.thedillows.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4F4CF2D1.8090704-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1330446443.1026.123.camel-1q1vX8mYZiGLUyTwlgNVppKKF0rrzTr+@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, 2012-02-28 at 16:29 +0100, Harald Hoyer wrote:
-> Am 28.02.2012 16:09, schrieb John Reiser:
-> > On 02/28/2012 04:43 AM, Cong Wang wrote:
-> > Was that run with a "cold cache"?  (What are the results for the
-> > a second run on testimage, immediately after the first?)
-> > I ask because the difference (48.5 - 34.5) between master and lazy
-> > on testimage is much larger as a percentage than the (15.4 - 13.5)
-> > difference for hostimage; and the testimage case was run first.
-> > 
-> 
-> yes, "cold cache" should be ruled out.. better do several runs and pick the
-> fastest one.
+On 02/28/2012 08:27 AM, David Dillow wrote:
 
-Is the purpose of this work to speed things up for the user, or for the
-developers? Your approach is correct for developers, since we're more
-likely to be making multiple dracut image with a warm cache. But users
-are more likely to hit the cold cache case.
+> Is the purpose of this work to speed things up for the user, or for the
+> developers? Your approach is correct for developers, since we're more
+> likely to be making multiple dracut image with a warm cache. But users
+> are more likely to hit the cold cache case.
 
+Both users and developers.  However, the cache must be controlled
+(or known) for any measurement, else there is no way to attribute
+the effects of any measured change: the cache effect could be much
+larger than any improvement (or degredation).  The easiest way
+is to have a warm cache: discard the first run of a series because
+of the unknown cache state.
+
+The cold cache case can be approximated by:
+    # echo 1 > /proc/sys/vm/drop_caches
+    # time dracut ...
+    # echo 1 > /proc/sys/vm/drop_caches    # each time!
+    # time dracut ...
+but that path /proc/sys/vm/drop_caches is harder to remember
+(and harder to get correct in a sudo!)
+It is also harder to guarantee consistency on a machine that is
+not otherwise idle.
+
+Running dracut after updating kernel and/or drivers is likely
+to hit a mixed cache: the updated stuff will tend to be hot,
+the not-updated stuff probably will be cold.
+
+-- 
