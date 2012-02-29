@@ -1,8 +1,10 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] url-lib: make nfs support optional
-Date: Wed, 29 Feb 2012 13:09:57 -0500
-Message-ID: <1330538998-21285-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 2/2] move emergency_shell to dracut-lib.sh
+Date: Wed, 29 Feb 2012 13:09:58 -0500
+Message-ID: <1330538998-21285-2-git-send-email-wwoods@redhat.com>
+References: <1330538998-21285-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1330538998-21285-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -10,30 +12,118 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Only include /lib/nfs-lib.sh if it exists, and then only run
-add_url_handler if nfs-lib was imported.
+This lets things running outside init call an emergency_shell.
+(example: scripts called by initqueue)
 ---
- modules.d/45url-lib/url-lib.sh |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ modules.d/99base/dracut-lib.sh |   38 ++++++++++++++++++++++++++++++++++++++
+ modules.d/99base/init.sh       |   40 +---------------------------------------
+ 2 files changed, 39 insertions(+), 39 deletions(-)
 
-diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
-index 383e7ac..7b669f4 100755
---- a/modules.d/45url-lib/url-lib.sh
-+++ b/modules.d/45url-lib/url-lib.sh
-@@ -74,7 +74,7 @@ set_http_header() {
- 
- ### NFS ##############################################################
- 
--. /lib/nfs-lib.sh
-+[ -e /lib/nfs-lib.sh ] && . /lib/nfs-lib.sh
- 
- nfs_already_mounted() {
-     local server="$1" path="$2" localdir="" s="" p=""
-@@ -112,4 +112,4 @@ nfs_fetch_url() {
-     [ -f "$outloc" ] || return 253
-     echo "$outloc"
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index afd366e..c31854e 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -753,3 +753,41 @@ killproc() {
+ need_shutdown() {
+     >/run/initramfs/.need_shutdown
  }
--add_url_handler nfs_fetch_url nfs nfs4
-+command -v nfs_to_var >/dev/null && add_url_handler nfs_fetch_url nfs nfs4
++
++emergency_shell()
++{
++    local _ctty
++    set +e
++    if [ "$1" = "-n" ]; then
++        _rdshell_name=$2
++        shift 2
++    else
++        _rdshell_name=dracut
++    fi
++    echo ; echo
++    warn $@
++    source_hook emergency
++    echo
++    wait_for_loginit
++    [ -e /run/initramfs/.die ] && exit 1
++    if getargbool 1 rd.shell -y rdshell || getarg rd.break rdbreak; then
++        echo "Dropping to debug shell."
++        echo
++        export PS1="$_rdshell_name:\${PWD}# "
++        [ -e /.profile ] || >/.profile
++        _ctty=/dev/console
++        if [ -n "$(command -v setsid)" ]; then
++            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
++            [ -c "$_ctty" ] || _ctty=/dev/tty1
++            setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
++        elif [ -n "$(command -v openvt)" ] && ! getarg "console=" >/dev/null 2>&1 && getargbool 1 "rd.openvt" ; then
++            openvt -f -c 1 -w -s -l -- sh
++        else
++            sh -i -l 0<$_ctty 1>$_ctty 2>&1
++        fi
++    else
++        warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
++        # cause a kernel panic
++        exit 1
++    fi
++}
+diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
+index 4d0a2a2..d197497 100755
+--- a/modules.d/99base/init.sh
++++ b/modules.d/99base/init.sh
+@@ -38,54 +38,16 @@ wait_for_loginit()
+     rm -f /run/initramfs/loginit.pipe /run/initramfs/loginit.pid
+ }
+ 
+-emergency_shell()
+-{
+-    local _ctty
+-    set +e
+-    if [ "$1" = "-n" ]; then
+-        _rdshell_name=$2
+-        shift 2
+-    else
+-        _rdshell_name=dracut
+-    fi
+-    echo ; echo
+-    warn $@
+-    source_hook emergency
+-    echo
+-    wait_for_loginit
+-    [ -e /run/initramfs/.die ] && exit 1
+-    if getargbool 1 rd.shell -y rdshell || getarg rd.break rdbreak; then
+-        echo "Dropping to debug shell."
+-        echo
+-        export PS1="$_rdshell_name:\${PWD}# "
+-        [ -e /.profile ] || >/.profile
+-        _ctty=/dev/console
+-        if [ -n "$(command -v setsid)" ]; then
+-            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
+-            [ -c "$_ctty" ] || _ctty=/dev/tty1
+-            setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
+-        elif [ -n "$(command -v openvt)" ] && ! getarg "console=" >/dev/null 2>&1 && getargbool 1 "rd.openvt" ; then
+-            openvt -f -c 1 -w -s -l -- sh
+-        else
+-            sh -i -l 0<$_ctty 1>$_ctty 2>&1
+-        fi
+-    else
+-        warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
+-        # cause a kernel panic
+-        exit 1
+-    fi
+-}
+-
+ NEWROOT="/sysroot"
+ [ -d $NEWROOT ] || mkdir -p -m 0755 $NEWROOT
+ 
+-trap "emergency_shell Signal caught!" 0
+ OLDPATH=$PATH
+ PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ export PATH
+ 
+ RD_DEBUG=""
+ . /lib/dracut-lib.sh
++trap "emergency_shell Signal caught!" 0
+ 
+ [ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
+ 
 -- 
 1.7.7.6
