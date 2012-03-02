@@ -1,129 +1,59 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] move emergency_shell to dracut-lib.sh
-Date: Wed, 29 Feb 2012 13:09:58 -0500
-Message-ID: <1330538998-21285-2-git-send-email-wwoods@redhat.com>
-References: <1330538998-21285-1-git-send-email-wwoods@redhat.com>
+From: Sonic Zhang <sonic.adi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Fail to mount a ext2 partition /dev/mmcblk0p1 on SD card as root file
+ system in kernel 3.2
+Date: Fri, 2 Mar 2012 18:53:23 +0800
+Message-ID: <CAJxxZ0NNb6981fpLyiH97Q3Y6ucWm=XB5-MmMRnBCr-dmQrpyw@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1330538998-21285-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=2TW5DDwBm+TtfZPUVeL19t65fcUi41raQSv7qHMSMng=;
+        b=n6lC+0dsBqscvA+EU1ScNcLFy8VZlscTkW3nr4Gmi8b8vO3/7+kmUq/jEjfieg6UzD
+         fTVlWnkvdejvePgC7ERqGJO+ytW2dD3nLpzCoqBBXoh64yw7YnjLwrceEFsPPpkxFL1A
+         cgCbXFk7qbSFIamNziIv5TcV0xZwi9eSZdEF6ftQfSYOmZgsKtSlmudOmgO0tedVu5eQ
+         q0CQ6DKm29/EFghRd2VAYptpFx1Ry9vZ4IPcTlDbWdrgqD+yCjGk5CE7GYumobqmV0/X
+         Z9Mp6cqP1uSdgIScDPVZTaUYwL2e8w5VeZ7kIh2zEb5iZLvIu4bm9NIhm/Fax/1Quv2C
+         GJMg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This lets things running outside init call an emergency_shell.
-(example: scripts called by initqueue)
----
- modules.d/99base/dracut-lib.sh |   38 ++++++++++++++++++++++++++++++++++++++
- modules.d/99base/init.sh       |   40 +---------------------------------------
- 2 files changed, 39 insertions(+), 39 deletions(-)
+Hi,
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index afd366e..c31854e 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -753,3 +753,41 @@ killproc() {
- need_shutdown() {
-     >/run/initramfs/.need_shutdown
- }
-+
-+emergency_shell()
-+{
-+    local _ctty
-+    set +e
-+    if [ "$1" = "-n" ]; then
-+        _rdshell_name=$2
-+        shift 2
-+    else
-+        _rdshell_name=dracut
-+    fi
-+    echo ; echo
-+    warn $@
-+    source_hook emergency
-+    echo
-+    wait_for_loginit
-+    [ -e /run/initramfs/.die ] && exit 1
-+    if getargbool 1 rd.shell -y rdshell || getarg rd.break rdbreak; then
-+        echo "Dropping to debug shell."
-+        echo
-+        export PS1="$_rdshell_name:\${PWD}# "
-+        [ -e /.profile ] || >/.profile
-+        _ctty=/dev/console
-+        if [ -n "$(command -v setsid)" ]; then
-+            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
-+            [ -c "$_ctty" ] || _ctty=/dev/tty1
-+            setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
-+        elif [ -n "$(command -v openvt)" ] && ! getarg "console=" >/dev/null 2>&1 && getargbool 1 "rd.openvt" ; then
-+            openvt -f -c 1 -w -s -l -- sh
-+        else
-+            sh -i -l 0<$_ctty 1>$_ctty 2>&1
-+        fi
-+    else
-+        warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
-+        # cause a kernel panic
-+        exit 1
-+    fi
-+}
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index 4d0a2a2..d197497 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -38,54 +38,16 @@ wait_for_loginit()
-     rm -f /run/initramfs/loginit.pipe /run/initramfs/loginit.pid
- }
- 
--emergency_shell()
--{
--    local _ctty
--    set +e
--    if [ "$1" = "-n" ]; then
--        _rdshell_name=$2
--        shift 2
--    else
--        _rdshell_name=dracut
--    fi
--    echo ; echo
--    warn $@
--    source_hook emergency
--    echo
--    wait_for_loginit
--    [ -e /run/initramfs/.die ] && exit 1
--    if getargbool 1 rd.shell -y rdshell || getarg rd.break rdbreak; then
--        echo "Dropping to debug shell."
--        echo
--        export PS1="$_rdshell_name:\${PWD}# "
--        [ -e /.profile ] || >/.profile
--        _ctty=/dev/console
--        if [ -n "$(command -v setsid)" ]; then
--            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
--            [ -c "$_ctty" ] || _ctty=/dev/tty1
--            setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
--        elif [ -n "$(command -v openvt)" ] && ! getarg "console=" >/dev/null 2>&1 && getargbool 1 "rd.openvt" ; then
--            openvt -f -c 1 -w -s -l -- sh
--        else
--            sh -i -l 0<$_ctty 1>$_ctty 2>&1
--        fi
--    else
--        warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
--        # cause a kernel panic
--        exit 1
--    fi
--}
--
- NEWROOT="/sysroot"
- [ -d $NEWROOT ] || mkdir -p -m 0755 $NEWROOT
- 
--trap "emergency_shell Signal caught!" 0
- OLDPATH=$PATH
- PATH=/usr/sbin:/usr/bin:/sbin:/bin
- export PATH
- 
- RD_DEBUG=""
- . /lib/dracut-lib.sh
-+trap "emergency_shell Signal caught!" 0
- 
- [ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
- 
--- 
-1.7.7.6
+Kernel 3.2 panic when I mount a ext2 partition /dev/mmcblk0p1 on SD
+card as root file system.
+
+My boot parameter line is "root=/dev/mmcblk0p1 rw rootwait
+earlyprintk=serial,uart0,57600 console=ttyBF0,57600".
+
+After reading init/do_mounts.c a bit, I find VFS folders "/dev" and
+"/root" don't exist when mount_root() tries to create block device
+node "/dev/root" and mount this device at  path "/root". If I create
+these folders by mkdir() before line create_dev() in function
+mount_root(), kernel boots up on SD card properly.
+
+Where should folders "/dev" and "/root" be created? Any hint?
+
+Thanks
+
+void __init mount_root(void)
+{
+.......
+#ifdef CONFIG_BLOCK
+        create_dev("/dev/root", ROOT_DEV);
+        mount_block_root("/dev/root", root_mountflags);
+#endif
+}
+
+static int __init do_mount_root(char *name, char *fs, int flags, void *data)
+{
+        int err = sys_mount(name, "/root", fs, flags, data);
+        if (err)
+                return err;
+......
+}
+
+Sonic Zhang
