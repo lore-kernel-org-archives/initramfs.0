@@ -1,35 +1,56 @@
-From: =?UTF-8?q?Dan=20Hor=C3=A1k?= <dan-mBPqX7VnFd4@public.gmane.org>
-Subject: [PATCH] install ctcm network module on s390
-Date: Fri,  2 Mar 2012 11:41:37 +0100
-Message-ID: <1330684897-5687-1-git-send-email-dan@danny.cz>
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Fail to mount a ext2 partition /dev/mmcblk0p1 on SD card as
+ root file system in kernel 3.2
+Date: Mon, 5 Mar 2012 04:24:50 +0000 (UTC)
+Message-ID: <jj1f6i$v3a$1@dough.gmane.org>
+References: <CAJxxZ0NNb6981fpLyiH97Q3Y6ucWm=XB5-MmMRnBCr-dmQrpyw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The ctcm module is not loaded automagically because it doesn't pass the
-"ether_type_trans" test in 40net/module-setup.sh, so load it explicitly.
----
- modules.d/95znet/module-setup.sh |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+["Followup-To:" header set to gmane.linux.kernel.initramfs.]
+On Fri, 02 Mar 2012 at 10:53 GMT, Sonic Zhang <sonic.adi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> Hi,
 
-diff --git a/modules.d/95znet/module-setup.sh b/modules.d/95znet/module-setup.sh
-index fbb79aa..b354947 100755
---- a/modules.d/95znet/module-setup.sh
-+++ b/modules.d/95znet/module-setup.sh
-@@ -13,6 +13,10 @@ depends() {
-     return 0
- }
- 
-+installkernel() {
-+    instmods ctcm
-+}
-+
- install() {
-     inst_hook cmdline 30 "$moddir/parse-ccw.sh"
-     inst /lib/udev/ccw_init
--- 
-1.7.7.6
+Hi,
+
+>
+> Where should folders "/dev" and "/root" be created? Any hint?
+>
+
+They are firstly created by dracut inside the initramfs:
+
+dracut.sh:
+
+    for d in dev proc sys sysroot root run run/lock run/initramfs; do
+        if [ -L "/$d" ]; then
+                inst_symlink "/$d"
+        else
+                mkdir -m 0755 -p "$initdir/$d"
+        fi
+    done
+
+and then re-created by kernel:
+
+init/initramfs.c:
+
+static int __init do_name(void)
+{
+        ...
+        clean_path(collected, mode);
+        ...
+	} else if (S_ISDIR(mode)) {
+	        sys_mkdir(collected, mode);
+                sys_chown(collected,uid, gid);
+                sys_chmod(collected, mode);
+                dir_add(collected, mtime);
+	}...
+...
+}
+
+Cheers!
