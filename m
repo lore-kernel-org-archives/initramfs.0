@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] network: refactor stuff from netroot/parse-ip-opts to net-lib
-Date: Tue,  6 Mar 2012 18:25:24 -0500
-Message-ID: <1331076325-24148-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 1/2] write-ifcfg.sh: cleanups
+Date: Wed,  7 Mar 2012 17:21:53 -0500
+Message-ID: <1331158914-20638-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,321 +10,34 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Add new functions: all_ifaces_up, get_netroot_ip, ip_is_local, ifdown,
-setup_net, set_ifname, ibft_to_cmdline
-
-Use them in netroot.sh and parse-ip-opts.sh.
-
-There's also a couple little unrelated cleanups.
+mkdir -p creates intermediate directories and never returns an error, so
+we don't need to create the intermediate directories ourself.
 ---
- modules.d/40network/net-lib.sh       |  108 ++++++++++++++++++++++++++++++++++
- modules.d/40network/netroot.sh       |   71 ++--------------------
- modules.d/40network/parse-ip-opts.sh |   46 ++-------------
- 3 files changed, 120 insertions(+), 105 deletions(-)
+ modules.d/45ifcfg/write-ifcfg.sh |   15 +++++++--------
+ 1 files changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
-index e3987a4..e51ce94 100644
---- a/modules.d/40network/net-lib.sh
-+++ b/modules.d/40network/net-lib.sh
-@@ -31,3 +31,111 @@ iface_has_link() {
-     [ "$(cat $interface/carrier)" = 1 ] || return 1
-     # XXX Do we need to reset the flags here? anaconda never bothered..
- }
-+
-+all_ifaces_up() {
-+    local iface="" IFACES=""
-+    [ -e "/tmp/net.ifaces" ] && read IFACES < /tmp/net.ifaces
-+    for iface in $IFACES; do
-+        [ -e /tmp/net.$iface.up ] || return 1
-+    done
-+}
-+
-+get_netroot_ip() {
-+    local prefix="" server="" rest=""
-+    splitsep "$1" ":" prefix server rest
-+    case $server in
-+        [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*) echo "$server"; return 0 ;;
-+    esac
-+    return 1
-+}
-+
-+ip_is_local() {
-+    strstr "$(ip route get $1 2>/dev/null)" " via "
-+}
-+
-+ifdown() {
-+    local netif="$1"
-+    # ip down/flush ensures that routing info goes away as well
-+    ip link set $netif down
-+    ip addr flush dev $netif
-+    echo "#empty" > /etc/resolv.conf
-+    # TODO: send "offline" uevent?
-+}
-+
-+setup_net() {
-+    local netif="$1" f="" gw_ip="" netroot_ip="" iface="" IFACES=""
-+    [ -e /tmp/net.$netif.up ] || return 1
-+    [ -e "/tmp/net.ifaces" ] && read IFACES < /tmp/net.ifaces
-+    [ -z "$IFACES" ] && IFACES="$netif"
-+    for iface in $IFACES ; do
-+        . /tmp/net.$iface.up
-+    done
-+    # run the scripts written by ifup
-+    [ -e /tmp/net.$netif.gw ]            && . /tmp/net.$netif.gw
-+    [ -e /tmp/net.$netif.hostname ]      && . /tmp/net.$netif.hostname
-+    [ -e /tmp/net.$netif.override ]      && . /tmp/net.$netif.override
-+    [ -e /tmp/dhclient.$netif.dhcpopts ] && . /tmp/dhclient.$netif.dhcpopts
-+    # set up resolv.conf
-+    [ -e /tmp/net.$netif.resolv.conf ] && \
-+        cp -f /tmp/net.$netif.resolv.conf /etc/resolv.conf
-+
-+    # Handle STP Timeout: arping the default gateway.
-+    # (or the root server, if a) it's local or b) there's no gateway.)
-+    # Note: This assumes that if no router is present the
-+    # root server is on the same subnet.
-+
-+    # Get DHCP-provided router IP, or the cmdline-provided "gw=" argument
-+    [ -n "$new_routers" ] && gw_ip=${new_routers%%,*}
-+    [ -n "$gw" ] && gw_ip=$gw
-+
-+    # Get the "netroot" IP (if there's an IP address in there)
-+    netroot_ip=$(get_netroot_ip $netroot)
-+
-+    # try netroot if it's local (or there's no gateway)
-+    if ip_is_local $netroot_ip || [ -z "$gw_ip" ]; then
-+        dest="$netroot_ip"
-+    else
-+        dest="$gw_ip"
-+    fi
-+    if [ -n "$dest" ] && ! arping -q -f -w 60 -I $netif $dest ; then
-+        info "Resolving $dest via ARP on $netif failed"
-+    fi
-+}
-+
-+set_ifname() {
-+    local name="$1" mac="$2" num=0 n=""
-+    # if it's already set, return the existing name
-+    for n in $(getargs ifname=); do
-+        strstr "$n" "$mac" && echo ${n%%:*} && return
-+    done
-+    # otherwise, pick a new name and use that
-+    while [ -e /sys/class/$name$num ]; do num=$(($num+1)); done
-+    echo "ifname=$name$num:$mac" >> /etc/cmdline.d/45-ifname.conf
-+    echo "$name$num"
-+}
-+
-+ibft_to_cmdline() {
-+    local iface="" mac="" dev=""
-+    local dhcp="" ip="" gw="" mask="" hostname=""
-+    modprobe -q iscsi_ibft
-+    (
-+        for iface in /sys/firmware/ibft/ethernet*; do
-+            [ -e ${iface}/mac ] || continue
-+            mac=$(read a < ${iface}/mac; echo $a)
-+            [ -z "$ifname_mac" ] && continue
-+            dev=$(set_ifname ibft $ifname_mac)
-+            dhcp=$(read a < ${iface}/dhcp; echo $a)
-+            if [ -n "$dhcp" ]; then
-+                echo "ip=$dev:dhcp"
-+            else
-+                ip=$(read a < ${iface}/ip-addr; echo $a)
-+                gw=$(read a < ${iface}/gateway; echo $a)
-+                mask=$(read a < ${iface}/subnet-mask; echo $a)
-+                hostname=$(read a < ${iface}/hostname; echo $a)
-+                echo "ip=$ip::$gw:$mask:$hostname:$dev:none"
-+            fi
-+        done
-+    ) >> /etc/cmdline.d/40-ibft.conf
-+    # reread cmdline
-+    unset CMDLINE
-+}
-diff --git a/modules.d/40network/netroot.sh b/modules.d/40network/netroot.sh
-index f44a97b..6885bef 100755
---- a/modules.d/40network/netroot.sh
-+++ b/modules.d/40network/netroot.sh
-@@ -3,14 +3,12 @@
- # ex: ts=8 sw=4 sts=4 et filetype=sh
+diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
+index d633a96..0f431e3 100755
+--- a/modules.d/45ifcfg/write-ifcfg.sh
++++ b/modules.d/45ifcfg/write-ifcfg.sh
+@@ -134,11 +134,10 @@ for netif in $IFACES ; do
+ done
  
- PATH=/usr/sbin:/usr/bin:/sbin:/bin
--type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-+command -v getarg >/dev/null    || . /lib/dracut-lib.sh
-+command -v setup_net >/dev/null || . /lib/net-lib.sh
- 
- # Huh? Empty $1?
- [ -z "$1" ] && exit 1
- 
--# Huh? No interface config?
--[ ! -e /tmp/net.$1.up ] && exit 1
--
- # [ ! -z $2 ] means this is for manually bringing up network
- # instead of real netroot; If It's called without $2, then there's
- # no sense in doing something if no (net)root info is available
-@@ -25,10 +23,7 @@ fi
- # Let's see if we have to wait for other interfaces
- # Note: exit works just fine, since the last interface to be
- #       online'd should see all files
--[ -e "/tmp/net.ifaces" ] && read IFACES < /tmp/net.ifaces
--for iface in $IFACES ; do
--    [ -e /tmp/net.$iface.up ] || exit 1
+ # Pass network opts
+-[ -d /run/initramfs ] || mkdir -m 0755 -p /run/initramfs
+-cp /tmp/net.* /run/initramfs/ >/dev/null 2>&1
+-for i in /run/initramfs/state /run/initramfs/state/etc/ /run/initramfs/state/etc/sysconfig /run/initramfs/state/etc/sysconfig/network-scripts; do
+-    [ -d $i ] || mkdir -m 0755 -p $i
 -done
-+all_ifaces_up || exit 1
- 
- # Set or override primary interface
- netif=$1
-@@ -80,62 +75,13 @@ if [ -z "$2" ]; then
- fi
- 
- # We're here, so we can assume that upping interfaces is now ok
--[ -z "$IFACES" ] && IFACES="$netif"
--for iface in $IFACES ; do
--    . /tmp/net.$iface.up
--done
--
--[ -e /tmp/net.$netif.gw ]          && . /tmp/net.$netif.gw
--[ -e /tmp/net.$netif.hostname ]    && . /tmp/net.$netif.hostname
--[ -e /tmp/net.$netif.resolv.conf ] && cp -f /tmp/net.$netif.resolv.conf /etc/resolv.conf
--
--# Load interface options
--[ -e /tmp/net.$netif.override ] && . /tmp/net.$netif.override
--[ -e /tmp/dhclient.$netif.dhcpopts ] && . /tmp/dhclient.$netif.dhcpopts
--
--# Handle STP Timeout: arping the default router if root server is
--# unknown or not local, or if not available the root server.
--# Note: This assumes that if no router is present the
--# root server is on the same subnet.
--#
--# TODO There's some netroot variants that don't (yet) have their
--# server-ip netroot
--
--# Get router IP if set
--[ -n "$new_routers" ] && gw_ip=${new_routers%%,*}
--[ -n "$gw" ] && gw_ip=$gw
--# Get root server IP if set
--if [ -n "$netroot" ]; then
--    dummy=${netroot#*:}
--    dummy=${dummy%%:*}
--    case "$dummy" in
--        [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*) netroot_ip=$dummy;;
--    esac
--fi
--# Default arping dest to router
--dest="$gw_ip"
--# Change to arping root server if appropriate
--if [ -n "$netroot_ip" ]; then
--    if [ -z "$dest" ]; then
--         # no gateway so check root server
--        dest="$netroot_ip"
--    else
--        r=$(ip route get "$netroot_ip")
--        if ! strstr "$r" ' via ' ; then
--            # local root server, so don't arping gateway
--            dest="$netroot_ip"
--        fi
--    fi
--fi
--if [ -n "$dest" ] && ! arping -q -f -w 60 -I $netif $dest ; then
--    dinfo "Resolving $dest via ARP on $netif failed"
--fi
-+setup_net $netif
- 
- # exit in case manually bring up network
- [ -n "$2" ] && exit 0
- 
- # Source netroot hooks before we start the handler
--source_all $hookdir/netroot
-+source_hook netroot
- 
- # Run the handler; don't store the root, it may change from device to device
- # XXX other variables to export?
-@@ -151,11 +97,6 @@ if $handler $netif $netroot $NEWROOT; then
- else
-     warn "Mounting root via '$netif' failed"
-     # If we're trying with multiple interfaces, put that one down.
--    # ip down/flush ensures that routeing info goes away as well
--    if [ -z "$BOOTDEV" ] ; then
--        ip link set $netif down
--        ip addr flush dev $netif
--        echo "#empty" > /etc/resolv.conf
--    fi
-+    [ -z "$BOOTDEV" ] && ifdown $netif
- fi
- exit 0
-diff --git a/modules.d/40network/parse-ip-opts.sh b/modules.d/40network/parse-ip-opts.sh
-index c97941e..7851329 100755
---- a/modules.d/40network/parse-ip-opts.sh
-+++ b/modules.d/40network/parse-ip-opts.sh
-@@ -14,7 +14,8 @@
- # routing,dns,dhcp-options,etc.
- #
- 
--type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-+command -v getarg >/dev/null          || . /lib/dracut-lib.sh
-+command -v ibft_to_cmdline >/dev/null || . /lib/net-lib.sh
- 
- # Check if ip= lines should be used
- if getarg ip= >/dev/null ; then
-@@ -52,50 +53,15 @@ if [ -n "$NEEDBOOTDEV" ] ; then
-     [ -z "$BOOTDEV" ] && die "Bootdev argument is empty"
- fi
- 
--if [ "ibft" = "$(getarg ip=)" ]; then
--    modprobe iscsi_ibft
--    num=0
--    (
--	for iface in /sys/firmware/ibft/ethernet*; do
--	    [ -e ${iface}/mac ] || continue
--            ifname_mac=$(read a < ${iface}/mac; echo $a)
--	    [ -z "$ifname_mac" ] && continue
--            unset dev
--            for ifname in $(getargs ifname=); do
--		if strstr "$ifname" "$ifname_mac"; then
--		    dev=${ifname%%:*}
--                    break
--                fi
--	    done
--            if [ -z "$dev" ]; then
--		ifname_if=ibft$num
--		num=$(( $num + 1 ))
--		echo "ifname=$ifname_if:$ifname_mac"
--		dev=$ifname_if
--	    fi
--
--	    dhcp=$(read a < ${iface}/dhcp; echo $a)
--	    if [ -n "$dhcp" ]; then
--		echo "ip=$dev:dhcp"
--	    else
--		ip=$(read a < ${iface}/ip-addr; echo $a)
--		gw=$(read a < ${iface}/gateway; echo $a)
--		mask=$(read a < ${iface}/subnet-mask; echo $a)
--		hostname=$(read a < ${iface}/hostname; echo $a)
--		echo "ip=$ip::$gw:$mask:$hostname:$dev:none"
--	    fi
--	done
--    ) >> /etc/cmdline
--    # reread cmdline
--    unset CMDLINE
--fi
-+# If ibft is requested, read ibft vals and write ip=XXX cmdline args
-+[ "ibft" = "$(getarg ip=)" ] && ibft_to_cmdline
- 
- # Check ip= lines
- # XXX Would be nice if we could errorcheck ip addresses here as well
- for p in $(getargs ip=); do
-     ip_to_var $p
- 
--    # skip ibft
-+    # skip ibft since we did it above
-     [ "$autoconf" = "ibft" ] && continue
- 
-     # We need to have an ip= line for the specified bootdev
-@@ -111,7 +77,7 @@ for p in $(getargs ip=); do
-     case $autoconf in
-         error) die "Error parsing option 'ip=$p'";;
-         bootp|rarp|both) die "Sorry, ip=$autoconf is currenty unsupported";;
--        none|off) \
-+        none|off)
-             [ -z "$ip" ] && \
-             die "For argument 'ip=$p'\nValue '$autoconf' without static configuration does not make sense"
-             [ -z "$mask" ] && \
+-cp /tmp/net.$netif.resolv.conf /run/initramfs/state/etc/ >/dev/null 2>&1
+-echo "files /etc/sysconfig/network-scripts" > /run/initramfs/rwtab
+-cp -a -t /run/initramfs/state/etc/sysconfig/network-scripts/ /tmp/ifcfg/* >/dev/null 2>&1
++mkdir -m 0755 -p /run/initramfs/state/etc/sysconfig/network-scripts
++echo "files /etc/sysconfig/network-scripts" >> /run/initramfs/rwtab
++{
++    cp /tmp/net.* /run/initramfs/
++    cp /tmp/net.$netif.resolv.conf /run/initramfs/state/etc/
++    cp -a -t /run/initramfs/state/etc/sysconfig/network-scripts/ /tmp/ifcfg/*
++} > /dev/null 2>&1
 -- 
 1.7.7.6
