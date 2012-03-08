@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] img-lib: fix unpack_img()
-Date: Thu,  8 Mar 2012 18:02:29 -0500
-Message-ID: <1331247749-11928-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH] url-lib: clean up output
+Date: Thu,  8 Mar 2012 18:03:39 -0500
+Message-ID: <1331247819-12140-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,48 +10,48 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-- det_img should have been det_archive
-- for ft=xz|gzip|bzip2, decompr should be "$ft -dc"
+For curl_fetch_url (http/https/ftp):
+- use --progress-bar (the output is less messy)
+- print the URL we're fetching so the user know's what's happening
+
+For curl and nfs:
+- don't echo the filename if it was provided by the user
 ---
- modules.d/99img-lib/img-lib.sh |    7 ++++---
+ modules.d/45url-lib/url-lib.sh |    7 ++++---
  1 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/99img-lib/img-lib.sh b/modules.d/99img-lib/img-lib.sh
-index f6be26d..22507aa 100755
---- a/modules.d/99img-lib/img-lib.sh
-+++ b/modules.d/99img-lib/img-lib.sh
-@@ -1,12 +1,13 @@
- #!/bin/sh
- # img-lib.sh: utilities for dealing with archives and filesystem images.
- #
--# TODO: identify/unpack rpm, deb?
-+# TODO: identify/unpack rpm, deb, maybe others?
+diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
+index 043a700..e305a68 100755
+--- a/modules.d/45url-lib/url-lib.sh
++++ b/modules.d/45url-lib/url-lib.sh
+@@ -53,9 +53,10 @@ add_url_handler() {
  
- 
- # super-simple "file" that only identifies archives.
- # works with stdin if $1 is not set.
- det_archive() {
-+    # NOTE: echo -e works in ash and bash, but not dash
-     local bz="BZh" xz="$(echo -e '\xfd7zXZ')" gz="$(echo -e '\x1f\x8b')"
-     local headerblock="$(dd ${1:+if=$1} bs=262 count=1 2>/dev/null)"
-     case "$headerblock" in
-@@ -32,7 +33,7 @@ unpack_archive() {
-     local img="$1" outdir="$2" archiver="" decompr=""
-     local ft="$(det_archive $img)"
-     case "$ft" in
--        xz|gzip|bzip2) decompr="$decompr -dc" ;;
-+        xz|gzip|bzip2) decompr="$ft -dc" ;;
-         cpio|tar) decompr="cat";;
-         *) return 1 ;;
-     esac
-@@ -64,7 +65,7 @@ unpack_img() {
-     [ -r "$img" ] || { warn "can't read img!"; return 1; }
-     [ -n "$outdir" ] || { warn "unpack_img: no output dir given"; return 1; }
- 
--    if [ "$(det_img $img)" ]; then
-+    if [ "$(det_archive $img)" ]; then
-         unpack_archive "$@" || { warn "can't unpack archive file!"; return 1; }
+ export CURL_HOME="/run/initramfs/url-lib"
+ mkdir -p $CURL_HOME
+-curl_args="--location --retry 3 --fail --show-error"
++curl_args="--location --retry 3 --fail --show-error --progress-bar"
+ curl_fetch_url() {
+     local url="$1" outloc="$2"
++    echo "$url" > /proc/self/fd/0
+     if [ -n "$outloc" ]; then
+         curl $curl_args --output "$outloc" "$url" || return $?
      else
-         unpack_fs "$@" || { warn "can't unpack filesystem image!"; return 1; }
+@@ -64,7 +65,7 @@ curl_fetch_url() {
+         outloc="$outdir/$(ls -A $outdir)"
+     fi
+     [ -f "$outloc" ] || return 253
+-    echo "$outloc"
++    if [ -z "$2" ]; then echo "$outloc" ; fi
+ }
+ add_url_handler curl_fetch_url http https ftp
+ 
+@@ -110,6 +111,6 @@ nfs_fetch_url() {
+         cp -f "$mntdir/$filename" "$outloc" || return $?
+     fi
+     [ -f "$outloc" ] || return 253
+-    echo "$outloc"
++    if [ -z "$2" ]; then echo "$outloc" ; fi
+ }
+ command -v nfs_to_var >/dev/null && add_url_handler nfs_fetch_url nfs nfs4
 -- 
 1.7.7.6
