@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] url-lib: clean up output
-Date: Thu,  8 Mar 2012 18:03:39 -0500
-Message-ID: <1331247819-12140-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH] Add 'live.updates' to livenet module
+Date: Thu,  8 Mar 2012 18:03:48 -0500
+Message-ID: <1331247828-12196-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,48 +10,94 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-For curl_fetch_url (http/https/ftp):
-- use --progress-bar (the output is less messy)
-- print the URL we're fetching so the user know's what's happening
+live.updates allows you to specify the URL for an "updates image" that
+should be applied to the live runtime before switch_root.
 
-For curl and nfs:
-- don't echo the filename if it was provided by the user
+The URL can be anything supported by url-lib (http, https, ftp, possibly
+nfs) and the image can be anything supported by img-lib (xz/gzip
+compressed cpio/tar, uncompressed cpio/tar, filesystem image, etc.)
 ---
- modules.d/45url-lib/url-lib.sh |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ modules.d/90livenet/fetch-liveupdate.sh |   32 +++++++++++++++++++++++++++++++
+ modules.d/90livenet/module-setup.sh     |    1 +
+ modules.d/90livenet/parse-livenet.sh    |   12 ++++++++++-
+ 3 files changed, 44 insertions(+), 1 deletions(-)
+ create mode 100755 modules.d/90livenet/fetch-liveupdate.sh
 
-diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
-index 043a700..e305a68 100755
---- a/modules.d/45url-lib/url-lib.sh
-+++ b/modules.d/45url-lib/url-lib.sh
-@@ -53,9 +53,10 @@ add_url_handler() {
+diff --git a/modules.d/90livenet/fetch-liveupdate.sh b/modules.d/90livenet/fetch-liveupdate.sh
+new file mode 100755
+index 0000000..8a5fdec
+--- /dev/null
++++ b/modules.d/90livenet/fetch-liveupdate.sh
+@@ -0,0 +1,32 @@
++#!/bin/sh
++# fetch-liveupdate - fetch an update image for dmsquash-live media.
++# this gets called by the "initqueue/online" hook for each network interface
++# that comes online.
++
++# no updates requested? we're not needed.
++[ -e /tmp/liveupdates.info ] || return 0
++
++command -v getarg >/dev/null || . /lib/dracut-lib.sh
++command -v fetch_url >/dev/null || . /lib/url-lib.sh
++command -v unpack_img >/dev/null || . /lib/img-lib.sh
++
++read url < /tmp/liveupdates.info
++
++info "fetching live updates from $url"
++
++fetch_url "$url" /tmp/updates.img
++if [ $? != 0 ]; then
++    warn "failed to fetch update image!"
++    warn "url: $url"
++    return 1
++fi
++
++unpack_img /tmp/updates.img /updates.tmp.$$
++if [ $? != 0 ]; then
++    warn "failed to unpack update image!"
++    warn "url: $url"
++    return 1
++fi
++rm -rf /updates
++mv -f /updates.tmp.$$ /updates
++mv /tmp/liveupdates.info /tmp/liveupdates.done
+diff --git a/modules.d/90livenet/module-setup.sh b/modules.d/90livenet/module-setup.sh
+index c650ef3..2071553 100755
+--- a/modules.d/90livenet/module-setup.sh
++++ b/modules.d/90livenet/module-setup.sh
+@@ -12,6 +12,7 @@ depends() {
  
- export CURL_HOME="/run/initramfs/url-lib"
- mkdir -p $CURL_HOME
--curl_args="--location --retry 3 --fail --show-error"
-+curl_args="--location --retry 3 --fail --show-error --progress-bar"
- curl_fetch_url() {
-     local url="$1" outloc="$2"
-+    echo "$url" > /proc/self/fd/0
-     if [ -n "$outloc" ]; then
-         curl $curl_args --output "$outloc" "$url" || return $?
-     else
-@@ -64,7 +65,7 @@ curl_fetch_url() {
-         outloc="$outdir/$(ls -A $outdir)"
-     fi
-     [ -f "$outloc" ] || return 253
--    echo "$outloc"
-+    if [ -z "$2" ]; then echo "$outloc" ; fi
+ install() {
+     inst_hook cmdline 29 "$moddir/parse-livenet.sh"
++    inst_hook initqueue/online 95 "$moddir/fetch-liveupdate.sh"
+     inst "$moddir/livenetroot.sh" "/sbin/livenetroot"
  }
- add_url_handler curl_fetch_url http https ftp
  
-@@ -110,6 +111,6 @@ nfs_fetch_url() {
-         cp -f "$mntdir/$filename" "$outloc" || return $?
-     fi
-     [ -f "$outloc" ] || return 253
--    echo "$outloc"
-+    if [ -z "$2" ]; then echo "$outloc" ; fi
- }
- command -v nfs_to_var >/dev/null && add_url_handler nfs_fetch_url nfs nfs4
+diff --git a/modules.d/90livenet/parse-livenet.sh b/modules.d/90livenet/parse-livenet.sh
+index 926dba2..3553cef 100755
+--- a/modules.d/90livenet/parse-livenet.sh
++++ b/modules.d/90livenet/parse-livenet.sh
+@@ -1,10 +1,20 @@
+-#!/bin/bash
++#!/bin/sh
+ # live net images - just like live images, but specified like:
+ # root=live:[url-to-backing-file]
+ 
+ [ -z "$root" ] && root=$(getarg root=)
+ . /lib/url-lib.sh
+ 
++# live updates
++updates=$(getarg live.updates=)
++if [ -n "$updates" ]; then
++    # make sure network comes up even if we're doing a local live device
++    [ -z "$netroot" ] && echo "rd.neednet=1" > /etc/cmdline.d/90livenet.conf
++    echo "$updates" > /tmp/liveupdates.info
++    echo '[ -e /tmp/liveupdates.done ]' > \
++        $hookdir/initqueue/finished/liveupdates.sh
++fi
++
+ str_starts "$root" "live:" && liveurl="$root"
+ str_starts "$liveurl" "live:" || return
+ liveurl="${liveurl#live:}"
 -- 
 1.7.7.6
