@@ -1,64 +1,69 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] fix up console handling
-Date: Wed, 14 Mar 2012 11:01:46 -0400
-Message-ID: <1331737309-24315-1-git-send-email-wwoods@redhat.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+From: Lennart Poettering <lennart@poettering.net>
+Subject: Re: [PATCH-v3 1/2] systemd: mount the securityfs
+ filesystem at early stage
+Date: Wed, 14 Mar 2012 17:54:14 +0100
+Message-ID: <20120314165414.GA853@tango.0pointer.de>
+References: <1331655340-11595-1-git-send-email-roberto.sassu@polito.it>
+	<20120313173911.GY838@rampage> <4F5F9409.6060706@polito.it>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
+Content-Disposition: inline
+In-Reply-To: <4F5F9409.6060706@polito.it>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+To: Roberto Sassu <roberto.sassu@polito.it>
+Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, linux-ima-user@lists.sourceforge.net, linux-security-module@vger.kernel.org, zohar@linux.vnet.ibm.com, harald@redhat.com, ramunno@polito.it
 
-Howdy, dracuteers.
+On Tue, 13.03.12 19:38, Roberto Sassu (roberto.sassu@polito.it) wrote:
 
-This patch is an attempt to fix up console handling in dracut (specifically
-in emergency_shell).
+> >>  static const MountPoint mount_table[] = {
+> >>          { "proc",     "/proc",                  "proc",     NULL,                MS_NOSUID|MS_NOEXEC|MS_NODEV, true },
+> >>          { "sysfs",    "/sys",                   "sysfs",    NULL,                MS_NOSUID|MS_NOEXEC|MS_NODEV, true },
+> >>          { "devtmpfs", "/dev",                   "devtmpfs", "mode=755",          MS_NOSUID,                    true },
+> >>+        { "securityfs", "/sys/kernel/security", "securityfs", NULL,              MS_NOSUID|MS_NOEXEC|MS_NODEV, true },
+> >
+> >Failure to mount securtiyfs might be fatal for _your_ purposes, but I'd
+> >wager that not only are some people not interested in this, but some
+> >people (myself included) might not even have securityfs in their kernel.
+> >
+> 
+> Hi Dave
+> 
+> i think i can change this to false without breaking
+> the other code, because at the beginning of the new
+> file 'src/ima-setup.c' i check for the IMA support in
+> the kernel by checking the existence of the
+> '/sys/kernel/security/ima' directory. If the mount
+> fails, this will be handled as the same as when the
+> IMA support is disabled in the kernel.
+> This could be acceptable because IMA requires the
+> security filesystem as dependency.
+> 
+> I'll wait for other comments before reposting the patches.
 
-The main goal is still to avoid the "no job control in this shell" message
-(and associated inability to use tab-completion, Ctrl-C, etc.)[1].
+Yes, please change this. It is important to us that systemd works well
+on kernels without any special security features enabled.
 
+Also, may I ask you to turn this feature on in configure, by default? I
+presume that machines with this feature built into systemd but with no
+policy file around will boot just fine, right? Hence enabling this by
+default shouldn't hurt.
 
-Dracut currently has two ways to do this:
+(The reason that I want this enabled by default is that I -- or other
+devs -- build this locally the code as comprehensively as possible so
+that things don't start to bitrot that easily)
 
-1) If the '--ctty' flag is passed to dracut, it will include 'setsid' in
-initramfs and try to use /dev/console as the ctty (or a device specified
-with rd.ctty=DEV
-2) If we don't have 'setsid', and 'openvt' is in the initramfs[2]
-(and no console=DEV or rd.openvt=0), it uses openvt to run sh on tty1.
+Lennart
 
-
-Unfortunately, they're both slightly broken:
-
-1) /dev/console can't be a controlling TTY, so ctty fails unless you pass a
-correct 'rd.ctty=DEV' argument.
-2) the 'openvt' method doesn't work on anything without VTs - headless
-systems, IBM POWER, s390, etc.
-
-
-Patch 1 adds some ctty-finding code that matches what busybox "cttyhack"
-does (and roughly what anaconda "loader" used to do) to find a valid ctty.
-
-Patch 2 makes it so openvt won't be used unless the ctty we found is a VT.
-
-Patch 3 makes --ctty the default behavior. Harald told me on IRC that the
-only reason he knew of that it wasn't the default was that it didn't work.
-Assuming the first two patches test well (esp. on headless systems etc.) I
-think it makes sense to have this be the default. 'setsid' is 9kb on a
-x86_64 system (2kb compressed) so I don't think it's a tremendous burden.
-
-Let me know what you think,
-
--w
-
-[1] For this to work the shell needs to be a session leader and it needs a
-controlling tty. We can become session leader with 'setsid', so that's easy.
-
-Setting the ctty can be done with the ctty with the TIOCSCTTY ioctl, but
-there's also a shortcut: the first real tty you open will automatically
-become your controlling tty. So all we really need to do is find the real
-tty (i.e. not /dev/console or /dev/tty0) and open it.
-
-[2] As far as I can tell, this happens by default in Fedora? It's in my
-initramfs and I've gotten but reports about it, but I can't figure out how it
-actually gets there..
+-- 
+Lennart Poettering - Red Hat, Inc.
