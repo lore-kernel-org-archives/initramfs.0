@@ -1,10 +1,8 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/3] fix emergency_shell with setsid (--ctty/cttyhack)
-Date: Wed, 14 Mar 2012 11:01:47 -0400
-Message-ID: <1331737309-24315-2-git-send-email-wwoods@redhat.com>
-References: <1331737309-24315-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH] fix up console handling
+Date: Wed, 14 Mar 2012 11:01:46 -0400
+Message-ID: <1331737309-24315-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1331737309-24315-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -12,52 +10,55 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-So, for emergency_shell to work right, it has to be a session leader
-(e.g. by using setsid) and it needs to have a controlling tty (ctty).
-But /dev/console and /dev/tty0 are just aliases - they aren't allowed to
-be cttys!
+Howdy, dracuteers.
 
-For this to work, we need to be attached to a *real* tty. Which means
-finding the real tty that /dev/console is attached to.
+This patch is an attempt to fix up console handling in dracut (specifically
+in emergency_shell).
 
-In the past, anaconda's "loader" and busybox's "cttyhack" used a series
-of ioctl() calls to guess what tty device /dev/console is actually
-attached to. Now we have /sys/class/tty/*/active, which tells us what
-device(s) are active for aliases like /dev/console or /dev/tty0.
+The main goal is still to avoid the "no job control in this shell" message
+(and associated inability to use tab-completion, Ctrl-C, etc.)[1].
 
-So: we can find our actual console device by following the 'active'
-links until we get to a real device. cttyhack uses the *last* device it
-finds in the list for /dev/console so we'll do the same.
----
- modules.d/99base/dracut-lib.sh |   15 ++++++++++++---
- 1 files changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index 80e093b..cc93a83 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -803,10 +803,19 @@ emergency_shell()
-         echo
-         export PS1="$_rdshell_name:\${PWD}# "
-         [ -e /.profile ] || >/.profile
--        _ctty=/dev/console
-+
-+        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
-+        if [ -z "$_ctty" ]; then
-+            _ctty=console
-+            while [ -f /sys/class/tty/$_ctty/active ]; do
-+                _ctty=$(cat /sys/class/tty/$_ctty/active)
-+                _ctty=${_ctty##* } # last one in the list
-+            done
-+            _ctty=/dev/$_ctty
-+        fi
-+        [ -c "$_ctty" ] || _ctty=/dev/tty1
-+
-         if [ -n "$(command -v setsid)" ]; then
--            _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
--            [ -c "$_ctty" ] || _ctty=/dev/tty1
-             setsid sh -i -l 0<$_ctty 1>$_ctty 2>&1
-         elif [ -n "$(command -v openvt)" ] && ! getarg "console=" >/dev/null 2>&1 && getargbool 1 "rd.openvt" ; then
-             openvt -f -c 1 -w -s -l -- sh
--- 
-1.7.7.6
+Dracut currently has two ways to do this:
+
+1) If the '--ctty' flag is passed to dracut, it will include 'setsid' in
+initramfs and try to use /dev/console as the ctty (or a device specified
+with rd.ctty=DEV
+2) If we don't have 'setsid', and 'openvt' is in the initramfs[2]
+(and no console=DEV or rd.openvt=0), it uses openvt to run sh on tty1.
+
+
+Unfortunately, they're both slightly broken:
+
+1) /dev/console can't be a controlling TTY, so ctty fails unless you pass a
+correct 'rd.ctty=DEV' argument.
+2) the 'openvt' method doesn't work on anything without VTs - headless
+systems, IBM POWER, s390, etc.
+
+
+Patch 1 adds some ctty-finding code that matches what busybox "cttyhack"
+does (and roughly what anaconda "loader" used to do) to find a valid ctty.
+
+Patch 2 makes it so openvt won't be used unless the ctty we found is a VT.
+
+Patch 3 makes --ctty the default behavior. Harald told me on IRC that the
+only reason he knew of that it wasn't the default was that it didn't work.
+Assuming the first two patches test well (esp. on headless systems etc.) I
+think it makes sense to have this be the default. 'setsid' is 9kb on a
+x86_64 system (2kb compressed) so I don't think it's a tremendous burden.
+
+Let me know what you think,
+
+-w
+
+[1] For this to work the shell needs to be a session leader and it needs a
+controlling tty. We can become session leader with 'setsid', so that's easy.
+
+Setting the ctty can be done with the ctty with the TIOCSCTTY ioctl, but
+there's also a shortcut: the first real tty you open will automatically
+become your controlling tty. So all we really need to do is find the real
+tty (i.e. not /dev/console or /dev/tty0) and open it.
+
+[2] As far as I can tell, this happens by default in Fedora? It's in my
+initramfs and I've gotten but reports about it, but I can't figure out how it
+actually gets there..
