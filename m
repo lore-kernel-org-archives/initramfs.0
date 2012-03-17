@@ -1,45 +1,39 @@
-From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH] Avoid use of "export -n"
-Date: Fri, 16 Mar 2012 21:11:24 +0000 (GMT)
-Message-ID: <20120316211124.8FFC69D401E@zog.reactivated.net>
+From: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] provide name based nbd connects
+Date: Sat, 17 Mar 2012 12:33:55 +0100
+Message-ID: <CAKzfqkf5Vn_RijjJ0Vames6zAsypTbNUJ+tqxD4A8S3XA-qbqw@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=wFKXsrqsDOcL+NFmPYWcO2ZkPA/a4lGcO/lmV8wC/Ek=;
+        b=0KkqgdfI19PDxq89/SkhcTMVj/9bEu0B8IfCutmaHUZjxLGmsdo9CfcdvLzOzkma8s
+         /iEqayuyGZXDZjbERvURkdBdgvMhY72RG1eImCarmQNZ11FzlHHvYOyL8vi4MttdJuG2
+         5aaPlu2UfYE1LdwBDD7WH0Ww7YtwSZG9kHbahhbzkO9qamQw3XV2T/TAQPeJ48gQIvjY
+         XNQrTBXqpBO7R7xFq5wlX0e7HJobcDsS1nWvSz++7NyV14Z7zmYeOTJNXckigIWM2HSq
+         HtxqE0nOtbJuG7leMwvsPCMFYZIqSe05BtymSMeHChHYGothzGPAKkJnwRgLOOBlI6bH
+         VB2A==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-"export -n" is a bash extension, not part of POSIX, and is hence
-incompatible with the busybox shell.
+Because nbd-server also provides name-based exports instead of
+port-based ones, make it possible to connect to those.
 
-This was breaking boot when the busybox module was used.
+--- modules.d/95nbd/nbdroot.sh.orig     2012-03-17 12:23:52.988936315 +0100
++++ modules.d/95nbd/nbdroot.sh  2012-03-17 12:26:12.048798184 +0100
+@@ -30,6 +30,11 @@
+ nbdflags=${root%%:*}
+ nbdopts=${root#*:}
 
-Reimplement the scope change in a few lines of standard shell code.
----
- modules.d/99base/init.sh |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
-
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index 5d51c9d..f599fae 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -263,8 +263,15 @@ else
-     udevadm info --cleanup-db
- fi
- 
-+# Retain the values of these variables but ensure that they are unexported
-+# This is a POSIX-compliant equivalent of bash's "export -n"
-+for var in root rflags fstype netroot NEWROOT; do
-+    eval tmp=\$$var
-+    unset $var
-+    [ -n "$tmp" ] && eval $var=\"$tmp\"
-+done
++# If nbdport not an integer, then assume name based import
++if [[ $nbdport != [0-9]* ]]; then
++    nbdport="-N $nbdport"
++fi
 +
- export RD_TIMESTAMP
--export -n root rflags fstype netroot NEWROOT
- set +x # Turn off debugging for this section
- # Clean up the environment
- for i in $(export -p); do
--- 
-1.7.7.6
+ if [ "$nbdopts" = "$nbdflags" ]; then
+     unset nbdopts
+ fi
