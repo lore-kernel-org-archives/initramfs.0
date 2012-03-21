@@ -1,62 +1,50 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] use mount --rbind to move submounts under /run into $NEWROOT
-Date: Mon, 19 Mar 2012 14:01:20 -0400
-Message-ID: <1332180080-13762-1-git-send-email-wwoods@redhat.com>
+From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] provide name based nbd connects
+Date: Wed, 21 Mar 2012 13:07:20 +0100
+Message-ID: <4F69C478.6090301@gmail.com>
+References: <CAKzfqkf5Vn_RijjJ0Vames6zAsypTbNUJ+tqxD4A8S3XA-qbqw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=zqGKEJhN3PwbbOvnShJBWv3SPziSEb9XAREo+qXngHA=;
+        b=Fr5dMKQRUEqKp7ujkxVTbP0NWWapxaeH3pLF9hY8t7TQ+6kQA9A2ZFQTKrRWhusekv
+         /tfML1OXZcApObbOhEAq00MSDIdlbO1Slg8L2O4V6UU7ViWBa8uJXTXD+gA4WxYpQbnJ
+         cTdFctUu8N4cZDS+JhVkmUM1IuWwv7P1XC91z3UNz3TjJ7klhrCeoMsgAYYECp+vii8K
+         mKbEhlGKEa7PEcvy1PvSgtt2tPr8JdHF//8s7162TzF09i1eKMhMx4aZB1jeHZ1Sqmq0
+         hGetba7bG/hl29ri1e05E5Qfl5GtvaFSrTuCARedO09WcxNCYD3SEHUr3C6VC8ED8Gs9
+         JgIg==
+In-Reply-To: <CAKzfqkf5Vn_RijjJ0Vames6zAsypTbNUJ+tqxD4A8S3XA-qbqw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-With mount --bind, anything mounted under /run will disappear after
-switch_root. This behavior is sort of surprising, since /run is supposed
-to be preserved.
+Am 17.03.2012 12:33, schrieb Wim Muskee:
+> Because nbd-server also provides name-based exports instead of
+> port-based ones, make it possible to connect to those.
+> 
+> --- modules.d/95nbd/nbdroot.sh.orig     2012-03-17 12:23:52.988936315 +0100
+> +++ modules.d/95nbd/nbdroot.sh  2012-03-17 12:26:12.048798184 +0100
+> @@ -30,6 +30,11 @@
+>  nbdflags=${root%%:*}
+>  nbdopts=${root#*:}
+> 
+> +# If nbdport not an integer, then assume name based import
+> +if [[ $nbdport != [0-9]* ]]; then
+> +    nbdport="-N $nbdport"
+> +fi
+> +
+>  if [ "$nbdopts" = "$nbdflags" ]; then
+>      unset nbdopts
+>  fi
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-This patch uses --rbind so submounts of /run get put into $NEWROOT.
-
-It also does the same thing for 98selinux/selinux-loadpolicy.sh when it
-bind-mounts /dev into $NEWROOT so it can run restorecon on it.
----
- modules.d/98selinux/selinux-loadpolicy.sh |    2 +-
- modules.d/99base/init.sh                  |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/modules.d/98selinux/selinux-loadpolicy.sh b/modules.d/98selinux/selinux-loadpolicy.sh
-index 6eb1dbb..d6e24d6 100755
---- a/modules.d/98selinux/selinux-loadpolicy.sh
-+++ b/modules.d/98selinux/selinux-loadpolicy.sh
-@@ -43,7 +43,7 @@ rd_load_policy()
-         if [ $ret -eq 0 -o $ret -eq 2 ]; then
-             # If machine requires a relabel, force to permissive mode
-             [ -e "$NEWROOT"/.autorelabel ] && LANG=C /usr/sbin/setenforce 0
--            mount --bind /dev "$NEWROOT/dev"
-+            mount --rbind /dev "$NEWROOT/dev"
-             LANG=C chroot "$NEWROOT" /sbin/restorecon -R /dev
-             return 0
-         fi
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index 5d51c9d..05da6bb 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -314,7 +314,7 @@ fi
- 
- if [ -d "$NEWROOT"/run ]; then
-     NEWRUN="${NEWROOT}/run"
--    mount --bind /run "$NEWRUN"
-+    mount --rbind /run "$NEWRUN"
-     NEWINITRAMFSROOT="$NEWRUN/initramfs"
- 
-     if [ "$NEWINITRAMFSROOT/lib" -ef "/lib" ]; then
-@@ -325,7 +325,7 @@ if [ -d "$NEWROOT"/run ]; then
- else
-     NEWRUN=/dev/.initramfs
-     mkdir -m 0755 "$NEWRUN"
--    mount --bind /run/initramfs "$NEWRUN"
-+    mount --rbind /run/initramfs "$NEWRUN"
- fi
- 
- wait_for_loginit
--- 
-1.7.7.6
+pushed
