@@ -1,60 +1,32 @@
-From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] Avoid use of "export -n"
-Date: Wed, 21 Mar 2012 13:07:37 +0100
-Message-ID: <4F69C489.3050605@gmail.com>
-References: <20120316211124.8FFC69D401E@zog.reactivated.net>
+From: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+Subject: Re: [systemd-devel] [PATCH-v4 1/2] systemd: mount the securityfs
+ filesystem at early stage
+Date: Thu, 22 Mar 2012 00:25:42 +0100
+Message-ID: <20120321232542.GB14830@tango.0pointer.de>
+References: <1331834775-7188-1-git-send-email-roberto.sassu@polito.it>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=message-id:date:from:user-agent:mime-version:to:cc:subject
-         :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=hHiYMRylV1/qxd1R14k8aZsXn4HmujuW/NLAQxIq8qw=;
-        b=XNlowZEDYmtFao3pvD6M9P9fsGEf/+O8eKLiCI92mrdyMQzk5+ajL9ukzttcow+pho
-         goVE5krtWCMuFYvuNbCm2ROVzugzJseGWNoQk2atTIajDk5rRVqxml9HSZrBVpXIncVm
-         R+uggKsLtiR8uIioUaOuhp9TLdrQEfQUg1O+UgAxWxOxpA4Nm191fiHoW6i6EbzkQ3ZJ
-         /gVuooGDP499P63kgFMS1RaOdR6mE734K8xD7QbZ+TefQKAqkN6y3SoinhjSyzG8rR7g
-         Xu/4ocv+sQXLBXaLB3cxMV6siAVY/FUE/bSlNi/wl5Ajwi/AJRtcbAtR/5NbCluWCY6/
-         CdYQ==
-In-Reply-To: <20120316211124.8FFC69D401E-k/4jFdqg8LLlyo9zxV8I99HuzzzSOjJt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1331834775-7188-1-git-send-email-roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
+Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org
 
-Am 16.03.2012 22:11, schrieb Daniel Drake:
-> "export -n" is a bash extension, not part of POSIX, and is hence
-> incompatible with the busybox shell.
-> 
-> This was breaking boot when the busybox module was used.
-> 
-> Reimplement the scope change in a few lines of standard shell code.
-> ---
->  modules.d/99base/init.sh |    9 ++++++++-
->  1 files changed, 8 insertions(+), 1 deletions(-)
-> 
-> diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-> index 5d51c9d..f599fae 100755
-> --- a/modules.d/99base/init.sh
-> +++ b/modules.d/99base/init.sh
-> @@ -263,8 +263,15 @@ else
->      udevadm info --cleanup-db
->  fi
->  
-> +# Retain the values of these variables but ensure that they are unexported
-> +# This is a POSIX-compliant equivalent of bash's "export -n"
-> +for var in root rflags fstype netroot NEWROOT; do
-> +    eval tmp=\$$var
-> +    unset $var
-> +    [ -n "$tmp" ] && eval $var=\"$tmp\"
-> +done
-> +
->  export RD_TIMESTAMP
-> -export -n root rflags fstype netroot NEWROOT
->  set +x # Turn off debugging for this section
->  # Clean up the environment
->  for i in $(export -p); do
+On Thu, 15.03.12 19:06, Roberto Sassu (roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org) wrote:
 
-pushed
+> The mount of the securityfs filesystem is now performed in the main systemd
+> executable as it is used by IMA to provide the interface for loading custom
+> policies. The unit file 'units/sys-kernel-security.mount' has been removed
+> because it is not longer necessary.
+
+Applied both patches!
+
+Thanks a lot for your work!
+
+Lennart
+
+-- 
+Lennart Poettering - Red Hat, Inc.
