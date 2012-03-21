@@ -1,32 +1,32 @@
-From: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
-Subject: Re: [systemd-devel] [PATCH-v4 1/2] systemd: mount the securityfs
- filesystem at early stage
-Date: Thu, 22 Mar 2012 00:25:42 +0100
-Message-ID: <20120321232542.GB14830@tango.0pointer.de>
-References: <1331834775-7188-1-git-send-email-roberto.sassu@polito.it>
-Mime-Version: 1.0
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] shutdown: fix PATH
+Date: Wed, 21 Mar 2012 19:47:46 -0400
+Message-ID: <1332373666-20104-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1331834775-7188-1-git-send-email-roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Roberto Sassu <roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org>
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ramunno-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, 15.03.12 19:06, Roberto Sassu (roberto.sassu-8RLafaVCWuNeoWH0uzbU5w@public.gmane.org) wrote:
+Some systems might not use /bin:/sbin in their paths anymore, but we're
+still using it in initramfs, so make sure our PATH is correct.
+---
+ modules.d/99shutdown/shutdown.sh |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-> The mount of the securityfs filesystem is now performed in the main systemd
-> executable as it is used by IMA to provide the interface for loading custom
-> policies. The unit file 'units/sys-kernel-security.mount' has been removed
-> because it is not longer necessary.
-
-Applied both patches!
-
-Thanks a lot for your work!
-
-Lennart
-
+diff --git a/modules.d/99shutdown/shutdown.sh b/modules.d/99shutdown/shutdown.sh
+index c8ca664..8817a4c 100755
+--- a/modules.d/99shutdown/shutdown.sh
++++ b/modules.d/99shutdown/shutdown.sh
+@@ -10,6 +10,7 @@
+ #!/bin/sh
+ . /lib/dracut-lib.sh
+ export TERM=linux
++PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ 
+ emergency_shell()
+ {
 -- 
-Lennart Poettering - Red Hat, Inc.
+1.7.7.6
