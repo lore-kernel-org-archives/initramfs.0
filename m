@@ -1,49 +1,56 @@
-From: Roberto Sassu <roberto.sassu@polito.it>
-Subject: Re: [PATCH-v4 1/2] systemd: mount the securityfs
- filesystem at early stage
-Date: Thu, 22 Mar 2012 09:50:27 +0100
-Message-ID: <4F6AE7D3.40102@polito.it>
-References: <1331834775-7188-1-git-send-email-roberto.sassu@polito.it>
-	<20120321232542.GB14830@tango.0pointer.de>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] inst_symlink: create parent dir if doesn't exist
+Date: Mon, 26 Mar 2012 00:11:53 +0200
+Message-ID: <1332713513-17889-1-git-send-email-aidecoe@aidecoe.name>
 Mime-Version: 1.0
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
-In-Reply-To: <20120321232542.GB14830@tango.0pointer.de>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Lennart Poettering <lennart@poettering.net>
-Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org, linux-ima-user@lists.sourceforge.net, linux-security-module@vger.kernel.org, zohar@linux.vnet.ibm.com, harald@redhat.com, ramunno@polito.it
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-On 03/22/2012 12:25 AM, Lennart Poettering wrote:
-> On Thu, 15.03.12 19:06, Roberto Sassu (roberto.sassu@polito.it) wrote:
->
->> The mount of the securityfs filesystem is now performed in the main systemd
->> executable as it is used by IMA to provide the interface for loading custom
->> policies. The unit file 'units/sys-kernel-security.mount' has been removed
->> because it is not longer necessary.
->
-> Applied both patches!
->
+If symlink is yet alone in target directory, inst_symlink will fail to
+create it.  This is how to reproduce the bug:
 
-Hi Lennart
+ # mkdir /tmp/test
+ # ln -s /bin/cp /tmp/test/cp
+ # ./dracut -l -f -H /tmp/test.img -I /tmp/test/cp
 
-thanks for accepting them!
+Result:
 
-Regards
+[...]
 
-Roberto Sassu
+I: *** Including modules done ***
+ln: failed to create symbolic link
+`/var/tmp/initramfs.Z5isVu//tmp/test/cp': No such file or directory
+ln: failed to create symbolic link
+`/var/tmp/initramfs.Z5isVu//tmp/test/cp': No such file or directory
+I: Wrote /tmp/test.img:
 
+[...]
 
-> Thanks a lot for your work!
->
-> Lennart
->
+Following patch creates directory for the symlink if it doesn't exist.
+---
+ dracut-functions.sh |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index f4ccf53..adca47d 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -545,8 +545,11 @@ inst_symlink() {
+             inst "$_realsrc"
+         fi
+     fi
++    set -x
++    [[ ! -e $initdir/${_target%/*} ]] && inst_dir "${_target%/*}"
+     [[ -d ${_target%/*} ]] && _target=$(readlink -f ${_target%/*})/${_target##*/}
+     ln -sfn $(convert_abs_rel "${_target}" "${_realsrc}") "$initdir/$_target"
++    set +x
+ }
+ 
+ # attempt to install any programs specified in a udev rule
+-- 
+1.7.8.5
