@@ -1,52 +1,54 @@
-From: =?utf-8?q?Amadeusz_=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: [PATCH] inst_symlink: create parent dir if doesn't exist
-Date: Mon, 26 Mar 2012 09:39:03 +0200
-Message-ID: <1332747454-sup-6881@raeviah>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] inst_symlink: create parent dir if doesn't exist
+Date: Mon, 26 Mar 2012 09:39:34 +0200
+Message-ID: <1332747574-20882-1-git-send-email-aidecoe@aidecoe.name>
 References: <1332713513-17889-1-git-send-email-aidecoe@aidecoe.name>
-Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pgp-signature"; boundary="=-1332747543-552962-14066-2723-1-="
-Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-reply-to: <1332713513-17889-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1332713513-17889-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
+If symlink is yet alone in target directory, inst_symlink will fail to
+create it.  This is how to reproduce the bug:
 
---=-1332747543-552962-14066-2723-1-=
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+ # mkdir /tmp/test
+ # ln -s /bin/cp /tmp/test/cp
+ # ./dracut -l -f -H /tmp/test.img -I /tmp/test/cp
 
-Excerpts from Amadeusz =C5=BBo=C5=82nowski's message of 2012-03-26 00:11:=
-53 +0200:
-> +    set -x
-> +    [[ ! -e $initdir/${_target%/*} ]] && inst_dir "${_target%/*}"
->      [[ -d ${_target%/*} ]] && _target=3D$(readlink -f ${_target%/*})/$=
-{_target##*/}
->      ln -sfn $(convert_abs_rel "${_target}" "${_realsrc}") "$initdir/$_=
-target"
-> +    set +x
+Result:
 
-Sorry, I have forgot to remove debug. Corrected patch in next post.
+[...]
 
--- =
+I: *** Including modules done ***
+ln: failed to create symbolic link
+`/var/tmp/initramfs.Z5isVu//tmp/test/cp': No such file or directory
+ln: failed to create symbolic link
+`/var/tmp/initramfs.Z5isVu//tmp/test/cp': No such file or directory
+I: Wrote /tmp/test.img:
 
-Amadeusz =C5=BBo=C5=82nowski
+[...]
 
---=-1332747543-552962-14066-2723-1-=
-Content-Disposition: attachment; filename="signature.asc"
-Content-Type: application/pgp-signature; name="signature.asc"
+Following patch creates directory for the symlink if it doesn't exist.
+---
+ dracut-functions.sh |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQEcBAEBAgAGBQJPcB0XAAoJEPATRTHh2/q1g7kIAJqIq+MdTxoE4TW0N+xdqpiC
-8AJ66DixA01+F1n+tCJbhTp8V1PEit6jlsNAUF3lt6kMVAnnhKYmhrPUVlA+Tk4G
-FflwVujUL7ifild/O6i0IjzIztL//ALNcrwPlpLNs9PmmgwBmMZFOhgPXlXAdtEd
-KRPCWZiCn+tfk3Or6dC/u4j2tRKxcDbP0VVnr10inyQeyfXi9JMsRqzlciZbLnHR
-ybDnCCpPcylGCxt9QWbowH+ig4Wd7RDIFeCSBojHdWR7xY2MLsZWTUehu0851Nd9
-pE0fRfWGUptwkhiOi07ZbJwa4UHn0AGNuhraHfuUGglg48VWRKvEDIlzEYwPiUw=
-=wW/n
------END PGP SIGNATURE-----
-
---=-1332747543-552962-14066-2723-1-=--
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index f4ccf53..8082466 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -545,6 +545,7 @@ inst_symlink() {
+             inst "$_realsrc"
+         fi
+     fi
++    [[ ! -e $initdir/${_target%/*} ]] && inst_dir "${_target%/*}"
+     [[ -d ${_target%/*} ]] && _target=$(readlink -f ${_target%/*})/${_target##*/}
+     ln -sfn $(convert_abs_rel "${_target}" "${_realsrc}") "$initdir/$_target"
+ }
+-- 
+1.7.8.5
