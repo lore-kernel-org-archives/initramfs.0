@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/5] run setup_net at start of initqueue/online hook
-Date: Thu,  5 Apr 2012 13:01:36 -0400
-Message-ID: <1333645299-16837-3-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 5/5] shutdown: use emergency_shell from dracut-lib
+Date: Thu,  5 Apr 2012 13:01:39 -0400
+Message-ID: <1333645299-16837-6-git-send-email-wwoods@redhat.com>
 References: <1333645299-16837-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1333645299-16837-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -12,55 +12,109 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This makes sure the network is active and ready to use during the
-initqueue/online hook.
-
-It also makes it so you can run setup_net repeatedly without causing
-error messages.
 ---
- modules.d/40network/net-genrules.sh |    3 +++
- modules.d/40network/net-lib.sh      |    3 +++
- 2 files changed, 6 insertions(+), 0 deletions(-)
+ modules.d/99base/dracut-lib.sh   |   10 +++++---
+ modules.d/99shutdown/shutdown.sh |   47 ++-----------------------------------
+ 2 files changed, 9 insertions(+), 48 deletions(-)
 
-diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
-index 84fd3ac..b3d5584 100755
---- a/modules.d/40network/net-genrules.sh
-+++ b/modules.d/40network/net-genrules.sh
-@@ -53,5 +53,8 @@ fix_bootif() {
- 
-     # Run the "online" hook
-     printf 'SUBSYSTEM=="net", ACTION=="online", RUN+="/sbin/initqueue --onetime --env netif=$env{INTERFACE} source_hook initqueue/online"\n'
-+    # And make sure we run setup_net at the start of the hook
-+    echo '. /lib/net-lib.sh; setup_net $netif' > \
-+            $hookdir/initqueue/online/05-setup_net.sh
- 
- } > /etc/udev/rules.d/60-net.rules
-diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
-index 467c79f..a7abe81 100644
---- a/modules.d/40network/net-lib.sh
-+++ b/modules.d/40network/net-lib.sh
-@@ -59,12 +59,14 @@ ifdown() {
-     ip link set $netif down
-     ip addr flush dev $netif
-     echo "#empty" > /etc/resolv.conf
-+    rm -f /tmp/net.$netif.did-setup
-     # TODO: send "offline" uevent?
- }
- 
- setup_net() {
-     local netif="$1" f="" gw_ip="" netroot_ip="" iface="" IFACES=""
-     [ -e /tmp/net.$netif.up ] || return 1
-+    [ -e /tmp/net.$netif.did-setup ] && return
-     [ -e "/tmp/net.ifaces" ] && read IFACES < /tmp/net.ifaces
-     [ -z "$IFACES" ] && IFACES="$netif"
-     for iface in $IFACES ; do
-@@ -100,6 +102,7 @@ setup_net() {
-     if [ -n "$dest" ] && ! arping -q -f -w 60 -I $netif $dest ; then
-         info "Resolving $dest via ARP on $netif failed"
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index e10a34d..a29d586 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -767,15 +767,17 @@ emergency_shell()
+ {
+     local _ctty
+     set +e
++    local _rdshell_name="dracut" action="Boot" hook="emergency"
+     if [ "$1" = "-n" ]; then
+         _rdshell_name=$2
+         shift 2
+-    else
+-        _rdshell_name=dracut
++    elif [ "$1" = "--shutdown" ]; then
++        _rdshell_name=$2; action="Shutdown"; hook="shutdown-emergency"
++        shift 2
      fi
-+    > /tmp/net.$netif.did-setup
- }
+     echo ; echo
+     warn $@
+-    source_hook emergency
++    source_hook "$hook"
+     echo
+     wait_for_loginit
+     [ -e /run/initramfs/.die ] && exit 1
+@@ -798,7 +800,7 @@ emergency_shell()
+         strstr "$(setsid --help 2>/dev/null)" "ctty" && CTTY="-c"
+         setsid $CTTY /bin/sh -i -l 0<$_ctty 1>$_ctty 2>&1
+     else
+-        warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
++        warn "$action has failed. To debug this issue add \"rd.shell\" to the kernel command line."
+         # cause a kernel panic
+         exit 1
+     fi
+diff --git a/modules.d/99shutdown/shutdown.sh b/modules.d/99shutdown/shutdown.sh
+index 8817a4c..45345a4 100755
+--- a/modules.d/99shutdown/shutdown.sh
++++ b/modules.d/99shutdown/shutdown.sh
+@@ -12,49 +12,8 @@
+ export TERM=linux
+ PATH=/usr/sbin:/usr/bin:/sbin:/bin
  
- set_ifname() {
+-emergency_shell()
+-{
+-    local _ctty
+-    set +e
+-    if [ "$1" = "-n" ]; then
+-        _rdshell_name=$2
+-        shift 2
+-    else
+-        _rdshell_name=dracut
+-    fi
+-    echo ; echo
+-    warn $@
+-    source_hook shutdown-emergency
+-    echo
+-    if getargbool 1 rd.shell -y rdshell || getarg rd.break rdbreak; then
+-        echo "Dropping to debug shell."
+-        echo
+-        export PS1="$_rdshell_name:\${PWD}# "
+-        [ -e /.profile ] || >/.profile
+-
+-        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
+-        if [ -z "$_ctty" ]; then
+-            _ctty=console
+-            while [ -f /sys/class/tty/$_ctty/active ]; do
+-                _ctty=$(cat /sys/class/tty/$_ctty/active)
+-                _ctty=${_ctty##* } # last one in the list
+-            done
+-            _ctty=/dev/$_ctty
+-        fi
+-        [ -c "$_ctty" ] || _ctty=/dev/tty1
+-        strstr "$(setsid --help)" "control" && CTTY="-c"
+-        setsid $CTTY /bin/sh -i -l 0<$_ctty 1>$_ctty 2>&1
+-    else
+-        exec /lib/systemd/systemd-shutdown "$@"
+-        warn "Shutdown has failed. To debug this issue add \"rdshell\" to the kernel command line."
+-        # cause a kernel panic
+-        exit 1
+-    fi
+-}
+-
+-trap "emergency_shell Signal caught!" 0
+-
+-getarg 'rd.break=pre-shutdown' && emergency_shell -n cmdline "Break before pre-shutdown"
++trap "emergency_shell --shutdown shutdown Signal caught!" 0
++getarg 'rd.break=pre-shutdown' && emergency_shell --shutdown pre-shutdown "Break before pre-shutdown"
+ 
+ umount_a() {
+     local _did_umount="n"
+@@ -97,7 +56,7 @@ while _check_shutdown; do
+ done
+ _check_shutdown final
+ 
+-getarg 'rd.break=shutdown' && emergency_shell -n cmdline "Break before shutdown"
++getarg 'rd.break=shutdown' && emergency_shell --shutdown shutdown "Break before shutdown"
+ [ "$1" = "reboot" ] && reboot -f -d -n --no-wall
+ [ "$1" = "poweroff" ] && poweroff -f -d -n --no-wall
+ [ "$1" = "halt" ] && halt -f -d -n --no-wall
 -- 
 1.7.7.6
