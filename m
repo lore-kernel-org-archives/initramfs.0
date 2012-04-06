@@ -1,120 +1,64 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/5] shutdown: use emergency_shell from dracut-lib
-Date: Thu,  5 Apr 2012 13:01:39 -0400
-Message-ID: <1333645299-16837-6-git-send-email-wwoods@redhat.com>
-References: <1333645299-16837-1-git-send-email-wwoods@redhat.com>
+From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Debian multiarch support
+Date: Fri, 6 Apr 2012 12:45:52 +0200
+Message-ID: <CAGEveXprJz33cnna8PDQE7eyNUw1S-RDYtyZY405STOH7FfswA@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1333645299-16837-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:cc:content-type;
+        bh=SY4s9h9UIPmzUZ97yYVYPR6+e+myDco6u1Y4xOqE1VA=;
+        b=CrVWgTgFHEsFoba/Xj1dqKYjnuAAalTP4p1ZYvkFh6eoXo/OZnZIN3uHk9XnoEmzpX
+         mAdqXGqRZCrtF9yHa5XDeWowbHxOK4utSEJWegNe9Zuw0TLgQIKxuyPe4ijkqNismfz6
+         19ngv2zSWDwObyMa/gcOo/WAYGXQ5uXYV/cWuxMkr7E1s4hc+Q70qHMTMmb1h3fBiRAC
+         iZ5ik/eczcRNI4Yel0GK5ayzEukqcPhazx7Ko8WoECnqBU9r3rxi6GGhQUXdpGBTa5wB
+         SZw4VC44wAp12tDByDPlAwrfQz6tNkIpe0bX/FbYTFQ1y1SDTQehIdrfjIL4w1BEpABr
+         iPJA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Thomas Lange <lange-jNDFPZUTrfRKC+uPiMyuu7CDI8haxt8Z@public.gmane.org>
 
----
- modules.d/99base/dracut-lib.sh   |   10 +++++---
- modules.d/99shutdown/shutdown.sh |   47 ++-----------------------------------
- 2 files changed, 9 insertions(+), 48 deletions(-)
+Hello,
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index e10a34d..a29d586 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -767,15 +767,17 @@ emergency_shell()
- {
-     local _ctty
-     set +e
-+    local _rdshell_name="dracut" action="Boot" hook="emergency"
-     if [ "$1" = "-n" ]; then
-         _rdshell_name=$2
-         shift 2
--    else
--        _rdshell_name=dracut
-+    elif [ "$1" = "--shutdown" ]; then
-+        _rdshell_name=$2; action="Shutdown"; hook="shutdown-emergency"
-+        shift 2
-     fi
-     echo ; echo
-     warn $@
--    source_hook emergency
-+    source_hook "$hook"
-     echo
-     wait_for_loginit
-     [ -e /run/initramfs/.die ] && exit 1
-@@ -798,7 +800,7 @@ emergency_shell()
-         strstr "$(setsid --help 2>/dev/null)" "ctty" && CTTY="-c"
-         setsid $CTTY /bin/sh -i -l 0<$_ctty 1>$_ctty 2>&1
-     else
--        warn "Boot has failed. To debug this issue add \"rdshell\" to the kernel command line."
-+        warn "$action has failed. To debug this issue add \"rd.shell\" to the kernel command line."
-         # cause a kernel panic
-         exit 1
-     fi
-diff --git a/modules.d/99shutdown/shutdown.sh b/modules.d/99shutdown/shutdown.sh
-index 8817a4c..45345a4 100755
---- a/modules.d/99shutdown/shutdown.sh
-+++ b/modules.d/99shutdown/shutdown.sh
-@@ -12,49 +12,8 @@
- export TERM=linux
- PATH=/usr/sbin:/usr/bin:/sbin:/bin
- 
--emergency_shell()
--{
--    local _ctty
--    set +e
--    if [ "$1" = "-n" ]; then
--        _rdshell_name=$2
--        shift 2
--    else
--        _rdshell_name=dracut
--    fi
--    echo ; echo
--    warn $@
--    source_hook shutdown-emergency
--    echo
--    if getargbool 1 rd.shell -y rdshell || getarg rd.break rdbreak; then
--        echo "Dropping to debug shell."
--        echo
--        export PS1="$_rdshell_name:\${PWD}# "
--        [ -e /.profile ] || >/.profile
--
--        _ctty="$(getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
--        if [ -z "$_ctty" ]; then
--            _ctty=console
--            while [ -f /sys/class/tty/$_ctty/active ]; do
--                _ctty=$(cat /sys/class/tty/$_ctty/active)
--                _ctty=${_ctty##* } # last one in the list
--            done
--            _ctty=/dev/$_ctty
--        fi
--        [ -c "$_ctty" ] || _ctty=/dev/tty1
--        strstr "$(setsid --help)" "control" && CTTY="-c"
--        setsid $CTTY /bin/sh -i -l 0<$_ctty 1>$_ctty 2>&1
--    else
--        exec /lib/systemd/systemd-shutdown "$@"
--        warn "Shutdown has failed. To debug this issue add \"rdshell\" to the kernel command line."
--        # cause a kernel panic
--        exit 1
--    fi
--}
--
--trap "emergency_shell Signal caught!" 0
--
--getarg 'rd.break=pre-shutdown' && emergency_shell -n cmdline "Break before pre-shutdown"
-+trap "emergency_shell --shutdown shutdown Signal caught!" 0
-+getarg 'rd.break=pre-shutdown' && emergency_shell --shutdown pre-shutdown "Break before pre-shutdown"
- 
- umount_a() {
-     local _did_umount="n"
-@@ -97,7 +56,7 @@ while _check_shutdown; do
- done
- _check_shutdown final
- 
--getarg 'rd.break=shutdown' && emergency_shell -n cmdline "Break before shutdown"
-+getarg 'rd.break=shutdown' && emergency_shell --shutdown shutdown "Break before shutdown"
- [ "$1" = "reboot" ] && reboot -f -d -n --no-wall
- [ "$1" = "poweroff" ] && poweroff -f -d -n --no-wall
- [ "$1" = "halt" ] && halt -f -d -n --no-wall
--- 
-1.7.7.6
+I have discovered that some modules fail on Ubunty Natty+ and Debian
+Wheezy+ because of their new new multiarch capability. Now they are
+migrating libraries to subdirectories that include the architecture
+triplet as part of the path:
+   /lib/i386-linux-gnu
+   /lib/x86_64-linux-gnu
+   /usr/lib/i386-linux-gnu
+   /usr/lib/x86_64-linux-gnu
+
+http://wiki.debian.org/Multiarch
+
+The problem is that actually some modules try to look for some
+libraries only at $libdir and $usrlibdir, like the nfs module which
+tries to install libnss3* files.
+
+I also have been told that they will allow to mix different binaries
+and libraries in the future, for example allowing to install an i386
+mount.nfs along with other amd64 binaries.
+
+So I've been trying with something like this:
+
+function multiarchtriplet() {
+  ldd $(which $1) | sed -n '/libc/s#.*/lib/\(.*\)/libc.*#\1#p';
+}
+
+_libdir=$libdir/$(multiarchtriplet mount.nfs)
+
+for _i in {/usr,}$_libdir/libnss*.so; do
+        [[ -e $_i ]] || continue
+        [[ "$_i" =~ $_nsslibs ]] || continue
+        dracut_install "$_i"
+done
+
+Do you like this approach? Or is too Debian specific and should be
+fixed at Debian packages?
+
+Regards,
+
+JonAn.
