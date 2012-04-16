@@ -1,166 +1,51 @@
-From: Lennert Buytenhek <buytenh-OLH4Qvv75CYX/NnBR394Jw@public.gmane.org>
-Subject: [PATCH,RFC] virtfs root filesystem support
-Date: Sun, 15 Apr 2012 02:40:17 +0200
-Message-ID: <20120415004017.GI28523@wantstofly.org>
+From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Debian multiarch support
+Date: Mon, 16 Apr 2012 11:34:38 +0200
+Message-ID: <CAGEveXqScm9T-cto8jRYh2_dM6Md+grqppXs0nWTjB_Vo69zMA@mail.gmail.com>
+References: <CAGEveXprJz33cnna8PDQE7eyNUw1S-RDYtyZY405STOH7FfswA@mail.gmail.com>
+	<CAGEveXr7G+5_rcuHUWBrg-rAQ1y6wU2ozVy2yBbQuo3PYdx3Mw@mail.gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+         :content-type;
+        bh=abqEqfFjo9KrfKA4NIjD/fn2ckN6NhLNtY5KSgOMbhc=;
+        b=avONhg3PTTNx2UJ5nqMtskVgC3hWuIIJyIGlgt2g3+g2ZGnuFk4SqCFZyXRFiH969C
+         O8ku/Quu8AZEHpnDqa+hcgtGzkxx1Qrx3AdnoDsmgMz4TAXT7GNz8NlXcTTSuAVWaIv2
+         Yx4N7YatGb8RzG0+sotBmDZk07AGndM4eMYIY675TjlsVIvXxpdRW/BxOiv88ElFaE9N
+         fIlbtsYBlroPMC4qfsIW5OlCWpqaQLPIgFg/oHVm8HnlRC/P+0MVpW+CYJ02thJFHJUL
+         ATHfNgP8bPbsAI8SJoO7LuLkb5y2CtgOTTbJ+jyUOGX1KNb0hknvQA5J7FopjTbMiXWt
+         T6mQ==
+In-Reply-To: <CAGEveXr7G+5_rcuHUWBrg-rAQ1y6wU2ozVy2yBbQuo3PYdx3Mw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Qemu/KVM provides virtfs, a paravirtualised filesystem that is
-implemented by running the Plan 9 folder sharing protocol over
-virtio.
+Hello,
 
-Make booting with root=virtfs:foobar use the virtfs filesystem
-with mount tag 'foobar' as root filesystem, to allow booting
-virtual machines off virtfs.
+Before considering my patch I should note that it has a bug, it should be:
 
-Note that this only handles 9p over virtio (i.e. virtfs), and
-doesn't attempt to handle mounting 9p filesystems over TCP/IP,
-for example.
+ # Detect lib paths
+ [[ $libdir ]] || for libdir in /lib64 /lib; do
+-    [[ -d $libdir ]] && break
++    [[ -d $libdir ]] && libdirs+=" $libdir" && break
+ done || {
+    dfatal 'No lib directory?!!!'
+    exit 1
+ }
 
-Signed-off-by: Lennert Buytenhek <buytenh-OLH4Qvv75CYX/NnBR394Jw@public.gmane.org>
+ [[ $usrlibdir ]] || for usrlibdir in /usr/lib64 /usr/lib; do
+-    [[ -d $usrlibdir ]] && break
++    [[ -d $usrlibdir ]] && libdirs+=" $usrlibdir" && break
+ done || dwarn 'No usr/lib directory!'
 
-diff --git a/dracut.spec b/dracut.spec
-index 074cb10..9cd08b7 100644
---- a/dracut.spec
-+++ b/dracut.spec
-@@ -270,6 +270,7 @@ rm -rf $RPM_BUILD_ROOT
- %{dracutlibdir}/modules.d/95zfcp
- %{dracutlibdir}/modules.d/95terminfo
- %{dracutlibdir}/modules.d/95udev-rules
-+%{dracutlibdir}/modules.d/95virtfs
- %{dracutlibdir}/modules.d/96securityfs
- %{dracutlibdir}/modules.d/97biosdevname
- %{dracutlibdir}/modules.d/97masterkey
-diff --git a/modules.d/95virtfs/module-setup.sh b/modules.d/95virtfs/module-setup.sh
-new file mode 100755
-index 0000000..a6081c2
---- /dev/null
-+++ b/modules.d/95virtfs/module-setup.sh
-@@ -0,0 +1,27 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+check() {
-+    [[ $hostonly ]] || [[ $mount_needs ]] && {
-+        for fs in ${host_fs_types[@]}; do
-+            strstr "$fs" "\|9p" && return 0
-+        done
-+        return 1
-+    }
-+
-+    return 0
-+}
-+
-+depends() {
-+    return 0
-+}
-+
-+installkernel() {
-+    instmods 9p 9pnet_virtio
-+}
-+
-+install() {
-+    inst_hook cmdline 95 "$moddir/parse-virtfs.sh"
-+    inst_hook mount 99 "$moddir/mount-virtfs.sh"
-+}
-diff --git a/modules.d/95virtfs/mount-virtfs.sh b/modules.d/95virtfs/mount-virtfs.sh
-new file mode 100755
-index 0000000..dfebf38
---- /dev/null
-+++ b/modules.d/95virtfs/mount-virtfs.sh
-@@ -0,0 +1,75 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-+
-+filter_rootopts() {
-+    rootopts=$1
-+    # strip ro and rw options
-+    local OLDIFS="$IFS"
-+    IFS=,
-+    set -- $rootopts
-+    IFS="$OLDIFS"
-+    local v
-+    while [ $# -gt 0 ]; do
-+        case $1 in
-+            rw|ro);;
-+            defaults);;
-+            *)
-+                v="$v,${1}";;
-+        esac
-+        shift
-+    done
-+    rootopts=${v#,}
-+    echo $rootopts
-+}
-+
-+mount_root() {
-+    local _ret
-+
-+    rootfs="9p"
-+    rflags="trans=virtio,version=9p2000.L"
-+
-+    modprobe 9pnet_virtio
-+
-+    mount -t ${rootfs} -o "$rflags",ro "${root#virtfs:}" "$NEWROOT"
-+
-+    rootopts=
-+    if getargbool 1 rd.fstab -n rd_NO_FSTAB \
-+        && ! getarg rootflags \
-+        && [ -f "$NEWROOT/etc/fstab" ] \
-+        && ! [ -L "$NEWROOT/etc/fstab" ]; then
-+        # if $NEWROOT/etc/fstab contains special mount options for
-+        # the root filesystem,
-+        # remount it with the proper options
-+        rootopts="defaults"
-+        while read dev mp fs opts rest; do
-+            # skip comments
-+            [ "${dev%%#*}" != "$dev" ] && continue
-+
-+            if [ "$mp" = "/" ]; then
-+                rootopts=$opts
-+                break
-+            fi
-+        done < "$NEWROOT/etc/fstab"
-+
-+        rootopts=$(filter_rootopts $rootopts)
-+    fi
-+
-+    # we want rootflags (rflags) to take precedence so prepend rootopts to
-+    # them; rflags is guaranteed to not be empty
-+    rflags="${rootopts:+"${rootopts},"}${rflags}"
-+
-+    umount "$NEWROOT"
-+
-+    info "Remounting ${root#virtfs:} with -o ${rflags}"
-+    mount -t ${rootfs} -o "$rflags" "${root#virtfs:}" "$NEWROOT" 2>&1 | vinfo
-+
-+    [ -f "$NEWROOT"/forcefsck ] && rm -f "$NEWROOT"/forcefsck 2>/dev/null
-+    [ -f "$NEWROOT"/.autofsck ] && rm -f "$NEWROOT"/.autofsck 2>/dev/null
-+}
-+
-+if [ -n "$root" -a -z "${root%%virtfs:*}" ]; then
-+    mount_root
-+fi
-diff --git a/modules.d/95virtfs/parse-virtfs.sh b/modules.d/95virtfs/parse-virtfs.sh
-new file mode 100755
-index 0000000..39c4c4c
---- /dev/null
-+++ b/modules.d/95virtfs/parse-virtfs.sh
-@@ -0,0 +1,7 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+if [ "${root%%:*}" = "virtfs" ] ; then
-+    rootok=1
-+fi
+Now there is a space before $libdir and $usrlibdir, which avoids
+suffixing the libdirs value defined on a *.conf file with $libdir. I'm
+sorry.
+
+Regards,
+
+JonAn.
