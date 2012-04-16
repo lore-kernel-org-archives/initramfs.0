@@ -1,51 +1,97 @@
-From: Jon Ander Hernandez <jonan.h-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Debian multiarch support
-Date: Mon, 16 Apr 2012 11:34:38 +0200
-Message-ID: <CAGEveXqScm9T-cto8jRYh2_dM6Md+grqppXs0nWTjB_Vo69zMA@mail.gmail.com>
-References: <CAGEveXprJz33cnna8PDQE7eyNUw1S-RDYtyZY405STOH7FfswA@mail.gmail.com>
-	<CAGEveXr7G+5_rcuHUWBrg-rAQ1y6wU2ozVy2yBbQuo3PYdx3Mw@mail.gmail.com>
+From: Espen Braastad <espen.braastad-qtFA7gTkXNbOT5slSWiCZNBPR1lH4CV8@public.gmane.org>
+Subject: Feature request: Support for the 'toram' boot parameter in
+ dmsquash-live
+Date: Mon, 16 Apr 2012 16:24:58 +0200 (CEST)
+Message-ID: <392039042.1975978.1334586298624.JavaMail.root@claudius.linpro.no>
+References: <1596396192.1945848.1334583686323.JavaMail.root@claudius.linpro.no>
 Mime-Version: 1.0
+Content-Type: multipart/mixed; 
+	boundary="----=_Part_1975976_1266906655.1334586298623"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :content-type;
-        bh=abqEqfFjo9KrfKA4NIjD/fn2ckN6NhLNtY5KSgOMbhc=;
-        b=avONhg3PTTNx2UJ5nqMtskVgC3hWuIIJyIGlgt2g3+g2ZGnuFk4SqCFZyXRFiH969C
-         O8ku/Quu8AZEHpnDqa+hcgtGzkxx1Qrx3AdnoDsmgMz4TAXT7GNz8NlXcTTSuAVWaIv2
-         Yx4N7YatGb8RzG0+sotBmDZk07AGndM4eMYIY675TjlsVIvXxpdRW/BxOiv88ElFaE9N
-         fIlbtsYBlroPMC4qfsIW5OlCWpqaQLPIgFg/oHVm8HnlRC/P+0MVpW+CYJ02thJFHJUL
-         ATHfNgP8bPbsAI8SJoO7LuLkb5y2CtgOTTbJ+jyUOGX1KNb0hknvQA5J7FopjTbMiXWt
-         T6mQ==
-In-Reply-To: <CAGEveXr7G+5_rcuHUWBrg-rAQ1y6wU2ozVy2yBbQuo3PYdx3Mw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1596396192.1945848.1334583686323.JavaMail.root-t9N6cZjhxLSjnyp831PxoW4ykkOk2xyE@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello,
+------=_Part_1975976_1266906655.1334586298623
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
 
-Before considering my patch I should note that it has a bug, it should be:
+Hi,
 
- # Detect lib paths
- [[ $libdir ]] || for libdir in /lib64 /lib; do
--    [[ -d $libdir ]] && break
-+    [[ -d $libdir ]] && libdirs+=" $libdir" && break
- done || {
-    dfatal 'No lib directory?!!!'
-    exit 1
- }
+This feature request is regarding the dracut module dmsquash-live.
 
- [[ $usrlibdir ]] || for usrlibdir in /usr/lib64 /usr/lib; do
--    [[ -d $usrlibdir ]] && break
-+    [[ -d $usrlibdir ]] && libdirs+=" $usrlibdir" && break
- done || dwarn 'No usr/lib directory!'
+I've attached a patch [1] to change the behavior of the module if the boot parameter 'toram' is set. With the patch and if the 'toram' parameter is set, the root file system will be copied to tmpfs during the boot process, and the system boots from there. The usual overlay partition will not be created, and the root file system is being run directly from tmpfs with rw permissions.
 
-Now there is a space before $libdir and $usrlibdir, which avoids
-suffixing the libdirs value defined on a *.conf file with $libdir. I'm
-sorry.
+Background:
+Bootable livecd images are usually iso9660 file systems which include vmlinuz, initrd and a compressed squashfs. The compressed squashfs includes an ext file system image containing the real file system. What seems happen during boot is that the (read-only) squashfs is mounted and an (rw) overlay partition is being mounted on top to allow the user to write data during the live session. This overlay partition holds the diff from the original file system. 
 
-Regards,
+Now, what's interesting is that production servers running for several months eventually will end up with a diff larger than the overlay can handle. Therefore, in some scenarios, it makes sense to skip the overlay, copy the entire file system to tmpfs, and then mount the writable rootfs from there - and that's where the optional 'toram' parameter comes in.
 
-JonAn.
+Thanks,
+
+[1] The patch is for /usr/share/dracut/modules.d/90dmsquash-live/dmsquash-live-root
+
+-- 
+Kind regards
+Espen Braastad
+Redpill Linpro AS
++47 21 54 41 37
+
+------=_Part_1975976_1266906655.1334586298623
+Content-Type: text/x-patch; name=dmsquash-live-root.patch
+Content-Disposition: attachment; filename=dmsquash-live-root.patch
+Content-Transfer-Encoding: base64
+
+LS0tIC91c3Ivc2hhcmUvZHJhY3V0L21vZHVsZXMuZC85MGRtc3F1YXNoLWxpdmUvZG1zcXVhc2gt
+bGl2ZS1yb290CTIwMTItMDItMjAgMTM6MTA6MzUuMDAwMDAwMDAwICswMTAwCisrKyBkbXNxdWFz
+aC1saXZlLXJvb3QJMjAxMi0wNC0xNiAxNjoyMDoyNC4wODUyODA1MTUgKzAyMDAKQEAgLTE5LDYg
+KzE5LDcgQEAKIGxpdmVfZGlyPSQoZ2V0YXJnIGxpdmVfZGlyKQogWyAteiAiJGxpdmVfZGlyIiBd
+ICYmIGxpdmVfZGlyPSJMaXZlT1MiCiBnZXRhcmcgbGl2ZV9yYW0gJiYgbGl2ZV9yYW09InllcyIK
+K2dldGFyZyB0b3JhbSAmJiB0b3JhbT0ieWVzIgogZ2V0YXJnIHJlc2V0X292ZXJsYXkgJiYgcmVz
+ZXRfb3ZlcmxheT0ieWVzIgogZ2V0YXJnIHJlYWRvbmx5X292ZXJsYXkgJiYgcmVhZG9ubHlfb3Zl
+cmxheT0iLS1yZWFkb25seSIgfHwgcmVhZG9ubHlfb3ZlcmxheT0iIgogb3ZlcmxheT0kKGdldGFy
+ZyBvdmVybGF5KQpAQCAtMTMxLDcgKzEzMiwxMCBAQAogICAgIEJBU0VfTE9PUERFVj0kKCBsb3Nl
+dHVwIC1mICkKICAgICBsb3NldHVwIC1yICRCQVNFX0xPT1BERVYgJEVYVDNGUwogCi0gICAgZG9f
+bGl2ZV9mcm9tX2Jhc2VfbG9vcAorICAgICMgQ3JlYXRlIG92ZXJsYXkgb25seSBpZiB0b3JhbSBp
+cyBub3Qgc2V0CisgICAgaWYgWyAteiAiJHRvcmFtIiBdIDsgdGhlbgorICAgICAgICBkb19saXZl
+X2Zyb21fYmFzZV9sb29wCisgICAgZmkKIGZpCiAKICMgd2UgbWlnaHQgaGF2ZSBhbiBlbWJlZGRl
+ZCBleHQzIG9uIHNxdWFzaGZzIHRvIHVzZSBhcyByb290ZnMgKGNvbXByZXNzZWQgbGl2ZSkKQEAg
+LTE2MCwxMyArMTY0LDYxIEBACiAKICAgICB1bW91bnQgLWwgL3NxdWFzaGZzCiAKLSAgICBkb19s
+aXZlX2Zyb21fYmFzZV9sb29wCisgICAgIyBDcmVhdGUgb3ZlcmxheSBvbmx5IGlmIHRvcmFtIGlz
+IG5vdCBzZXQKKyAgICBpZiBbIC16ICIkdG9yYW0iIF0gOyB0aGVuCisgICAgICAgIGRvX2xpdmVf
+ZnJvbV9iYXNlX2xvb3AKKyAgICBmaQorZmkKKworIyBJIHRoZSBrZXJuZWwgcGFyYW1ldGVyIHRv
+cmFtIGlzIHNldCwgY3JlYXRlIGEgdG1wZnMgZGV2aWNlIGFuZCBjb3B5IHRoZSAKKyMgZmlsZXN5
+c3RlbSB0byBpdC4gQ29udGludWUgdGhlIGJvb3QgcHJvY2VzcyB3aXRoIHRoaXMgdG1wZnMgZGV2
+aWNlIGFzCisjIGEgd3JpdGFibGUgcm9vdCBkZXZpY2UuCitpZiBbIC1uICIkdG9yYW0iIF0gOyB0
+aGVuCisgICAgYmxvY2tzPSQoIGJsb2NrZGV2IC0tZ2V0c3ogJEJBU0VfTE9PUERFViApCisKKyAg
+ICBlY2hvICJDcmVhdGUgdG1wZnMgKCRibG9ja3MgYmxvY2tzKSBmb3IgdGhlIHJvb3QgZmlsZXN5
+c3RlbS4uLiIKKyAgICBta2RpciAtcCAvaW1hZ2UKKyAgICBtb3VudCAtbiAtdCB0bXBmcyAtbyBu
+cl9ibG9ja3M9JGJsb2NrcyB0bXBmcyAvaW1hZ2UKKworICAgIGVjaG8gIkNvcHkgZmlsZXN5c3Rl
+bSBpbWFnZSB0byB0bXBmcy4uLiAodGhpcyBtYXkgdGFrZSBhIGZldyBtaW51dGVzKSIKKyAgICBk
+ZCBpZj0kQkFTRV9MT09QREVWIG9mPS9pbWFnZS9yb290ZnMuaW1nCisKKyAgICBST09URlNfTE9P
+UERFVj0kKCBsb3NldHVwIC1mICkKKyAgICBlY2hvICJDcmVhdGUgbG9vcCBkZXZpY2UgZm9yIHRo
+ZSByb290IGZpbGVzeXN0ZW06ICRST09URlNfTE9PUERFViIKKyAgICBsb3NldHVwICRST09URlNf
+TE9PUERFViAvaW1hZ2Uvcm9vdGZzLmltZworCisgICAgZWNobyAiSXQncyB0aW1lIHRvIGNsZWFu
+IHVwLi4gIgorCisgICAgZWNobyAiID4gVW1vdW50aW5nIGltYWdlcyIKKyAgICB1bW91bnQgLWwg
+L2ltYWdlCisgICAgdW1vdW50IC1sIC9kZXYvLmluaXRyYW1mcy9saXZlCisKKyAgICBlY2hvICIg
+PiBEZXRhY2ggJE9TTUlOX0xPT1BERVYiCisgICAgbG9zZXR1cCAtZCAkT1NNSU5fTE9PUERFVgor
+CisgICAgZWNobyAiID4gRGV0YWNoICRPU01JTl9TUVVBU0hFRF9MT09QREVWIgorICAgIGxvc2V0
+dXAgLWQgJE9TTUlOX1NRVUFTSEVEX0xPT1BERVYKKyAgICAKKyAgICBlY2hvICIgPiBEZXRhY2gg
+JEJBU0VfTE9PUERFViIKKyAgICBsb3NldHVwIC1kICRCQVNFX0xPT1BERVYKKyAgICAKKyAgICBl
+Y2hvICIgPiBEZXRhY2ggJFNRVUFTSEVEX0xPT1BERVYiCisgICAgbG9zZXR1cCAtZCAkU1FVQVNI
+RURfTE9PUERFVgorCisgICAgZWNobyAiUm9vdCBmaWxlc3lzdGVtIGlzIG5vdyBvbiAkUk9PVEZT
+X0xPT1BERVYuIgorICAgIGVjaG8KKworICAgIGxuIC1zICRST09URlNfTE9PUERFViAvZGV2L3Jv
+b3QKKyAgICBwcmludGYgJy9iaW4vbW91bnQgLW8gcncgJXMgJXNcbicgIiRST09URlNfTE9PUERF
+ViIgIiRORVdST09UIiA+IC9tb3VudC8wMS0kJC1saXZlLnNoCisgICAgZXhpdCAwCiBmaQogCiBp
+ZiBbIC1iICIkT1NNSU5fTE9PUERFViIgXTsgdGhlbgogICAgICMgc2V0IHVwIHRoZSBkZXZpY2Vt
+YXBwZXIgc25hcHNob3QgZGV2aWNlLCB3aGljaCB3aWxsIG1lcmdlCiAgICAgIyB0aGUgbm9ybWFs
+IGxpdmUgZnMgaW1hZ2UsIGFuZCB0aGUgZGVsdGEsIGludG8gYSBtaW5pbXppZWQgZnMgaW1hZ2UK
+LSAgICBlY2hvICIwICQoIGJsb2NrZGV2IC0tZ2V0c3ogJEJBU0VfTE9PUERFViApIHNuYXBzaG90
+ICRCQVNFX0xPT1BERVYgJE9TTUlOX0xPT1BERVYgcCA4IiB8IGRtc2V0dXAgY3JlYXRlIC0tcmVh
+ZG9ubHkgbGl2ZS1vc2ltZy1taW4KKyAgICBpZiBbIC16ICIkdG9yYW0iIF0gOyB0aGVuCisgICAg
+ICAgIGVjaG8gIjAgJCggYmxvY2tkZXYgLS1nZXRzeiAkQkFTRV9MT09QREVWICkgc25hcHNob3Qg
+JEJBU0VfTE9PUERFViAkT1NNSU5fTE9PUERFViBwIDgiIHwgZG1zZXR1cCBjcmVhdGUgLS1yZWFk
+b25seSBsaXZlLW9zaW1nLW1pbgorICAgIGZpCiBmaQogCiBST09URkxBR1M9IiQoZ2V0YXJnIHJv
+b3RmbGFncykiCg==
+------=_Part_1975976_1266906655.1334586298623--
