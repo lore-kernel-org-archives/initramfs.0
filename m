@@ -1,97 +1,34 @@
-From: Espen Braastad <espen.braastad-qtFA7gTkXNbOT5slSWiCZNBPR1lH4CV8@public.gmane.org>
-Subject: Feature request: Support for the 'toram' boot parameter in
- dmsquash-live
-Date: Mon, 16 Apr 2012 16:24:58 +0200 (CEST)
-Message-ID: <392039042.1975978.1334586298624.JavaMail.root@claudius.linpro.no>
-References: <1596396192.1945848.1334583686323.JavaMail.root@claudius.linpro.no>
-Mime-Version: 1.0
-Content-Type: multipart/mixed; 
-	boundary="----=_Part_1975976_1266906655.1334586298623"
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] lsinitrd: support symlinks
+Date: Tue, 17 Apr 2012 11:31:27 +0200
+Message-ID: <1334655087-16937-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1596396192.1945848.1334583686323.JavaMail.root-t9N6cZjhxLSjnyp831PxoW4ykkOk2xyE@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-------=_Part_1975976_1266906655.1334586298623
-Content-Type: text/plain; charset=utf-8
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Nikoli <nikoli-N9AOi2cAC9ZBDgjK7y7TUQ@public.gmane.org>
 
-Hi,
+From: Nikoli <nikoli-N9AOi2cAC9ZBDgjK7y7TUQ@public.gmane.org>
 
-This feature request is regarding the dracut module dmsquash-live.
+---
+ lsinitrd.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-I've attached a patch [1] to change the behavior of the module if the boot parameter 'toram' is set. With the patch and if the 'toram' parameter is set, the root file system will be copied to tmpfs during the boot process, and the system boots from there. The usual overlay partition will not be created, and the root file system is being run directly from tmpfs with rw permissions.
-
-Background:
-Bootable livecd images are usually iso9660 file systems which include vmlinuz, initrd and a compressed squashfs. The compressed squashfs includes an ext file system image containing the real file system. What seems happen during boot is that the (read-only) squashfs is mounted and an (rw) overlay partition is being mounted on top to allow the user to write data during the live session. This overlay partition holds the diff from the original file system. 
-
-Now, what's interesting is that production servers running for several months eventually will end up with a diff larger than the overlay can handle. Therefore, in some scenarios, it makes sense to skip the overlay, copy the entire file system to tmpfs, and then mount the writable rootfs from there - and that's where the optional 'toram' parameter comes in.
-
-Thanks,
-
-[1] The patch is for /usr/share/dracut/modules.d/90dmsquash-live/dmsquash-live-root
-
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index 1eaa37d..e6767dc 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -34,7 +34,7 @@ image="${1:-/boot/initramfs-$(uname -r).img}"
+ [[ -f "$image" ]]    || { echo "$image does not exist" ; exit 1 ; }
+ 
+ CAT=zcat
+-FILE_T=$(file "$image")
++FILE_T=$(file --dereference "$image")
+ 
+ if echo "test"|xz|xz -dc --single-stream >/dev/null 2>&1; then
+     XZ_SINGLE_STREAM="--single-stream"
 -- 
-Kind regards
-Espen Braastad
-Redpill Linpro AS
-+47 21 54 41 37
-
-------=_Part_1975976_1266906655.1334586298623
-Content-Type: text/x-patch; name=dmsquash-live-root.patch
-Content-Disposition: attachment; filename=dmsquash-live-root.patch
-Content-Transfer-Encoding: base64
-
-LS0tIC91c3Ivc2hhcmUvZHJhY3V0L21vZHVsZXMuZC85MGRtc3F1YXNoLWxpdmUvZG1zcXVhc2gt
-bGl2ZS1yb290CTIwMTItMDItMjAgMTM6MTA6MzUuMDAwMDAwMDAwICswMTAwCisrKyBkbXNxdWFz
-aC1saXZlLXJvb3QJMjAxMi0wNC0xNiAxNjoyMDoyNC4wODUyODA1MTUgKzAyMDAKQEAgLTE5LDYg
-KzE5LDcgQEAKIGxpdmVfZGlyPSQoZ2V0YXJnIGxpdmVfZGlyKQogWyAteiAiJGxpdmVfZGlyIiBd
-ICYmIGxpdmVfZGlyPSJMaXZlT1MiCiBnZXRhcmcgbGl2ZV9yYW0gJiYgbGl2ZV9yYW09InllcyIK
-K2dldGFyZyB0b3JhbSAmJiB0b3JhbT0ieWVzIgogZ2V0YXJnIHJlc2V0X292ZXJsYXkgJiYgcmVz
-ZXRfb3ZlcmxheT0ieWVzIgogZ2V0YXJnIHJlYWRvbmx5X292ZXJsYXkgJiYgcmVhZG9ubHlfb3Zl
-cmxheT0iLS1yZWFkb25seSIgfHwgcmVhZG9ubHlfb3ZlcmxheT0iIgogb3ZlcmxheT0kKGdldGFy
-ZyBvdmVybGF5KQpAQCAtMTMxLDcgKzEzMiwxMCBAQAogICAgIEJBU0VfTE9PUERFVj0kKCBsb3Nl
-dHVwIC1mICkKICAgICBsb3NldHVwIC1yICRCQVNFX0xPT1BERVYgJEVYVDNGUwogCi0gICAgZG9f
-bGl2ZV9mcm9tX2Jhc2VfbG9vcAorICAgICMgQ3JlYXRlIG92ZXJsYXkgb25seSBpZiB0b3JhbSBp
-cyBub3Qgc2V0CisgICAgaWYgWyAteiAiJHRvcmFtIiBdIDsgdGhlbgorICAgICAgICBkb19saXZl
-X2Zyb21fYmFzZV9sb29wCisgICAgZmkKIGZpCiAKICMgd2UgbWlnaHQgaGF2ZSBhbiBlbWJlZGRl
-ZCBleHQzIG9uIHNxdWFzaGZzIHRvIHVzZSBhcyByb290ZnMgKGNvbXByZXNzZWQgbGl2ZSkKQEAg
-LTE2MCwxMyArMTY0LDYxIEBACiAKICAgICB1bW91bnQgLWwgL3NxdWFzaGZzCiAKLSAgICBkb19s
-aXZlX2Zyb21fYmFzZV9sb29wCisgICAgIyBDcmVhdGUgb3ZlcmxheSBvbmx5IGlmIHRvcmFtIGlz
-IG5vdCBzZXQKKyAgICBpZiBbIC16ICIkdG9yYW0iIF0gOyB0aGVuCisgICAgICAgIGRvX2xpdmVf
-ZnJvbV9iYXNlX2xvb3AKKyAgICBmaQorZmkKKworIyBJIHRoZSBrZXJuZWwgcGFyYW1ldGVyIHRv
-cmFtIGlzIHNldCwgY3JlYXRlIGEgdG1wZnMgZGV2aWNlIGFuZCBjb3B5IHRoZSAKKyMgZmlsZXN5
-c3RlbSB0byBpdC4gQ29udGludWUgdGhlIGJvb3QgcHJvY2VzcyB3aXRoIHRoaXMgdG1wZnMgZGV2
-aWNlIGFzCisjIGEgd3JpdGFibGUgcm9vdCBkZXZpY2UuCitpZiBbIC1uICIkdG9yYW0iIF0gOyB0
-aGVuCisgICAgYmxvY2tzPSQoIGJsb2NrZGV2IC0tZ2V0c3ogJEJBU0VfTE9PUERFViApCisKKyAg
-ICBlY2hvICJDcmVhdGUgdG1wZnMgKCRibG9ja3MgYmxvY2tzKSBmb3IgdGhlIHJvb3QgZmlsZXN5
-c3RlbS4uLiIKKyAgICBta2RpciAtcCAvaW1hZ2UKKyAgICBtb3VudCAtbiAtdCB0bXBmcyAtbyBu
-cl9ibG9ja3M9JGJsb2NrcyB0bXBmcyAvaW1hZ2UKKworICAgIGVjaG8gIkNvcHkgZmlsZXN5c3Rl
-bSBpbWFnZSB0byB0bXBmcy4uLiAodGhpcyBtYXkgdGFrZSBhIGZldyBtaW51dGVzKSIKKyAgICBk
-ZCBpZj0kQkFTRV9MT09QREVWIG9mPS9pbWFnZS9yb290ZnMuaW1nCisKKyAgICBST09URlNfTE9P
-UERFVj0kKCBsb3NldHVwIC1mICkKKyAgICBlY2hvICJDcmVhdGUgbG9vcCBkZXZpY2UgZm9yIHRo
-ZSByb290IGZpbGVzeXN0ZW06ICRST09URlNfTE9PUERFViIKKyAgICBsb3NldHVwICRST09URlNf
-TE9PUERFViAvaW1hZ2Uvcm9vdGZzLmltZworCisgICAgZWNobyAiSXQncyB0aW1lIHRvIGNsZWFu
-IHVwLi4gIgorCisgICAgZWNobyAiID4gVW1vdW50aW5nIGltYWdlcyIKKyAgICB1bW91bnQgLWwg
-L2ltYWdlCisgICAgdW1vdW50IC1sIC9kZXYvLmluaXRyYW1mcy9saXZlCisKKyAgICBlY2hvICIg
-PiBEZXRhY2ggJE9TTUlOX0xPT1BERVYiCisgICAgbG9zZXR1cCAtZCAkT1NNSU5fTE9PUERFVgor
-CisgICAgZWNobyAiID4gRGV0YWNoICRPU01JTl9TUVVBU0hFRF9MT09QREVWIgorICAgIGxvc2V0
-dXAgLWQgJE9TTUlOX1NRVUFTSEVEX0xPT1BERVYKKyAgICAKKyAgICBlY2hvICIgPiBEZXRhY2gg
-JEJBU0VfTE9PUERFViIKKyAgICBsb3NldHVwIC1kICRCQVNFX0xPT1BERVYKKyAgICAKKyAgICBl
-Y2hvICIgPiBEZXRhY2ggJFNRVUFTSEVEX0xPT1BERVYiCisgICAgbG9zZXR1cCAtZCAkU1FVQVNI
-RURfTE9PUERFVgorCisgICAgZWNobyAiUm9vdCBmaWxlc3lzdGVtIGlzIG5vdyBvbiAkUk9PVEZT
-X0xPT1BERVYuIgorICAgIGVjaG8KKworICAgIGxuIC1zICRST09URlNfTE9PUERFViAvZGV2L3Jv
-b3QKKyAgICBwcmludGYgJy9iaW4vbW91bnQgLW8gcncgJXMgJXNcbicgIiRST09URlNfTE9PUERF
-ViIgIiRORVdST09UIiA+IC9tb3VudC8wMS0kJC1saXZlLnNoCisgICAgZXhpdCAwCiBmaQogCiBp
-ZiBbIC1iICIkT1NNSU5fTE9PUERFViIgXTsgdGhlbgogICAgICMgc2V0IHVwIHRoZSBkZXZpY2Vt
-YXBwZXIgc25hcHNob3QgZGV2aWNlLCB3aGljaCB3aWxsIG1lcmdlCiAgICAgIyB0aGUgbm9ybWFs
-IGxpdmUgZnMgaW1hZ2UsIGFuZCB0aGUgZGVsdGEsIGludG8gYSBtaW5pbXppZWQgZnMgaW1hZ2UK
-LSAgICBlY2hvICIwICQoIGJsb2NrZGV2IC0tZ2V0c3ogJEJBU0VfTE9PUERFViApIHNuYXBzaG90
-ICRCQVNFX0xPT1BERVYgJE9TTUlOX0xPT1BERVYgcCA4IiB8IGRtc2V0dXAgY3JlYXRlIC0tcmVh
-ZG9ubHkgbGl2ZS1vc2ltZy1taW4KKyAgICBpZiBbIC16ICIkdG9yYW0iIF0gOyB0aGVuCisgICAg
-ICAgIGVjaG8gIjAgJCggYmxvY2tkZXYgLS1nZXRzeiAkQkFTRV9MT09QREVWICkgc25hcHNob3Qg
-JEJBU0VfTE9PUERFViAkT1NNSU5fTE9PUERFViBwIDgiIHwgZG1zZXR1cCBjcmVhdGUgLS1yZWFk
-b25seSBsaXZlLW9zaW1nLW1pbgorICAgIGZpCiBmaQogCiBST09URkxBR1M9IiQoZ2V0YXJnIHJv
-b3RmbGFncykiCg==
-------=_Part_1975976_1266906655.1334586298623--
+1.7.3.4
