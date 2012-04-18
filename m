@@ -1,58 +1,55 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Patch] network: move the kill-dhclient.sh hook later
-Date: Wed, 18 Apr 2012 13:57:41 +0800
-Message-ID: <4F8E57D5.7090200@redhat.com>
-References: <1334669111-17575-1-git-send-email-xiyou.wangcong@gmail.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: dracut does not mount iscsi targets specified using --mount option
+Date: Wed, 18 Apr 2012 18:28:29 -0400
+Message-ID: <20120418222829.GG2224@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1334669111-17575-1-git-send-email-xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 04/17/2012 09:25 PM, Cong Wang wrote:
+Hi,
 
-> kdump module uses a pre-pivot hook too, it needs networking, so
-> do not kill dhclient so early. kdump hook needs to find a place
-> where all needed fs are mounted meanwhile networking works too.
+I am trying to dump kernel vmcore to an software iscsi target (kdump).
+kdump specifies the dump destination using "--mount" option. But dracut
+does not even include the "iscsi" module and associated device is not
+mounted in second kernel.
 
+Following is the dracut command line as called by /sbin/mkdumprd.
 
-There's still below hooks need consider if you want to move:
+dracut -m kdumpbase --add dash --add fstab-sys --add kernel-modules -c /dev/null -I /sbin/makedumpfile --mount '/dev/mapper/vg-lv_root / ext4 rw,seclabel,relatime,user_xattr,barrier=1,data=ordered' --mount '/dev/mapper/mpatha /mnt/common ext4 rw,seclabel,relatime,user_xattr,barrier=1,stripe=16,data=ordered' -M -f /boot/initramfs-3.3.2-1.fc17.x86_64kdump.img 3.3.2-1.fc17.x86_64
 
-90crypt/module-setup.sh:    inst_hook pre-pivot 30
-"$moddir/crypt-cleanup.sh"
-95iscsi/module-setup.sh:    inst_hook pre-pivot 90
-"$moddir/cleanup-iscsi.sh"
+Note there is a multipath target over iscsi devices and that target is
+mounted on /mnt/common. Hence specified using "--mount /dev/mapper/mpatha
+/mnt/common"
 
+Following is list of modules being included by dracut (printed on standard
+output due to -M option).
 
-> 
-> Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> 
-> ---
-> diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-> index c91f164..1a7d206 100755
-> --- a/modules.d/40network/module-setup.sh
-> +++ b/modules.d/40network/module-setup.sh
-> @@ -85,7 +85,7 @@ install() {
->      inst_hook cmdline 97 "$moddir/parse-bridge.sh"
->      inst_hook cmdline 98 "$moddir/parse-ip-opts.sh"
->      inst_hook cmdline 99 "$moddir/parse-ifname.sh"
-> -    inst_hook pre-pivot 10 "$moddir/kill-dhclient.sh"
-> +    inst_hook pre-pivot 98 "$moddir/kill-dhclient.sh"
->  
->      _arch=$(uname -m)
->  
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+rpmversion
+dm
+kernel-modules
+lvm
+multipath
+fstab-sys
+rootfs-block
+udev-rules
+base
+fs-lib
+kdumpbase
+shutdown
 
+I thought that once you specify a mount using "--mount" option, dracut
+will traverse through the full device stack, figure out all the
+dependencies, include all the modules and bring up the full stack in 
+the kernel and mount the top level device. Is that not the case?
 
+BTW,  I have done testing with multipath targets (without iscsi) and
+it works. So multipath is not the issue. But iscsi is.
 
--- 
 Thanks
-Dave
+Vivek
