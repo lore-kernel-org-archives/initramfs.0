@@ -1,97 +1,64 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] move cleanup scripts to pre-pivot-cleanup hook
-Date: Thu, 19 Apr 2012 12:01:43 +0800
-Message-ID: <20120419040143.GA17474@localhost.redhat.com>
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut does not mount iscsi targets specified using --mount
+ option
+Date: Thu, 19 Apr 2012 12:57:13 +0800
+Message-ID: <1334811433.31095.5.camel@cr0>
+References: <20120418222829.GG2224@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20120418222829.GG2224-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-below cleanup scripts is moved:
-40network: kill-dhclient.sh
-90crypt: crypt-cleanup.sh
-90multipath: multipathd-stop.sh
-95iscsi: cleanup-iscsi.sh
-95nfs: nfsroot-cleanup.sh
+On Wed, 2012-04-18 at 18:28 -0400, Vivek Goyal wrote:
+> Hi,
+> 
+> I am trying to dump kernel vmcore to an software iscsi target (kdump).
+> kdump specifies the dump destination using "--mount" option. But dracut
+> does not even include the "iscsi" module and associated device is not
+> mounted in second kernel.
+> 
+> Following is the dracut command line as called by /sbin/mkdumprd.
+> 
+> dracut -m kdumpbase --add dash --add fstab-sys --add kernel-modules -c /dev/null -I /sbin/makedumpfile --mount '/dev/mapper/vg-lv_root / ext4 rw,seclabel,relatime,user_xattr,barrier=1,data=ordered' --mount '/dev/mapper/mpatha /mnt/common ext4 rw,seclabel,relatime,user_xattr,barrier=1,stripe=16,data=ordered' -M -f /boot/initramfs-3.3.2-1.fc17.x86_64kdump.img 3.3.2-1.fc17.x86_64
+> 
+> Note there is a multipath target over iscsi devices and that target is
+> mounted on /mnt/common. Hence specified using "--mount /dev/mapper/mpatha
+> /mnt/common"
+> 
+> Following is list of modules being included by dracut (printed on standard
+> output due to -M option).
+> 
+> rpmversion
+> dm
+> kernel-modules
+> lvm
+> multipath
+> fstab-sys
+> rootfs-block
+> udev-rules
+> base
+> fs-lib
+> kdumpbase
+> shutdown
+> 
+> I thought that once you specify a mount using "--mount" option, dracut
+> will traverse through the full device stack, figure out all the
+> dependencies, include all the modules and bring up the full stack in 
+> the kernel and mount the top level device. Is that not the case?
+> 
+> BTW,  I have done testing with multipath targets (without iscsi) and
+> it works. So multipath is not the issue. But iscsi is.
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/40network/module-setup.sh   |    2 +-
- modules.d/90crypt/module-setup.sh     |    2 +-
- modules.d/90multipath/module-setup.sh |    2 +-
- modules.d/95iscsi/module-setup.sh     |    2 +-
- modules.d/95nfs/module-setup.sh       |    2 +-
- 5 files changed, 5 insertions(+), 5 deletions(-)
+I think this is a bug, dracut fails to detect iscsi thus doesn't include
+the iscsi module.
 
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index c91f164..13dcc0f 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -85,7 +85,7 @@ install() {
-     inst_hook cmdline 97 "$moddir/parse-bridge.sh"
-     inst_hook cmdline 98 "$moddir/parse-ip-opts.sh"
-     inst_hook cmdline 99 "$moddir/parse-ifname.sh"
--    inst_hook pre-pivot 10 "$moddir/kill-dhclient.sh"
-+    inst_hook pre-pivot-cleanup 10 "$moddir/kill-dhclient.sh"
- 
-     _arch=$(uname -m)
- 
-diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
-index 8fdf32b..4a66516 100755
---- a/modules.d/90crypt/module-setup.sh
-+++ b/modules.d/90crypt/module-setup.sh
-@@ -48,7 +48,7 @@ install() {
-     inst "$moddir"/probe-keydev.sh /sbin/probe-keydev
-     inst_hook cmdline 10 "$moddir/parse-keydev.sh"
-     inst_hook cmdline 30 "$moddir/parse-crypt.sh"
--    inst_hook pre-pivot 30 "$moddir/crypt-cleanup.sh"
-+    inst_hook pre-pivot-cleanup 30 "$moddir/crypt-cleanup.sh"
-     inst_simple /etc/crypttab
-     inst "$moddir/crypt-lib.sh" "/lib/dracut-crypt-lib.sh"
- }
-diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
-index b78c005..d6339f2 100755
---- a/modules.d/90multipath/module-setup.sh
-+++ b/modules.d/90multipath/module-setup.sh
-@@ -68,7 +68,7 @@ install() {
-     done
- 
-     inst_hook pre-trigger 02 "$moddir/multipathd.sh"
--    inst_hook pre-pivot   02 "$moddir/multipathd-stop.sh"
-+    inst_hook pre-pivot-cleanup   02 "$moddir/multipathd-stop.sh"
-     inst_rules 40-multipath.rules
- }
- 
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index b6c1c1f..a001a28 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -63,7 +63,7 @@ install() {
-     inst hostname
-     inst iscsi-iname
-     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
--    inst_hook pre-pivot 90 "$moddir/cleanup-iscsi.sh"
-+    inst_hook pre-pivot-cleanup 90 "$moddir/cleanup-iscsi.sh"
-     inst "$moddir/iscsiroot.sh" "/sbin/iscsiroot"
-     inst "$moddir/mount-lun.sh" "/bin/mount-lun.sh"
- }
-diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
-index 7853783..8a0d7fc 100755
---- a/modules.d/95nfs/module-setup.sh
-+++ b/modules.d/95nfs/module-setup.sh
-@@ -62,7 +62,7 @@ install() {
- 
-     inst_hook cmdline 90 "$moddir/parse-nfsroot.sh"
-     inst_hook pre-udev 99 "$moddir/nfs-start-rpc.sh"
--    inst_hook pre-pivot 99 "$moddir/nfsroot-cleanup.sh"
-+    inst_hook pre-pivot-cleanup 99 "$moddir/nfsroot-cleanup.sh"
-     inst "$moddir/nfsroot.sh" "/sbin/nfsroot"
-     inst "$moddir/nfs-lib.sh" "/lib/nfs-lib.sh"
-     mkdir -m 0755 -p "$initdir/var/lib/nfs/rpc_pipefs"
--- 
-1.7.1
+Vivek, can you try to add 'set -x' in the check() function in
+module-setup.sh of iscsi module to get some debugging info? Especially
+is_iscsi().
+
+Thanks for testing!
