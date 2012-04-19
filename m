@@ -1,31 +1,27 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut does not mount iscsi targets specified using --mount option
-Date: Thu, 19 Apr 2012 10:59:17 +0200
-Message-ID: <4F8FD3E5.90103@redhat.com>
-References: <20120418222829.GG2224@redhat.com>
+Subject: Re: [PATCH] a few patches
+Date: Thu, 19 Apr 2012 12:13:59 +0200
+Message-ID: <4F8FE567.1050000@redhat.com>
+References: <1333645299-16837-1-git-send-email-wwoods@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120418222829.GG2224-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1333645299-16837-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 19.04.2012 00:28, schrieb Vivek Goyal:
-> Hi,
+Am 05.04.2012 19:01, schrieb Will Woods:
+> So here's 5 patches for dracut. Whee!
 > 
-> I am trying to dump kernel vmcore to an software iscsi target (kdump).
-> kdump specifies the dump destination using "--mount" option. But dracut
-> does not even include the "iscsi" module and associated device is not
-> mounted in second kernel.
+> Patches 2, 3, and 4 are needed to fix a bunch of stuff blocking Fedora 17
+> releases - although I can add workarounds for the splitsep thing pretty
+> easily. 1 & 5 are nice but unnecessary.
 > 
-> Following is the dracut command line as called by /sbin/mkdumprd.
+> Thanks!
 > 
-> dracut -m kdumpbase --add dash --add fstab-sys --add kernel-modules -c /dev/null -I /sbin/makedumpfile --mount '/dev/mapper/vg-lv_root / ext4 rw,seclabel,relatime,user_xattr,barrier=1,data=ordered' --mount '/dev/mapper/mpatha /mnt/common ext4 rw,seclabel,relatime,user_xattr,barrier=1,stripe=16,data=ordered' -M -f /boot/initramfs-3.3.2-1.fc17.x86_64kdump.img 3.3.2-1.fc17.x86_64
+> -w
 
-"-m kdumpbase" - This tells dracut to only use the kdumpbase dracut module
-So, because the iscsi dracut module is not added, dracut does not even check() it.
-
-Why is it "-m kdumpbase" and not "--add kdumpbase" ???
+pushed
