@@ -1,7 +1,7 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] add pre-pivot-cleanup hook
-Date: Thu, 19 Apr 2012 12:01:36 +0800
-Message-ID: <20120419040136.GA17472@localhost.redhat.com>
+Subject: [PATCH 2/2] move cleanup scripts to pre-pivot-cleanup hook
+Date: Thu, 19 Apr 2012 12:01:43 +0800
+Message-ID: <20120419040143.GA17474@localhost.redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
@@ -12,105 +12,86 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-Sometimes some hook script will need to be before the cleanup hook scripts
-For example dhclient killing, nfs cleanup, etc. must not happen before kdump
-because it will use their fuctionalities.
-
-So here introduce a new hook pre-pivot-cleanup, all cleanup scripts will go there.
-that means pre-pivot hook is splited to two hooks pre-pivot and pre-pivot-cleanup
+below cleanup scripts is moved:
+40network: kill-dhclient.sh
+90crypt: crypt-cleanup.sh
+90multipath: multipathd-stop.sh
+95iscsi: cleanup-iscsi.sh
+95nfs: nfsroot-cleanup.sh
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- README.modules           |    3 +++
- dracut-functions.sh      |    2 +-
- dracut.asc               |    7 ++++++-
- dracut.cmdline.7.asc     |    2 +-
- modules.d/99base/init.sh |    7 ++++++-
- 5 files changed, 17 insertions(+), 4 deletions(-)
+ modules.d/40network/module-setup.sh   |    2 +-
+ modules.d/90crypt/module-setup.sh     |    2 +-
+ modules.d/90multipath/module-setup.sh |    2 +-
+ modules.d/95iscsi/module-setup.sh     |    2 +-
+ modules.d/95nfs/module-setup.sh       |    2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/README.modules b/README.modules
-index 21461de..188d011 100644
---- a/README.modules
-+++ b/README.modules
-@@ -103,6 +103,9 @@ init has the following hook points to inject scripts:
-    a timeout.
+diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+index c91f164..13dcc0f 100755
+--- a/modules.d/40network/module-setup.sh
++++ b/modules.d/40network/module-setup.sh
+@@ -85,7 +85,7 @@ install() {
+     inst_hook cmdline 97 "$moddir/parse-bridge.sh"
+     inst_hook cmdline 98 "$moddir/parse-ip-opts.sh"
+     inst_hook cmdline 99 "$moddir/parse-ifname.sh"
+-    inst_hook pre-pivot 10 "$moddir/kill-dhclient.sh"
++    inst_hook pre-pivot-cleanup 10 "$moddir/kill-dhclient.sh"
  
- /lib/dracut/hooks/pre-pivot/*.sh
-+   scripts to run before latter initramfs cleanups
-+
-+/lib/dracut/hooks/pre-pivot-cleanup/*.sh
-    scripts to run before the real init is executed and the initramfs
-    disappears
-    All processes started before should be killed here.
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 910f2d8..8ea5464 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -36,7 +36,7 @@ fi
- [[ $hookdirs ]] || {
-     hookdirs="cmdline pre-udev pre-trigger netroot "
-     hookdirs+="initqueue initqueue/settled initqueue/online initqueue/finished initqueue/timeout "
--    hookdirs+="pre-mount pre-pivot mount "
-+    hookdirs+="pre-mount pre-pivot pre-pivot-cleanup mount "
-     hookdirs+="emergency shutdown-emergency shutdown cleanup "
-     export hookdirs
+     _arch=$(uname -m)
+ 
+diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
+index 8fdf32b..4a66516 100755
+--- a/modules.d/90crypt/module-setup.sh
++++ b/modules.d/90crypt/module-setup.sh
+@@ -48,7 +48,7 @@ install() {
+     inst "$moddir"/probe-keydev.sh /sbin/probe-keydev
+     inst_hook cmdline 10 "$moddir/parse-keydev.sh"
+     inst_hook cmdline 30 "$moddir/parse-crypt.sh"
+-    inst_hook pre-pivot 30 "$moddir/crypt-cleanup.sh"
++    inst_hook pre-pivot-cleanup 30 "$moddir/crypt-cleanup.sh"
+     inst_simple /etc/crypttab
+     inst "$moddir/crypt-lib.sh" "/lib/dracut-crypt-lib.sh"
  }
-diff --git a/dracut.asc b/dracut.asc
-index 1a0e3d2..1f81d12 100644
---- a/dracut.asc
-+++ b/dracut.asc
-@@ -854,12 +854,17 @@ This hook is mainly to mount the real root device.
+diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
+index b78c005..d6339f2 100755
+--- a/modules.d/90multipath/module-setup.sh
++++ b/modules.d/90multipath/module-setup.sh
+@@ -68,7 +68,7 @@ install() {
+     done
  
- === Hook: pre-pivot
+     inst_hook pre-trigger 02 "$moddir/multipathd.sh"
+-    inst_hook pre-pivot   02 "$moddir/multipathd-stop.sh"
++    inst_hook pre-pivot-cleanup   02 "$moddir/multipathd-stop.sh"
+     inst_rules 40-multipath.rules
+ }
  
-+This hook is called before pre-pivot-cleanup hook, This is a good place for
-+actions other than cleanups which need to be called before pivot.
-+
-+
-+=== Hook: pre-pivot-cleanup
-+
- This hook is the last hook and is called before init finally switches root to
- the real root device. This is a good place to clean up and kill processes not
- needed anymore.
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index b6c1c1f..a001a28 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -63,7 +63,7 @@ install() {
+     inst hostname
+     inst iscsi-iname
+     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
+-    inst_hook pre-pivot 90 "$moddir/cleanup-iscsi.sh"
++    inst_hook pre-pivot-cleanup 90 "$moddir/cleanup-iscsi.sh"
+     inst "$moddir/iscsiroot.sh" "/sbin/iscsiroot"
+     inst "$moddir/mount-lun.sh" "/bin/mount-lun.sh"
+ }
+diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
+index 7853783..8a0d7fc 100755
+--- a/modules.d/95nfs/module-setup.sh
++++ b/modules.d/95nfs/module-setup.sh
+@@ -62,7 +62,7 @@ install() {
  
- 
--
- === Cleanup and switch_root
- 
- Init kills all udev processes, cleans up the environment, sets up the arguments
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index a1e06dd..fa4f0e1 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -94,7 +94,7 @@ Debug
- **rd.break**::
-     drop to a shell at the end
- 
--**rd.break=**_{cmdline|pre-udev|pre-trigger|initqueue|pre-mount|mount|pre-pivot}_::
-+**rd.break=**_{cmdline|pre-udev|pre-trigger|initqueue|pre-mount|mount|pre-pivot|pre-pivot-cleanup}_::
-     drop to a shell on defined breakpoint
- 
- **rd.udev.info**::
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index 2f87a20..3fc0082 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -224,10 +224,15 @@ done
-     while read dev mp rest; do [ "$mp" = "$NEWROOT" ] && echo $dev; done < /proc/mounts
- } | vinfo
- 
--# pre pivot scripts are sourced just before we switch over to the new root.
-+# pre pivot scripts are sourced just before we doing cleanup and switch over
-+# to the new root.
- getarg 'rd.break=pre-pivot' 'rdbreak=pre-pivot' && emergency_shell -n pre-pivot "Break pre-pivot"
- source_hook pre-pivot
- 
-+# pre pivot cleanup scripts are sourced just before we switch over to the new root.
-+getarg 'rd.break=pre-pivot-cleanup' 'rdbreak=pre-pivot-cleanup' && emergency_shell -n pre-pivot-cleanup "Break pre-pivot-cleanup"
-+source_hook pre-pivot-cleanup
-+
- # By the time we get here, the root filesystem should be mounted.
- # Try to find init. 
- for i in "$(getarg real_init=)" "$(getarg init=)" $(getargs rd.distroinit=) /sbin/init; do
---
+     inst_hook cmdline 90 "$moddir/parse-nfsroot.sh"
+     inst_hook pre-udev 99 "$moddir/nfs-start-rpc.sh"
+-    inst_hook pre-pivot 99 "$moddir/nfsroot-cleanup.sh"
++    inst_hook pre-pivot-cleanup 99 "$moddir/nfsroot-cleanup.sh"
+     inst "$moddir/nfsroot.sh" "/sbin/nfsroot"
+     inst "$moddir/nfs-lib.sh" "/lib/nfs-lib.sh"
+     mkdir -m 0755 -p "$initdir/var/lib/nfs/rpc_pipefs"
+-- 
 1.7.1
