@@ -1,8 +1,10 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] url-lib: don't add existing handlers multiple times
-Date: Fri, 20 Apr 2012 16:20:24 -0400
-Message-ID: <1334953225-28832-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 2/2] url-lib: don't use --progress-bar if TERM=dumb (RHBZ#814713)
+Date: Fri, 20 Apr 2012 16:20:25 -0400
+Message-ID: <1334953225-28832-2-git-send-email-wwoods@redhat.com>
+References: <1334953225-28832-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1334953225-28832-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -10,27 +12,34 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Every time url-lib gets imported we end up making the list of handlers
-longer with redundant entries. That's silly - we shouldn't add items
-that already exist.
+Basically, s390 is the only place I've ever seen TERM=dumb, and it's too
+dumb to handle '\r', so --progress-bar produces waaaaay too much output.
 
-Note that this means you'll have to manipulate the handler list yourself
-if you want to change the position/priority of existing handlers.
+The normal progress meter only prints something once per second, so
+that's reasonable on terminals where '\r' doesn't work.
+
+See also: https://bugzilla.redhat.com/show_bug.cgi?id=814713
 ---
- modules.d/45url-lib/url-lib.sh |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ modules.d/45url-lib/url-lib.sh |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
 diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
-index e305a68..7930146 100755
+index 7930146..5721294 100755
 --- a/modules.d/45url-lib/url-lib.sh
 +++ b/modules.d/45url-lib/url-lib.sh
-@@ -43,6 +43,7 @@ add_url_handler() {
-     local schemes="$@" scheme=""
-     set --
-     for scheme in $schemes; do
-+        [ "$(get_url_handler $scheme)" = "$handler" ] && continue
-         set -- "$@" "$scheme:$handler"
-     done
-     set -- $@ $url_handler_map # add new items to *front* of list
+@@ -54,7 +54,12 @@ add_url_handler() {
+ 
+ export CURL_HOME="/run/initramfs/url-lib"
+ mkdir -p $CURL_HOME
+-curl_args="--location --retry 3 --fail --show-error --progress-bar"
++curl_args="--location --retry 3 --fail --show-error"
++
++# technically "dumb" can handle the progress bar, but the only thing I've ever
++# seen using TERM=dumb is s390 CMS, and it's too dumb for --progress-bar
++[ "$TERM" != "dumb" ] && curl_args="$curl_args --progress-bar"
++
+ curl_fetch_url() {
+     local url="$1" outloc="$2"
+     echo "$url" > /proc/self/fd/0
 -- 
 1.7.7.6
