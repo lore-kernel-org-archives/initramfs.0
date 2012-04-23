@@ -1,8 +1,8 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: dracut does not mount iscsi targets specified using --mount
  option
-Date: Mon, 23 Apr 2012 08:54:49 -0400
-Message-ID: <20120423125449.GF8103@redhat.com>
+Date: Mon, 23 Apr 2012 10:49:13 -0400
+Message-ID: <20120423144913.GC15561@redhat.com>
 References: <20120418222829.GG2224@redhat.com>
  <4F8FD3E5.90103@redhat.com>
  <20120420135156.GE22419@redhat.com>
@@ -37,17 +37,10 @@ On Mon, Apr 23, 2012 at 10:37:57AM +0200, Harald Hoyer wrote:
 > > 
 > 
 > Why don't you want host-only mode for the other kernel modules?
+						    ^^^^^^^^^^
 
-I think host-only should be reasonable but there should be scope for
-further optimization. IIUC, host-only will try to include all the modules
-which are needed to mount root and boot the machine. But in kdump, we
-might not want to mount root at all. We just might want to dump vmcore
-over NFS and reboot.
-
-So the assumption that we will necessarily mount root is not valid in
-kdump context. I am not sure how much memory saving this extra
-optimization will lead to, but I will try passing -H and do some testing
-and see how size is varying.
+You meant "dracut modules" probably? I have the same question that -H
+should make sense for other dracut modules too.
 
 Thanks
 Vivek
