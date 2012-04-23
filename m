@@ -1,69 +1,42 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut does not mount iscsi targets specified using --mount option
-Date: Mon, 23 Apr 2012 18:11:54 +0200
-Message-ID: <4F957F4A.6090808@redhat.com>
-References: <20120418222829.GG2224@redhat.com> <4F8FD3E5.90103@redhat.com> <20120420135156.GE22419@redhat.com> <1335154319.18028.14.camel@cr0> <4F95076A.9060504@redhat.com> <20120423151711.GD15561@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] ifcfg: write DNS1=... for nameserver= args (RHBZ#815369)
+Date: Mon, 23 Apr 2012 16:25:25 -0400
+Message-ID: <1335212725-20178-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120423151711.GD15561-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 23.04.2012 17:17, schrieb Vivek Goyal:
-> On Mon, Apr 23, 2012 at 09:40:26AM +0200, Harald Hoyer wrote:
-> 
-> [..]
->> Just activate the host-only mode "--hostonly" or "-H"
-> 
-> I tried -H but then it looks like it does not include modules required
-> to mount disks passed using "--mount" option. For example, I want to 
-> mount a multipath target in initramfs but I don't see multipath module
-> being included.
-> 
-> Following is dracut command line.
-> 
-> dracut --add kdumpbase --add dash --add fstab-sys --add kernel-modules -c /dev/null -I /sbin/makedumpfile --hostonly --mount '/dev/mapper/vg-lv_root / ext4 rw,seclabel,relatime,user_xattr,barrier=1,data=ordered' --mount '/dev/mapper/mpathb /mnt/common ext4 rw,seclabel,relatime,user_xattr,barrier=1,data=ordered' -M -f /boot/initramfs-3.3.2-1.fc17.x86_64kdump.img 3.3.2-1.fc17.x86_64
-> 
-> Notice, /dev/mapper/mpathb is the multipath device.
-> 
-> Following is the list of modules included by dracut.
-> 
-> -----------------
-> i18n
-> rpmversion
-> plymouth
-> dm
-> kernel-modules
-> lvm
-> fstab-sys
-> resume
-> rootfs-block
-> terminfo
-> udev-rules
-> biosdevname
-> usrmount
-> base
-> fs-lib
-> kdumpbase
-> shutdown
-> -------------------
-> 
-> Notice it did not inclde "multipath" module.
-> 
-> I passed the --debug option to dracut and attaching the resulting output.
-> I personally think that a new dracut option "--mount-only" might make
-> sense where only those modules are included which somehow contribute to
-> mounting of targets specified by "--mount".
-> 
-> BTW, using --hostonly gave a nice redcution in initramfs size and my
-> uncomressed initramfs is around 18MB which sounds just right.
-> 
-> Thanks
-> Vivek
+If you're using a static network config, you'll want to keep your
+nameservers around when NM starts. Write DNS1 (and DNS2, DNS3, etc..)
+into the ifcfg file.
 
-oh.. multipath detection is not yet implemented for host-only... everything else
-should work, though
+Thanks to Mark Hamzy <hamzy-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> for the patch.
+---
+ modules.d/45ifcfg/write-ifcfg.sh |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
+index c072a13..3e1d89b 100755
+--- a/modules.d/45ifcfg/write-ifcfg.sh
++++ b/modules.d/45ifcfg/write-ifcfg.sh
+@@ -53,6 +53,14 @@ for netif in $IFACES ; do
+             echo "NETMASK=$mask"
+             [ -n "$gw" ] && echo "GATEWAY=$gw"
+         fi
++        namesrv=$(getargs nameserver)
++        if [ -n "$namesrv" ]; then
++            i=1
++            for n in $namesrv; do
++                echo DNS$i=$n
++                i=$(($i+1))
++            done
++        fi
+     } > /tmp/ifcfg/ifcfg-$netif
+ 
+     # bridge needs different things written to ifcfg
+-- 
+1.7.7.6
