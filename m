@@ -1,45 +1,48 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] url-lib: don't use --progress-bar if TERM=dumb (RHBZ#814713)
-Date: Fri, 20 Apr 2012 16:20:25 -0400
-Message-ID: <1334953225-28832-2-git-send-email-wwoods@redhat.com>
-References: <1334953225-28832-1-git-send-email-wwoods@redhat.com>
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut does not mount iscsi targets specified using --mount
+ option
+Date: Mon, 23 Apr 2012 12:09:01 +0800
+Message-ID: <1335154141.18028.11.camel@cr0>
+References: <20120418222829.GG2224@redhat.com> <4F8FD3E5.90103@redhat.com>
+	 <1334904333.20684.23.camel@cr0> <4F91217A.6080905@redhat.com>
+	 <20120420155143.GK22419@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1334953225-28832-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120420155143.GK22419-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Basically, s390 is the only place I've ever seen TERM=dumb, and it's too
-dumb to handle '\r', so --progress-bar produces waaaaay too much output.
+On Fri, 2012-04-20 at 11:53 -0400, Vivek Goyal wrote:
+> On Fri, Apr 20, 2012 at 10:42:34AM +0200, Harald Hoyer wrote:
+> 
+> [..]
+> > >> Why is it "-m kdumpbase" and not "--add kdumpbase" ???
+> > > 
+> > > I thought "--add" is plus for "-m", so the initial module has to be
+> > > added via "-m" in cmdline? Seems I was wrong, but could this be the
+> > > reason that causes iscsi module not loaded?
+> > > 
+> > > Thanks!
+> > > 
+> > 
+> > You can send me the output of dracut with the "--debug" option added to inspect
+> > it further.
+> 
+> Hi Harald,
+> 
+> I ran dracut from command line (could not figure out how to capture the
+> output of service to a file with systemd) and captured the output of
+> --debug with "-m kdumpbase" and "--add kdumpbase".
+> 
+> For some reason it was complaining that module kdumpbase not found but
+> I see that it is present in /lib/dracut/modules.d. Anyway, I am attaching
+> both the outputs for you to have a look. Files are gzipped as they were
+> big.
 
-The normal progress meter only prints something once per second, so
-that's reasonable on terminals where '\r' doesn't work.
-
-See also: https://bugzilla.redhat.com/show_bug.cgi?id=814713
----
- modules.d/45url-lib/url-lib.sh |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
-
-diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
-index 7930146..5721294 100755
---- a/modules.d/45url-lib/url-lib.sh
-+++ b/modules.d/45url-lib/url-lib.sh
-@@ -54,7 +54,12 @@ add_url_handler() {
- 
- export CURL_HOME="/run/initramfs/url-lib"
- mkdir -p $CURL_HOME
--curl_args="--location --retry 3 --fail --show-error --progress-bar"
-+curl_args="--location --retry 3 --fail --show-error"
-+
-+# technically "dumb" can handle the progress bar, but the only thing I've ever
-+# seen using TERM=dumb is s390 CMS, and it's too dumb for --progress-bar
-+[ "$TERM" != "dumb" ] && curl_args="$curl_args --progress-bar"
-+
- curl_fetch_url() {
-     local url="$1" outloc="$2"
-     echo "$url" > /proc/self/fd/0
--- 
-1.7.7.6
+Just fyi, that is because kdump module checks an env variable at start,
+so you can use 'kdumpctl start' to run it manually instead of using
+dracut directly. :)
