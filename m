@@ -1,58 +1,63 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut does not mount iscsi targets specified using --mount
- option
-Date: Tue, 24 Apr 2012 11:18:09 +0800
-Message-ID: <1335237489.32756.8.camel@cr0>
-References: <20120418222829.GG2224@redhat.com> <4F8FD3E5.90103@redhat.com>
-	 <20120420135156.GE22419@redhat.com> <1335154319.18028.14.camel@cr0>
-	 <4F95076A.9060504@redhat.com> <1335167619.18028.35.camel@cr0>
-	 <4F9514E5.3010003@redhat.com> <20120423125449.GF8103@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] ifcfg: write DNS1=... for nameserver= args (RHBZ#815369)
+Date: Tue, 24 Apr 2012 12:45:23 +0200
+Message-ID: <4F968443.8020403@redhat.com>
+References: <1335212725-20178-1-git-send-email-wwoods@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120423125449.GF8103-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1335212725-20178-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 2012-04-23 at 08:54 -0400, Vivek Goyal wrote:
-> On Mon, Apr 23, 2012 at 10:37:57AM +0200, Harald Hoyer wrote:
-> > Am 23.04.2012 09:53, schrieb Cong Wang:
-> > > On Mon, 2012-04-23 at 09:40 +0200, Harald Hoyer wrote:
-> > >>
-> > >> Just activate the host-only mode "--hostonly" or "-H"
-> > >>
-> > > 
-> > > Well, -H will set host-only mode for all dracut modules, but here we
-> > > want to activate host-only mode _only_ for kernel-modules module.
-> > > 
-> > > For other dracut modules, we use --add to only specify those we need, as
-> > > you can see from Vivek's output.
-> > > 
-> > > 
-> > 
-> > Why don't you want host-only mode for the other kernel modules?
+Am 23.04.2012 22:25, schrieb Will Woods:
+> If you're using a static network config, you'll want to keep your
+> nameservers around when NM starts. Write DNS1 (and DNS2, DNS3, etc..)
+> into the ifcfg file.
 > 
-> I think host-only should be reasonable but there should be scope for
-> further optimization. IIUC, host-only will try to include all the modules
-> which are needed to mount root and boot the machine. But in kdump, we
-> might not want to mount root at all. We just might want to dump vmcore
-> over NFS and reboot.
-
-Yes, exactly. The last time I tried host-only, it included more dracut
-modules than what we need, thus increased the initrd size.
-
-(The other reason is, as you replied in another email, host-only doesn't
-respect --mount, this also means "network" module will not be included
-when I dump to NFS but my rootfs is not NFS.)
-
+> Thanks to Mark Hamzy <hamzy-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> for the patch.
+> ---
+>  modules.d/45ifcfg/write-ifcfg.sh |    8 ++++++++
+>  1 files changed, 8 insertions(+), 0 deletions(-)
 > 
-> So the assumption that we will necessarily mount root is not valid in
-> kdump context. I am not sure how much memory saving this extra
-> optimization will lead to, but I will try passing -H and do some testing
-> and see how size is varying.
+> diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
+> index c072a13..3e1d89b 100755
+> --- a/modules.d/45ifcfg/write-ifcfg.sh
+> +++ b/modules.d/45ifcfg/write-ifcfg.sh
+> @@ -53,6 +53,14 @@ for netif in $IFACES ; do
+>              echo "NETMASK=$mask"
+>              [ -n "$gw" ] && echo "GATEWAY=$gw"
+>          fi
+> +        namesrv=$(getargs nameserver)
+> +        if [ -n "$namesrv" ]; then
+> +            i=1
+> +            for n in $namesrv; do
+> +                echo DNS$i=$n
+> +                i=$(($i+1))
+> +            done
+> +        fi
+>      } > /tmp/ifcfg/ifcfg-$netif
+>  
+>      # bridge needs different things written to ifcfg
 
-Before this, we have to fix -H to work with --mount. ;-)
+Hmm, I have this in my queue (different location):
 
+diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
+index c072a13..b81ac39 100755
+--- a/modules.d/45ifcfg/write-ifcfg.sh
++++ b/modules.d/45ifcfg/write-ifcfg.sh
+@@ -138,6 +138,11 @@ for netif in $IFACES ; do
+             } >> /tmp/ifcfg/ifcfg-$ethname
+         fi
+     fi
++    i=1
++    for ns in $(getargs nameserver); do
++        echo "DNS${i}=${ns}" >> /tmp/ifcfg/ifcfg-$netif
++        i=$((i+1))
++    done
+ done
+
+ # Pass network opts
