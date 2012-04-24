@@ -1,42 +1,34 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] ifcfg: write DNS1=... for nameserver= args (RHBZ#815369)
-Date: Mon, 23 Apr 2012 16:25:25 -0400
-Message-ID: <1335212725-20178-1-git-send-email-wwoods@redhat.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut does not mount iscsi targets specified using --mount
+ option
+Date: Mon, 23 Apr 2012 21:38:38 -0400
+Message-ID: <20120424013838.GC22525@redhat.com>
+References: <20120418222829.GG2224@redhat.com>
+ <4F8FD3E5.90103@redhat.com>
+ <20120420135156.GE22419@redhat.com>
+ <1335154319.18028.14.camel@cr0>
+ <4F95076A.9060504@redhat.com>
+ <20120423151711.GD15561@redhat.com>
+ <4F957F4A.6090808@redhat.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4F957F4A.6090808-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-If you're using a static network config, you'll want to keep your
-nameservers around when NM starts. Write DNS1 (and DNS2, DNS3, etc..)
-into the ifcfg file.
+On Mon, Apr 23, 2012 at 06:11:54PM +0200, Harald Hoyer wrote:
 
-Thanks to Mark Hamzy <hamzy-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> for the patch.
----
- modules.d/45ifcfg/write-ifcfg.sh |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+[..]
+> oh.. multipath detection is not yet implemented for host-only... everything else
+> should work, though
 
-diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
-index c072a13..3e1d89b 100755
---- a/modules.d/45ifcfg/write-ifcfg.sh
-+++ b/modules.d/45ifcfg/write-ifcfg.sh
-@@ -53,6 +53,14 @@ for netif in $IFACES ; do
-             echo "NETMASK=$mask"
-             [ -n "$gw" ] && echo "GATEWAY=$gw"
-         fi
-+        namesrv=$(getargs nameserver)
-+        if [ -n "$namesrv" ]; then
-+            i=1
-+            for n in $namesrv; do
-+                echo DNS$i=$n
-+                i=$(($i+1))
-+            done
-+        fi
-     } > /tmp/ifcfg/ifcfg-$netif
- 
-     # bridge needs different things written to ifcfg
--- 
-1.7.7.6
+iscsi does not work either. Just gave it a try and iscsi does not show up
+in list of included modules.
+
+Thanks
+Vivek
