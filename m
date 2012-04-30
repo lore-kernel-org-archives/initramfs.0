@@ -1,51 +1,57 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: What are the semantics of --mount option
-Date: Thu, 26 Apr 2012 13:54:01 +0200
-Message-ID: <4F993759.2020400@redhat.com>
-References: <20120425215006.GA19485@redhat.com> <4F991CEF.3020307@redhat.com> <20120426114001.GC21447@redhat.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut does not mount iscsi targets specified using --mount
+ option
+Date: Mon, 30 Apr 2012 11:07:35 -0400
+Message-ID: <20120430150735.GG3693@redhat.com>
+References: <1335154319.18028.14.camel@cr0>
+ <4F95076A.9060504@redhat.com>
+ <1335167619.18028.35.camel@cr0>
+ <4F9514E5.3010003@redhat.com>
+ <20120423125449.GF8103@redhat.com>
+ <1335237489.32756.8.camel@cr0>
+ <20120424210224.GJ26708@redhat.com>
+ <4F97C337.8040604@gmail.com>
+ <20120425134606.GE12519@redhat.com>
+ <4F9802CE.2030601@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120426114001.GC21447-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4F9802CE.2030601-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Am 26.04.2012 13:40, schrieb Vivek Goyal:
-> On Thu, Apr 26, 2012 at 12:01:19PM +0200, Harald Hoyer wrote:
->> Am 25.04.2012 23:50, schrieb Vivek Goyal:
->>> Hi Harald,
->>>
->>> What are the semantics of --mount option. If I call dracut with --mount
->>> option, can I expect that resulting initramfs will mount that
->>> filesystem (including network file system) by the time  pre-pivot hook of
->>> a module is called?
->>
->> yes, but network setup has to be crafted on the kernel cmdline or in a
->> /etc/cmdline.d/*.conf
+On Wed, Apr 25, 2012 at 03:57:34PM +0200, Harald Hoyer wrote:
+> Am 25.04.2012 15:46, schrieb Vivek Goyal:
+> > On Wed, Apr 25, 2012 at 11:26:15AM +0200, Harald Hoyer wrote:
+> > 
+> > Hi Harald,
+> > 
+> > [..]
+> >>      is_mpath() {
+> >> -        [ -e /sys/dev/block/$1/dm/uuid ] || return 1
+> >> -        [[ $(cat /sys/dev/block/$1/dm/uuid) =~ ^mpath- ]] && return 0
+> >> +        local _dev
+> >> +        _dev=${1##/dev/}
+> >> +        [ -e /sys/dev/block/$_dev/dm/uuid ] || return 1
+> >> +        [[ $(cat /sys/dev/block/$_dev/dm/uuid) =~ ^mpath- ]] && return 0
+> > 
+> > Will this work? _dev is device name (sda) and /sys/dev/block/ has links
+> > based on device "maj:min". I applied this patch and ran dracut and I 
+> > see that multipath module did not get included.
+> > 
+> > Thanks
+> > Vivek
 > 
-> This is interesting. General theme of dracut seems to be that for
-> networking, iscsi etc, we will include relevant tools (binaries/config
-> files etc) but will not store the specific configuration of target and
-> expect the configuration either on command line (iscsiroot, netroot etc)
-> or in /etc/cmdline.d/*.conf.
-> 
-> I am confused why that's the case. I mean I can understand this for
-> generic initramfs. But for hostonly initramfs, don't we want to bring
-> up all the devices encountered in root path by default? Why a user is
-> supposed to specify specific iscsi, network configuration on the
-> command line again. dracut has access to alll this information while
-> traversing the device stack and should be able to store it in initramfs.
-> 
-> IOW, will it make sense that in hostonly mode, various modules also starting
-> saving associated configuration of device (as needed) and by default
-> try to bring up those devices on boot (in addition to honoring any
-> command line options passed)?
-> 
-> Thanks
-> Vivek
+> oh.. you are right:
 
-Network setup and network devices have not yet been ported to host-only
-self-configuration.
+Harald, I saw these patches committed in master branch of fedora tree. Are
+you planning to commit them for F17 too? They are not very intrusive
+so it might not be a bad idea?  From my perspective, multipath kdump
+support gets enabled in F17 and my future testing becomes easier.
+
+Thanks
+Vivek
