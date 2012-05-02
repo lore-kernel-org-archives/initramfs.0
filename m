@@ -1,32 +1,36 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] ifcfg: fix resolv.conf
-Date: Tue,  1 May 2012 14:08:34 -0400
-Message-ID: <1335895714-21699-2-git-send-email-wwoods@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Does netroot=isci: option work with latest dracut
+Date: Wed, 02 May 2012 11:12:48 +0200
+Message-ID: <4FA0FA90.1010702@redhat.com>
+References: <20120501164704.GA18202@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20120501164704.GA18202-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-/etc/net.*.resolv.conf is not a useful filename; copy it to resolv.conf
----
- modules.d/45ifcfg/write-ifcfg.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Am 01.05.2012 18:47, schrieb Vivek Goyal:
+> Hi,
+> 
+> On F17, I am trying kdump to an iscsi target. And I am passing a
+> netroot=iscsi:..... cmdline to dracut. But that does not seem to work.
+> 
+> Some debugging showed that we do parse the netroot= arguemnt in
+> parse-iscsiroot.sh but after that nothing happens. Nobody tries to
+> bring up the iscsi luns.
+> 
+> I see some code in iscsiroot.sh to call iscsistart to bring up iscsi
+> luns but that code does not seem to be hooked up. I could not figure
+> out who calls /sbin/iscsiroot.
+> 
+> So I am wondering if I am doing something wrong or there is some
+> disconnect in my understanding of how netroot= options works.
+> 
+> Thanks
+> Vivek
 
-diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
-index b81ac39..f612762 100755
---- a/modules.d/45ifcfg/write-ifcfg.sh
-+++ b/modules.d/45ifcfg/write-ifcfg.sh
-@@ -152,7 +152,7 @@ echo "files /etc/sysconfig/network-scripts" >> /run/initramfs/rwtab
- echo "files /var/lib/dhclient" >> /run/initramfs/rwtab
- {
-     cp /tmp/net.* /run/initramfs/
--    cp /tmp/net.$netif.resolv.conf /run/initramfs/state/etc/
-+    cp /tmp/net.$netif.resolv.conf /run/initramfs/state/etc/resolv.conf
-     cp -a -t /run/initramfs/state/etc/sysconfig/network-scripts/ /tmp/ifcfg/*
-     cp /tmp/ifcfg-leases/* /run/initramfs/state/var/lib/dhclient
- } > /dev/null 2>&1
--- 
-1.7.7.6
+did you specify "ip=..." ?
