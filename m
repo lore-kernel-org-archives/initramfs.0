@@ -1,33 +1,39 @@
-From: Olivier Blin <dev-RZzICDNEOQ/YtjvyW6yDsg@public.gmane.org>
-Subject: [PATCH] 90kernel-modules/module-setup.sh: install xhci-hcd
-Date: Thu, 10 May 2012 22:58:22 +0200
-Message-ID: <1336683502-5495-1-git-send-email-dev@blino.org>
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 3/3] url-lib: fix progressbar on s390, again
+Date: Fri, 11 May 2012 18:45:08 -0400
+Message-ID: <1336776308-15211-3-git-send-email-wwoods@redhat.com>
+References: <1336776308-15211-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1336776308-15211-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Olivier Blin <dev-RZzICDNEOQ/YtjvyW6yDsg@public.gmane.org>
 
-to allow booting and using kbd devices from USB 3.0
+It turns out that you can't rely on s390 setting TERM to anything
+useful, so we just have to disable progressbar on all s390 systems.
 ---
- modules.d/90kernel-modules/module-setup.sh |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/45url-lib/url-lib.sh |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index 26f4784..97e1de8 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -36,7 +36,7 @@ installkernel() {
-         hostonly='' instmods usb_storage sdhci sdhci-pci
+diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
+index 5721294..8a50c6f 100755
+--- a/modules.d/45url-lib/url-lib.sh
++++ b/modules.d/45url-lib/url-lib.sh
+@@ -56,9 +56,9 @@ export CURL_HOME="/run/initramfs/url-lib"
+ mkdir -p $CURL_HOME
+ curl_args="--location --retry 3 --fail --show-error"
  
-         # install keyboard support
--        hostonly='' instmods atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech hid-logitech-dj hid-microsoft ehci-hcd ohci-hcd uhci-hcd
-+        hostonly='' instmods atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech hid-logitech-dj hid-microsoft ehci-hcd ohci-hcd uhci-hcd xhci-hcd
-         # install unix socket support
-         hostonly='' instmods unix
-         instmods "=drivers/pcmcia" =ide "=drivers/usb/storage"
+-# technically "dumb" can handle the progress bar, but the only thing I've ever
+-# seen using TERM=dumb is s390 CMS, and it's too dumb for --progress-bar
+-[ "$TERM" != "dumb" ] && curl_args="$curl_args --progress-bar"
++# s390 x3270 consoles are too dumb for --progress-bar, and they don't seem to
++# set TERM usefully, so we just have to disable it for all s390 systems.
++strstr "$(uname -m)" "s390" || curl_args="$curl_args --progress-bar"
+ 
+ curl_fetch_url() {
+     local url="$1" outloc="$2"
 -- 
-1.7.10
+1.7.7.6
