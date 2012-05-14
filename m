@@ -1,55 +1,79 @@
-From: Dan =?ISO-8859-1?Q?Hor=E1k?= <dan-mBPqX7VnFd4@public.gmane.org>
-Subject: Re: [PATCH 3/3] url-lib: fix progressbar on s390, again
-Date: Sat, 12 May 2012 10:16:52 +0200
-Message-ID: <1336810612.2985.14.camel@eagle.danny.cz>
-References: <1336776308-15211-1-git-send-email-wwoods@redhat.com>
-	 <1336776308-15211-3-git-send-email-wwoods@redhat.com>
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: dracut options for installing files and drivers
+Date: Mon, 14 May 2012 06:01:28 +0000 (UTC)
+Message-ID: <joq73o$u50$1@dough.gmane.org>
+References: <4FAA1E44.2090006@redhat.com> <4FAA65B7.9040209@redhat.com>
+ <4FAB2379.2050504@redhat.com> <4FAB7A26.4060409@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1336776308-15211-3-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Will Woods p=C3=AD=C5=A1e v P=C3=A1 11. 05. 2012 v 18:45 -0400:=20
-> It turns out that you can't rely on s390 setting TERM to anything
-> useful, so we just have to disable progressbar on all s390 systems.
+On Thu, 10 May 2012 at 08:19 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On 05/10/2012 10:10 AM, Dave Young wrote:
+>
+>> On 05/09/2012 08:40 PM, Harald Hoyer wrote:
+>> 
+>>> Am 09.05.2012 09:35, schrieb Dave Young:
+>>>> Hi, harald
+>>>>
+>>>> Dracut options '-I' and '-a' both mean optionally install file/ko
+>>>
+>>> this is wrong
+>>>
+>>> $ man dracut
+>>>
+>>> "-a" means
+>>>
+>>>        -a, --add <list of dracut modules>
+>> 
+>> 
+>> modules install happens in modules.d/90kernel-modules/module-setup.sh
+>> but module-setup.sh does not check the return value of instmods, so it
+>> will not fail and exit if no such modules.
+>
+>
+> Oops, I actually means --add-drivers instead of -a
+>
 
-seems it will be the only solution, for an installed system there is
-TERM set to "dumb" for the console, but in the initrd environment it's
-set to "linux", probably the default from kernel itself.
+Yeah...
 
+% sudo dracut --add-drivers "no-such-module" -I "/no/such/file" -f test.img
+E: ssh interactive mode need option --ctty!
+F: Failed to install /no/such/file
+% echo $?
+1
 
-Dan
+Maybe the following untested patch could fix this??
 
 ---
-> modules.d/45url-lib/url-lib.sh |    6 +++---
->  1 files changed, 3 insertions(+), 3 deletions(-)
->=20
-> diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url=
--lib.sh
-> index 5721294..8a50c6f 100755
-> --- a/modules.d/45url-lib/url-lib.sh
-> +++ b/modules.d/45url-lib/url-lib.sh
-> @@ -56,9 +56,9 @@ export CURL_HOME=3D"/run/initramfs/url-lib"
->  mkdir -p $CURL_HOME
->  curl_args=3D"--location --retry 3 --fail --show-error"
-> =20
-> -# technically "dumb" can handle the progress bar, but the only thing=
- I've ever
-> -# seen using TERM=3Ddumb is s390 CMS, and it's too dumb for --progre=
-ss-bar
-> -[ "$TERM" !=3D "dumb" ] && curl_args=3D"$curl_args --progress-bar"
-> +# s390 x3270 consoles are too dumb for --progress-bar, and they don'=
-t seem to
-> +# set TERM usefully, so we just have to disable it for all s390 syst=
-ems.
-> +strstr "$(uname -m)" "s390" || curl_args=3D"$curl_args --progress-ba=
-r"
-> =20
->  curl_fetch_url() {
->      local url=3D"$1" outloc=3D"$2"
-
+diff --git a/modules.d/90kernel-modules/module-setup.sh
+b/modules.d/90kernel-modules/module-setup.sh
+index 26f4784..838088a 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -58,8 +58,18 @@ installkernel() {
+         hostonly='' instmods $drivers
+      fi
+	       
+       -    [[ $add_drivers ]] && hostonly='' instmods $add_drivers
+       -    [[ $filesystems ]] && hostonly='' instmods $filesystems
+       +    if [[ $add_drivers ]]; then
+       +        hostonly='' instmods $add_drivers || {
+       +            dfatal "Failed to install $add_drivers"
+       +            return 1
+       +       }
+       +    fi
+       +    if [[ $filesystems ]]; then
+       +        hostonly='' instmods $filesystems || {
+       +            dfatal "Failed to install $filesystems"
+       +            return 1
+       +       }
+       +    fi
+        
+	     # force install of scsi_wait_scan
+          hostonly='' instmods scsi_wait_scan
+			  
