@@ -1,50 +1,50 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: dracut options for installing files and drivers
-Date: Tue, 15 May 2012 03:00:05 +0000 (UTC)
-Message-ID: <josgrl$ivu$1@dough.gmane.org>
-References: <4FAA1E44.2090006@redhat.com> <4FAA65B7.9040209@redhat.com>
- <4FAB2379.2050504@redhat.com> <4FAB7A26.4060409@redhat.com>
- <joq73o$u50$1@dough.gmane.org> <joq7ki$u50$2@dough.gmane.org>
- <4FB0D2C4.6030204@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/2] check install files passed by cmdline
+Date: Tue, 15 May 2012 14:19:57 +0800
+Message-ID: <1337062797-28629-2-git-send-email-amwang@redhat.com>
+References: <1337062797-28629-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1337062797-28629-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Mon, 14 May 2012 at 09:39 GMT, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On 05/14/2012 02:10 PM, Cong Wang wrote:
->
->>> Yeah...
->>>
->>> % sudo dracut --add-drivers "no-such-module" -I "/no/such/file" -f test.img
->>> E: ssh interactive mode need option --ctty!
->>> F: Failed to install /no/such/file
->>> % echo $?
->>> 1
->>>
->>> Maybe the following untested patch could fix this??
->
->
-> Hi, what version of dracut did you use? master branch '-I no/such/file'
-> will not fail... Seems there it is changed to 'dracut -o' in some commit.
->
-> Also `./dracut.sh -l --add-drivers "no-such-module" -f test.img` return
-> 0 during my test.
->
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Yeah, I used an old version of dracut, the following commit changed
-that without a reason:
+We should not trust cmdline passed by users, always
+check the install files passed from cmdline. This restores
+the old behaviour which was changed by:
 
-commit c6c6a08850c7e4ee211696895f7ca3864be85052
-Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Tue Feb 7 18:26:30 2012 +0100
+	commit c6c6a08850c7e4ee211696895f7ca3864be85052
+	Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+	Date:   Tue Feb 7 18:26:30 2012 +0100
 
-    add "install_items" to dracut.conf
-    
+	    add "install_items" to dracut.conf
 
-I will send a patch to fix this too.
+Reported-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Thanks!
+---
+ dracut.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/dracut.sh b/dracut.sh
+index 315b965..bf9e79f 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -770,7 +770,7 @@ done
+ 
+ if [[ $kernel_only != yes ]]; then
+     for item in $install_items; do
+-        dracut_install -o "$item"
++        dracut_install "$item"
+     done
+     unset item
+ 
+-- 
+1.7.7.6
