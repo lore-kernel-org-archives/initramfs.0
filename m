@@ -1,154 +1,77 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] check kernel module existance
-Date: Tue, 15 May 2012 14:19:56 +0800
-Message-ID: <1337062797-28629-1-git-send-email-amwang@redhat.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut:fstab-sys: Wait for devices specified using --mount
+ option
+Date: Tue, 15 May 2012 13:23:02 -0400
+Message-ID: <20120515172301.GB24585@redhat.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+dracut allows passing --mount option which mounts the specified devices.
+But it does not wait for these devices to show up and mounting will fail
+if devices do not show up by the time "mount" was called.
 
-This patch adds check of kernel module existance and
-propagate errors to upper callers.
+I am writing some patches to support kdump on iscsi target and I noticed
+that one of the initqueue script was not called as we found the root
+device and broke out of main loop.
 
-In case of break other callers of instmods(), this patch
-adds an option '-c' to it, only when "-c" is specified
-we fail, otherwise, errors are ignored.
+There are two possible enancements to this patch.
 
-Reported-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+- Introduce a time limited wait (rd.timeout something along the lines of
+  rd.retry). That will allow kdump to try to dump to a backup target if
+  primary targets fails to come up.
 
+- Wait for UUID= and LABEL= to show up too. Right now kdump converts
+  UUID= and LABEL= to respective devices and passes /dev/* to dracut
+  --mount option. So I am not introducing the wait for UUID= or LABEL=
+ in this patch.
+
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> 
 ---
- dracut-functions.sh                        |   37 +++++++++++++++++++++-------
- dracut.sh                                  |   10 ++++++-
- modules.d/90kernel-modules/module-setup.sh |    8 ++++-
- 3 files changed, 42 insertions(+), 13 deletions(-)
+ lib/dracut/modules.d/95fstab-sys/module-setup.sh   |    1 
+ lib/dracut/modules.d/95fstab-sys/wait-mount-dev.sh |   22 +++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 8256e02..4fe428e 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -1108,17 +1108,22 @@ find_kernel_modules () {
-     find_kernel_modules_by_path  drivers
+Index: /lib/dracut/modules.d/95fstab-sys/module-setup.sh
+===================================================================
+--- .orig/lib/dracut/modules.d/95fstab-sys/module-setup.sh	2012-05-15 13:02:06.342000001 -0400
++++ /lib/dracut/modules.d/95fstab-sys/module-setup.sh	2012-05-15 13:02:42.190000002 -0400
+@@ -13,4 +13,5 @@ depends() {
+ install() {
+     [ -f /etc/fstab.sys ] && inst /etc/fstab.sys
+     inst_hook pre-pivot 00 "$moddir/mount-sys.sh"
++    inst_hook cmdline 00 "$moddir/wait-mount-dev.sh"
  }
- 
--# instmods <kernel module> [<kernel module> ... ]
--# instmods <kernel subsystem>
-+# instmods [-c] <kernel module> [<kernel module> ... ]
-+# instmods [-c] <kernel subsystem>
- # install kernel modules along with all their dependencies.
- # <kernel subsystem> can be e.g. "=block" or "=drivers/usb/storage"
- instmods() {
-     [[ $no_kernel = yes ]] && return
-     # called [sub]functions inherit _fderr
-     local _fderr=9
-+    local _check=no
-+    if [[ $1 = '-c' ]]; then
-+        _check=yes
-+        shift
-+    fi
- 
-     function inst1mod() {
--        local _mod="$1"
-+        local _ret=0 _mod="$1"
-         case $_mod in
-             =*)
-                 if [ -f $srcmods/modules.${_mod#=} ]; then
-@@ -1162,26 +1167,40 @@ instmods() {
-                 ((_ret+=$?))
-                 ;;
-         esac
-+        return $_ret
-     }
- 
-     function instmods_1() {
--        local _ret=0 _mod _mpargs
-+        local _mod _mpargs
-         if (($# == 0)); then  # filenames from stdin
-             while read _mod; do
--                inst1mod "${_mod%.ko*}"
-+                inst1mod "${_mod%.ko*}" || {
-+                    if [ "$_check" = "yes" ]; then
-+                        dfatal "Failed to install $_mod"
-+                        return 1
-+                    fi
-+                }
-             done
-         fi
-         while (($# > 0)); do  # filenames as arguments
--            inst1mod ${1%.ko*}
-+            inst1mod ${1%.ko*} || {
-+                if [ "$_check" = "yes" ]; then
-+                    dfatal "Failed to install $1"
-+                    return 1
-+                fi
-+            }
-             shift
-         done
--        return $_ret
-+        return 0
-     }
- 
--    local _filter_not_found='FATAL: Module .* not found.'
-+    local _ret _filter_not_found='FATAL: Module .* not found.'
-+    set -o pipefail
-     # Capture all stderr from modprobe to _fderr. We could use {var}>...
-     # redirections, but that would make dracut require bash4 at least.
-     eval "( instmods_1 \"\$@\" ) ${_fderr}>&1" \
-     | while read line; do [[ "$line" =~ $_filter_not_found ]] || echo $line;done | derror
--    return $?
-+    _ret=$?
-+    set +o pipefail
-+    return $_ret
- }
-diff --git a/dracut.sh b/dracut.sh
-index 2a7a812..315b965 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -708,11 +708,17 @@ for moddir in "$dracutbasedir/modules.d"/[0-9][0-9]*; do
-         [[ $show_modules = yes ]] && echo "$_d_mod" || \
-             dinfo "*** Including module: $_d_mod ***"
-         if [[ $kernel_only = yes ]]; then
--            module_installkernel $_d_mod
-+            module_installkernel $_d_mod || {
-+                dfatal "installkernel failed in module $_d_mod"
-+                exit 1
-+            }
-         else
-             module_install $_d_mod
-             if [[ $no_kernel != yes ]]; then
--                module_installkernel $_d_mod
-+                module_installkernel $_d_mod || {
-+                    dfatal "installkernel failed in module $_d_mod"
-+                    exit 1
-+                }
-             fi
-         fi
-         mods_to_load=${mods_to_load// $_d_mod /}
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index 26f4784..8cff439 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -58,8 +58,12 @@ installkernel() {
-         hostonly='' instmods $drivers
-     fi
- 
--    [[ $add_drivers ]] && hostonly='' instmods $add_drivers
--    [[ $filesystems ]] && hostonly='' instmods $filesystems
-+    if [[ $add_drivers ]]; then
-+        hostonly='' instmods -c $add_drivers || return 1
-+    fi
-+    if [[ $filesystems ]]; then
-+        hostonly='' instmods -c $filesystems || return 1
-+    fi
- 
-     # force install of scsi_wait_scan
-     hostonly='' instmods scsi_wait_scan
--- 
-1.7.7.6
+Index: /lib/dracut/modules.d/95fstab-sys/wait-mount-dev.sh
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ /lib/dracut/modules.d/95fstab-sys/wait-mount-dev.sh	2012-05-15 13:03:27.729000315 -0400
+@@ -0,0 +1,22 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
++type det_fs >/dev/null 2>&1 || . /lib/fs-lib.sh
++
++fstab_wait_dev() {
++    local _dev _mp _fs _opts _dump _pass _rest
++    test -e "$1" || return 1
++    while read _dev _mp _fs _opts _dump _pass _rest; do
++        [ -z "${_dev%%#*}" ] && continue # Skip comment lines
++        case "$_dev" in
++        /dev/?*)
++            wait_for_dev $_dev;;
++        *) ;;
++        esac
++    done < $1
++    return 0
++}
++
++[ -f /etc/fstab ] && fstab_wait_dev /etc/fstab
