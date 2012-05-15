@@ -1,10 +1,8 @@
 From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] check install files passed by cmdline
-Date: Tue, 15 May 2012 14:19:57 +0800
-Message-ID: <1337062797-28629-2-git-send-email-amwang@redhat.com>
-References: <1337062797-28629-1-git-send-email-amwang@redhat.com>
+Subject: [PATCH 1/2] check kernel module existance
+Date: Tue, 15 May 2012 14:19:56 +0800
+Message-ID: <1337062797-28629-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1337062797-28629-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -15,36 +13,142 @@ Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cong Wang <xiyo
 
 From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-We should not trust cmdline passed by users, always
-check the install files passed from cmdline. This restores
-the old behaviour which was changed by:
+This patch adds check of kernel module existance and
+propagate errors to upper callers.
 
-	commit c6c6a08850c7e4ee211696895f7ca3864be85052
-	Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-	Date:   Tue Feb 7 18:26:30 2012 +0100
-
-	    add "install_items" to dracut.conf
+In case of break other callers of instmods(), this patch
+adds an option '-c' to it, only when "-c" is specified
+we fail, otherwise, errors are ignored.
 
 Reported-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
 ---
- dracut.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ dracut-functions.sh                        |   37 +++++++++++++++++++++-------
+ dracut.sh                                  |   10 ++++++-
+ modules.d/90kernel-modules/module-setup.sh |    8 ++++-
+ 3 files changed, 42 insertions(+), 13 deletions(-)
 
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index 8256e02..4fe428e 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -1108,17 +1108,22 @@ find_kernel_modules () {
+     find_kernel_modules_by_path  drivers
+ }
+ 
+-# instmods <kernel module> [<kernel module> ... ]
+-# instmods <kernel subsystem>
++# instmods [-c] <kernel module> [<kernel module> ... ]
++# instmods [-c] <kernel subsystem>
+ # install kernel modules along with all their dependencies.
+ # <kernel subsystem> can be e.g. "=block" or "=drivers/usb/storage"
+ instmods() {
+     [[ $no_kernel = yes ]] && return
+     # called [sub]functions inherit _fderr
+     local _fderr=9
++    local _check=no
++    if [[ $1 = '-c' ]]; then
++        _check=yes
++        shift
++    fi
+ 
+     function inst1mod() {
+-        local _mod="$1"
++        local _ret=0 _mod="$1"
+         case $_mod in
+             =*)
+                 if [ -f $srcmods/modules.${_mod#=} ]; then
+@@ -1162,26 +1167,40 @@ instmods() {
+                 ((_ret+=$?))
+                 ;;
+         esac
++        return $_ret
+     }
+ 
+     function instmods_1() {
+-        local _ret=0 _mod _mpargs
++        local _mod _mpargs
+         if (($# == 0)); then  # filenames from stdin
+             while read _mod; do
+-                inst1mod "${_mod%.ko*}"
++                inst1mod "${_mod%.ko*}" || {
++                    if [ "$_check" = "yes" ]; then
++                        dfatal "Failed to install $_mod"
++                        return 1
++                    fi
++                }
+             done
+         fi
+         while (($# > 0)); do  # filenames as arguments
+-            inst1mod ${1%.ko*}
++            inst1mod ${1%.ko*} || {
++                if [ "$_check" = "yes" ]; then
++                    dfatal "Failed to install $1"
++                    return 1
++                fi
++            }
+             shift
+         done
+-        return $_ret
++        return 0
+     }
+ 
+-    local _filter_not_found='FATAL: Module .* not found.'
++    local _ret _filter_not_found='FATAL: Module .* not found.'
++    set -o pipefail
+     # Capture all stderr from modprobe to _fderr. We could use {var}>...
+     # redirections, but that would make dracut require bash4 at least.
+     eval "( instmods_1 \"\$@\" ) ${_fderr}>&1" \
+     | while read line; do [[ "$line" =~ $_filter_not_found ]] || echo $line;done | derror
+-    return $?
++    _ret=$?
++    set +o pipefail
++    return $_ret
+ }
 diff --git a/dracut.sh b/dracut.sh
-index 315b965..bf9e79f 100755
+index 2a7a812..315b965 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -770,7 +770,7 @@ done
+@@ -708,11 +708,17 @@ for moddir in "$dracutbasedir/modules.d"/[0-9][0-9]*; do
+         [[ $show_modules = yes ]] && echo "$_d_mod" || \
+             dinfo "*** Including module: $_d_mod ***"
+         if [[ $kernel_only = yes ]]; then
+-            module_installkernel $_d_mod
++            module_installkernel $_d_mod || {
++                dfatal "installkernel failed in module $_d_mod"
++                exit 1
++            }
+         else
+             module_install $_d_mod
+             if [[ $no_kernel != yes ]]; then
+-                module_installkernel $_d_mod
++                module_installkernel $_d_mod || {
++                    dfatal "installkernel failed in module $_d_mod"
++                    exit 1
++                }
+             fi
+         fi
+         mods_to_load=${mods_to_load// $_d_mod /}
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index 26f4784..8cff439 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -58,8 +58,12 @@ installkernel() {
+         hostonly='' instmods $drivers
+     fi
  
- if [[ $kernel_only != yes ]]; then
-     for item in $install_items; do
--        dracut_install -o "$item"
-+        dracut_install "$item"
-     done
-     unset item
+-    [[ $add_drivers ]] && hostonly='' instmods $add_drivers
+-    [[ $filesystems ]] && hostonly='' instmods $filesystems
++    if [[ $add_drivers ]]; then
++        hostonly='' instmods -c $add_drivers || return 1
++    fi
++    if [[ $filesystems ]]; then
++        hostonly='' instmods -c $filesystems || return 1
++    fi
  
+     # force install of scsi_wait_scan
+     hostonly='' instmods scsi_wait_scan
 -- 
 1.7.7.6
