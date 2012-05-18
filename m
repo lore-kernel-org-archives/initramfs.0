@@ -1,48 +1,34 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut:fstab-sys: Wait for devices specified using
- --mount option
-Date: Thu, 17 May 2012 09:23:32 -0400
-Message-ID: <20120517132332.GB16297@redhat.com>
-References: <20120515172301.GB24585@redhat.com>
- <20120515173611.GC24585@redhat.com>
-Mime-Version: 1.0
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [Patch] check ifenslave instead of brctl in parse-bond.sh
+Date: Fri, 18 May 2012 13:38:17 +0800
+Message-ID: <1337319497-32738-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120515173611.GC24585-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Tue, May 15, 2012 at 01:36:11PM -0400, Vivek Goyal wrote:
-> [Regenerated the patch on top of git repo. Should be easier to apply now]
-> 
-> dracut allows passing --mount option which mounts the specified devices.
-> But it does not wait for these devices to show up and mounting will fail
-> if devices do not show up by the time "mount" was called.
-> 
-> I am writing some patches to support kdump on iscsi target and I noticed
-> that one of the initqueue script was not called as we found the root
-> device and broke out of main loop.
-> 
-> There are two possible enancements to this patch.
-> 
-> - Introduce a time limited wait (rd.timeout something along the lines of
->   rd.retry). That will allow kdump to try to dump to a backup target if
->   primary targets fails to come up.
-> 
-> - Wait for UUID= and LABEL= to show up too. Right now kdump converts
->   UUID= and LABEL= to respective devices and passes /dev/* to dracut
->   --mount option. So I am not introducing the wait for UUID= or LABEL=
->  in this patch.
-> 
-> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Hi Harald,
+This is obviously wrong, ifenslave instead of brctl is needed for bonding.
 
-Any feedback on the patch? Do let me know if you want some changes.
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: WANG Cong <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Thanks
-Vivek
+---
+diff --git a/modules.d/40network/parse-bond.sh b/modules.d/40network/parse-bond.sh
+index 0a4c006..ae0ae97 100755
+--- a/modules.d/40network/parse-bond.sh
++++ b/modules.d/40network/parse-bond.sh
+@@ -18,7 +18,7 @@ if getarg bond= >/dev/null ; then
+     if [ -z "$netroot" ] ; then
+         die "No netboot configured, bond is invalid"
+     fi
+-    command -v brctl >/dev/null 2>&1 || die "No 'brctl' installed"
++    command -v ifenslave >/dev/null 2>&1 || die "No 'ifenslave' installed"
+ fi
+ 
+ # We translate list of slaves to space-separated here to mwke it easier to loop over them in ifup
