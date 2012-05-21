@@ -1,39 +1,51 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 1/3] Add vlan support in network module
-Date: Mon, 21 May 2012 17:26:02 +0800
-Message-ID: <4FBA0A2A.5040600@gmail.com>
-References: <1337591686-31875-1-git-send-email-amwang@redhat.com> <4FBA094B.5040303@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 3/3] Avoid generating udev rules for vlan interface
+Date: Mon, 21 May 2012 11:25:11 +0200
+Message-ID: <4FBA09F7.4030003@redhat.com>
+References: <1337591686-31875-1-git-send-email-amwang@redhat.com> <1337591686-31875-3-git-send-email-amwang@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=message-id:date:from:user-agent:mime-version:to:cc:subject
-         :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=FF1L/eUI3nVdJdb+DS85igkQQGioXQNz8E9LdkzdPyc=;
-        b=rcF4w1FxMuFW1q7HZsPyVaWpPXl98L89EFISAQhj8514UjvSWLA7HkudqRzR+yDfwz
-         iM5Gde42/mOL+Cz4k8c27Y8T2erQV8OaVpEe80QJ/gobEOxbzBCoeVCPWaTO9OqqRPFL
-         PAumjJNodv0DzLYGrPyaRwnIf7XhIAZAgFKZX2BT+giIiyB9FsjMOY2Xpz0XDIg63kUr
-         WHCfx/cXt+kIDePTUkvNUrrvDspcs29+GZmhSebQHmiAP2pLfu/ld1o6xz4AvkpYPOAE
-         g9/yWHfJD1Kp6+ALu+fXjLr1pc6mZJjgoXtuxn5gBW1wqv/bqxngtHn0x46+grbG/EMj
-         PtHQ==
-In-Reply-To: <4FBA094B.5040303-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1337591686-31875-3-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 05/21/2012 05:22 PM, Harald Hoyer wrote:
-> vconfig is deprecated. Please use iproute.
->
-> -           /sbin/vconfig add ${PHYSDEV} ${VID}
-> +           ip link add dev ${DEVICE} link ${PHYSDEV} type vlan id ${VID}
->
+Am 21.05.2012 11:14, schrieb Cong Wang:
+> From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> 
+> Vlan device has the same mac address with its physical device,
+> if we generate udev rules for vlan NIC too, its physical device
+> name will be override.
+> 
+> I used an ugly hack in ifname-genrules.sh, don't know if we have any
+> better ways to fix this?
+> 
+> Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
+>  modules.d/40network/ifname-genrules.sh |    6 +++++-
+>  1 files changed, 5 insertions(+), 1 deletions(-)
+> 
+> diff --git a/modules.d/40network/ifname-genrules.sh b/modules.d/40network/ifname-genrules.sh
+> index e188c88..b36f167 100755
+> --- a/modules.d/40network/ifname-genrules.sh
+> +++ b/modules.d/40network/ifname-genrules.sh
+> @@ -10,7 +10,11 @@ fi
+>  {
+>      for p in $(getargs ifname=); do
+>          parse_ifname_opts $p
+> -        printf 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="%s", ATTR{type}=="1", NAME="%s"\n' "$ifname_mac" "$ifname_if"
+> +        #Hack: vlan device has the same mac address with its physical device
+> +        [ -e /tmp/vlan.info ] && source /tmp/vlan.info
+> +        if [ "$ifname_if" != "$vlanname" ]; then
+> +            printf 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="%s", ATTR{type}=="1", NAME="%s"\n' "$ifname_mac" "$ifname_if"
+> +        fi
+>      done
+>  
+>      # Rename non named interfaces out of the way for named ones.
 
-Fair enough, I will drop it. ;-)
-
-BTW, I think ifenslave can be dropped too, as we can use the /proc 
-interface to add slaves.
-
-Thanks!
+Maybe one of the /sys attributes indicate, that it is a vlan interface?
