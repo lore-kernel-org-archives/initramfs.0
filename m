@@ -1,7 +1,7 @@
 From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/7] Remove netroot check in cmdline parsing code
-Date: Tue, 22 May 2012 15:48:21 +0800
-Message-ID: <1337672903-1643-5-git-send-email-amwang@redhat.com>
+Subject: [PATCH 6/7] Do not use ifenslave
+Date: Tue, 22 May 2012 15:48:22 +0800
+Message-ID: <1337672903-1643-6-git-send-email-amwang@redhat.com>
 References: <1337672903-1643-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1337672903-1643-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -15,59 +15,56 @@ Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave You
 
 From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Relax the rules for kdump, we don't specify netroot in kdump.
+ifenslave could be dropped, use the /sys interface.
 
 Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- modules.d/40network/parse-bond.sh   |    3 ---
- modules.d/40network/parse-bridge.sh |    3 ---
- modules.d/40network/parse-vlan.sh   |    3 ---
- 3 files changed, 0 insertions(+), 9 deletions(-)
+ modules.d/40network/ifup.sh         |    2 +-
+ modules.d/40network/module-setup.sh |    2 +-
+ modules.d/40network/parse-bond.sh   |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index c03838f..1aaa1a8 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -156,7 +156,7 @@ if [ -e /tmp/bond.info ]; then
+ 
+         for slave in $bondslaves ; do
+             ip link set $slave down
+-            ifenslave $bondname $slave
++            echo "+$slave" > /sys/class/net/$bondname/bonding/slaves
+             ip link set $slave up
+             wait_for_if_up $slave
+         done
+diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+index f28286c..da58521 100755
+--- a/modules.d/40network/module-setup.sh
++++ b/modules.d/40network/module-setup.sh
+@@ -75,7 +75,7 @@ installkernel() {
+ install() {
+     local _arch _i _dir
+     dracut_install ip arping tr dhclient
+-    dracut_install -o brctl ifenslave
++    dracut_install -o brctl
+     inst "$moddir/ifup.sh" "/sbin/ifup"
+     inst "$moddir/netroot.sh" "/sbin/netroot"
+     inst "$moddir/dhclient-script.sh" "/sbin/dhclient-script"
 diff --git a/modules.d/40network/parse-bond.sh b/modules.d/40network/parse-bond.sh
-index ae0ae97..5822685 100755
+index 5822685..933ad27 100755
 --- a/modules.d/40network/parse-bond.sh
 +++ b/modules.d/40network/parse-bond.sh
-@@ -15,9 +15,6 @@
+@@ -15,7 +15,7 @@
  
  # Check if bond parameter is valid
  if getarg bond= >/dev/null ; then
--    if [ -z "$netroot" ] ; then
--        die "No netboot configured, bond is invalid"
--    fi
-     command -v ifenslave >/dev/null 2>&1 || die "No 'ifenslave' installed"
+-    command -v ifenslave >/dev/null 2>&1 || die "No 'ifenslave' installed"
++    :
  fi
  
-diff --git a/modules.d/40network/parse-bridge.sh b/modules.d/40network/parse-bridge.sh
-index aaa5a54..6e1fee1 100755
---- a/modules.d/40network/parse-bridge.sh
-+++ b/modules.d/40network/parse-bridge.sh
-@@ -13,9 +13,6 @@
- 
- # Check if bridge parameter is valid
- if getarg bridge= >/dev/null ; then
--    if [ -z "$netroot" ] ; then
--        die "No netboot configured, bridge is invalid"
--    fi
-     command -v brctl >/dev/null 2>&1 || die "No 'brctl' installed" 
- fi
- 
-diff --git a/modules.d/40network/parse-vlan.sh b/modules.d/40network/parse-vlan.sh
-index 60b09d8..3ba2289 100644
---- a/modules.d/40network/parse-vlan.sh
-+++ b/modules.d/40network/parse-vlan.sh
-@@ -9,9 +9,6 @@
- 
- # Check if vlan parameter is valid
- if getarg vlan= >/dev/null ; then
--    if [ -z "$netroot" ] ; then
--        die "No netboot configured, vlan is invalid"
--    fi
-     :
- fi
- 
+ # We translate list of slaves to space-separated here to mwke it easier to loop over them in ifup
 -- 
 1.7.7.6
