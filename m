@@ -1,37 +1,179 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 3/3] Avoid generating udev rules for vlan interface
-Date: Tue, 22 May 2012 09:43:37 +0800
-Message-ID: <4FBAEF49.60108@gmail.com>
-References: <1337591686-31875-1-git-send-email-amwang@redhat.com> <1337591686-31875-3-git-send-email-amwang@redhat.com> <4FBA09F7.4030003@redhat.com> <4FBA0B8D.1070708@gmail.com> <4FBA0E7E.1070004@redhat.com> <4FBA1698.3090006@gmail.com> <4FBA26A1.6010109@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/7] Add vlan support in network module
+Date: Tue, 22 May 2012 15:48:17 +0800
+Message-ID: <1337672903-1643-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=message-id:date:from:user-agent:mime-version:to:cc:subject
-         :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=hNsylEhcjNtdzd3xpGs6v6dQvgdX5ht9a46Lo9cC6Rc=;
-        b=iZ3grtFY8McZzTb0J53JVyxNoyrPT4S0T2S6Gg2e2KqLufUxmnhXbQ7o8y648RlzWy
-         /YKcyLdY9Z3tk2x97OczpUltxVLZl8TEsdjsds8QU6fnWA8iuiPivnbwITwHzWAKrgRh
-         7KWmd6cfJNprx4WBEIhhDRgdZlmw5BztW5vQKqBCIdC0Qc6ktnFIdvDgo6Z3aWCBtaPW
-         r9LZAJ4ogZG46Ktqylyk48gwt2H1TW1pip2cZggIDJjZxPAkp2pXgGTKI8mSDitzo8xn
-         QZTdn6fpadeHB058d4KdtZY04oxf4xa52fvRbqA4MSOcgNwDLW1X33+cKWhA6nkUBjUA
-         8YTA==
-In-Reply-To: <4FBA26A1.6010109-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 05/21/2012 07:27 PM, Harald Hoyer wrote:!
->
-> it would skip eth0.2, because its DEVPATH contains "virtual" and the rule is
-> never matched
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-When eth0.2 comes up, yes.
+This patch adds basic vlan support in network module.
 
-When eth0 comes up, no, both lines will be applied to eth0 and the final 
-result is that eth0 will be renamed to eth0.2.
+The cmdline syntax for vlan is:
 
-And eth0 comes up before eth0.2, so...
+        vlan=<vlanname>:<phydevice>
+
+for an example:
+
+        vlan=eth0.2:eth0
+
+or
+        vlan=vlan2:eth0
+
+See the doc in patch 2/7.
+
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ modules.d/40network/ifup.sh         |   29 ++++++++++++++++++++++
+ modules.d/40network/module-setup.sh |    3 ++
+ modules.d/40network/net-genrules.sh |    5 ++++
+ modules.d/40network/parse-vlan.sh   |   45 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 82 insertions(+), 0 deletions(-)
+ create mode 100644 modules.d/40network/parse-vlan.sh
+
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index 71b869d..c03838f 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -40,6 +40,17 @@ if [ -e /tmp/bridge.info ]; then
+     fi
+ fi
+ 
++if [ -e /tmp/vlan.info ]; then
++    . /tmp/vlan.info
++    if [ "$netif" = "$phydevice" ]; then
++        if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
++            : # We need to really setup bond (recursive call)
++        else
++            netif="$vlanname"
++        fi
++    fi
++fi
++
+ # disable manual ifup while netroot is set for simplifying our logic
+ # in netroot case we prefer netroot to bringup $netif automaticlly
+ [ -n "$2" -a "$2" = "-m" ] && [ -z "$netroot" ] && manualup="$2"
+@@ -178,6 +189,24 @@ if [ "$netif" = "$bridgename" ] && [ ! -e /tmp/net.$bridgename.up ]; then
+     brctl addif $bridgename $ethname
+ fi
+ 
++get_vid() {
++    case "$1" in
++    vlan*)
++        return ${1#vlan}
++        ;;
++    *.*)
++        return ${1##*.}
++        ;;
++    esac
++}
++
++if [ "$netif" = "$vlanname" ] && [ ! -e /tmp/net.$vlanname.up ]; then
++    modprobe 8021q
++    ip link set "$phydevice" up
++    wait_for_if_up "$phydevice"
++    ip link add dev "$vlanname" link "$phydevice" type vlan id "$(get_vid $vlanname; echo $?)"
++fi
++
+ # No ip lines default to dhcp
+ ip=$(getarg ip)
+ 
+diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+index d49b594..f28286c 100755
+--- a/modules.d/40network/module-setup.sh
++++ b/modules.d/40network/module-setup.sh
+@@ -68,6 +68,8 @@ installkernel() {
+     instmods ipv6
+     # bonding
+     instmods bonding
++    # vlan
++    instmods 8021q
+ }
+ 
+ install() {
+@@ -82,6 +84,7 @@ install() {
+     inst_hook pre-udev 50 "$moddir/ifname-genrules.sh"
+     inst_hook pre-udev 60 "$moddir/net-genrules.sh"
+     inst_hook cmdline 91 "$moddir/dhcp-root.sh"
++    inst_hook cmdline 95 "$moddir/parse-vlan.sh"
+     inst_hook cmdline 96 "$moddir/parse-bond.sh"
+     inst_hook cmdline 97 "$moddir/parse-bridge.sh"
+     inst_hook cmdline 98 "$moddir/parse-ip-opts.sh"
+diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
+index 7176681..142634e 100755
+--- a/modules.d/40network/net-genrules.sh
++++ b/modules.d/40network/net-genrules.sh
+@@ -31,6 +31,11 @@ fix_bootif() {
+         IFACES=${bondslaves%% *}
+     fi
+ 
++    if [ -e /tmp/vlan.info ]; then
++        . /tmp/vlan.info
++        IFACES=$phydevice
++    fi
++
+     ifup='/sbin/ifup $env{INTERFACE}'
+     [ -z "$netroot" ] && ifup="$ifup -m"
+ 
+diff --git a/modules.d/40network/parse-vlan.sh b/modules.d/40network/parse-vlan.sh
+new file mode 100644
+index 0000000..60b09d8
+--- /dev/null
++++ b/modules.d/40network/parse-vlan.sh
+@@ -0,0 +1,45 @@
++#!/bin/sh
++#
++# Format:
++#	vlan=<vlanname>:<phydevice>
++#
++
++# return if vlan already parsed
++[ -n "$vlanname" ] && return
++
++# Check if vlan parameter is valid
++if getarg vlan= >/dev/null ; then
++    if [ -z "$netroot" ] ; then
++        die "No netboot configured, vlan is invalid"
++    fi
++    :
++fi
++
++parsevlan() {
++    local v=${1}:
++    set --
++    while [ -n "$v" ]; do
++        set -- "$@" "${v%%:*}"
++        v=${v#*:}
++    done
++
++    unset vlanname phydevice
++    case $# in
++    2)  vlanname=$1; phydevice=$2 ;;
++    *)  die "vlan= requires two parameters" ;;
++    esac
++}
++
++unset vlanname phydevice
++
++if getarg vlan >/dev/null; then
++    # Read vlan= parameters if they exist
++    vlan="$(getarg vlan=)"
++    if [ ! "$vlan" = "vlan" ]; then
++        parsevlan "$(getarg vlan=)"
++    fi
++
++    echo "vlanname=\"$vlanname\"" > /tmp/vlan.info
++    echo "phydevice=\"$phydevice\"" >> /tmp/vlan.info
++    return
++fi
+-- 
+1.7.7.6
