@@ -1,7 +1,7 @@
 From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/7] Add doc for bridge= cmdline
-Date: Tue, 22 May 2012 15:48:20 +0800
-Message-ID: <1337672903-1643-4-git-send-email-amwang@redhat.com>
+Subject: [PATCH 5/7] Remove netroot check in cmdline parsing code
+Date: Tue, 22 May 2012 15:48:21 +0800
+Message-ID: <1337672903-1643-5-git-send-email-amwang@redhat.com>
 References: <1337672903-1643-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1337672903-1643-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -15,29 +15,59 @@ Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave You
 
 From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Document bridge= cmdline in dracut.cmdline(7).
+Relax the rules for kdump, we don't specify netroot in kdump.
 
 Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- dracut.cmdline.7.asc |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ modules.d/40network/parse-bond.sh   |    3 ---
+ modules.d/40network/parse-bridge.sh |    3 ---
+ modules.d/40network/parse-vlan.sh   |    3 ---
+ 3 files changed, 0 insertions(+), 9 deletions(-)
 
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index 79a4577..c131f1c 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -317,6 +317,9 @@ auto6::: do IPv6 autoconfiguration
-     then its values should be separated by semicolon.
-     Bond without parameters assumes bond=bond0:eth0,eth1:mode=balance-rr
+diff --git a/modules.d/40network/parse-bond.sh b/modules.d/40network/parse-bond.sh
+index ae0ae97..5822685 100755
+--- a/modules.d/40network/parse-bond.sh
++++ b/modules.d/40network/parse-bond.sh
+@@ -15,9 +15,6 @@
  
-+**bridge=_<bridgename>_:_<ethname>_**::
-+    Setup bridge <bridgename> with <ethname>. Bridge without parameters assumes bridge=br0:eth0
-+
+ # Check if bond parameter is valid
+ if getarg bond= >/dev/null ; then
+-    if [ -z "$netroot" ] ; then
+-        die "No netboot configured, bond is invalid"
+-    fi
+     command -v ifenslave >/dev/null 2>&1 || die "No 'ifenslave' installed"
+ fi
  
- NFS
- ~~~
+diff --git a/modules.d/40network/parse-bridge.sh b/modules.d/40network/parse-bridge.sh
+index aaa5a54..6e1fee1 100755
+--- a/modules.d/40network/parse-bridge.sh
++++ b/modules.d/40network/parse-bridge.sh
+@@ -13,9 +13,6 @@
+ 
+ # Check if bridge parameter is valid
+ if getarg bridge= >/dev/null ; then
+-    if [ -z "$netroot" ] ; then
+-        die "No netboot configured, bridge is invalid"
+-    fi
+     command -v brctl >/dev/null 2>&1 || die "No 'brctl' installed" 
+ fi
+ 
+diff --git a/modules.d/40network/parse-vlan.sh b/modules.d/40network/parse-vlan.sh
+index 60b09d8..3ba2289 100644
+--- a/modules.d/40network/parse-vlan.sh
++++ b/modules.d/40network/parse-vlan.sh
+@@ -9,9 +9,6 @@
+ 
+ # Check if vlan parameter is valid
+ if getarg vlan= >/dev/null ; then
+-    if [ -z "$netroot" ] ; then
+-        die "No netboot configured, vlan is invalid"
+-    fi
+     :
+ fi
+ 
 -- 
 1.7.7.6
