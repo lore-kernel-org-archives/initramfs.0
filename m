@@ -1,56 +1,37 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut-lib.sh: add find_mount()
-Date: Wed, 23 May 2012 09:31:55 +0200
-Message-ID: <20120523073155.GE14560@x2.net.home>
-References: <1337723769-5412-1-git-send-email-wwoods@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 3/3] Avoid generating udev rules for vlan interface
+Date: Wed, 23 May 2012 11:45:16 +0200
+Message-ID: <4FBCB1AC.907@redhat.com>
+References: <1337591686-31875-1-git-send-email-amwang@redhat.com> <1337591686-31875-3-git-send-email-amwang@redhat.com> <4FBA09F7.4030003@redhat.com> <4FBA0B8D.1070708@gmail.com> <4FBA0E7E.1070004@redhat.com> <4FBA1698.3090006@gmail.com> <4FBA26A1.6010109@redhat.com> <4FBAEF49.60108@gmail.com> <4FBB5D3D.2080101@redhat.com> <4FBB97E7.6060804@gmail.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1337723769-5412-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4FBB97E7.6060804-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Tue, May 22, 2012 at 05:56:09PM -0400, Will Woods wrote:
-> Add a function to find the mount point for a given device.
-> ---
->  modules.d/99base/dracut-lib.sh |   11 +++++++++++
->  1 file changed, 11 insertions(+)
+Am 22.05.2012 15:43, schrieb Cong Wang:
+> On 05/22/2012 05:32 PM, Harald Hoyer wrote:
+>> Am 22.05.2012 03:43, schrieb Cong Wang:
+>>> On 05/21/2012 07:27 PM, Harald Hoyer wrote:!
+>>>>
+>>>> it would skip eth0.2, because its DEVPATH contains "virtual" and the rule is
+>>>> never matched
+>>>
+>>> When eth0.2 comes up, yes.
+>>>
+>>> When eth0 comes up, no, both lines will be applied to eth0 and the final result
+>>> is that eth0 will be renamed to eth0.2.
+>>>
+>>> And eth0 comes up before eth0.2, so...
+>>
+>> well, but you wouldn't specify "ifname=" on the kernel command line for eth0.2,
+>> would you?
 > 
-> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-> index 8a54a7a..b6168df 100755
-> --- a/modules.d/99base/dracut-lib.sh
-> +++ b/modules.d/99base/dracut-lib.sh
-> @@ -402,6 +402,7 @@ udevproperty() {
->      fi
->  }
->  
-> +# check if a given directory is a mounted filesystem
->  ismounted() {
->      while read a m a; do
->          [ "$m" = "$1" ] && return 0
-> @@ -409,6 +410,16 @@ ismounted() {
->      return 1
->  }
->  
-> +# find mountpoint for the given device
-> +find_mount() {
-> +    local wanted_dev="$1"; [ -b "$1" ] && wanted_dev=$(readlink -e -q "$1")
-> +    local dev mnt etc
-> +    while read -r dev mnt etc; do
-> +        [ "$dev" = "$wanted_dev" ] && echo $mnt && return 0
-> +    done < /proc/mounts
-> +    return 1
-> +}
+> We use ip=eth0.2:dhcp to get IP for eth0.2 via DHCP, so ifname=eth0.2:XXX is
+> requried by ip=, no?
 
- or
-
-    findmnt -n --source $1 -o TARGET
-
-
--- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
- http://karelzak.blogspot.com
+no, you would need ifname=eth0:XXX
