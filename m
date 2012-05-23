@@ -1,48 +1,56 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] add anaconda-style option parsing to ip_to_var
-Date: Tue, 22 May 2012 18:31:07 -0400
-Message-ID: <1337725867-9922-1-git-send-email-wwoods@redhat.com>
+From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] dracut-lib.sh: add find_mount()
+Date: Wed, 23 May 2012 09:31:55 +0200
+Message-ID: <20120523073155.GE14560@x2.net.home>
+References: <1337723769-5412-1-git-send-email-wwoods@redhat.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1337723769-5412-1-git-send-email-wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Anaconda used arguments of the form:
+On Tue, May 22, 2012 at 05:56:09PM -0400, Will Woods wrote:
+> Add a function to find the mount point for a given device.
+> ---
+>  modules.d/99base/dracut-lib.sh |   11 +++++++++++
+>  1 file changed, 11 insertions(+)
+> 
+> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+> index 8a54a7a..b6168df 100755
+> --- a/modules.d/99base/dracut-lib.sh
+> +++ b/modules.d/99base/dracut-lib.sh
+> @@ -402,6 +402,7 @@ udevproperty() {
+>      fi
+>  }
+>  
+> +# check if a given directory is a mounted filesystem
+>  ismounted() {
+>      while read a m a; do
+>          [ "$m" = "$1" ] && return 0
+> @@ -409,6 +410,16 @@ ismounted() {
+>      return 1
+>  }
+>  
+> +# find mountpoint for the given device
+> +find_mount() {
+> +    local wanted_dev="$1"; [ -b "$1" ] && wanted_dev=$(readlink -e -q "$1")
+> +    local dev mnt etc
+> +    while read -r dev mnt etc; do
+> +        [ "$dev" = "$wanted_dev" ] && echo $mnt && return 0
+> +    done < /proc/mounts
+> +    return 1
+> +}
 
-  ip=<ip> gateway=<gw> netmask=<nm>
+ or
 
-for static IP configuration. So if we get a value for "ip" that's an IP
-address, look for gateway= and netmask= and related args to fill in the
-ip config vars.
----
- modules.d/40network/net-lib.sh |   14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+    findmnt -n --source $1 -o TARGET
 
-diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
-index d6adda9..75ad5e3 100644
---- a/modules.d/40network/net-lib.sh
-+++ b/modules.d/40network/net-lib.sh
-@@ -266,4 +266,18 @@ ip_to_var() {
-         4)  dev=$1; autoconf=$2; mtu=$3; macaddr=$4 ;;
-         *)  ip=$1; srv=$2; gw=$3; mask=$4; hostname=$5; dev=$6; autoconf=$7; mtu=$8; macaddr=$9 ;;
-     esac
-+    # anaconda-style argument cluster
-+    if strstr "$autoconf" "*.*.*.*"; then
-+        ip="$autoconf"
-+        gw=$(getarg gateway=)
-+        mask=$(getarg netmask=)
-+        hostname=$(getarg hostname=)
-+        dev=$(getarg ksdevice=)
-+        autoconf="none"
-+        mtu=$(getarg mtu=)
-+        case "$dev" in
-+            # ignore fancy values for ksdevice=XXX
-+            link|bootif|BOOTIF|ibft|*:*:*:*:*:*) dev="" ;;
-+        esac
-+    fi
- }
+
 -- 
-1.7.10.1
+ Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+ http://karelzak.blogspot.com
