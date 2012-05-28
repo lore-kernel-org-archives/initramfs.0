@@ -1,59 +1,43 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 3/3] Avoid generating udev rules for vlan interface
-Date: Thu, 24 May 2012 12:50:10 +0800
-Message-ID: <CAM_iQpU_64ggdyveLWZqAQJzTumGTin7sTeUeo_58OwAVRXs0w@mail.gmail.com>
-References: <1337591686-31875-1-git-send-email-amwang@redhat.com>
-	<1337591686-31875-3-git-send-email-amwang@redhat.com>
-	<4FBA09F7.4030003@redhat.com>
-	<4FBA0B8D.1070708@gmail.com>
-	<4FBA0E7E.1070004@redhat.com>
-	<4FBA1698.3090006@gmail.com>
-	<4FBA26A1.6010109@redhat.com>
-	<4FBAEF49.60108@gmail.com>
-	<4FBB5D3D.2080101@redhat.com>
-	<4FBB97E7.6060804@gmail.com>
-	<4FBCB1AC.907@redhat.com>
+From: maximilian attems <max-U9r9yeDMy7A@public.gmane.org>
+Subject: Re: Remove scsi_wait_scan module
+Date: Mon, 28 May 2012 10:00:15 +0000
+Message-ID: <20120528100015.GB10036@vostochny.stro.at>
+References: <1338110026.2957.5.camel@dabdike.int.hansenpartnership.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :cc:content-type;
-        bh=/PjF5PqQb3D5mKbZAhODTdDYfoaknL9DK4vh5kHMEZw=;
-        b=P74WcCPsdtJntaANThy3WuJn0H1o1REEtkzaLKISqzbAfDEF7H6vPZriyzkWCFteBr
-         KNt2SENAeV26CubWXs6sWYhZluyVmNwjA/0NO4XZuiJuHmwQQ9jPJ7ZolaOayw4aPHif
-         QG/559AQeerY4IO8a1GnQxXZdOGRgudTZhX27RyCkDSkKH/G2luRuMVE1m2+d8w3OfUI
-         HNau4pVD599cz911YiMJrJJ+IcgeQLhP67+hJTzFHv+HU9tNgkAweXc5LViAn8tGuUnI
-         JrfIxq052W+UlRa33+3Z2DAGA2gnubHWgPgUrSOYB1pRHvW2gYfQ1WjGeLPilYK3DvVA
-         Dmew==
-In-Reply-To: <4FBCB1AC.907-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1338110026.2957.5.camel-sFMDBYUN5F8GjUHQrlYNx2Wm91YjaHnnhRte9Li2A+AAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: linux-scsi <linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Jeff Mahoney <jeffm-l3A5Bk7waGM@public.gmane.org>, Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, May 23, 2012 at 5:45 PM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> Am 22.05.2012 15:43, schrieb Cong Wang:
->>
->> We use ip=eth0.2:dhcp to get IP for eth0.2 via DHCP, so ifname=eth0.2:XXX is
->> requried by ip=, no?
->
-> no, you would need ifname=eth0:XXX
->
+On Sun, May 27, 2012 at 10:13:46AM +0100, James Bottomley wrote:
+> scsi_wait_scan was introduced with asynchronous host scanning as a hack
+> for distributions that weren't using proper udev based wait for root to
+> appear in their initramfs scripts.  In 2.6.30 Commit 
+ 
+> c751085943362143f84346d274e0011419c84202
+> Author: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
+> Date:   Sun Apr 12 20:06:56 2009 +0200
+> 
+>     PM/Hibernate: Wait for SCSI devices scan to complete during resume
+> 
+> Actually broke scsi_wait_scan because it renders
+> scsi_complete_async_scans() a nop for modular SCSI if you include
+> scsi_scans.h (which this module does).
+> 
+> The lack of bug reports is sufficient proof that this module is no
+> longer used.
 
-Yeah, only specifying ifname=eth0:XXX seems also work.
+We do use it in initramfs-tools.
 
-Actually I am confused by the doc of ifname=, which said:
+There is quite a number of bug reports moaning about having to boot with
+`scsi_mod.scan=sync'. I didn't pass them on, because I didn't knew that
+the module itself got broken, for example:
+http://bugs.debian.org/616689
 
-    Note: If you use this option you _must_ specify an ifname= argument for all
-    interfaces used in ip= or fcoe= arguments.
-
-I think it is out-of-date? In my case, "ip=eth0.2:dhcp ifname=eth0:XXX", eth0.2
-appears in ip= but does not have to be in ifname=, as you suggested.
-
-What's more, how about bridge and bonding cases? Do we have to specify
-the slave device in ifname= instead of the master device??
-
-Thanks!
+-- 
+maks
