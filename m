@@ -1,45 +1,49 @@
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [BUGFIX Patch] fix a wrong usage of vinfo in init.sh
-Date: Tue, 29 May 2012 16:28:32 +0800
-Message-ID: <CAM_iQpVxAXOF9wL+kza9o4HA3ZAzaFh98Onvu=78gTWh5whDQQ@mail.gmail.com>
-References: <1338278814-8603-1-git-send-email-amwang@redhat.com>
-	<4FC486B4.8090506@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 3/8] Add doc for bond= cmdline
+Date: Tue, 29 May 2012 17:00:30 +0800
+Message-ID: <1338282035-14262-3-git-send-email-amwang@redhat.com>
+References: <1338282035-14262-1-git-send-email-amwang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :cc:content-type:content-transfer-encoding;
-        bh=ubajF7wZ6d5v37y8A8VUIJNXMqXSYT+eqpC2SEfANP0=;
-        b=znzXL8a82LqJ+CJMo1mXjhLfyvdQiQukjvetIUHTg8mlI7eM5QugcVwMcGufJA6DcC
-         H8KJlc0oapoTSG12nK7YdNAAvVzkgVeKjrvuQn1o9/fi7BvFvHM8tWeD4Mypx5cPzJyK
-         82B0ES9xy3yiz5TNeYQ2zZYEFF4U5vkktrHxlTXgSCJwi76OqAmMhf2AeCM9RG5m+pfU
-         P3tButdrtSXHVAV8Dhkdn066be1lcKq21NLyMAwaAtO+rzLK26nK4dOs5MrUtLzqJWY+
-         yYVvHACj9yh8vrNBRA+YKfBcYDTb7FGT/wIq8IWDCdyh9NFwEl2fKFy1OEcfAMMMiZZq
-         OsNw==
-In-Reply-To: <4FC486B4.8090506-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1338282035-14262-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Tue, May 29, 2012 at 4:20 PM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote=
-:
-> Am 29.05.2012 10:06, schrieb Cong Wang:
->> =C2=A0[ -f /etc/initrd-release ] && . /etc/initrd-release
->> -[ -n "$VERSION" ] && vinfo "dracut-$VERSION"
->> +[ -n "$VERSION" ] && echo "dracut-$VERSION" | vinfo
->>
->> =C2=A0source_conf /etc/conf.d
->>
->
-> Thanks! even simpler:
->
-> -[ -n "$VERSION" ] && vinfo "dracut-$VERSION"
-> +[ -n "$VERSION" ] && info "dracut-$VERSION"
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Yeah.. please go ahead to commit it. This blocks my testing.
+Document bond= cmdline in dracut.cmdline(7).
 
-Thanks!
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ dracut.cmdline.7.asc |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index 95c6aea..79a4577 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -309,6 +309,15 @@ auto6::: do IPv6 autoconfiguration
+     We support the four styles of vlan names: VLAN_PLUS_VID (vlan0005), VLAN_PLUS_VID_NO_PAD (vlan5),
+     DEV_PLUS_VID (eth0.0005), DEV_PLUS_VID_NO_PAD (eth0.5)
+ 
++**bond=_<bondname>_[:_<bondslaves>_:[:_<options>_]]**::
++    Setup bonding device <bondname> on top of <bondslaves>.
++    <bondslaves> is a comma-separated list of physical (ethernet) interfaces.
++    <options> is a comma-separated list on bonding options (modinfo bonding for details)
++    in format compatible with initscripts. If <options> includes multi-valued arp_ip_target option,
++    then its values should be separated by semicolon.
++    Bond without parameters assumes bond=bond0:eth0,eth1:mode=balance-rr
++
++
+ NFS
+ ~~~
+ **root=**[_<server-ip>_:]_<root-dir>_[:_<nfs-options>_]::
+-- 
+1.7.7.6
