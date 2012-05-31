@@ -1,119 +1,181 @@
-From: James Bottomley <James.Bottomley@HansenPartnership.com>
-Subject: Re: Remove scsi_wait_scan module
-Date: Thu, 31 May 2012 09:21:45 +0100
-Message-ID: <1338452505.3073.4.camel@dabdike.int.hansenpartnership.com>
-References: <1338110026.2957.5.camel@dabdike.int.hansenpartnership.com>
-	 <20120528100015.GB10036@vostochny.stro.at>
-	 <1338206866.6330.22.camel@dabdike>
-	 <CAA9_cmfh9ZtepX+hjLVRM95u_pAe90kZTkBeVmFPWm8AMaqJ5g@mail.gmail.com>
-	 <1338420752.3069.20.camel@dabdike>
-	 <CAA9_cmfZFm5+9ARB7tNVwNzwxJh3bPD=h7gMWhByjy00-qZvgg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-scsi-owner@vger.kernel.org>
-In-Reply-To: <CAA9_cmfZFm5+9ARB7tNVwNzwxJh3bPD=h7gMWhByjy00-qZvgg@mail.gmail.com>
-Sender: linux-scsi-owner@vger.kernel.org
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Handle multiple underlying devices of a bridge
+Date: Thu, 31 May 2012 22:07:38 +0800
+Message-ID: <1338473258-13467-1-git-send-email-amwang@redhat.com>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Dan Williams <dan.j.williams@gmail.com>
-Cc: maximilian attems <max@stro.at>, linux-scsi <linux-scsi@vger.kernel.org>, Dave Jones <davej@redhat.com>, Jeff Mahoney <jeffm@suse.de>, Ben Hutchings <ben@decadent.org.uk>, initramfs@vger.kernel.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Wed, 2012-05-30 at 19:34 -0700, Dan Williams wrote:
-> On Wed, May 30, 2012 at 4:32 PM, James Bottomley
-> <James.Bottomley@hansenpartnership.com> wrote:
-> > On Wed, 2012-05-30 at 11:26 -0700, Dan Williams wrote:
-> >> On Mon, May 28, 2012 at 5:07 AM, James Bottomley
-> >> <James.Bottomley@hansenpartnership.com> wrote:
-> >> > On Mon, 2012-05-28 at 10:00 +0000, maximilian attems wrote:
-> >> >> On Sun, May 27, 2012 at 10:13:46AM +0100, James Bottomley wrote:
-> >> >> > scsi_wait_scan was introduced with asynchronous host scanning as a hack
-> >> >> > for distributions that weren't using proper udev based wait for root to
-> >> >> > appear in their initramfs scripts.  In 2.6.30 Commit
-> >> >>
-> >> >> > c751085943362143f84346d274e0011419c84202
-> >> >> > Author: Rafael J. Wysocki <rjw@sisk.pl>
-> >> >> > Date:   Sun Apr 12 20:06:56 2009 +0200
-> >> >> >
-> >> >> >     PM/Hibernate: Wait for SCSI devices scan to complete during resume
-> >> >> >
-> >> >> > Actually broke scsi_wait_scan because it renders
-> >> >> > scsi_complete_async_scans() a nop for modular SCSI if you include
-> >> >> > scsi_scans.h (which this module does).
-> >> >> >
-> >> >> > The lack of bug reports is sufficient proof that this module is no
-> >> >> > longer used.
-> >> >>
-> >> >> We do use it in initramfs-tools.
-> >> >>
-> >> >> There is quite a number of bug reports moaning about having to boot with
-> >> >> `scsi_mod.scan=sync'. I didn't pass them on, because I didn't knew that
-> >> >> the module itself got broken, for example:
-> >> >> http://bugs.debian.org/616689
-> >> >
-> >> > OK, so what these bugs show is the breakage ... basically scsi_wait_scan
-> >> > isn't really waiting for the scans to complete.  I can fix it in stable
-> >> > so you can close your bug reports, but if I do, can you also transition
-> >> > away from using it so I can remove it in 3.5?
-> >>
-> >> Is there some other method whereby userspace can sync all driver
-> >> probing actions?
-> >
-> > No,  but then there never really was.  The theory is you know all the
-> > disks you need (/ /usr and so on) and you just wait for them to appear
-> > before mounting them and proceeding with boot.
-> >
-> >> We won't need scsi_complete_async_scans() after:
-> >>
-> >>   http://marc.info/?l=linux-scsi&m=133840132007532&w=2
-> >>
-> >> ...but won't initramfs environments still need a way to trigger
-> >> wait_for_device_probe()?  Something like echo "flush" >
-> >> /sys/devices/async_probe. and maybe reading that file indicates if
-> >> some async probing is still in-flight?
-> >
-> > Why?  The job of an initramfs is to mount root.  All it has to do is
-> > wait for root to appear via udev and then proceed.  The whole reason for
-> > doing stuff async initially was to speed boot, so probing can still be
-> > ongoing even after the initrd exits.
-> >
-> > If you think about it, most modern fabrics are hot plug.  Just because
-> > the initial scan has completed there's no guarantee that all the devices
-> > have appeared yet.
-> 
-> Fine for single device root, but what about raid and degraded assembly?
-> 
-> Last time I checked scsi_wait_scan was still being used by dracut in
-> the case where it decides to stop waiting for all raid members to
-> appear.  It's a "last call" before proceeding with degraded assembly.
+From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-That's pretty pointless behaviour, isn't it?  What it's basically doing
-is allowing a set time for the devices to appear, waiting out that time
-(so presumably something is wrong with one or more of the devices), then
-inserting scsi_wait_scan as some type of magic incantation to just make
-it work.
+A bridge device with only one underlying ethernet device is almost
+useless, for sure we want to support a bridge with multiple
+underlying devices.
 
-> If you immediately assemble and mount root as soon as the root device
-> could be started it will almost always be a degraded array.  Sure the
-> initramfs can just timeout arrival, but at a minimum that timeout
-> should be "load module + flush scanning".  Without a flush mechanism
-> it's just a shot in the dark what that minimum timeout should be.
+This patch adds the support by extending <ethname> in the original
+bridge= cmdline to a comma-separated list of ethernet interfaces.
 
-No, you wait a specified time for all the devices to appear before
-assembling the raid.  If they don't, you try to bring a degraded raid
-up.
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-The behaviour is also dependent on the user: If I'm a savvy user and I
-have a raid log, I want my system up as fast as possible, so I only want
-to wait until the minimum number of devices appears before assembling
-the raid and moving on, knowing that hotplug of the remaining will cause
-a log replay.
+---
+ dracut.cmdline.7.asc                |    5 ++-
+ modules.d/40network/ifup.sh         |   38 ++++++++++++++++++++--------------
+ modules.d/40network/net-genrules.sh |    2 +-
+ modules.d/40network/parse-bridge.sh |   17 ++++++++-------
+ 4 files changed, 35 insertions(+), 27 deletions(-)
 
-> If ata error recovery is kicking in and needs 10s of seconds to
-> recover a drive I'd want my initramfs to wait for that process to
-> quiesce before timing out and moving on.
-
-That's the timeout you specify.
-
-James
-
-
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index dcdbbce..b642d2f 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -316,8 +316,9 @@ auto6::: do IPv6 autoconfiguration
+     then its values should be separated by semicolon.
+     Bond without parameters assumes bond=bond0:eth0,eth1:mode=balance-rr
+ 
+-**bridge=_<bridgename>_:_<ethname>_**::
+-    Setup bridge <bridgename> with <ethname>. Bridge without parameters assumes bridge=br0:eth0
++**bridge=_<bridgename>_:_<ethnames>_**::
++    Setup bridge <bridgename> with <ethnames>. <ethnames> is a comma-separated
++    list of physical (ethernet) interfaces. Bridge without parameters assumes bridge=br0:eth0
+ 
+ 
+ NFS
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index 1aaa1a8..c9516bb 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -31,13 +31,15 @@ fi
+ # bridge this interface?
+ if [ -e /tmp/bridge.info ]; then
+     . /tmp/bridge.info
+-    if [ "$netif" = "$ethname" ]; then
+-        if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
+-            : # We need to really setup bond (recursive call)
+-        else
+-            netif="$bridgename"
++    for ethname in $ethnames ; do
++        if [ "$netif" = "$ethname" ]; then
++            if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
++                : # We need to really setup bond (recursive call)
++            else
++                netif="$bridgename"
++            fi
+         fi
+-    fi
++    done
+ fi
+ 
+ if [ -e /tmp/vlan.info ]; then
+@@ -175,18 +177,22 @@ fi
+ 
+ # XXX need error handling like dhclient-script
+ 
++if [ -e /tmp/bridge.info ]; then
++    . /tmp/bridge.info
+ # start bridge if necessary
+-if [ "$netif" = "$bridgename" ] && [ ! -e /tmp/net.$bridgename.up ]; then
+-    if [ "$ethname" = "$bondname" ] ; then
+-        DO_BOND_SETUP=yes ifup $bondname
+-    else
+-        ip link set $ethname up
++    if [ "$netif" = "$bridgename" ] && [ ! -e /tmp/net.$bridgename.up ]; then
++        brctl addbr $bridgename
++        brctl setfd $bridgename 0
++        for ethname in $ethnames ; do
++            if [ "$ethname" = "$bondname" ] ; then
++                DO_BOND_SETUP=yes ifup $bondname
++            else
++                ip link set $ethname up
++            fi
++            wait_for_if_up $ethname
++            brctl addif $bridgename $ethname
++        done
+     fi
+-    wait_for_if_up $ethname
+-    # Create bridge and add eth to bridge
+-    brctl addbr $bridgename
+-    brctl setfd $bridgename 0
+-    brctl addif $bridgename $ethname
+ fi
+ 
+ get_vid() {
+diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
+index ca47b2b..2d3dff2 100755
+--- a/modules.d/40network/net-genrules.sh
++++ b/modules.d/40network/net-genrules.sh
+@@ -21,7 +21,7 @@ fix_bootif() {
+     # bridge: attempt only the defined interface
+     if [ -e /tmp/bridge.info ]; then
+         . /tmp/bridge.info
+-        IFACES=$ethname
++        IFACES=${ethnames%% *}
+     fi
+ 
+     # bond: attempt only the defined interface (override bridge defines)
+diff --git a/modules.d/40network/parse-bridge.sh b/modules.d/40network/parse-bridge.sh
+index 6e1fee1..5728fb6 100755
+--- a/modules.d/40network/parse-bridge.sh
++++ b/modules.d/40network/parse-bridge.sh
+@@ -3,8 +3,9 @@
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ #
+ # Format:
+-#       bridge=<bridgename>:<ethname>
++#       bridge=<bridgename>:<ethnames>
+ #
++#       <ethnames> is a comma-separated list of physical (ethernet) interfaces
+ #       bridge without parameters assumes bridge=br0:eth0
+ #
+ 
+@@ -24,16 +25,16 @@ parsebridge() {
+         v=${v#*:}
+     done
+ 
+-    unset bridgename ethname
++    unset bridgename ethnames
+     case $# in
+-        0)  bridgename=br0; ethname=$iface ;;
++        0)  bridgename=br0; ethnames=$iface ;;
+         1)  die "bridge= requires two parameters" ;;
+-        2)  bridgename=$1; ethname=$2 ;;
++        2)  bridgename=$1; ethnames=$(echo $2|tr "," " ") ;;
+         *)  die "bridge= requires two parameters" ;;
+     esac
+ }
+ 
+-unset bridgename ethname
++unset bridgename ethnames
+ 
+ iface=eth0
+ if [ -e /tmp/bond.info ]; then
+@@ -43,7 +44,7 @@ if [ -e /tmp/bond.info ]; then
+     fi
+ fi
+ 
+-# Parse bridge for bridgename and ethname
++# Parse bridge for bridgename and ethnames
+ if bridge="$(getarg bridge)"; then
+     # Read bridge= parameters if they exist
+     if [ -n "$bridge" ]; then
+@@ -52,9 +53,9 @@ if bridge="$(getarg bridge)"; then
+     # Simple default bridge
+     if [ -z "$bridgename" ]; then
+         bridgename=br0
+-        ethname=$iface
++        ethnames=$iface
+     fi
+     echo "bridgename=$bridgename" > /tmp/bridge.info
+-    echo "ethname=$ethname" >> /tmp/bridge.info
++    echo "ethnames=\"$ethnames\"" >> /tmp/bridge.info
+     return
+ fi
+-- 
+1.7.7.6
