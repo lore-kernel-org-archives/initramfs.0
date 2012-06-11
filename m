@@ -1,70 +1,43 @@
-From: Juan RP <xtraeme-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] Avoid annonying warnings when pkg-config is not installed.
-Date: Wed, 6 Jun 2012 14:27:34 +0200
-Message-ID: <20120606142734.a7abbbd9.xtraeme@gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/2] fix ifup for static ipv6
+Date: Mon, 11 Jun 2012 13:46:21 -0400
+Message-ID: <1339436782-31960-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=date:from:to:subject:message-id:x-mailer:mime-version:content-type
-         :content-transfer-encoding;
-        bh=Jd2F4almsqi3MUKYCCXaqqTMW8NgXnhkot1KoqZRedA=;
-        b=bqx7olRBohzOw/89ul3zDNNafxR7RmBRdkNnoH2MLXoqS0XNfW4GuDTdl40RU9TQ8K
-         /dbaZG1k0uFr9hrQ1BzO19gZFN0SwM3L1SjvI/wvhkfvrLuRHm3PepqTzvFs4X8Cs/SU
-         RfFJiuc0j78jbr/1Cp3nchXT2ZKIvpY9+iZGkCcr9ewkmWyMVs55OIQcKnFo1gz7Cade
-         eGXfnXfY4PQVqN0C4Oc6SYRJw3dgjPF7LXO1fi4OqvSuODnfmHEkdsj9RXmUU/9bw1km
-         VRiwElNge1EVplinNKPqxs7n85I2hWyk4VyDMIU32x4fUb/aZ5FjLNESMpjaO5U7xwTh
-         p7PQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+"brd +" is not valid for ipv6. This causes the 'ip addr add' command to
+fail with the message "Broadcast can be set only for IPv4 addresses".
 
-From 7f805792b626e10baa87554dc5efc48cc86c6e5d Mon Sep 17 00:00:00 2001
-From: Juan RP <xtraeme-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Wed, 6 Jun 2012 14:19:59 +0200
-Subject: [PATCH] Avoid annonying warnings when pkg-config is not installed.
-
+So: don't use "brd +" for ipv6.
 ---
- dracut-functions.sh                    |    2 +-
- modules.d/95udev-rules/module-setup.sh |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ modules.d/40network/ifup.sh |    9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index f788878..4180f03 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -531,7 +531,7 @@ inst_symlink() {
-     ln -sfn $(convert_abs_rel "${_target}" "${_realsrc}") "$initdir/$_target"
- }
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index f785968..245b450 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -105,10 +105,13 @@ do_static() {
+     wait_for_if_up $netif
+     [ -n "$macaddr" ] && ip link set address $macaddr
+     [ -n "$mtu" ] && ip link set mtu $mtu
+-    # do not flush addr for ipv6
+-    strstr $ip '*:*:*' || \
++    if strstr $ip '*:*:*'; then
++        # note no ip addr flush for ipv6
++        ip addr add $ip/$mask dev $netif
++    else
+         ip addr flush dev $netif
+-    ip addr add $ip/$mask brd + dev $netif
++        ip addr add $ip/$mask brd + dev $netif
++    fi
  
--udevdir=$(pkg-config udev --variable=udevdir)
-+udevdir=$(pkg-config udev --variable=udevdir 2>/dev/null)
- if ! [[ -d "$udevdir" ]]; then
-     [[ -d /lib/udev ]] && udevdir=/lib/udev
-     [[ -d /usr/lib/udev ]] && udevdir=/usr/lib/udev
-diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-rules/module-setup.sh
-index e8c1c04..ff47021 100755
---- a/modules.d/95udev-rules/module-setup.sh
-+++ b/modules.d/95udev-rules/module-setup.sh
-@@ -5,13 +5,13 @@
- install() {
-     local _i
- 
--    systemdutildir=$(pkg-config systemd --variable=systemdutildir)
-+    systemdutildir=$(pkg-config systemd --variable=systemdutildir 2>/dev/null)
-     if ! [[ -d "$systemdutildir" ]]; then
-         [[ -d /lib/systemd ]] && systemdutildir=/lib/systemd
-         [[ -d /usr/lib/systemd ]] && systemdutildir=/usr/lib/systemd
-     fi
- 
--    udevdir=$(pkg-config udev --variable=udevdir)
-+    udevdir=$(pkg-config udev --variable=udevdir 2>/dev/null)
-     if ! [[ -d "$udevdir" ]]; then
-         [[ -d /lib/udev ]] && udevdir=/lib/udev
-         [[ -d /usr/lib/udev ]] && udevdir=/usr/lib/udev
+     [ -n "$gw" ] && echo ip route add default via $gw dev $netif > /tmp/net.$netif.gw
+     [ -n "$hostname" ] && echo "echo $hostname > /proc/sys/kernel/hostname" > /tmp/net.$netif.hostname
 -- 
-1.7.10.3
-
+1.7.10.2
