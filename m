@@ -1,10 +1,11 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/4] man pages: hostonly mode generates host-specific configuration
-Date: Mon, 25 Jun 2012 18:32:01 +0200
-Message-ID: <1340641923-14477-2-git-send-email-aidecoe@aidecoe.name>
+Subject: [PATCH 3/4] dracut-lib.sh: Use "$*" instead of "$@" in warn, info, and so on...
+Date: Mon, 25 Jun 2012 18:32:02 +0200
+Message-ID: <1340641923-14477-3-git-send-email-aidecoe@aidecoe.name>
 References: <1340641923-14477-1-git-send-email-aidecoe@aidecoe.name>
+ <1340641923-14477-2-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1340641923-14477-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1340641923-14477-2-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -13,40 +14,70 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-This fact hasn't been mentioned.
+"$@" might cause some uneccessary word breaking.
 ---
- dracut.8.asc      |    4 ++--
- dracut.conf.5.asc |    3 ++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ modules.d/99base/dracut-lib.sh |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/dracut.8.asc b/dracut.8.asc
-index cadd740..bab5996 100644
---- a/dracut.8.asc
-+++ b/dracut.8.asc
-@@ -232,8 +232,8 @@ Default:
-     This is useful when running dracut from a git checkout.
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 5dc3fbd..e63f3f0 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -297,12 +297,12 @@ source_conf() {
  
- **-H, --hostonly**::
--    Host-Only mode: Install only what is needed for booting
--    the local host instead of a generic host.
-+    Host-Only mode: Install only what is needed for booting the local host
-+    instead of a generic host and generate host-specific configuration.
- +
- [WARNING]
- ====
-diff --git a/dracut.conf.5.asc b/dracut.conf.5.asc
-index 017a221..d17477d 100644
---- a/dracut.conf.5.asc
-+++ b/dracut.conf.5.asc
-@@ -65,7 +65,8 @@ line are not interpreted.
-     Strip binaries in the initramfs (default=yes)
+ die() {
+     {
+-        echo "<24>dracut: FATAL: $@";
++        echo "<24>dracut: FATAL: $*";
+         echo "<24>dracut: Refusing to continue";
+     } > /dev/kmsg
  
- *hostonly=*"__{yes|no}__"::
--    Host-Only mode: Install only what is needed for booting the local host instead of a generic host.
-+    Host-Only mode: Install only what is needed for booting the local host
-+    instead of a generic host and generate host-specific configuration.
+     {
+-        echo "warn dracut: FATAL: \"$@\"";
++        echo "warn dracut: FATAL: \"$*\"";
+         echo "warn dracut: Refusing to continue";
+     } >> $hookdir/emergency/01-die.sh
  
- *tmpdir=*"__<temporary directory>__"::
-     Specify temporary directory to use.
+@@ -327,25 +327,25 @@ if [ ! -x /lib/systemd/systemd ]; then
+ 
+     warn() {
+         check_quiet
+-        echo "<28>dracut Warning: $@" > /dev/kmsg
+-        echo "dracut Warning: $@" >&2
++        echo "<28>dracut Warning: $*" > /dev/kmsg
++        echo "dracut Warning: $*" >&2
+     }
+ 
+     info() {
+         check_quiet
+-        echo "<30>dracut: $@" > /dev/kmsg
++        echo "<30>dracut: $*" > /dev/kmsg
+         [ "$DRACUT_QUIET" != "yes" ] && \
+-            echo "dracut: $@"
++            echo "dracut: $*"
+     }
+ 
+ else
+ 
+     warn() {
+-        echo "Warning: $@" >&2
++        echo "Warning: $*" >&2
+     }
+ 
+     info() {
+-        echo "$@"
++        echo "$*"
+     }
+ 
+ fi
+@@ -827,7 +827,7 @@ emergency_shell()
+     fi
+ 
+     echo ; echo
+-    warn $@
++    warn "$*"
+     source_hook "$hook"
+     echo
+ 
 -- 
 1.7.8.6
