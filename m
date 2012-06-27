@@ -1,42 +1,52 @@
 From: Srinivasa T N <seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 1/1] Convert MAC in BOOTIF parameter to lower case
-Date: Wed, 27 Jun 2012 00:04:36 +0530
-Message-ID: <4FEA00BC.8090505@linux.vnet.ibm.com>
+Subject: [PATCH] Fixed BOOTIF for converting mac addr to lowercase
+Date: Wed, 27 Jun 2012 11:29:13 +0530
+Message-ID: <4FEAA131.3040304@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------000805080706090200010502"
+ boundary="------------030301080307080308070205"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 This is a multi-part message in MIME format.
---------------000805080706090200010502
+--------------030301080307080308070205
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 
-The patch at http://comments.gmane.org/gmane.linux.kernel.initramfs/2244 
-takes care of only the MAC conversion to lower case in the interface 
-name.  But the same has to be taken care for BOOTIF also.  This patch 
-takes care of changing the BOOTIF to lower case.
+The patch, acfab373 - Handle upper case MAC addresses in ifname 
+option,takes care of only the MAC conversion to lower case in the 
+interface name.  But the same has to be taken care for BOOTIF also.  
+This patch takes care of changing the BOOTIF to lower case.
 
-Note that sed has been used instead of tr, as dracut does not install tr 
-to the initramfs, atleast on RHEL 6.x.
+Note that sed has been used in the patch instead of tr, as it is not 
+compulsion to install tr by dracut in the initramfs and may not be 
+available always.
 
 Signed-off-by: Srinivasa T N (seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org)
 
-
---------------000805080706090200010502
+--------------030301080307080308070205
 Content-Type: text/plain;
  name="convert-mac-to-lower-net-genrules.patch"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
  filename="convert-mac-to-lower-net-genrules.patch"
 
-diff -rNu a/dracut-004/modules.d/40network/net-genrules.sh b/dracut-004/modules.d/40network/net-genrules.sh
---- a/dracut-004/modules.d/40network/net-genrules.sh	2012-06-26 21:51:37.835027611 +0530
-+++ b/dracut-004/modules.d/40network/net-genrules.sh	2012-06-25 14:21:02.905652291 +0530
-@@ -10,7 +10,8 @@
+From 2ec9c91adbf808dbad9bdd2057d9df55a62b711f Mon Sep 17 00:00:00 2001
+From: Srinivasa T N <seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Wed, 27 Jun 2012 11:20:13 +0530
+Subject: [PATCH] Fixed BOOTIF for converting mac addr to lowercase
+
+---
+ modules.d/40network/net-genrules.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
+index 99d0fe5..b2f4fbf 100755
+--- a/modules.d/40network/net-genrules.sh
++++ b/modules.d/40network/net-genrules.sh
+@@ -10,7 +10,8 @@ fix_bootif() {
      macaddr=${macaddr%:}
      # strip hardware type field from pxelinux
      [ -n "${macaddr%??:??:??:??:??:??}" ] && macaddr=${macaddr#??:}
@@ -46,5 +56,8 @@ diff -rNu a/dracut-004/modules.d/40network/net-genrules.sh b/dracut-004/modules.
  }
  
  # Don't continue if we don't need network
+-- 
+1.7.4.4
 
---------------000805080706090200010502--
+
+--------------030301080307080308070205--
