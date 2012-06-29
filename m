@@ -1,116 +1,81 @@
-From: Srinivasa T N <seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 1/1] Convert MAC in BOOTIF parameter to lower case
-Date: Fri, 29 Jun 2012 16:02:54 +0530
-Message-ID: <4FED8456.8070509@linux.vnet.ibm.com>
-References: <4FEA00BC.8090505@linux.vnet.ibm.com> <20120627203314.2e0136c1@kryten> <4FEAF08F.1030103@linux.vnet.ibm.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCE] dracut 020 release
+Date: Fri, 29 Jun 2012 13:46:15 +0200
+Message-ID: <4FED9587.2050708@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------020509000700010303070708"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4FEAF08F.1030103-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Srinivasa T N <seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Anton Blanchard <anton-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kamalesh Babulal <kamalesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, luciano.chavez-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This is a multi-part message in MIME format.
---------------020509000700010303070708
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-
-On 06/27/2012 05:07 PM, Srinivasa T N wrote:
-> On 06/27/2012 04:03 PM, Anton Blanchard wrote:
->>
->> Hi,
->>
->>> The patch at
->>> http://comments.gmane.org/gmane.linux.kernel.initramfs/2244 takes
->>> care of only the MAC conversion to lower case in the interface name.
->>> But the same has to be taken care for BOOTIF also. This patch takes
->>> care of changing the BOOTIF to lower case.
->>>
->>> Note that sed has been used instead of tr, as dracut does not install
->>> tr to the initramfs, atleast on RHEL 6.x.
->>
->> Good to know, could you replace the existing interface MAC conversion
->> with sed too?
->>
->
-> Attached a patch to do the same.
->
-Sorry for sending the wrong patch yesterday.  I am sending the correct 
-patch with both the patches.
-
-Regards,
-Seenu.
-
---------------020509000700010303070708
-Content-Type: text/plain;
- name="convert-mac-to-lower-case.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="convert-mac-to-lower-case.patch"
-
-From 2ec9c91adbf808dbad9bdd2057d9df55a62b711f Mon Sep 17 00:00:00 2001
-From: Srinivasa T N <seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 27 Jun 2012 11:20:13 +0530
-Subject: [PATCH 1/2] Fixed BOOTIF for converting mac addr to lowercase
-
----
- modules.d/40network/net-genrules.sh |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
-index 99d0fe5..b2f4fbf 100755
---- a/modules.d/40network/net-genrules.sh
-+++ b/modules.d/40network/net-genrules.sh
-@@ -10,7 +10,8 @@ fix_bootif() {
-     macaddr=${macaddr%:}
-     # strip hardware type field from pxelinux
-     [ -n "${macaddr%??:??:??:??:??:??}" ] && macaddr=${macaddr#??:}
--    echo $macaddr
-+    # return macaddr with lowercase alpha characters expected by udev
-+    echo $macaddr | sed 'y/ABCDEF/abcdef/'
- }
- 
- # Don't continue if we don't need network
--- 
-1.7.4.4
+dracut-020
+==========
+- changed rd.dasd kernel parameter
+- arm kernel modules added to kernel-modules
+- make udevdir systemdutildir systemdsystemunitdir global vars
+  your distribution should ship those settings in
+  /etc/dracut.conf.d/01-distro.conf
+  see dracut.conf.d/fedora.conf.example
+- kernel modules are now only handled with /sys/modules and modules.dep
+- systemd fixups
+- mdraid: wait for md devices to be clean, before shutdown
+- ifup fixed for ipv6
+- add PARTUUID as root=PARTUUID=<partition uuid> parameter
+- fixed instmods() return code and set pipefail globally
+- add 04watchdog dracut module
+- dracut-shutdown.service: fixed ordering to be before shutdown.target
+- make use of "ln -r" instead of shell functions, if new coreutils is installed
+- network: support vlan tagged bonding
+- new dracut module qemu and qemu-net to install all kernel driver
+- fs-lib/fs-lib.sh: removed test mounting of btrfs and xfs
+- no more "mknod" in the initramfs!!
+- replaced all "tr" calls with "sed"
+- speedup with lazy kernel module dependency resolving
+- lots of speedup optimizations and last but not least
+- dracut-install:
+  - new binary to significanlty speedup the installation process
+  - dracut-functions.sh makes use of it, if installed
 
 
-From 675f6055c742a7aa2c92420cd73d9299eb2d8166 Mon Sep 17 00:00:00 2001
-From: Srinivasa T N <seenutn-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 27 Jun 2012 16:59:27 +0530
-Subject: [PATCH 2/2] Convert the MAC in interface name to use sed instead of
- tr
+$ dracut-install --help
+Usage: dracut-install -D DESTROOTDIR [OPTION]... -a SOURCE...
+   or: dracut-install -D DESTROOTDIR [OPTION]... SOURCE DEST
 
----
- modules.d/40network/parse-ifname.sh |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+Install SOURCE to DEST in DESTROOTDIR with all needed dependencies.
 
-diff --git a/modules.d/40network/parse-ifname.sh b/modules.d/40network/parse-ifname.sh
-index 26e6084..863fd2f 100755
---- a/modules.d/40network/parse-ifname.sh
-+++ b/modules.d/40network/parse-ifname.sh
-@@ -5,7 +5,6 @@
- # Format:
- #       ifname=<interface>:<mac>
- #
--# Note letters in the macaddress must be lowercase!
- #
- # Examples:
- # ifname=eth0:4a:3f:4c:04:f8:d7
-@@ -26,7 +25,7 @@ parse_ifname_opts() {
-         7)
-             ifname_if=$1
-             # udev requires MAC addresses to be lower case
--            ifname_mac=`echo $2:$3:$4:$5:$6:$7 | tr '[:upper:]' '[:lower:]'`
-+            ifname_mac=`echo $2:$3:$4:$5:$6:$7 | sed 'y/ABCDEF/abcdef'`
-             ;;
-         *)
-             die "Invalid arguments for ifname="
--- 
-1.7.4.4
+  -D --destrootdir    Install all files to DESTROOTDIR as the root
+  -a --all            Install all SOURCE arguments to DESTROOTDIR
+  -o --optional       If SOURCE does not exist, do not fail
+  -d --dir            SOURCE is a directory
+  -l --ldd            Also install shebang executables and libraries
+  -R --resolvelazy    Only install shebang executables and libraries for all
+SOURCE files
+  -f --fips           Also install all '.SOURCE.hmac' files
+  -v --verbose        Show more output
+     --debug          Show debug output
+     --version        Show package version
+  -h --help           Show this help
 
-
---------------020509000700010303070708--
+Example:
+# dracut-install -D /var/tmp/test-root --ldd -a sh tr
+# tree /var/tmp/test-root
+/var/tmp/test-root
+|-- lib64 -> usr/lib64
+`-- usr
+    |-- bin
+    |   |-- bash
+    |   |-- sh -> bash
+    |   `-- tr
+    `-- lib64
+        |-- ld-2.15.90.so
+        |-- ld-linux-x86-64.so.2 -> ld-2.15.90.so
+        |-- libc-2.15.90.so
+        |-- libc.so
+        |-- libc.so.6 -> libc-2.15.90.so
+        |-- libdl-2.15.90.so
+        |-- libdl.so -> libdl-2.15.90.so
+        |-- libdl.so.2 -> libdl-2.15.90.so
+        |-- libtinfo.so.5 -> libtinfo.so.5.9
+        `-- libtinfo.so.5.9
