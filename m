@@ -1,38 +1,61 @@
-From: Paulius Zaleckas <paulius.zaleckas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: dracut does not load pata_atiixp module
-Date: Mon, 02 Jul 2012 20:42:23 +0300
-Message-ID: <4FF1DD7F.5020907@gmail.com>
-References: <4FEEEE37.4070105@gmail.com>
+From: Robert Schweikert <rjschwei-IBi9RG/b67k@public.gmane.org>
+Subject: Fix for typo
+Date: Fri, 06 Jul 2012 07:56:17 -0400
+Message-ID: <4FF6D261.1030008@suse.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=message-id:date:from:user-agent:mime-version:to:subject:references
-         :in-reply-to:content-type:content-transfer-encoding;
-        bh=O+k1vf5oq4UCkJSUaHWiTJfpBzWSxKJ9KD1zWJSzNDo=;
-        b=j73Q2T96xXn2fALb9WvQXaiP8w4455W5k7qUhumROILHvOw4xoOfVfLLjMNWPvLfdq
-         maGGm7tQApsYyfHYT2psbXdaXVt9PHp1JguM2vw9liXNI4hfe5nRegPubaoKi3/ao6uD
-         TLeggcD3NrQRWICbWsJDFfW1mHtbxIpvmHkvi3ym5bBqowMtCboUwFU7SvzK61TBAUQl
-         +8FnfNdfMZHviEES7vPRnQhvLNewP6ym91xQo8E9tEdYt99df9A1ZktpvBcXTj70UN/Q
-         T6sSa/OOVtlB3uF6m5OxkRQ8MRjYJRu7bGxf9Yyy9Ft/jFC2qXk+eKBGP4t1jjo8lph+
-         RJEw==
-In-Reply-To: <4FEEEE37.4070105-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/30/2012 03:16 PM, Paulius Zaleckas wrote:
-> I have upgraded F16->F17 with preupgrade and booting
-> with F17 kernel fails. The reason is that dracut fails
-> to find my root HDD (sdb). Module pata_atiixp has to be
-> loaded for it to appear. This module exists in initramfs,
-> but dracut does not load it... F16 initramfs loads it
-> and boots OK. I am really willing to help nail this bug.
->
-> Dracut version is: 018-40.git20120522.fc17
-> failing kernel: 3.4.3-1.fc17.x86_64
+Hi,
 
-It seems that initramfs regeneration fixed the problem.
+While reading through the docs I found a typo, fixed in the patch below. 
+Also I noticed that there are a number of scripts in modules.d that use 
+#!/bin/bash. This appears to contradict the documentation, should these 
+not all be #!/bin/sh ?
 
+Last but not least, the HACKING file does not actually provide any 
+information about hacking, i.e. how to submit patches, or the "general 
+rules for writing modules" posted on the web page 
+(https://dracut.wiki.kernel.org/index.php/Main_Page), shouldn't this be 
+information that is included in the HACKING file?
+
+Thanks,
+Robert
+
+ From ee95d01ed7e990a6b24e94614beafef970036a49 Mon Sep 17 00:00:00 2001
+From: Robert Schweikert <rjschwei-IBi9RG/b67k@public.gmane.org>
+Date: Fri, 6 Jul 2012 07:49:56 -0400
+Subject: [PATCH] fix typo
+
+---
+  README.modules |    2 +-
+  1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/README.modules b/README.modules
+index 64d533f..a8e18bf 100644
+--- a/README.modules
++++ b/README.modules
+@@ -51,7 +51,7 @@ check():
+         functionality the module implements is being used on the host 
+system.
+         For example, if this module handles installing support for LUKS
+         encrypted volumes, it should return 0 if all the tools to handle
+-       encrpted volumes are available and the host system has the root
++       encrypted volumes are available and the host system has the root
+         partition on an encrypted volume, 1 otherwise.
+
+  depends():
+-- 
+1.7.7
+
+-- 
+Robert Schweikert                           MAY THE SOURCE BE WITH YOU
+SUSE-IBM Software Integration Center                   LINUX
+Tech Lead
+rjschwei-IBi9RG/b67k@public.gmane.org
+rschweik-G1DYhSM1WHTQT0dZR+AlfA@public.gmane.org
+781-464-8147
