@@ -1,7 +1,7 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2]dhclient initqueue hook fix
-Date: Mon, 9 Jul 2012 14:56:35 +0800
-Message-ID: <20120709065635.GA14094@dhcp-16-143.nay.redhat.com>
+Subject: [PATCH 2/2]02caps: do not create /bin/sh link
+Date: Mon, 9 Jul 2012 14:57:11 +0800
+Message-ID: <20120709065711.GA14096@dhcp-16-143.nay.redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
@@ -11,29 +11,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-dhclient initqueue hook fix
+02caps: do not create /bin/sh link
 
-setup_net is scheduled in initqueue, sometimes it does not get chance to run
-So the default route will not be set properly
+caps.sh use !/bin/bash explictly, so no need to ln -sf bash /bin/sh
 
-Add a check in initqueue/finished to resolve this issue.
+OTOH, 00dash will create the symlink /bin/sh, 99base will create it if
+there's no /bin/sh symlink. It looks bad to creat /bin/sh in other modules. 
+
+If a script want to use bash as command interpreter it should use !/bin/bash
+or !/bin/sh in case dash is not installed.
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/40network/dhclient-script.sh |    2 ++
- 1 file changed, 2 insertions(+)
+ modules.d/02caps/module-setup.sh |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---- dracut.orig/modules.d/40network/dhclient-script.sh
-+++ dracut/modules.d/40network/dhclient-script.sh
-@@ -81,9 +81,11 @@ case $reason in
-             echo "setup_net $netif"
-             echo "source_hook initqueue/online $netif"
-             [ -e /tmp/net.$netif.manualup ] || echo "/sbin/netroot $netif"
-+            echo "> /tmp/setup_net_$netif.ok"
-             echo "rm -f $hookdir/initqueue/setup_net_$netif.sh"
-         } > $hookdir/initqueue/setup_net_$netif.sh
+--- dracut.orig/modules.d/02caps/module-setup.sh
++++ dracut/modules.d/02caps/module-setup.sh
+@@ -14,6 +14,6 @@ install() {
+     inst_hook pre-pivot 00 "$moddir/caps.sh"
+     inst $(type -P capsh 2>/dev/null) /usr/sbin/capsh
+     # capsh wants bash and we need bash also
+-    inst /bin/bash && ln -sf bash "${initdir}/bin/sh"
++    inst /bin/bash
+ }
  
-+        echo "[ -f /tmp/setup_net_$netif.ok ]" > $hookdir/initqueue/finished/dhclient-$netif.sh
-         >/tmp/net.$netif.up
-         ;;
-     *) echo "dhcp: $reason";;
