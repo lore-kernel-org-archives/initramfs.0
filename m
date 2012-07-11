@@ -1,61 +1,61 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2]dhclient initqueue hook fix
-Date: Mon, 09 Jul 2012 15:01:58 +0800
-Message-ID: <4FFA81E6.6050302@redhat.com>
-References: <20120709065635.GA14094@dhcp-16-143.nay.redhat.com>
+Subject: nfs: install modprobe config file
+Date: Wed, 11 Jul 2012 13:08:18 +0800
+Message-ID: <20120711050818.GA10940@dhcp-16-143.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120709065635.GA14094-je1gSBvt1Td3da3rpXeqgR/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On 07/09/2012 02:56 PM, Dave Young wrote:
+install nfs modprobe config file
 
-> dhclient initqueue hook fix
-> 
-> setup_net is scheduled in initqueue, sometimes it does not get chance to run
-> So the default route will not be set properly
-> 
-> Add a check in initqueue/finished to resolve this issue.
+For nfs4, in case nfs.ko is not loaded mount.nfs4 will try to load
+nfs4.ko instead of nfs.ko. Fedora nfs-utils creates a lib/modprobe.d/nfs.conf
+in which there's below alias:
+alias nfs4 nfs
 
+Dracut also need this file to auto load nfs kernel module.
 
-Hi, harald
+Tested booting to a fedora 17 nfsroot share.
 
-Could you review this patch?
-I sent it several days ago, it went into my mailbox but seems it did not
-get in the list archive..
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/95nfs/module-setup.sh  |    6 ++++++
+ modules.d/95nfs/parse-nfsroot.sh |    7 -------
+ 2 files changed, 6 insertions(+), 7 deletions(-)
 
-
-> 
-> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/40network/dhclient-script.sh |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> --- dracut.orig/modules.d/40network/dhclient-script.sh
-> +++ dracut/modules.d/40network/dhclient-script.sh
-> @@ -81,9 +81,11 @@ case $reason in
->              echo "setup_net $netif"
->              echo "source_hook initqueue/online $netif"
->              [ -e /tmp/net.$netif.manualup ] || echo "/sbin/netroot $netif"
-> +            echo "> /tmp/setup_net_$netif.ok"
->              echo "rm -f $hookdir/initqueue/setup_net_$netif.sh"
->          } > $hookdir/initqueue/setup_net_$netif.sh
->  
-> +        echo "[ -f /tmp/setup_net_$netif.ok ]" > $hookdir/initqueue/finished/dhclient-$netif.sh
->          >/tmp/net.$netif.up
->          ;;
->      *) echo "dhcp: $reason";;
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Thanks
-Dave
+--- dracut.orig/modules.d/95nfs/module-setup.sh
++++ dracut/modules.d/95nfs/module-setup.sh
+@@ -35,6 +35,12 @@ install() {
+         mount.nfs4 umount rpc.idmapd sed /etc/netconfig
+     dracut_install /etc/services /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/idmapd.conf
+ 
++    if [ -f /lib/modprobe.d/nfs.conf ]; then
++        dracut_install /lib/modprobe.d/nfs.conf
++    else
++        echo "alias nfs4 nfs" > $initdir/etc/modprobe.d/nfs.conf
++    fi
++
+     inst_libdir_file 'libnfsidmap_nsswitch.so*' 'libnfsidmap/*.so' 'libnfsidmap*.so*'
+ 
+     _nsslibs=$(sed -e '/^#/d' -e 's/^.*://' -e 's/\[NOTFOUND=return\]//' /etc/nsswitch.conf \
+--- dracut.orig/modules.d/95nfs/parse-nfsroot.sh
++++ dracut/modules.d/95nfs/parse-nfsroot.sh
+@@ -88,13 +88,6 @@ nfsroot_to_var $netroot
+ # Set fstype, might help somewhere
+ fstype=${nfs#/dev/}
+ 
+-# NFS actually supported? Some more uglyness here: nfs3 or nfs4 might not
+-# be in the module...
+-if ! incol2 /proc/filesystems $fstype ; then
+-    modprobe nfs
+-    incol2 /proc/filesystems $fstype || die "nfsroot type $fstype requested but kernel/initrd does not support nfs"
+-fi
+-
+ # Rewrite root so we don't have to parse this uglyness later on again
+ netroot="$fstype:$server:$path:$options"
+ 
