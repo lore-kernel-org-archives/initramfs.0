@@ -1,89 +1,35 @@
-From: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/5] 91crypt-loop: open root device with a key inside encrypted loop container
-Date: Tue, 24 Jul 2012 15:08:53 +0300
-Message-ID: <1343131735-13248-4-git-send-email-leho@kraav.com>
-References: <1343131735-13248-1-git-send-email-leho@kraav.com>
+From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] 91crypt-loop: replace basename calls with string matching
+Date: Tue, 24 Jul 2012 14:13:59 +0200
+Message-ID: <500E9187.5020505@gmail.com>
+References: <1343131020-12683-1-git-send-email-leho@kraav.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343131735-13248-1-git-send-email-leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=ELeHPNzPEq5lnUImHzmt6nrK5UKy3/v+xgBEOFz0KnI=;
+        b=vkiGGCzwW3MkZ52Z22t4o0FdGYTXGH/jqA8nIKLxTgSEDfKq3ca2N7T20AdY6TQrNr
+         cm3RaNO62ppKn6LmuEmLF6Rb9RrgovRPn/HNdFF7LEoUlDiYQjdyRYUwFWlLWFHpXlaw
+         tpobLLRTyfe3uTHSryMBrDM0ClRCJUc+csMYvBClJ77sb3mmKPHWnXY0f3GFgUopf3yu
+         Iu+RC/MG7yIh9bS5dcvR1ETSr1kb6FnG8QGroTfNTx9th42OFbwadTU2nW21IeSDjOLc
+         cRI+zSO8X8lv6PBOjntPBVJU8i8OT421N8BbZJqj3285k+GA42msEgupN6zW7oAT/6c3
+         JsPQ==
+In-Reply-To: <1343131020-12683-1-git-send-email-leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Leho Kraav <leho-BFEd76tUscAAvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
----
- modules.d/91crypt-loop/crypt-loop-lib.sh |   40 ++++++++++++++++++++++++++++++
- modules.d/91crypt-loop/module-setup.sh   |   14 ++++++++++
- 2 files changed, 54 insertions(+), 0 deletions(-)
- create mode 100644 modules.d/91crypt-loop/crypt-loop-lib.sh
- create mode 100644 modules.d/91crypt-loop/module-setup.sh
+Am 24.07.2012 13:57, schrieb Leho Kraav:
+> ---
+>  modules.d/90crypt/crypt-lib.sh           |    2 +-
+>  modules.d/91crypt-loop/crypt-loop-lib.sh |    8 ++++----
+>  2 files changed, 5 insertions(+), 5 deletions(-)
+> 
 
-diff --git a/modules.d/91crypt-loop/crypt-loop-lib.sh b/modules.d/91crypt-loop/crypt-loop-lib.sh
-new file mode 100644
-index 0000000..63a553c
---- /dev/null
-+++ b/modules.d/91crypt-loop/crypt-loop-lib.sh
-@@ -0,0 +1,40 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=4 sw=4 sts=0 et filetype=sh
-+
-+command -v ask_for_password >/dev/null || . /lib/dracut-crypt-lib.sh
-+
-+# loop_decrypt mnt_point keypath keydev device
-+#
-+# Decrypts symmetrically encrypted key to standard output.
-+#
-+# mnt_point - mount point where <keydev> is already mounted
-+# keypath - LUKS encrypted loop file path relative to <mnt_point>
-+# keydev - device on which key resides; only to display in prompt
-+# device - device to be opened by cryptsetup; only to display in prompt
-+loop_decrypt() {
-+    local mntp="$1"
-+    local keypath="$2"
-+    local keydev="$3"
-+    local device="$4"
-+
-+    local key="/dev/mapper/$(basename $mntp)"
-+
-+    if [ ! -b $key ]; then
-+        info "Keyfile has .img suffix, treating it as LUKS-encrypted loop keyfile container to unlock $device"
-+
-+        local loopdev=$(losetup -f "${mntp}/${keypath}" --show)
-+        local opts="-d - luksOpen $loopdev $(basename $key)"
-+
-+        ask_for_password \
-+            --cmd "cryptsetup $opts" \
-+            --prompt "Password ($keypath on $keydev for $device)" \
-+            --tty-echo-off
-+
-+        [ -b $key ] || die "Tried setting it up, but keyfile block device was still not found!" 
-+    else
-+        info "Existing keyfile found, re-using it for $device"
-+    fi
-+
-+    cat $key
-+}
-diff --git a/modules.d/91crypt-loop/module-setup.sh b/modules.d/91crypt-loop/module-setup.sh
-new file mode 100644
-index 0000000..8170694
---- /dev/null
-+++ b/modules.d/91crypt-loop/module-setup.sh
-@@ -0,0 +1,14 @@
-+check() {
-+	type -P losetup >/dev/null || return 1
-+	
-+	return 255
-+}
-+
-+depends() {
-+	echo crypt
-+}
-+
-+install() {
-+	dracut_install losetup
-+	inst "$moddir/crypt-loop-lib.sh" "/lib/dracut-crypt-loop-lib.sh"
-+}
--- 
-1.7.8.6
+Your patch seems to be against a very old version of dracut. Nevertheless, I
+removed all basename calls in git HEAD. Thanks for the reminder!
