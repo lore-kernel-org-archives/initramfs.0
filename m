@@ -1,10 +1,14 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/7] 98usrmount: use rw and ro options instead of rd.usrmount.ro
-Date: Thu, 26 Jul 2012 15:05:22 +0200
-Message-ID: <1343307927-17079-2-git-send-email-aidecoe@aidecoe.name>
+Subject: [PATCH 6/7] apply "ro" and "rw" options from cmdline to / mount
+Date: Thu, 26 Jul 2012 15:05:26 +0200
+Message-ID: <1343307927-17079-6-git-send-email-aidecoe@aidecoe.name>
 References: <1343307927-17079-1-git-send-email-aidecoe@aidecoe.name>
+ <1343307927-17079-2-git-send-email-aidecoe@aidecoe.name>
+ <1343307927-17079-3-git-send-email-aidecoe@aidecoe.name>
+ <1343307927-17079-4-git-send-email-aidecoe@aidecoe.name>
+ <1343307927-17079-5-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343307927-17079-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1343307927-17079-5-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -13,78 +17,108 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-In result /usr is forced to be mounted ro or rw along with /.
----
- dracut.cmdline.7.asc              |   12 ++++++++----
- modules.d/98usrmount/mount-usr.sh |   18 +++++++++---------
- 2 files changed, 17 insertions(+), 13 deletions(-)
+rflags is no longer guaranteed to be non empty.  / is mounted according
+to rootflags parameter but forced ro at first.  Later it is remounted
+according to /etc/fstab + rootflags parameter and "ro"/"rw".  If
+parameters are still the same as for first mount, / isn't remounted.
 
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index 755d641..8f642f3 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -61,6 +61,14 @@ rootfstype=ext3
-     _/etc/fstab_ of the real root will be parsed for special mount options and
-     mounted accordingly.
+Conflicts:
+
+    modules.d/95rootfs-block/mount-root.sh
+    modules.d/99base/parse-root-opts.sh
+---
+ modules.d/95rootfs-block/mount-root.sh |   35 +++++++------------------------
+ modules.d/99base/parse-root-opts.sh    |   11 +++------
+ 2 files changed, 12 insertions(+), 34 deletions(-)
+
+diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+index ef8ca3c..de9753a 100755
+--- a/modules.d/95rootfs-block/mount-root.sh
++++ b/modules.d/95rootfs-block/mount-root.sh
+@@ -5,32 +5,13 @@
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ type det_fs >/dev/null 2>&1 || . /lib/fs-lib.sh
  
-+**ro**::
-+    force mounting _/_ and _/usr_ (if it is a separate device) read-only.  If
-+    none of ro and rw is present, both are mounted according to _/etc/fstab_.
-+
-+**rw**::
-+    force mounting _/_ and _/usr_ (if it is a separate device) read-write.
-+    See also ro option.
-+
- **rd.fstab=0**::
-     do not honor special mount options for the root filesystem found in
-     _/etc/fstab_ of the real root.
-@@ -81,10 +89,6 @@ resume=UUID=3f5ad593-4546-4a94-a374-bcfb68aa11f7
-     the init system performs fsck before remount, you might want to use this
-     option to avoid duplication.
- 
--**rd.usrmount.ro**:
--    force mounting _/usr_ read-only.  Use this option if your init system
--    performs remount of _/usr_ the same as it does with rootfs.
+-filter_rootopts() {
+-    rootopts=$1
+-    # strip ro and rw options
+-    local OLDIFS="$IFS"
+-    IFS=,
+-    set -- $rootopts
+-    IFS="$OLDIFS"
+-    local v
+-    while [ $# -gt 0 ]; do
+-        case $1 in
+-            defaults);;
+-            *)
+-                v="$v,${1}";;
+-        esac
+-        shift
+-    done
+-    rootopts=${v#,}
+-    echo $rootopts
+-}
 -
+ mount_root() {
+     local _ret
++    local _rflags_ro="$rflags,ro"
+     # sanity - determine/fix fstype
+     rootfs=$(det_fs "${root#block:}" "$fstype")
+-    while ! mount -t ${rootfs} -o "$rflags",ro "${root#block:}" "$NEWROOT"; do
+-        warn "Failed to mount -t ${rootfs} -o $rflags,ro ${root#block:} $NEWROOT"
++    while ! mount -t ${rootfs} -o "$_rflags_ro" "${root#block:}" "$NEWROOT"; do
++        warn "Failed to mount -t ${rootfs} -o $_rflags_ro ${root#block:} $NEWROOT"
+         fsck_ask_err
+     done
  
- Misc
- ~~~~
-diff --git a/modules.d/98usrmount/mount-usr.sh b/modules.d/98usrmount/mount-usr.sh
-index c277d74..98e08e3 100755
---- a/modules.d/98usrmount/mount-usr.sh
-+++ b/modules.d/98usrmount/mount-usr.sh
-@@ -57,9 +57,12 @@ mount_usr()
-                 [ -n "$rflags" ]; then
-                 # for btrfs subvolumes we have to mount /usr with the same rflags
-                 _opts="${_opts:+${_opts},}${rflags}"
--            elif getarg ro; then
--                # if "ro" is specified, we want /usr to be readonly, too
-+            elif getargbool 0 ro; then
-+                # if "ro" is specified, we want /usr to be mounted read-only
-                 _opts="${_opts:+${_opts},}ro"
-+            elif getargbool 0 rw; then
-+                # if "rw" is specified, we want /usr to be mounted read-write
-+                _opts="${_opts:+${_opts},}rw"
+@@ -96,13 +77,13 @@ mount_root() {
+                 break
              fi
-             echo "$_dev ${NEWROOT}${_mp} $_fs ${_opts} $_freq $_passno"
-             _usr_found="1"
-@@ -77,13 +80,10 @@ mount_usr()
-                 [ $_fsck_ret -ne 255 ] && echo $_fsck_ret >/run/initramfs/usr-fsck
-             fi
-         fi
--        if getargbool 0 rd.usrmount.ro; then
--            info "Mounting /usr (read-only forced)"
--            mount -r "$NEWROOT/usr" 2>&1 | vinfo
--        else
--            info "Mounting /usr"
--            mount "$NEWROOT/usr" 2>&1 | vinfo
--        fi
-+
-+        info "Mounting /usr"
-+        mount "$NEWROOT/usr" 2>&1 | vinfo
-+
-         if ! ismounted "$NEWROOT/usr"; then
-             warn "Mounting /usr to $NEWROOT/usr failed"
-             warn "*** Dropping you to a shell; the system will continue"
+         done < "$NEWROOT/etc/fstab"
+-
+-        rootopts=$(filter_rootopts $rootopts)
+     fi
+ 
+     # we want rootflags (rflags) to take precedence so prepend rootopts to
+-    # them; rflags is guaranteed to not be empty
+-    rflags="${rootopts:+${rootopts},}${rflags}"
++    # them
++    rflags="${rootopts},${rflags}"
++    rflags="${rflags#,}"
++    rflags="${rflags%,}"
+ 
+     # backslashes are treated as escape character in fstab
+     # esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
+@@ -125,7 +106,7 @@ mount_root() {
+     if ! ismounted "$NEWROOT"; then
+         info "Mounting ${root#block:} with -o ${rflags}"
+         mount "$NEWROOT" 2>&1 | vinfo
+-    else
++    elif ! are_lists_eq , "$rflags" "$_rflags_ro" defaults; then
+         info "Remounting ${root#block:} with -o ${rflags}"
+         mount -o remount "$NEWROOT" 2>&1 | vinfo
+     fi
+diff --git a/modules.d/99base/parse-root-opts.sh b/modules.d/99base/parse-root-opts.sh
+index 44dcc09..7b0b758 100755
+--- a/modules.d/99base/parse-root-opts.sh
++++ b/modules.d/99base/parse-root-opts.sh
+@@ -4,13 +4,10 @@
+ 
+ root=$(getarg root=)
+ 
+-if rflags="$(getarg rootflags=)"; then
+-    getarg rw && rflags="${rflags},rw"
+-    getarg ro && rflags="${rflags},ro"
+-else
+-    getarg rw && rflags=rw
+-    getarg ro && rflags=ro
+-fi
++rflags="$(getarg rootflags=)"
++getargbool 0 rw && rflags="${rflags},rw"
++getargbool 0 ro && rflags="${rflags},ro"
++rflags="${rflags#,}"
+ 
+ fstype="$(getarg rootfstype=)"
+ if [ -z "$fstype" ]; then
 -- 
 1.7.8.6
