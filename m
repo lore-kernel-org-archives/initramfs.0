@@ -1,14 +1,15 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 6/7] apply "ro" and "rw" options from cmdline to / mount
-Date: Thu, 26 Jul 2012 15:05:26 +0200
-Message-ID: <1343307927-17079-6-git-send-email-aidecoe@aidecoe.name>
+Subject: [PATCH 7/7] modules.d/99base/mount-hook.sh is not used - removed
+Date: Thu, 26 Jul 2012 15:05:27 +0200
+Message-ID: <1343307927-17079-7-git-send-email-aidecoe@aidecoe.name>
 References: <1343307927-17079-1-git-send-email-aidecoe@aidecoe.name>
  <1343307927-17079-2-git-send-email-aidecoe@aidecoe.name>
  <1343307927-17079-3-git-send-email-aidecoe@aidecoe.name>
  <1343307927-17079-4-git-send-email-aidecoe@aidecoe.name>
  <1343307927-17079-5-git-send-email-aidecoe@aidecoe.name>
+ <1343307927-17079-6-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343307927-17079-5-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1343307927-17079-6-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -17,28 +18,34 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-rflags is no longer guaranteed to be non empty.  / is mounted according
-to rootflags parameter but forced ro at first.  Later it is remounted
-according to /etc/fstab + rootflags parameter and "ro"/"rw".  If
-parameters are still the same as for first mount, / isn't remounted.
-
-Conflicts:
-
-    modules.d/95rootfs-block/mount-root.sh
-    modules.d/99base/parse-root-opts.sh
 ---
- modules.d/95rootfs-block/mount-root.sh |   35 +++++++------------------------
- modules.d/99base/parse-root-opts.sh    |   11 +++------
- 2 files changed, 12 insertions(+), 34 deletions(-)
+ modules.d/99base/mount-hook.sh |  171 ----------------------------------------
+ 1 files changed, 0 insertions(+), 171 deletions(-)
+ delete mode 100755 modules.d/99base/mount-hook.sh
 
-diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-index ef8ca3c..de9753a 100755
---- a/modules.d/95rootfs-block/mount-root.sh
-+++ b/modules.d/95rootfs-block/mount-root.sh
-@@ -5,32 +5,13 @@
- type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
- type det_fs >/dev/null 2>&1 || . /lib/fs-lib.sh
- 
+diff --git a/modules.d/99base/mount-hook.sh b/modules.d/99base/mount-hook.sh
+deleted file mode 100755
+index e32ecae..0000000
+--- a/modules.d/99base/mount-hook.sh
++++ /dev/null
+@@ -1,171 +0,0 @@
+-#!/bin/sh
+-# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+-# ex: ts=8 sw=4 sts=4 et filetype=sh
+-
+-PATH=/usr/sbin:/usr/bin:/sbin:/bin
+-type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+-type det_fs >/dev/null 2>&1 || [ -f /lib/fs-lib.sh ] && . /lib/fs-lib.sh
+-# If fs-lib is not included use following det_fs replacement.
+-type det_fs >/dev/null 2>&1 || det_fs() { echo "${2:-auto}"; }
+-
+-mountpoint="$1"
+-ismounted "$mountpoint" && exit 0
+-
+-if [ -f "$NEWROOT"/fastboot ] || getargbool 0 fastboot ; then
+-    fastboot=yes
+-fi
+-
 -filter_rootopts() {
 -    rootopts=$1
 -    # strip ro and rw options
@@ -49,6 +56,7 @@ index ef8ca3c..de9753a 100755
 -    local v
 -    while [ $# -gt 0 ]; do
 -        case $1 in
+-            rw|ro);;
 -            defaults);;
 -            *)
 -                v="$v,${1}";;
@@ -59,66 +67,138 @@ index ef8ca3c..de9753a 100755
 -    echo $rootopts
 -}
 -
- mount_root() {
-     local _ret
-+    local _rflags_ro="$rflags,ro"
-     # sanity - determine/fix fstype
-     rootfs=$(det_fs "${root#block:}" "$fstype")
--    while ! mount -t ${rootfs} -o "$rflags",ro "${root#block:}" "$NEWROOT"; do
--        warn "Failed to mount -t ${rootfs} -o $rflags,ro ${root#block:} $NEWROOT"
-+    while ! mount -t ${rootfs} -o "$_rflags_ro" "${root#block:}" "$NEWROOT"; do
-+        warn "Failed to mount -t ${rootfs} -o $_rflags_ro ${root#block:} $NEWROOT"
-         fsck_ask_err
-     done
- 
-@@ -96,13 +77,13 @@ mount_root() {
-                 break
-             fi
-         done < "$NEWROOT/etc/fstab"
+-mount_root() {
+-    local _ret
+-    # sanity - determine/fix fstype
+-    rootfs=$(det_fs "${root#block:}" "$fstype")
+-    mount -t ${rootfs} -o "$rflags",ro "${root#block:}" "$NEWROOT"
+-
+-    READONLY=
+-    fsckoptions=
+-    if [ -f "$NEWROOT"/etc/sysconfig/readonly-root ]; then
+-        . "$NEWROOT"/etc/sysconfig/readonly-root
+-    fi
+-
+-    if getargbool 0 "readonlyroot=" -y readonlyroot; then
+-        READONLY=yes
+-    fi
+-
+-    if getarg noreadonlyroot ; then
+-        READONLY=no
+-    fi
+-
+-    if [ -f "$NEWROOT"/fastboot ] || getargbool 0 fastboot ; then
+-        fastboot=yes
+-    fi
+-
+-    if [ -f "$NEWROOT"/fsckoptions ]; then
+-        fsckoptions=$(cat "$NEWROOT"/fsckoptions)
+-    fi
+-
+-    if [ -f "$NEWROOT"/forcefsck ] || getargbool 0 forcefsck ; then
+-        fsckoptions="-f $fsckoptions"
+-    elif [ -f "$NEWROOT"/.autofsck ]; then
+-        [ -f "$NEWROOT"/etc/sysconfig/autofsck ] && . "$NEWROOT"/etc/sysconfig/autofsck
+-        if [ "$AUTOFSCK_DEF_CHECK" = "yes" ]; then
+-            AUTOFSCK_OPT="$AUTOFSCK_OPT -f"
+-        fi
+-        if [ -n "$AUTOFSCK_SINGLEUSER" ]; then
+-            warn "*** Warning -- the system did not shut down cleanly. "
+-            warn "*** Dropping you to a shell; the system will continue"
+-            warn "*** when you leave the shell."
+-            emergency_shell
+-        fi
+-        fsckoptions="$AUTOFSCK_OPT $fsckoptions"
+-    fi
+-
+-    rootopts=
+-    if getargbool 1 rd.fstab -d -n rd_NO_FSTAB \
+-        && ! getarg rootflags \
+-        && [ -f "$NEWROOT/etc/fstab" ] \
+-        && ! [ -L "$NEWROOT/etc/fstab" ]; then
+-        # if $NEWROOT/etc/fstab contains special mount options for
+-        # the root filesystem,
+-        # remount it with the proper options
+-        rootopts="defaults"
+-        while read dev mp fs opts rest; do
+-            # skip comments
+-            [ "${dev%%#*}" != "$dev" ] && continue
+-
+-            if [ "$mp" = "/" ]; then
+-                # sanity - determine/fix fstype
+-                rootfs=$(det_fs "${root#block:}" "$fs")
+-                rootopts=$opts
+-                break
+-            fi
+-        done < "$NEWROOT/etc/fstab"
 -
 -        rootopts=$(filter_rootopts $rootopts)
-     fi
- 
-     # we want rootflags (rflags) to take precedence so prepend rootopts to
+-    fi
+-
+-    # we want rootflags (rflags) to take precedence so prepend rootopts to
 -    # them; rflags is guaranteed to not be empty
--    rflags="${rootopts:+${rootopts},}${rflags}"
-+    # them
-+    rflags="${rootopts},${rflags}"
-+    rflags="${rflags#,}"
-+    rflags="${rflags%,}"
- 
-     # backslashes are treated as escape character in fstab
-     # esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
-@@ -125,7 +106,7 @@ mount_root() {
-     if ! ismounted "$NEWROOT"; then
-         info "Mounting ${root#block:} with -o ${rflags}"
-         mount "$NEWROOT" 2>&1 | vinfo
--    else
-+    elif ! are_lists_eq , "$rflags" "$_rflags_ro" defaults; then
-         info "Remounting ${root#block:} with -o ${rflags}"
-         mount -o remount "$NEWROOT" 2>&1 | vinfo
-     fi
-diff --git a/modules.d/99base/parse-root-opts.sh b/modules.d/99base/parse-root-opts.sh
-index 44dcc09..7b0b758 100755
---- a/modules.d/99base/parse-root-opts.sh
-+++ b/modules.d/99base/parse-root-opts.sh
-@@ -4,13 +4,10 @@
- 
- root=$(getarg root=)
- 
--if rflags="$(getarg rootflags=)"; then
--    getarg rw && rflags="${rflags},rw"
--    getarg ro && rflags="${rflags},ro"
--else
--    getarg rw && rflags=rw
--    getarg ro && rflags=ro
+-    rflags="${rootopts:+"${rootopts},"}${rflags}"
+-
+-    umount "$NEWROOT"
+-
+-    # backslashes are treated as escape character in fstab
+-    # esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
+-    # printf '%s %s %s %s 1 1 \n' "$esc_root" "$NEWROOT" "$rootfs" "$rflags" >/etc/fstab
+-
+-    if [ -z "$fastboot" -a "$READONLY" != "yes" ] && ! strstr "${rflags},${rootopts}" _netdev; then
+-        fsck_single "${root#block:}" "$rootfs" "$rflags" "$fsckoptions"
+-        _ret=$?
+-        [ $_ret -ne 255 ] && echo $_ret >/run/initramfs/root-fsck
+-    fi
+-
+-    info "Remounting ${root#block:} with -o ${rflags}"
+-    mount -t "$rootfs" -o "$rflags" "${root#block:}" "$NEWROOT" 2>&1 | vinfo
+-
+-    [ -f "$NEWROOT"/forcefsck ] && rm -f "$NEWROOT"/forcefsck 2>/dev/null
+-    [ -f "$NEWROOT"/.autofsck ] && rm -f "$NEWROOT"/.autofsck 2>/dev/null
+-}
+-
+-sub_mount_ready() {
+-    local _dev _mp _rest
+-    while read _dev _mp _rest; do
+-        [ "$1" = "$_mp" ] && continue
+-
+-        if [ "${1##$_mp}" != "$1" ]; then
+-            ismounted "$_mp" || return 1
+-        fi
+-    done < "/etc/fstab"
+-    return 0
+-}
+-
+-if [ "$mountpoint" = "$NEWROOT" ]; then
+-    mount_root
+-    exit $?
 -fi
-+rflags="$(getarg rootflags=)"
-+getargbool 0 rw && rflags="${rflags},rw"
-+getargbool 0 ro && rflags="${rflags},ro"
-+rflags="${rflags#,}"
- 
- fstype="$(getarg rootfstype=)"
- if [ -z "$fstype" ]; then
+-
+-while read _dev _mp _fs _opts _rest; do
+-    if [ "$_mp" = "$mountpoint" ]; then
+-        _found="1"
+-        break
+-    fi
+-done < "/etc/fstab"
+-
+-[ "$_found" = "1" ] || exit 1
+-
+-sub_mount_ready "$mountpoint" || exit 1
+-
+-if [ -z "$fastboot" ] && ! strstr "${_opts}" _netdev; then
+-    # fsck?
+-    fsck_single "$_dev" "$_fs" "$_opts"
+-    _ret=$?
+-    if [ "${mountpoint##$NEWROOT}" != "$mountpoint" ]; then
+-        echo $_ret >/run/initramfs/${mountpoint##$NEWROOT}-fsck
+-    fi
+-fi
+-
+-info "Mounting $_dev on $mountpoint"
+-mount "$mountpoint" 2>&1 | vinfo
+-
+-ismounted "$mountpoint" || exit 1
+-
 -- 
 1.7.8.6
