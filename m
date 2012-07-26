@@ -1,12 +1,10 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 4/7] 98usrmount: [ "x$_usr_found" != "x" ] - removed redundant 'x'
-Date: Thu, 26 Jul 2012 15:05:24 +0200
-Message-ID: <1343307927-17079-4-git-send-email-aidecoe@aidecoe.name>
+Subject: [PATCH 2/7] 98usrmount: use rw and ro options instead of rd.usrmount.ro
+Date: Thu, 26 Jul 2012 15:05:22 +0200
+Message-ID: <1343307927-17079-2-git-send-email-aidecoe@aidecoe.name>
 References: <1343307927-17079-1-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-2-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-3-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343307927-17079-3-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1343307927-17079-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -15,22 +13,78 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
+In result /usr is forced to be mounted ro or rw along with /.
 ---
- modules.d/98usrmount/mount-usr.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ dracut.cmdline.7.asc              |   12 ++++++++----
+ modules.d/98usrmount/mount-usr.sh |   18 +++++++++---------
+ 2 files changed, 17 insertions(+), 13 deletions(-)
 
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index 755d641..8f642f3 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -61,6 +61,14 @@ rootfstype=ext3
+     _/etc/fstab_ of the real root will be parsed for special mount options and
+     mounted accordingly.
+ 
++**ro**::
++    force mounting _/_ and _/usr_ (if it is a separate device) read-only.  If
++    none of ro and rw is present, both are mounted according to _/etc/fstab_.
++
++**rw**::
++    force mounting _/_ and _/usr_ (if it is a separate device) read-write.
++    See also ro option.
++
+ **rd.fstab=0**::
+     do not honor special mount options for the root filesystem found in
+     _/etc/fstab_ of the real root.
+@@ -81,10 +89,6 @@ resume=UUID=3f5ad593-4546-4a94-a374-bcfb68aa11f7
+     the init system performs fsck before remount, you might want to use this
+     option to avoid duplication.
+ 
+-**rd.usrmount.ro**:
+-    force mounting _/usr_ read-only.  Use this option if your init system
+-    performs remount of _/usr_ the same as it does with rootfs.
+-
+ 
+ Misc
+ ~~~~
 diff --git a/modules.d/98usrmount/mount-usr.sh b/modules.d/98usrmount/mount-usr.sh
-index f4d59b3..cca41c3 100755
+index c277d74..98e08e3 100755
 --- a/modules.d/98usrmount/mount-usr.sh
 +++ b/modules.d/98usrmount/mount-usr.sh
-@@ -70,7 +70,7 @@ mount_usr()
+@@ -57,9 +57,12 @@ mount_usr()
+                 [ -n "$rflags" ]; then
+                 # for btrfs subvolumes we have to mount /usr with the same rflags
+                 _opts="${_opts:+${_opts},}${rflags}"
+-            elif getarg ro; then
+-                # if "ro" is specified, we want /usr to be readonly, too
++            elif getargbool 0 ro; then
++                # if "ro" is specified, we want /usr to be mounted read-only
+                 _opts="${_opts:+${_opts},}ro"
++            elif getargbool 0 rw; then
++                # if "rw" is specified, we want /usr to be mounted read-write
++                _opts="${_opts:+${_opts},}rw"
+             fi
+             echo "$_dev ${NEWROOT}${_mp} $_fs ${_opts} $_freq $_passno"
+             _usr_found="1"
+@@ -77,13 +80,10 @@ mount_usr()
+                 [ $_fsck_ret -ne 255 ] && echo $_fsck_ret >/run/initramfs/usr-fsck
+             fi
          fi
-     done < "$NEWROOT/etc/fstab" >> /etc/fstab
- 
--    if [ "x$_usr_found" != "x" ]; then
-+    if [ "$_usr_found" != "" ]; then
-         # we have to mount /usr
-         _fsck_ret=0
-         if ! getargbool 0 rd.skipfsck; then
+-        if getargbool 0 rd.usrmount.ro; then
+-            info "Mounting /usr (read-only forced)"
+-            mount -r "$NEWROOT/usr" 2>&1 | vinfo
+-        else
+-            info "Mounting /usr"
+-            mount "$NEWROOT/usr" 2>&1 | vinfo
+-        fi
++
++        info "Mounting /usr"
++        mount "$NEWROOT/usr" 2>&1 | vinfo
++
+         if ! ismounted "$NEWROOT/usr"; then
+             warn "Mounting /usr to $NEWROOT/usr failed"
+             warn "*** Dropping you to a shell; the system will continue"
 -- 
 1.7.8.6
