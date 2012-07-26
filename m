@@ -1,89 +1,32 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] Makefile: use implicit rules for install/dracut-install
-Date: Wed, 25 Jul 2012 22:08:23 +0200
-Message-ID: <1343246903-9613-2-git-send-email-aidecoe@aidecoe.name>
-References: <1343246903-9613-1-git-send-email-aidecoe@aidecoe.name>
+From: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] 95fstab-sys: Skip mounted filesystem.
+Date: Thu, 26 Jul 2012 11:24:25 +0800
+Message-ID: <1343273066-3493-1-git-send-email-chaowang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343246903-9613-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, wangchao19890207-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 
-Don't fail on install rule if install/dracut-install is not build - just
-skip it.  $(strip) is not used by install rule, because it is nowhere
-set.
+Signed-off-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- Makefile |   30 ++++++++++++++----------------
- 1 files changed, 14 insertions(+), 16 deletions(-)
+ modules.d/95fstab-sys/mount-sys.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Makefile b/Makefile
-index a109ef0..d013cbc 100644
---- a/Makefile
-+++ b/Makefile
-@@ -8,7 +8,8 @@ pkglibdir ?= ${libdir}/dracut
- sysconfdir ?= ${prefix}/etc
- bindir ?= ${prefix}/bin
- mandir ?= ${prefix}/share/man
--CFLAGS ?= -std=gnu99 -O2 -g -Wall
-+CFLAGS ?= -O2 -g -Wall
-+CFLAGS += -std=gnu99
- 
- man1pages = lsinitrd.1
- 
-@@ -32,22 +33,17 @@ manpages = $(man1pages) $(man5pages) $(man7pages) $(man8pages)
- 
- .PHONY: install clean archive rpm testimage test all check AUTHORS doc
- 
--all: syncheck dracut-version.sh dracut-install
-+DRACUT_INSTALL_BIN = install/dracut-install
- 
--DRACUT_INSTALL_SOURCE = \
--        install/dracut-install.c \
--        install/hashmap.c\
--        install/log.c \
--        install/util.c
-+DRACUT_INSTALL_OBJECTS = \
-+        install/dracut-install.o \
-+        install/hashmap.o\
-+        install/log.o \
-+        install/util.o
- 
--DRACUT_INSTALL_HEADER = \
--        install/hashmap.h \
--        install/log.h \
--        install/macro.h \
--        install/util.h
-+all: syncheck dracut-version.sh $(DRACUT_INSTALL_BIN)
- 
--dracut-install: $(DRACUT_INSTALL_SOURCE) $(DRACUT_INSTALL_HEADER)
--	gcc $(CFLAGS) -o dracut-install $(DRACUT_INSTALL_SOURCE)
-+$(DRACUT_INSTALL_BIN): $(DRACUT_INSTALL_OBJECTS)
- 
- indent:
- 	indent -i8 -nut -br -linux -l120 install/dracut-install.c
-@@ -99,7 +95,9 @@ install: doc dracut-version.sh
- 		ln -s ../dracut-shutdown.service \
- 		$(DESTDIR)$(systemdsystemunitdir)/shutdown.target.wants/dracut-shutdown.service; \
- 	fi
--	install $(strip) -m 0755 dracut-install $(DESTDIR)$(pkglibdir)/dracut-install
-+	if [ -x $(DRACUT_INSTALL_BIN) ]; then \
-+		install -m 0755 $(DRACUT_INSTALL_BIN) $(DESTDIR)$(pkglibdir)/dracut-install; \
-+	fi
- 
- dracut-version.sh:
- 	@echo "DRACUT_VERSION=$(VERSION)-$(GITVERSION)" > dracut-version.sh
-@@ -110,7 +108,7 @@ clean:
- 	$(RM) */*/*~
- 	$(RM) test-*.img
- 	$(RM) dracut-*.rpm dracut-*.tar.bz2
--	$(RM) dracut-install
-+	$(RM) $(DRACUT_INSTALL_BIN) $(DRACUT_INSTALL_OBJECTS)
- 	$(RM) $(manpages) dracut.html
- 	$(MAKE) -C test clean
- 
+diff --git a/modules.d/95fstab-sys/mount-sys.sh b/modules.d/95fstab-sys/mount-sys.sh
+index a1e5ab1..12711a0 100755
+--- a/modules.d/95fstab-sys/mount-sys.sh
++++ b/modules.d/95fstab-sys/mount-sys.sh
+@@ -11,6 +11,7 @@ fstab_mount() {
+     info "Mounting from $1"
+     while read _dev _mp _fs _opts _dump _pass _rest; do
+         [ -z "${_dev%%#*}" ] && continue # Skip comment lines
++        ismounted $_mp && continue # Skip mounted filesystem
+         if [ "$_pass" -gt 0 ] && ! strstr "$_opts" _netdev; then
+             fsck_single "$_dev" "$_fs" "$_opts"
+         fi
 -- 
-1.7.8.6
+1.7.11.2
