@@ -1,41 +1,53 @@
-From: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] 90multipath: check() - Regexp fix to match multipath partition.
-Date: Thu, 26 Jul 2012 11:24:26 +0800
-Message-ID: <1343273066-3493-2-git-send-email-chaowang@redhat.com>
-References: <1343273066-3493-1-git-send-email-chaowang@redhat.com>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 1/3] Remove obsolete gentoo conf file.
+Date: Thu, 26 Jul 2012 09:35:56 +0200
+Message-ID: <1343288158-12343-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343273066-3493-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, wangchao19890207-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-A multipath partition's uuid will be presented like:
- # cat /sys/dev/block/$_dev/dm/uuid
- part1-mpath-360060e801047103004f2c4b300000008
-
-So in this case, change the match regexp from '^mpath-' to 'mpath-'.
-
-Signed-off-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/90multipath/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ dracut.conf.d/gentoo-openrc.conf.example |    9 ---------
+ dracut.conf.d/gentoo.conf.example        |    6 +++---
+ 2 files changed, 3 insertions(+), 12 deletions(-)
+ delete mode 100644 dracut.conf.d/gentoo-openrc.conf.example
 
-diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
-index 5944d25..6c96441 100755
---- a/modules.d/90multipath/module-setup.sh
-+++ b/modules.d/90multipath/module-setup.sh
-@@ -11,7 +11,7 @@ check() {
-         local _dev
-         _dev=$(get_maj_min $1)
-         [ -e /sys/dev/block/$_dev/dm/uuid ] || return 1
--        [[ $(cat /sys/dev/block/$_dev/dm/uuid) =~ ^mpath- ]] && return 0
-+        [[ $(cat /sys/dev/block/$_dev/dm/uuid) =~ mpath- ]] && return 0
-         return 1
-     }
+diff --git a/dracut.conf.d/gentoo-openrc.conf.example b/dracut.conf.d/gentoo-openrc.conf.example
+deleted file mode 100644
+index f5aa8ed..0000000
+--- a/dracut.conf.d/gentoo-openrc.conf.example
++++ /dev/null
+@@ -1,9 +0,0 @@
+-# /etc/dracut.conf.d/gentoo-openrc.conf
+-# Dracut config file customized for Gentoo Base System release 2
+-
+-#
+-# Modules
+-#
+-
+-# i18n
+-i18n_vars="/etc/conf.d/keymaps:keymap-KEYMAP,extended_keymaps-EXT_KEYMAPS /etc/conf.d/consolefont:consolefont-FONT,consoletranslation-FONT_MAP /etc/rc.conf:unicode-UNICODE"
+diff --git a/dracut.conf.d/gentoo.conf.example b/dracut.conf.d/gentoo.conf.example
+index a40b746..f5aa8ed 100644
+--- a/dracut.conf.d/gentoo.conf.example
++++ b/dracut.conf.d/gentoo.conf.example
+@@ -1,9 +1,9 @@
+-# /etc/dracut.conf.d/gentoo.conf
+-# Dracut config file customized for Gentoo Base System release 1
++# /etc/dracut.conf.d/gentoo-openrc.conf
++# Dracut config file customized for Gentoo Base System release 2
  
+ #
+ # Modules
+ #
+ 
+ # i18n
+-i18n_vars="/etc/conf.d/keymaps:KEYMAP,EXTENDED_KEYMAPS-EXT_KEYMAPS /etc/conf.d/consolefont:CONSOLEFONT-FONT,CONSOLETRANSLATION-FONT_MAP /etc/rc.conf:UNICODE"
++i18n_vars="/etc/conf.d/keymaps:keymap-KEYMAP,extended_keymaps-EXT_KEYMAPS /etc/conf.d/consolefont:consolefont-FONT,consoletranslation-FONT_MAP /etc/rc.conf:unicode-UNICODE"
 -- 
-1.7.11.2
+1.7.8.6
