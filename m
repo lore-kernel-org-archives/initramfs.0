@@ -1,7 +1,7 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [Patch] 90kernel-modules: remove unused variables in install()
-Date: Thu, 26 Jul 2012 15:39:13 +0800
-Message-ID: <1343288353-5515-1-git-send-email-amwang@redhat.com>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] 90multipath: added kpartx.rules; multipath.rules - different prefix
+Date: Thu, 26 Jul 2012 11:38:04 +0200
+Message-ID: <1343295484-20678-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -9,25 +9,23 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-From: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-The local variables in install() are unused, can be removed.
-
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
 ---
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index 1632367..5018dc1 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -75,7 +75,6 @@ installkernel() {
+ modules.d/90multipath/module-setup.sh |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
+index 5944d25..69c4441 100755
+--- a/modules.d/90multipath/module-setup.sh
++++ b/modules.d/90multipath/module-setup.sh
+@@ -85,6 +85,6 @@ install() {
+ 
+     inst_hook pre-trigger 02 "$moddir/multipathd.sh"
+     inst_hook cleanup   02 "$moddir/multipathd-stop.sh"
+-    inst_rules 40-multipath.rules
++    inst_rules 40-multipath.rules 65-multipath.rules 66-kpartx.rules
  }
  
- install() {
--    local _f i
-     [ -f /etc/modprobe.conf ] && dracut_install /etc/modprobe.conf
-     dracut_install -o /{etc,lib}/modprobe.d/*.conf
-     inst_hook cmdline 01 "$moddir/parse-kernel.sh"
+-- 
+1.7.8.6
