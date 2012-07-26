@@ -1,204 +1,129 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 7/7] modules.d/99base/mount-hook.sh is not used - removed
-Date: Thu, 26 Jul 2012 15:05:27 +0200
-Message-ID: <1343307927-17079-7-git-send-email-aidecoe@aidecoe.name>
-References: <1343307927-17079-1-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-2-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-3-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-4-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-5-git-send-email-aidecoe@aidecoe.name>
- <1343307927-17079-6-git-send-email-aidecoe@aidecoe.name>
+From: Frederic Crozat <fcrozat-IBi9RG/b67k@public.gmane.org>
+Subject: PATCH: add support for xfs / reiserfs separate journal device
+Date: Thu, 26 Jul 2012 15:16:22 +0200
+Message-ID: <1343308582.2983.31.camel@par-r81vxc7.par.novell.com>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="=-wqXtqkHI7yZ0/EW6bLLV"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1343307927-17079-6-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+
+
+--=-wqXtqkHI7yZ0/EW6bLLV
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+xfs and reiserfs (among other) supports storing journal data to a
+separate device. Unfortunately, XFS requires this information to boot
+properly (reiserfs can embed the information in its metadata but you
+might want to override it).
+
+Attached patch ensure host information are stored in initramfs and also
+allows to give data over kernel commandline.
+
+
+-- 
+Frederic Crozat <fcrozat-IBi9RG/b67k@public.gmane.org>
+SUSE
+
+--=-wqXtqkHI7yZ0/EW6bLLV
+Content-Disposition: inline; filename="separate-journal.patch"
+Content-Type: text/x-patch; name="separate-journal.patch"; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+
+From a7c592b9bb7de0d7874ae51d02944a7eee2ec75b Mon Sep 17 00:00:00 2001
+From: Frederic Crozat <fcrozat-IBi9RG/b67k@public.gmane.org>
+Date: Tue, 24 Jul 2012 18:52:17 +0200
+Subject: [PATCH] Add support for separate journal on reiserfs and xfs
 
 ---
- modules.d/99base/mount-hook.sh |  171 ----------------------------------------
- 1 files changed, 0 insertions(+), 171 deletions(-)
- delete mode 100755 modules.d/99base/mount-hook.sh
+ modules.d/95rootfs-block/module-setup.sh |   43 ++++++++++++++++++++++++++++++
+ modules.d/95rootfs-block/mount-root.sh   |   15 +++++++++++
+ 2 files changed, 58 insertions(+)
 
-diff --git a/modules.d/99base/mount-hook.sh b/modules.d/99base/mount-hook.sh
-deleted file mode 100755
-index e32ecae..0000000
---- a/modules.d/99base/mount-hook.sh
-+++ /dev/null
-@@ -1,171 +0,0 @@
--#!/bin/sh
--# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
--# ex: ts=8 sw=4 sts=4 et filetype=sh
--
--PATH=/usr/sbin:/usr/bin:/sbin:/bin
--type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
--type det_fs >/dev/null 2>&1 || [ -f /lib/fs-lib.sh ] && . /lib/fs-lib.sh
--# If fs-lib is not included use following det_fs replacement.
--type det_fs >/dev/null 2>&1 || det_fs() { echo "${2:-auto}"; }
--
--mountpoint="$1"
--ismounted "$mountpoint" && exit 0
--
--if [ -f "$NEWROOT"/fastboot ] || getargbool 0 fastboot ; then
--    fastboot=yes
--fi
--
--filter_rootopts() {
--    rootopts=$1
--    # strip ro and rw options
--    local OLDIFS="$IFS"
--    IFS=,
--    set -- $rootopts
--    IFS="$OLDIFS"
--    local v
--    while [ $# -gt 0 ]; do
--        case $1 in
--            rw|ro);;
--            defaults);;
--            *)
--                v="$v,${1}";;
--        esac
--        shift
--    done
--    rootopts=${v#,}
--    echo $rootopts
--}
--
--mount_root() {
--    local _ret
--    # sanity - determine/fix fstype
--    rootfs=$(det_fs "${root#block:}" "$fstype")
--    mount -t ${rootfs} -o "$rflags",ro "${root#block:}" "$NEWROOT"
--
--    READONLY=
--    fsckoptions=
--    if [ -f "$NEWROOT"/etc/sysconfig/readonly-root ]; then
--        . "$NEWROOT"/etc/sysconfig/readonly-root
--    fi
--
--    if getargbool 0 "readonlyroot=" -y readonlyroot; then
--        READONLY=yes
--    fi
--
--    if getarg noreadonlyroot ; then
--        READONLY=no
--    fi
--
--    if [ -f "$NEWROOT"/fastboot ] || getargbool 0 fastboot ; then
--        fastboot=yes
--    fi
--
--    if [ -f "$NEWROOT"/fsckoptions ]; then
--        fsckoptions=$(cat "$NEWROOT"/fsckoptions)
--    fi
--
--    if [ -f "$NEWROOT"/forcefsck ] || getargbool 0 forcefsck ; then
--        fsckoptions="-f $fsckoptions"
--    elif [ -f "$NEWROOT"/.autofsck ]; then
--        [ -f "$NEWROOT"/etc/sysconfig/autofsck ] && . "$NEWROOT"/etc/sysconfig/autofsck
--        if [ "$AUTOFSCK_DEF_CHECK" = "yes" ]; then
--            AUTOFSCK_OPT="$AUTOFSCK_OPT -f"
--        fi
--        if [ -n "$AUTOFSCK_SINGLEUSER" ]; then
--            warn "*** Warning -- the system did not shut down cleanly. "
--            warn "*** Dropping you to a shell; the system will continue"
--            warn "*** when you leave the shell."
--            emergency_shell
--        fi
--        fsckoptions="$AUTOFSCK_OPT $fsckoptions"
--    fi
--
--    rootopts=
--    if getargbool 1 rd.fstab -d -n rd_NO_FSTAB \
--        && ! getarg rootflags \
--        && [ -f "$NEWROOT/etc/fstab" ] \
--        && ! [ -L "$NEWROOT/etc/fstab" ]; then
--        # if $NEWROOT/etc/fstab contains special mount options for
--        # the root filesystem,
--        # remount it with the proper options
--        rootopts="defaults"
--        while read dev mp fs opts rest; do
--            # skip comments
--            [ "${dev%%#*}" != "$dev" ] && continue
--
--            if [ "$mp" = "/" ]; then
--                # sanity - determine/fix fstype
--                rootfs=$(det_fs "${root#block:}" "$fs")
--                rootopts=$opts
--                break
--            fi
--        done < "$NEWROOT/etc/fstab"
--
--        rootopts=$(filter_rootopts $rootopts)
--    fi
--
--    # we want rootflags (rflags) to take precedence so prepend rootopts to
--    # them; rflags is guaranteed to not be empty
--    rflags="${rootopts:+"${rootopts},"}${rflags}"
--
--    umount "$NEWROOT"
--
--    # backslashes are treated as escape character in fstab
--    # esc_root=$(echo ${root#block:} | sed 's,\\,\\\\,g')
--    # printf '%s %s %s %s 1 1 \n' "$esc_root" "$NEWROOT" "$rootfs" "$rflags" >/etc/fstab
--
--    if [ -z "$fastboot" -a "$READONLY" != "yes" ] && ! strstr "${rflags},${rootopts}" _netdev; then
--        fsck_single "${root#block:}" "$rootfs" "$rflags" "$fsckoptions"
--        _ret=$?
--        [ $_ret -ne 255 ] && echo $_ret >/run/initramfs/root-fsck
--    fi
--
--    info "Remounting ${root#block:} with -o ${rflags}"
--    mount -t "$rootfs" -o "$rflags" "${root#block:}" "$NEWROOT" 2>&1 | vinfo
--
--    [ -f "$NEWROOT"/forcefsck ] && rm -f "$NEWROOT"/forcefsck 2>/dev/null
--    [ -f "$NEWROOT"/.autofsck ] && rm -f "$NEWROOT"/.autofsck 2>/dev/null
--}
--
--sub_mount_ready() {
--    local _dev _mp _rest
--    while read _dev _mp _rest; do
--        [ "$1" = "$_mp" ] && continue
--
--        if [ "${1##$_mp}" != "$1" ]; then
--            ismounted "$_mp" || return 1
--        fi
--    done < "/etc/fstab"
--    return 0
--}
--
--if [ "$mountpoint" = "$NEWROOT" ]; then
--    mount_root
--    exit $?
--fi
--
--while read _dev _mp _fs _opts _rest; do
--    if [ "$_mp" = "$mountpoint" ]; then
--        _found="1"
--        break
--    fi
--done < "/etc/fstab"
--
--[ "$_found" = "1" ] || exit 1
--
--sub_mount_ready "$mountpoint" || exit 1
--
--if [ -z "$fastboot" ] && ! strstr "${_opts}" _netdev; then
--    # fsck?
--    fsck_single "$_dev" "$_fs" "$_opts"
--    _ret=$?
--    if [ "${mountpoint##$NEWROOT}" != "$mountpoint" ]; then
--        echo $_ret >/run/initramfs/${mountpoint##$NEWROOT}-fsck
--    fi
--fi
--
--info "Mounting $_dev on $mountpoint"
--mount "$mountpoint" 2>&1 | vinfo
--
--ismounted "$mountpoint" || exit 1
--
+diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
+index 243a174..e5212c7 100755
+--- a/modules.d/95rootfs-block/module-setup.sh
++++ b/modules.d/95rootfs-block/module-setup.sh
+@@ -2,6 +2,49 @@
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ 
++type det_fs >/dev/null 2>&1 || . $dracutbasedir/modules.d/99fs-lib/fs-lib.sh
++
++search_option() {
++    rootopts=$1
++    option=$2
++    local OLDIFS="$IFS"
++    IFS=,
++    set -- $rootopts
++    IFS="$OLDIFS"
++    while [ $# -gt 0 ]; do
++        case $1 in
++            $option=*)
++                echo ${1#${option}=}
++                break
++        esac
++        shift
++    done
++}
++
++check() {
++        rootopts="defaults"
++        while read dev mp fs opts dump fsck; do
++            # skip comments
++            [ "${dev%%#*}" != "$dev" ] && continue
++
++            if [ "$mp" = "/" ]; then
++                # sanity - determine/fix fstype
++                rootfs=$(det_fs "${root#block:}" "$fs")
++                rootopts=$opts
++                rootfsck=$fsck
++                break
++            fi
++        done < "$NEWROOT/etc/fstab"
++
++        [ "$rootfs" = "reiserfs" ] && journaldev=$(search_option $rootopts "jdev")
++        [ "$rootfs" = "xfs" ] && journaldev=$(search_option $rootopts "logdev")
++        if [ -n "$journaldev" ]; then
++            echo "root.journaldev=$journaldev" >> "${initdir}/etc/cmdline.d/95root-journaldev.conf"
++        fi
++    return 0
++
++}
++
+ depends() {
+     echo fs-lib
+ }
+diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
+index e61b0e8..d4300ae 100755
+--- a/modules.d/95rootfs-block/mount-root.sh
++++ b/modules.d/95rootfs-block/mount-root.sh
+@@ -29,6 +29,21 @@ mount_root() {
+     local _ret
+     # sanity - determine/fix fstype
+     rootfs=$(det_fs "${root#block:}" "$fstype")
++
++    journaldev=$(getarg root.journaldev)
++    if [ -n $journaldev ]; then
++        case "$rootfs" in
++            xfs)
++                rflags="${rflags:+${rflags},}logdev=$journaldev"
++                ;;
++            reiserfs)
++                fsckoptions="-j $journaldev $fsckoptions"
++                rflags="${rflags:+${rflags},}jdev=$journaldev"
++                ;;
++            *);;
++        esac
++    fi
++
+     while ! mount -t ${rootfs} -o "$rflags",ro "${root#block:}" "$NEWROOT"; do
+         warn "Failed to mount -t ${rootfs} -o $rflags,ro ${root#block:} $NEWROOT"
+         fsck_ask_err
 -- 
-1.7.8.6
+1.7.10.4
+
+
+--=-wqXtqkHI7yZ0/EW6bLLV--
