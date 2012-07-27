@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] dracut-lib: add find_mount, use it to implement ismounted
-Date: Fri, 27 Jul 2012 13:12:29 -0400
-Message-ID: <1343409149-26884-2-git-send-email-wwoods@redhat.com>
+Subject: [PATCH 1/2] add comment for getargbool()
+Date: Fri, 27 Jul 2012 13:12:28 -0400
+Message-ID: <1343409149-26884-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,41 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-find_mount is really the same thing as ismounted with two additions:
-
-  1) uses "readlink" so "ismounted /dev/disk/by-label/LABEL" works
-  2) returns the mountpoint of the device
-
-And ismounted is now just "find_mount $dev >/dev/null".
+I always forget how getargbool works. Add a comment documenting it.
 ---
- modules.d/99base/dracut-lib.sh |   11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ modules.d/99base/dracut-lib.sh |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index 3a7be9a..813cead 100755
+index 2eb1224..3a7be9a 100755
 --- a/modules.d/99base/dracut-lib.sh
 +++ b/modules.d/99base/dracut-lib.sh
-@@ -452,13 +452,18 @@ udevproperty() {
-     fi
- }
- 
--ismounted() {
--    while read a m a; do
--        [ "$m" = "$1" ] && return 0
-+find_mount() {
-+    local dev mnt etc wanted_dev="$(readlink -e -q $1)"
-+    while read dev mnt etc; do
-+        [ "$dev" = "$wanted_dev" ] && echo "$dev" && return 0
-     done < /proc/mounts
+@@ -145,6 +145,13 @@ getarg() {
      return 1
  }
  
-+ismounted() {
-+    find_mount "$1" > /dev/null
-+}
-+
- wait_for_if_up() {
-     local cnt=0
-     local li
++# getargbool <defaultval> <args...>
++# False if "getarg <args...>" returns "0", "no", or "off".
++# True if getarg returns any other non-empty string.
++# If not found, assumes <defaultval> - usually 0 for false, 1 for true.
++# example: getargbool 0 rd.info
++#   true: rd.info, rd.info=1, rd.info=xxx
++#   false: rd.info=0, rd.info=off, rd.info not present (default val is 0)
+ getargbool() {
+     local _b
+     unset _b
 -- 
 1.7.10.4
