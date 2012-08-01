@@ -1,62 +1,27 @@
-From: Vinay Venkataraghavan <raghavanvinay-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
-Subject: Building new initrd with dracut-network packages for iscsi boot.
-Date: Wed, 1 Aug 2012 09:05:15 -0700 (PDT)
-Message-ID: <1343837115.80604.YahooMailNeo@web121006.mail.ne1.yahoo.com>
-Reply-To: Vinay Venkataraghavan <raghavanvinay-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+From: Michal Soltys <soltys-R61QfzASbfY@public.gmane.org>
+Subject: Re: [PATCH] Revert "dracut-functions: $_x should exist, no need to
+ test."
+Date: Wed, 01 Aug 2012 22:44:45 +0200
+Message-ID: <5019953D.6080203@ziu.info>
+References: <1343791422-8391-1-git-send-email-chaowang@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s1024; t=1343837115; bh=LhTNVfodXhedlLWNz34BnpjSpx6TwgF0KOINIY04wjU=; h=X-YMail-OSG:Received:X-Mailer:Message-ID:Date:From:Reply-To:Subject:To:Cc:MIME-Version:Content-Type:Content-Transfer-Encoding; b=KLvC0lZv35smKnBUK8lVDFr3VlqNB0npTnm6gXahsZzQAKhLkKPAnJOojgbg/WbgYZb5MmGT5UPIt1Z0+uZvbmhtr03bWVgsOmHn7NOlm/TMMuCpdYMtQ9QTdpAxldPcnLHulYz/u3n4k0ugHXmb+nOD9gX4/nb3DXhJ4XksT5w=
+In-Reply-To: <1343791422-8391-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Vinay Venkataraghavan <raghavanvinay-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, wangchao19890207-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 
-Hi all,
+On 2012-08-01 05:23, Chao Wang wrote:
+> This reverts commit b2d225a6698607bbcb73b6e6d12fbfc5be014102.
+>
 
-I have a few questions regarding building a new initrd which adds addit=
-ional modules to the existing initrd.
+For the record, your original commit could work after setting:
 
-The environment that I am working in is as follows:
+shopt -s nullglob
 
-1. that anaconda has completed the install and I prevent the system fro=
-m rebooting.=20
-
-2. Anaconda has installed the OS to an iscsi disk.=20
-
-
-What I'd like to do now is to add the dracut-network and iscsi modules =
-to the initrd so that when the system reboots it will be able to connec=
-t to the remote iscsi target and mount the root device.
-
-I have been working through this for about three weeks now and am stuck=
- at the phase where I can rebuild the initrd with the network modules a=
-nd iscsi modules.=20
-
-
-The installed system contains all the dependency rpms such as: dracut, =
-dracut-kernel, dracut-network, and iscsi-initiator-utils.=A0
-
-While in the anaconda shell I tried the following command:
-
-dracut -v -a iscsi -m network new_initrd.img `uname -r`
-
-Executing this command has two problems:
-
-1. The network option is invalid. I'm wondering if this should be -m dr=
-acut-network??
-
-2. This does not add modules to the existing image. But it creates a ve=
-ry minimal initrd.=20
-
-
-What I would like is to add the network boot modules to boot from an is=
-csi root device to the existing initrd.=20
-
-
-I would appreciate any help in this matter. Please let me know if I can=
- furnish any further information.
-
-Thanks in advance.
-- Vinay
+For failing globs this expands to empty string and the loop is never 
+executed. All kinds of such checks could go away in any bash-expecting 
+script.
