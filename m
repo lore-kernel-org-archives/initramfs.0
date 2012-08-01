@@ -1,58 +1,62 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 023 release
-Date: Wed, 01 Aug 2012 15:33:20 +0200
-Message-ID: <50193020.4000002@redhat.com>
+From: Vinay Venkataraghavan <raghavanvinay-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: Building new initrd with dracut-network packages for iscsi boot.
+Date: Wed, 1 Aug 2012 09:05:15 -0700 (PDT)
+Message-ID: <1343837115.80604.YahooMailNeo@web121006.mail.ne1.yahoo.com>
+Reply-To: Vinay Venkataraghavan <raghavanvinay-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s1024; t=1343837115; bh=LhTNVfodXhedlLWNz34BnpjSpx6TwgF0KOINIY04wjU=; h=X-YMail-OSG:Received:X-Mailer:Message-ID:Date:From:Reply-To:Subject:To:Cc:MIME-Version:Content-Type:Content-Transfer-Encoding; b=KLvC0lZv35smKnBUK8lVDFr3VlqNB0npTnm6gXahsZzQAKhLkKPAnJOojgbg/WbgYZb5MmGT5UPIt1Z0+uZvbmhtr03bWVgsOmHn7NOlm/TMMuCpdYMtQ9QTdpAxldPcnLHulYz/u3n4k0ugHXmb+nOD9gX4/nb3DXhJ4XksT5w=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-8859-1"
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Vinay Venkataraghavan <raghavanvinay-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
 
-Here comes a new dracut version. Thanks to all who have contributed to
-this release.
+Hi all,
 
-The tarball can be found here:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/
-	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+I have a few questions regarding building a new initrd which adds addit=
+ional modules to the existing initrd.
 
-Git:
-	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+The environment that I am working in is as follows:
 
-Git Web:
-	http://git.kernel.org/?p=boot/dracut/dracut.git
+1. that anaconda has completed the install and I prevent the system fro=
+m rebooting.=20
 
-Git Web RSS Feed:
-	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+2. Anaconda has installed the OS to an iscsi disk.=20
 
-Project Page:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
 
-Project Wiki:
-	http://dracut.wiki.kernel.org
+What I'd like to do now is to add the dracut-network and iscsi modules =
+to the initrd so that when the system reboots it will be able to connec=
+t to the remote iscsi target and mount the root device.
 
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+I have been working through this for about three weeks now and am stuck=
+ at the phase where I can rebuild the initrd with the network modules a=
+nd iscsi modules.=20
 
-dracut-023
-==========
-- resume from hibernate fixes
-- -N option for --no-hostonly
-- support for systemd crypto handling
-- new dracut module "crypt-loop"
-- deprecate the old kernel command line options
-- more documentation
-- honor CFLAGS for dracut-install build
-- multipath fixes
-- / is mounted according to rootflags parameter but forced ro at first.
-  Later it is remounted according to /etc/fstab + rootflags parameter
-  and "ro"/"rw".
-- support for xfs / reiserfs separate journal device
-- new "ro_mnt" option to force ro mount of / and /usr
-- root on cifs support
-- dracut-install: fixed issue for /var/tmp containing a symlink
-- only lazy resolve with ldd, if the /var/tmp partition is not mounted with "noexec"
-- i18n: fixed inclusion of "include" keymaps
+
+The installed system contains all the dependency rpms such as: dracut, =
+dracut-kernel, dracut-network, and iscsi-initiator-utils.=A0
+
+While in the anaconda shell I tried the following command:
+
+dracut -v -a iscsi -m network new_initrd.img `uname -r`
+
+Executing this command has two problems:
+
+1. The network option is invalid. I'm wondering if this should be -m dr=
+acut-network??
+
+2. This does not add modules to the existing image. But it creates a ve=
+ry minimal initrd.=20
+
+
+What I would like is to add the network boot modules to boot from an is=
+csi root device to the existing initrd.=20
+
+
+I would appreciate any help in this matter. Please let me know if I can=
+ furnish any further information.
+
+Thanks in advance.
+- Vinay
