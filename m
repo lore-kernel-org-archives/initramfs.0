@@ -1,68 +1,72 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: multipath device issue
-Date: Fri, 03 Aug 2012 16:55:22 +0800
-Message-ID: <501B91FA.6010703@redhat.com>
-References: <501A0B87.9070506@redhat.com> <501A3532.7010907@redhat.com> <501A7590.3010701@redhat.com> <501A7E2A.4020601@redhat.com> <501A8078.1020208@redhat.com> <501B635B.1090703@redhat.com> <501B7FCE.1050502@redhat.com>
+Subject: [PATCH] Add option to bring up a device in initramfs
+Date: Thu, 9 Aug 2012 11:08:48 +0800
+Message-ID: <20120809030848.GA10460@dhcp-16-143.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <501B7FCE.1050502-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-On 08/03/2012 03:37 PM, Harald Hoyer wrote:
-
-> Am 03.08.2012 07:36, schrieb Dave Young:
->> Hi, harald
->>
->> It has nothing to do with the udev rules.
->>
->> There's two issues:
->> 1) 90multipath install multipath.sh to pre-trigger hook, but seems
->> /dev/mapper/mpathX depends on /dev/dm-* population which will be created
->> after udev trigger.
->>
->> 2) fstab-sys call wait_for_dev /dev/mapper/mpathb in initqueue,
->> /dev/mapper/mpathb does not geting change to create, so dracut drop to
->> emergency shell.
->>
->> I'm not sure what's the right way to resolve this, move multipath.sh to
->> pre-mount hook looks resolve the issue 1), how to resolve the issue 2)?
->> comment out it works, but it looks not a right fix.
->>
->> I'm not familiar with multipath, please correct me for anything wrong.
->>
-
-> 
-> I think it _has_ to do with the udev rules.
+Content-Type: text/plain; charset="iso-8859-1"
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
-What I should say is "It has nothing to do with the udev rules patches
-you mentioned previously" ;)
+Kdump support dump to raw device which could be on top of complex stora=
+ge
+such as multipath and iscsi which are standalone dracut modules.
 
-> 
-> 1. the multipathd daemon has to be started before udevd is started.
-> 2. when udev is triggered, 62-multipath.rules should kick in and call
-> "multipath" for every disk, which adds disks to the daemon, if they fit.
-> 3. of course /etc/multipath.conf has to be configured correctly.
-> 
-> So, if you see /dev/mapper/mpathb be correctly created, when you start multpathd
-> after all devices exist in /dev, then the 62-multipath.rules
-> mechanism does not seem to work,
+Add a --device option to dracut which will add the device to host_devs =
+so
+dracut can add the dependent modules automaticlly and enable them in in=
+itramfs.
 
->
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut.8.asc |    3 +++
+ dracut.sh    |    3 +++
+ 2 files changed, 6 insertions(+)
 
-> With the next systemd release "rd.udev.log-priority=debug" does work again and
-> we might be able to debug this issue.
-
-
-Ok, will see if I can get something from the 62-multipath.rules. Thanks
-for the suggestion.
-
-
--- 
-Thanks
-Dave
+--- dracut.orig/dracut.sh
++++ dracut/dracut.sh
+@@ -133,6 +133,7 @@ Creates initial ramdisk images for prelo
+   --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
+                         Mount device [DEV] on mountpoint [MP] with fil=
+esystem
+                         [FSTYPE] and options [FSOPTS] in the initramfs
++  --device "[DEV]"      Bring up [DEV] in initramfs
+   -i, --include [SOURCE] [TARGET]
+                         Include the files in the SOURCE directory into=
+ the
+                          Target directory in the final initramfs.
+@@ -261,6 +262,7 @@ TEMP=3D$(unset POSIXLY_CORRECT; getopt \
+     --long fscks: \
+     --long add-fstab: \
+     --long mount: \
++    --long device: \
+     --long nofscks: \
+     --long ro-mnt \
+     --long kmoddir: \
+@@ -327,6 +329,7 @@ while :; do
+         --fscks)       push fscks_l              "$2"; shift;;
+         --add-fstab)   push add_fstab_l          "$2"; shift;;
+         --mount)       push fstab_lines          "$2"; shift;;
++        --device)      push host_devs            "$2"; shift;;
+         --nofscks)     nofscks_l=3D"yes";;
+         --ro-mnt)      ro_mnt_l=3D"yes";;
+         -k|--kmoddir)  drivers_dir_l=3D"$2"; shift;;
+--- dracut.orig/dracut.8.asc
++++ dracut/dracut.8.asc
+@@ -321,6 +321,9 @@ provide a valid _/etc/fstab_.
+     Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<=
+filesystem
+     options>_ in the initramfs
+=20
++**--device** _<device>_ ::
++    Bring up _<device>_ in initramfs
++
+ **-i, --include**=A0_<SOURCE>_=A0_<TARGET>_::
+     include the files in the SOURCE directory into the
+     TARGET directory in the final initramfs. If SOURCE is a file, it w=
+ill be
