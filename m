@@ -1,72 +1,46 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Add option to bring up a device in initramfs
-Date: Thu, 9 Aug 2012 11:08:48 +0800
-Message-ID: <20120809030848.GA10460@dhcp-16-143.nay.redhat.com>
+From: Shlomi Fish <pickledibex-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Getting "Cannot resume from device" (or something along these) lines
+ with dracut and add_device+="LABEL=sf_unix_swap"
+Date: Sat, 11 Aug 2012 12:06:38 +0300
+Message-ID: <CAAsq1beH8qcf5CpyvBeG+1EFEyBKY9WKq79wjSsJT9MHkrD_4Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=KsBBF+BGdCKtNFP7KbaX+1djwjY5AGVTQfthlN1RbAw=;
+        b=zbHyXXx68rAaLWQPpP2iI4EQfnubol/+4c5hlJJCKCHGhjkbOCu1BGPa0+c52NwQXU
+         k9nE4jlMT4FwY+2tSPKCoDgPx8yP5/k/OFrZXqw5C8XALnqky3mtxWAsdQ7GlOKWjzIr
+         VteTfBmohXCXxBTDEfSRKzb9jqfXFv/xaILymZr3iefPJ6babAUDrECu7x/T4Ptg7NZ9
+         6dz1ghi+2gaOb8dgRvJ8P/rKIDddAC6DeWocP9svonJTDUgyYY7L0x604l1UZvKZxnth
+         o1VcuCwvkY0XcG27S9LbOyQaopQ9+iKUx7qYOPCWaecdyPF3R2kFPBj/nA3S0ettCM9m
+         cWHA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Hi all,
 
-Kdump support dump to raw device which could be on top of complex stora=
-ge
-such as multipath and iscsi which are standalone dracut modules.
+I'm using Mageia Linux 3/Cauldron and have this in my dracut configuration:
 
-Add a --device option to dracut which will add the device to host_devs =
-so
-dracut can add the dependent modules automaticlly and enable them in in=
-itramfs.
+<<<
+[root@telaviv1 ~]# cat /etc/dracut.conf.d/51-mageia-resume.conf
+add_device+="LABEL=sf_unix_swap"
+[root@telaviv1 ~]#
+>>>
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.8.asc |    3 +++
- dracut.sh    |    3 +++
- 2 files changed, 6 insertions(+)
+Now, at startup, I am getting (after waiting for several seconds) a
+message such as "Cannot resume from device" or
+"resume device not found" and then it boots normally.  My questions are:
 
---- dracut.orig/dracut.sh
-+++ dracut/dracut.sh
-@@ -133,6 +133,7 @@ Creates initial ramdisk images for prelo
-   --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
-                         Mount device [DEV] on mountpoint [MP] with fil=
-esystem
-                         [FSTYPE] and options [FSOPTS] in the initramfs
-+  --device "[DEV]"      Bring up [DEV] in initramfs
-   -i, --include [SOURCE] [TARGET]
-                         Include the files in the SOURCE directory into=
- the
-                          Target directory in the final initramfs.
-@@ -261,6 +262,7 @@ TEMP=3D$(unset POSIXLY_CORRECT; getopt \
-     --long fscks: \
-     --long add-fstab: \
-     --long mount: \
-+    --long device: \
-     --long nofscks: \
-     --long ro-mnt \
-     --long kmoddir: \
-@@ -327,6 +329,7 @@ while :; do
-         --fscks)       push fscks_l              "$2"; shift;;
-         --add-fstab)   push add_fstab_l          "$2"; shift;;
-         --mount)       push fstab_lines          "$2"; shift;;
-+        --device)      push host_devs            "$2"; shift;;
-         --nofscks)     nofscks_l=3D"yes";;
-         --ro-mnt)      ro_mnt_l=3D"yes";;
-         -k|--kmoddir)  drivers_dir_l=3D"$2"; shift;;
---- dracut.orig/dracut.8.asc
-+++ dracut/dracut.8.asc
-@@ -321,6 +321,9 @@ provide a valid _/etc/fstab_.
-     Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<=
-filesystem
-     options>_ in the initramfs
-=20
-+**--device** _<device>_ ::
-+    Bring up _<device>_ in initramfs
-+
- **-i, --include**=A0_<SOURCE>_=A0_<TARGET>_::
-     include the files in the SOURCE directory into the
-     TARGET directory in the final initramfs. If SOURCE is a file, it w=
-ill be
+1. The label is valid. Can I use a label for the resume device?
+
+2. If not, can I use a UUID instead?
+
+3. If I cannot use a label, then the man page of dracut should be
+fixed because -add-device does not mention anything  about not being
+able to use a LABEL (which is possible in e.g: /etc/fstab ).
+
+Thanks in advance for any help.
