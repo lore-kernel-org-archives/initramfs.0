@@ -1,89 +1,104 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add option to bring up a device in initramfs
-Date: Mon, 13 Aug 2012 11:10:29 -0400
-Message-ID: <20120813151029.GE24876@redhat.com>
-References: <20120809030848.GA10460@dhcp-16-143.nay.redhat.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: multipath device issue
+Date: Tue, 14 Aug 2012 14:16:07 +0800
+Message-ID: <5029ED27.8000309@redhat.com>
+References: <501A0B87.9070506@redhat.com> <501A3532.7010907@redhat.com> <501A7590.3010701@redhat.com> <501A7E2A.4020601@redhat.com> <501A8078.1020208@redhat.com> <501B635B.1090703@redhat.com> <501B7FCE.1050502@redhat.com> <501B91FA.6010703@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120809030848.GA10460-je1gSBvt1Td3da3rpXeqgR/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <501B91FA.6010703-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Thu, Aug 09, 2012 at 11:08:48AM +0800, Dave Young wrote:
->=20
-> Kdump support dump to raw device which could be on top of complex sto=
-rage
-> such as multipath and iscsi which are standalone dracut modules.
->=20
-> Add a --device option to dracut which will add the device to host_dev=
-s so
-> dracut can add the dependent modules automaticlly and enable them in =
-initramfs.
->=20
 
-You have not specified any format for --device argument? What do you ex=
-pect
-there? Device name, UUID, udev persistent link, or what?
+>> So, if you see /dev/mapper/mpathb be correctly created, when you start multpathd
+>> after all devices exist in /dev, then the 62-multipath.rules
+>> mechanism does not seem to work,
+> 
+>>
+> 
+>> With the next systemd release "rd.udev.log-priority=debug" does work again and
+>> we might be able to debug this issue.
+> 
+> 
+> Ok, will see if I can get something from the 62-multipath.rules. Thanks
+> for the suggestion.
+> 
+> 
 
-Secondly, do we need some extra code to make sure somebody waits for
-this device to come up? Who makes sure that initqueue does not exit
-till this device node comes up.
 
+Hi, here is the debug messages with latest systemd, 62-multipath fails
+at run 'socket:/org/kernel/dm/multipath_event':
+
+---
+Welcome to Fedora 17 (Beefy Miracle) dracut-023-2.fc18 (Initramfs)!
+
+[    0.799958] systemd[1]: No hostname configured.
+[    0.801608] systemd[1]: Set hostname to <localhost>.
+[    0.807834] systemd[1]: Cannot add dependency job for unit
+systemd-journal-flush.service, ignoring: Unit
+systemd-journal-flush.service failed to load: No such file or directory.
+See system logs and 'systemctl status systemd-journal-flush.service' for
+details.
+[  OK  ] Listening on udev Kernel Socket.
+[  OK  ] Listening on udev Control Socket.
+[  OK  ] Listening on Journal Socket.
+         Starting Journal Service...
+[    0.825703] systemd-journald[44]: Fixed max_use=11.8M max_size=1.4M
+min_size=64.0K keep_free=5.9M
+[    0.828702] systemd-journald[44]: Reserving 2695 entries in hash table.
+[    0.831147] systemd-journald[44]: Vacuuming...
+[  OK  ] Started Journal Service.
+[  OK  ] Reached target Sockets.
+         Starting Dracut cmdline hook...
+         Starting Setup Virtual Console...
+[  OK  ] Reached target Swap.
+[  OK  ] [    0.850156] usb 1-1: new full-speed USB device number 2
+using uhci_hcd
+Reached target Local File Systems.
+[  OK  ] Started Setup Virtual Console.
+[  OK  ] Reached target System Initialization.
+dracut-cmdline[46]: Warning: Option 'KEYTABLE' is deprecated, use
+'KEYMAP' instead.
+dracut-cmdline[46]: Warning: Option 'SYSFONT' is deprecated, use 'FONT'
+instead.
+[  OK  ] Started Dracut cmdline hook.
+         Starting Dracut pre-udev hook...
+[  OK  ] Started Dracut pre-udev hook.
+         Starting udev Kernel Device Manager...
+[  OK  ] Started udev Kernel Device Manager.
+         Starting Dracut pre-trigger hook...
+[  OK  ] Reached target Basic System.
+[    0.950521] systemd-udevd[102]: starting version 188
+[    0.970090] device-mapper: multipath: version 1.3.0 loaded
+[    1.003546] input: ImExPS/2 Generic Explorer Mouse as
+/devices/platform/i8042/serio1/input/input2
+[    1.266732] usb 1-1: New USB device found, idVendor=0627, idProduct=0001
+[    1.269940] usb 1-1: New USB device strings: Mfr=1, Product=3,
+SerialNumber=5
+[    1.272323] usb 1-1: Product: QEMU USB Tablet
+[    1.273889] usb 1-1: Manufacturer: QEMU 1.0
+[    1.275491] usb 1-1: SerialNumber: 42
+[    1.311638] input: QEMU 1.0 QEMU USB Tablet as
+/devices/pci0000:00/0000:00:01.2/usb1/1-1/1-1:1.0/input/input3
+[    1.315072] generic-usb 0003:0627:0001.0001: input,hidraw0: USB HID
+v0.01 Pointer [QEMU 1.0 QEMU USB Tablet] on usb-0000:00:01.2-1/input0
+[    1.344055] Refined TSC clocksource calibration: 2491.907 MHz.
+[    1.349823] systemd-udevd[163]: failed to execute
+'/usr/lib/udev/socket:/org/kernel/dm/multipath_event'
+'socket:/org/kernel/dm/multipath_event': No such file or directory
+dracut-initqueue[144]: Warning: Could not boot.
+dracut-initqueue[144]: Warning: /dev/mapper/mpathb does not exist
+
+
+Entering emergency mode. Exit the shell to continue.
+Type "journalctl" to view system logs.
+
+dracut:/#
+
+-- 
 Thanks
-Vivek
-
-> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  dracut.8.asc |    3 +++
->  dracut.sh    |    3 +++
->  2 files changed, 6 insertions(+)
->=20
-> --- dracut.orig/dracut.sh
-> +++ dracut/dracut.sh
-> @@ -133,6 +133,7 @@ Creates initial ramdisk images for prelo
->    --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
->                          Mount device [DEV] on mountpoint [MP] with f=
-ilesystem
->                          [FSTYPE] and options [FSOPTS] in the initram=
-fs
-> +  --device "[DEV]"      Bring up [DEV] in initramfs
->    -i, --include [SOURCE] [TARGET]
->                          Include the files in the SOURCE directory in=
-to the
->                           Target directory in the final initramfs.
-> @@ -261,6 +262,7 @@ TEMP=3D$(unset POSIXLY_CORRECT; getopt \
->      --long fscks: \
->      --long add-fstab: \
->      --long mount: \
-> +    --long device: \
->      --long nofscks: \
->      --long ro-mnt \
->      --long kmoddir: \
-> @@ -327,6 +329,7 @@ while :; do
->          --fscks)       push fscks_l              "$2"; shift;;
->          --add-fstab)   push add_fstab_l          "$2"; shift;;
->          --mount)       push fstab_lines          "$2"; shift;;
-> +        --device)      push host_devs            "$2"; shift;;
->          --nofscks)     nofscks_l=3D"yes";;
->          --ro-mnt)      ro_mnt_l=3D"yes";;
->          -k|--kmoddir)  drivers_dir_l=3D"$2"; shift;;
-> --- dracut.orig/dracut.8.asc
-> +++ dracut/dracut.8.asc
-> @@ -321,6 +321,9 @@ provide a valid _/etc/fstab_.
->      Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and =
-_<filesystem
->      options>_ in the initramfs
-> =20
-> +**--device** _<device>_ ::
-> +    Bring up _<device>_ in initramfs
-> +
->  **-i, --include**=A0_<SOURCE>_=A0_<TARGET>_::
->      include the files in the SOURCE directory into the
->      TARGET directory in the final initramfs. If SOURCE is a file, it=
- will be
+Dave
