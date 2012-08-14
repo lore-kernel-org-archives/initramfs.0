@@ -1,59 +1,71 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add option to bring up a device in initramfs
-Date: Tue, 14 Aug 2012 15:36:07 -0400
-Message-ID: <20120814193607.GB5760@redhat.com>
-References: <20120809030848.GA10460@dhcp-16-143.nay.redhat.com>
- <20120813151029.GE24876@redhat.com>
- <5029EFCF.4060005@redhat.com>
+From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
+Subject: Re: Getting "Cannot resume from device" (or something along these)
+ lines with dracut and add_device+="LABEL=sf_unix_swap"
+Date: Tue, 14 Aug 2012 23:05:01 +0100
+Message-ID: <k0ei2d$g3h$1@dough.gmane.org>
+References: <CAAsq1beH8qcf5CpyvBeG+1EFEyBKY9WKq79wjSsJT9MHkrD_4Q@mail.gmail.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5029EFCF.4060005-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <CAAsq1beH8qcf5CpyvBeG+1EFEyBKY9WKq79wjSsJT9MHkrD_4Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Aug 14, 2012 at 02:27:27PM +0800, Dave Young wrote:
-> On 08/13/2012 11:10 PM, Vivek Goyal wrote:
+'Twas brillig, and Shlomi Fish at 11/08/12 10:06 did gyre and gimble:
+> Hi all,
 > 
-> > On Thu, Aug 09, 2012 at 11:08:48AM +0800, Dave Young wrote:
-> >>
-> >> Kdump support dump to raw device which could be on top of complex storage
-> >> such as multipath and iscsi which are standalone dracut modules.
-> >>
-> >> Add a --device option to dracut which will add the device to host_devs so
-> >> dracut can add the dependent modules automaticlly and enable them in initramfs.
-> >>
-> > 
-> > You have not specified any format for --device argument? What do you expect
-> > there? Device name, UUID, udev persistent link, or what?
-> 
-> 
-> It's a device name, should metion it in doc as well.
-> 
-> > 
-> > Secondly, do we need some extra code to make sure somebody waits for
-> > this device to come up? Who makes sure that initqueue does not exit
-> > till this device node comes up.
-> 
-> 
-> I see there's a wait-mount-dev.sh in 95fstab-sys module which is for
-> waiting for the mount needed dev.
-> 
-> Currently dracut maintains host_devs and host_fs_types, host_fs_types
-> are mainly used inst the fs kernel modules. Other than the filesystem
-> modules we should use host_devs instead, ie. introduce
-> for_each_host_devs for modules such as multipath and iscsi using.
+> I'm using Mageia Linux 3/Cauldron and have this in my dracut configuration:
 
-I see that iscsi is using for_each_host_dev_fs, which has both device
-and filesystem info. Same is the case with multipath.
+The add_device stuff is a Mageia specific patch added rather late in the
+development cycle. I did discuss the reasons for it (to act as a system
+to enable LVM/RAID for swap partitions) with Harald and we came up with
+a better suggestion but due to the timing I didn't have time to
+implement it.
 
-May be add raw device in host_dev_fs with filesystem type as "raw" and
-special case "raw" whoever relies on this info. There might be other
-better ways to handle this though.
+Anyway, this question isn't really relevant for upstream but I'll try
+anyway.
 
-Thanks
-Vivek
+> <<<
+> [root@telaviv1 ~]# cat /etc/dracut.conf.d/51-mageia-resume.conf
+> add_device+="LABEL=sf_unix_swap"
+> [root@telaviv1 ~]#
+>>>>
+> 
+> Now, at startup, I am getting (after waiting for several seconds) a
+> message such as "Cannot resume from device" or
+> "resume device not found" and then it boots normally.  My questions are:
+> 
+> 1. The label is valid. Can I use a label for the resume device?
+
+It should work.
+
+> 2. If not, can I use a UUID instead?
+
+UUIDs should work also.
+
+> 3. If I cannot use a label, then the man page of dracut should be
+> fixed because -add-device does not mention anything  about not being
+> able to use a LABEL (which is possible in e.g: /etc/fstab ).
+
+Again, this is all a Mageia patch for now, which likely won't go
+upstream (unless anyone else has a need for such behaviour?).
+
+For reference the patch is here:
+http://svnweb.mageia.org/packages/cauldron/dracut/current/SOURCES/0505-Add-a-new-add-device-option.patch?revision=278450&view=markup
+
+Col
+
+-- 
+
+Colin Guthrie
+gmane(at)colin.guthr.ie
+http://colin.guthr.ie/
+
+Day Job:
+  Tribalogic Limited http://www.tribalogic.net/
+Open Source:
+  Mageia Contributor http://www.mageia.org/
+  PulseAudio Hacker http://www.pulseaudio.org/
+  Trac Hacker http://trac.edgewall.org/
