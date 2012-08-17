@@ -1,76 +1,28 @@
 From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [patch 3/3] Add a dracut option --device to bring up a device in initramfs
-Date: Fri, 17 Aug 2012 20:35:22 +0800
-Message-ID: <20120817123905.353853040@redhat.com>
-References: <20120817123519.082687047@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Subject: [patch 0/3] add --device option
+Date: Fri, 17 Aug 2012 20:35:19 +0800
+Message-ID: <20120817123519.082687047@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=0816-3-add-raw-device.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; charset="utf-8"
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Kdump support dump to raw device which could be on top of complex stora=
-ge
-such as multipath and iscsi which are standalone dracut modules.
-
-Add a --device option to dracut which will add the device to host_devs =
-so
-dracut can add the dependent modules automaticlly and enable them in in=
-itramfs.
-
---device will accept device node name as the param.
-
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+This is the update patch series for --device option.
+1/3: wait host devs in base module
+2/3: Add for_each_host_dev for device only checking
+3/3: Add a dracut option --device to bring up a device in initramfs
 ---
- dracut.8.asc |    3 +++
- dracut.sh    |    3 +++
- 2 files changed, 6 insertions(+)
-
---- dracut.orig/dracut.sh
-+++ dracut/dracut.sh
-@@ -133,6 +133,7 @@ Creates initial ramdisk images for prelo
-   --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
-                         Mount device [DEV] on mountpoint [MP] with fil=
-esystem
-                         [FSTYPE] and options [FSOPTS] in the initramfs
-+  --device "[DEV]"      Bring up [DEV] in initramfs
-   -i, --include [SOURCE] [TARGET]
-                         Include the files in the SOURCE directory into=
- the
-                          Target directory in the final initramfs.
-@@ -261,6 +262,7 @@ TEMP=3D$(unset POSIXLY_CORRECT; getopt \
-     --long fscks: \
-     --long add-fstab: \
-     --long mount: \
-+    --long device: \
-     --long nofscks: \
-     --long ro-mnt \
-     --long kmoddir: \
-@@ -327,6 +329,7 @@ while :; do
-         --fscks)       push fscks_l              "$2"; shift;;
-         --add-fstab)   push add_fstab_l          "$2"; shift;;
-         --mount)       push fstab_lines          "$2"; shift;;
-+        --device)      push host_devs            "$2"; shift;;
-         --nofscks)     nofscks_l=3D"yes";;
-         --ro-mnt)      ro_mnt_l=3D"yes";;
-         -k|--kmoddir)  drivers_dir_l=3D"$2"; shift;;
---- dracut.orig/dracut.8.asc
-+++ dracut/dracut.8.asc
-@@ -321,6 +321,9 @@ provide a valid _/etc/fstab_.
-     Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<=
-filesystem
-     options>_ in the initramfs
-=20
-+**--device** _<device>_ ::
-+    Bring up _<device>_ in initramfs, _<device>_ should be the device =
-name
-+
- **-i, --include**=C2=A0_<SOURCE>_=C2=A0_<TARGET>_::
-     include the files in the SOURCE directory into the
-     TARGET directory in the final initramfs. If SOURCE is a file, it w=
-ill be
+ dracut-functions.sh                     |   15 +++++++++++++++
+ dracut.8.asc                            |    3 +++
+ dracut.sh                               |   22 ++++++++++++++++++++++
+ modules.d/90lvm/module-setup.sh         |    2 +-
+ modules.d/90multipath/module-setup.sh   |    2 +-
+ modules.d/95fstab-sys/module-setup.sh   |    1 -
+ modules.d/95fstab-sys/wait-mount-dev.sh |   22 ----------------------
+ modules.d/95iscsi/module-setup.sh       |    2 +-
+ modules.d/99base/module-setup.sh        |    1 +
+ modules.d/99base/wait-host-devs.sh      |   20 ++++++++++++++++++++
+ 10 files changed, 64 insertions(+), 26 deletions(-)
