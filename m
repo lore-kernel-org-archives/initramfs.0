@@ -1,39 +1,76 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Why is mixing BOOTIF= and ip= dangerous?
-Date: Thu, 16 Aug 2012 17:00:32 -0400
-Message-ID: <1345150832.6844.93.camel@samus>
+From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Subject: [patch 3/3] Add a dracut option --device to bring up a device in initramfs
+Date: Fri, 17 Aug 2012 20:35:22 +0800
+Message-ID: <20120817123905.353853040@redhat.com>
+References: <20120817123519.082687047@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline; filename=0816-3-add-raw-device.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: TEXT/PLAIN; charset="utf-8"
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-40network/parse-ip-opts.sh says:
+Kdump support dump to raw device which could be on top of complex stora=
+ge
+such as multipath and iscsi which are standalone dracut modules.
 
-  # Don't mix BOOTIF=macaddr from pxelinux and ip= lines
-  getarg ip= >/dev/null && getarg BOOTIF= >/dev/null && \
-      die "Mixing BOOTIF and ip= lines is dangerous"
+Add a --device option to dracut which will add the device to host_devs =
+so
+dracut can add the dependent modules automaticlly and enable them in in=
+itramfs.
 
-Why is this dangerous? Couldn't we just ignore BOOTIF= if ip= is
-present?
+--device will accept device node name as the param.
 
-Here's why I ask - in anaconda, if the user passes a kickstart file
-inside initramfs (common in PXE environments), it can contain a line
-like this:
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut.8.asc |    3 +++
+ dracut.sh    |    3 +++
+ 2 files changed, 6 insertions(+)
 
-  network --bootproto=static --ip=10.0.2.15 --netmask=255.255.255.0 ...
-
-which anaconda will translate into something like:
-
-  ip=10.0.2.15::10.0.2.1:255.0.0.0:::none
-
-but because there's also BOOTIF=... in the boot args, dracut just die()s
-instead. Even if the kickstart says "network --bootproto=dhcp", which
-becomes "ip=dhcp" (which is the behavior for BOOTIF=...), it dies.
-
-So. Is this necessary? If so, why? If not, can we remove that check and
-just ignore BOOTIF if there's an ip= arg?
-
--w
+--- dracut.orig/dracut.sh
++++ dracut/dracut.sh
+@@ -133,6 +133,7 @@ Creates initial ramdisk images for prelo
+   --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
+                         Mount device [DEV] on mountpoint [MP] with fil=
+esystem
+                         [FSTYPE] and options [FSOPTS] in the initramfs
++  --device "[DEV]"      Bring up [DEV] in initramfs
+   -i, --include [SOURCE] [TARGET]
+                         Include the files in the SOURCE directory into=
+ the
+                          Target directory in the final initramfs.
+@@ -261,6 +262,7 @@ TEMP=3D$(unset POSIXLY_CORRECT; getopt \
+     --long fscks: \
+     --long add-fstab: \
+     --long mount: \
++    --long device: \
+     --long nofscks: \
+     --long ro-mnt \
+     --long kmoddir: \
+@@ -327,6 +329,7 @@ while :; do
+         --fscks)       push fscks_l              "$2"; shift;;
+         --add-fstab)   push add_fstab_l          "$2"; shift;;
+         --mount)       push fstab_lines          "$2"; shift;;
++        --device)      push host_devs            "$2"; shift;;
+         --nofscks)     nofscks_l=3D"yes";;
+         --ro-mnt)      ro_mnt_l=3D"yes";;
+         -k|--kmoddir)  drivers_dir_l=3D"$2"; shift;;
+--- dracut.orig/dracut.8.asc
++++ dracut/dracut.8.asc
+@@ -321,6 +321,9 @@ provide a valid _/etc/fstab_.
+     Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<=
+filesystem
+     options>_ in the initramfs
+=20
++**--device** _<device>_ ::
++    Bring up _<device>_ in initramfs, _<device>_ should be the device =
+name
++
+ **-i, --include**=C2=A0_<SOURCE>_=C2=A0_<TARGET>_::
+     include the files in the SOURCE directory into the
+     TARGET directory in the final initramfs. If SOURCE is a file, it w=
+ill be
