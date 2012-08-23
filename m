@@ -1,10 +1,10 @@
 From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [patch v2 1/3] wait host devs in base module
-Date: Thu, 23 Aug 2012 11:02:22 +0800
-Message-ID: <20120823030627.975913807@redhat.com>
+Subject: [patch v2 2/3] Add for_each_host_dev_and_slaves for device only checking
+Date: Thu, 23 Aug 2012 11:02:23 +0800
+Message-ID: <20120823030628.133563734@redhat.com>
 References: <20120823030221.587864989@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=0816-1-wait-host-devs.patch
+Content-Disposition: inline; filename=0816-2-add-for-each-dev-and-slave.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -13,113 +13,152 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-each dev in host_devs[] should be waited in initqueue to make sure they
-are oneline before initqueue finish.
+For lvm, multipath, iscsi modules they do not care about the filesystem,
+Also there could be devcie in host_devs but it does not get formated.
 
-Add a new wait_host_devs.sh in base module to make this a generic thing.
-Because all the devs in fstab lines are also added to host_devs, so no need
-do same wait in fstab-sys module anymore.
+For these kind of modules, use for_each_host_dev_and_slaves will be better than use
+for_each_host_dev_fs, here add a new function to iterate the host_devs and
+their slave devices.
 
-[v2->v3]: do not add slave devices to host_devs
-          wait for persistent dev name in initramfs
+In original for_each_host_dev_fs, it will call check_block_and_slaves which
+will return once helper function return 0, but this is not enough for kdump
+iscsi setup. For kdump iscsi case, it need setup each slave devices so that
+the iscsi target can be properly setuped in initramfs.
+
+Thus, this patch also add new functions check_block_and_slaves_all and
+for_each_host_dev_and_slaves_all.
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Tested-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut.sh                               |   16 ++++++++++++++++
- modules.d/95fstab-sys/module-setup.sh   |    1 -
- modules.d/95fstab-sys/wait-mount-dev.sh |   22 ----------------------
- modules.d/99base/module-setup.sh        |    1 +
- modules.d/99base/wait-host-devs.sh      |   20 ++++++++++++++++++++
- 5 files changed, 37 insertions(+), 23 deletions(-)
+ dracut-functions.sh                   |   48 +++++++++++++++++++++++++++++++++-
+ modules.d/90lvm/module-setup.sh       |    4 +-
+ modules.d/90multipath/module-setup.sh |    5 +--
+ modules.d/95iscsi/module-setup.sh     |    5 +--
+ 4 files changed, 53 insertions(+), 9 deletions(-)
 
---- dracut.orig/dracut.sh
-+++ dracut/dracut.sh
-@@ -903,6 +903,22 @@ done
- 
- dinfo "*** Including modules done ***"
- 
-+get_persistent_dev() {
-+    local i _tmp
-+    local _dev=${1##*/}
-+
-+    for i in /dev/disk/by-id/*; do
-+        _tmp=$(readlink $i)
-+        [ "${_tmp##*/}" = "$_dev" ] && echo $i && return
-+    done
-+}
-+
-+## save host_devs which we need bring up
-+for _dev in ${host_devs[@]}; do
-+    _pdev=$(get_persistent_dev $_dev)
-+    [ -n "$_pdev" ] && echo $_pdev >> $initdir/etc/host_devs
-+done
-+
- ## final stuff that has to happen
- if [[ $no_kernel != yes ]]; then
- 
---- dracut.orig/modules.d/95fstab-sys/module-setup.sh
-+++ dracut/modules.d/95fstab-sys/module-setup.sh
-@@ -13,5 +13,4 @@ depends() {
- install() {
-     [ -f /etc/fstab.sys ] && inst_simple /etc/fstab.sys
-     inst_hook pre-pivot 00 "$moddir/mount-sys.sh"
--    inst_hook cmdline 00 "$moddir/wait-mount-dev.sh"
+--- dracut.orig/dracut-functions.sh
++++ dracut/dracut-functions.sh
+@@ -383,7 +383,6 @@ find_mp_fstype() {
+     return 1
  }
---- dracut.orig/modules.d/95fstab-sys/wait-mount-dev.sh
-+++ /dev/null
-@@ -1,22 +0,0 @@
--#!/bin/sh
--# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
--# ex: ts=8 sw=4 sts=4 et filetype=sh
--
--type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
--type det_fs >/dev/null 2>&1 || . /lib/fs-lib.sh
--
--fstab_wait_dev() {
--    local _dev _mp _fs _opts _dump _pass _rest
--    test -e "$1" || return 1
--    while read _dev _mp _fs _opts _dump _pass _rest; do
--        [ -z "${_dev%%#*}" ] && continue # Skip comment lines
--        case "$_dev" in
--        /dev/?*)
--            wait_for_dev $_dev;;
--        *) ;;
--        esac
--    done < $1
--    return 0
--}
--
--[ -f /etc/fstab ] && fstab_wait_dev /etc/fstab
---- dracut.orig/modules.d/99base/module-setup.sh
-+++ dracut/modules.d/99base/module-setup.sh
-@@ -41,6 +41,7 @@ install() {
-     dracut_install switch_root || dfatal "Failed to install switch_root"
  
-     inst_simple "$moddir/dracut-lib.sh" "/lib/dracut-lib.sh"
-+    inst_hook cmdline 00 "$moddir/wait-host-devs.sh"
-     inst_hook cmdline 10 "$moddir/parse-root-opts.sh"
-     mkdir -p "${initdir}/var"
-     [ -x /lib/systemd/systemd-timestamp ] && inst /lib/systemd/systemd-timestamp
---- /dev/null
-+++ dracut/modules.d/99base/wait-host-devs.sh
-@@ -0,0 +1,20 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-+
-+wait_host_devs() {
+-
+ # finds the major:minor of the block device backing the root filesystem.
+ find_root_block_device() { find_block_device /; }
+ 
+@@ -429,6 +428,53 @@ check_block_and_slaves() {
+     return 1
+ }
+ 
++check_block_and_slaves_all() {
++    local _x _ret=1
++    [[ -b /dev/block/$2 ]] || return 1 # Not a block device? So sorry.
++    if "$1" $2; then
++          _ret=0
++    fi
++    check_vol_slaves "$@" && return 0
++    if [[ -f /sys/dev/block/$2/../dev ]]; then
++        check_block_and_slaves_all $1 $(cat "/sys/dev/block/$2/../dev") && _ret=0
++    fi
++    [[ -d /sys/dev/block/$2/slaves ]] || return 1
++    for _x in /sys/dev/block/$2/slaves/*/dev; do
++        [[ -f $_x ]] || continue
++        check_block_and_slaves_all $1 $(cat "$_x") && _ret=0
++    done
++    return $_ret
++}
++# for_each_host_dev_and_slaves <func>
++# Execute "<func> <dev>" for every "<dev>" found
++# in ${host_devs[@]} and their slaves
++for_each_host_dev_and_slaves_all()
++{
++    local _func="$1"
 +    local _dev
-+
-+    while read _dev; do
-+        case "$_dev" in
-+        /dev/?*)
-+            wait_for_dev $_dev
-+            ;;
-+        *) ;;
-+        esac
-+    done < $1
++    local _ret=1
++    for _dev in ${host_devs[@]}; do
++        [[ -b "$_dev" ]] || continue
++        echo host_devs: $_dev
++        if check_block_and_slaves_all $_func $(get_maj_min $_dev); then
++               _ret=0
++        fi
++    done
++    return $_ret
 +}
 +
-+[ -f /etc/host_devs ] && wait_host_devs /etc/host_devs
++for_each_host_dev_and_slaves()
++{
++    local _func="$1"
++    local _dev
++    for _dev in ${host_devs[@]}; do
++        [[ -b "$_dev" ]] || continue
++        echo host_devs: $_dev
++        check_block_and_slaves_all $_func $(get_maj_min $_dev) && return 0
++    done
++    return 1
++}
++
+ # ugly workaround for the lvm design
+ # There is no volume group device,
+ # so, there are no slave devices for volume groups.
+--- dracut.orig/modules.d/90lvm/module-setup.sh
++++ dracut/modules.d/90lvm/module-setup.sh
+@@ -9,7 +9,7 @@ check() {
+ 
+     check_lvm() {
+         local DM_VG_NAME DM_LV_NAME DM_UDEV_DISABLE_DISK_RULES_FLAG
+-        eval $(udevadm info --query=property --name=$1|egrep '(DM_VG_NAME|DM_LV_NAME|DM_UDEV_DISABLE_DISK_RULES_FLAG)=')
++        eval $(udevadm info --query=property --name=/dev/block/$1|egrep '(DM_VG_NAME|DM_LV_NAME|DM_UDEV_DISABLE_DISK_RULES_FLAG)=')
+         [[ "$DM_UDEV_DISABLE_DISK_RULES_FLAG" = "1" ]] && return 1
+         [[ ${DM_VG_NAME} ]] && [[ ${DM_LV_NAME} ]] || return 1
+         if ! strstr " ${_activated[*]} " " ${DM_VG_NAME}/${DM_LV_NAME} "; then
+@@ -22,7 +22,7 @@ check() {
+     }
+ 
+     [[ $hostonly ]] || [[ $mount_needs ]] && {
+-        for_each_host_dev_fs check_lvm || return 1
++        for_each_host_dev_and_slaves check_lvm || return 1
+     }
+ 
+     return 0
+--- dracut.orig/modules.d/90multipath/module-setup.sh
++++ dracut/modules.d/90multipath/module-setup.sh
+@@ -8,15 +8,14 @@ check() {
+     type -P multipath >/dev/null || return 1
+ 
+     is_mpath() {
+-        local _dev
+-        _dev=$(get_maj_min $1)
++        local _dev=$1
+         [ -e /sys/dev/block/$_dev/dm/uuid ] || return 1
+         [[ $(cat /sys/dev/block/$_dev/dm/uuid) =~ mpath- ]] && return 0
+         return 1
+     }
+ 
+     [[ $hostonly ]] || [[ $mount_needs ]] && {
+-        for_each_host_dev_fs is_mpath || return 1
++        for_each_host_dev_and_slaves is_mpath || return 1
+     }
+ 
+     return 0
+--- dracut.orig/modules.d/95iscsi/module-setup.sh
++++ dracut/modules.d/95iscsi/module-setup.sh
+@@ -11,8 +11,7 @@ check() {
+     # booting from root.
+ 
+     is_iscsi() (
+-        local _dev
+-        _dev=$(get_maj_min $1)
++        local _dev=$1
+ 
+         [[ -L /sys/dev/block/$_dev ]] || return
+         cd "$(readlink -f /sys/dev/block/$_dev)"
+@@ -23,7 +22,7 @@ check() {
+     )
+ 
+     [[ $hostonly ]] || [[ $mount_needs ]] && {
+-        for_each_host_dev_fs is_iscsi || return 1
++        for_each_host_dev_and_slaves is_iscsi || return 1
+     }
+     return 0
+ }
