@@ -1,76 +1,125 @@
 From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [patch v2 3/3] Add a dracut option --device to bring up a device in initramfs
-Date: Thu, 23 Aug 2012 11:02:24 +0800
-Message-ID: <20120823030628.297605642@redhat.com>
+Subject: [patch v2 1/3] wait host devs in base module
+Date: Thu, 23 Aug 2012 11:02:22 +0800
+Message-ID: <20120823030627.975913807@redhat.com>
 References: <20120823030221.587864989@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=0816-3-add-raw-device.patch
+Content-Disposition: inline; filename=0816-1-wait-host-devs.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; charset="utf-8"
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Kdump support dump to raw device which could be on top of complex stora=
-ge
-such as multipath and iscsi which are standalone dracut modules.
+each dev in host_devs[] should be waited in initqueue to make sure they
+are oneline before initqueue finish.
 
-Add a --device option to dracut which will add the device to host_devs =
-so
-dracut can add the dependent modules automaticlly and enable them in in=
-itramfs.
+Add a new wait_host_devs.sh in base module to make this a generic thing.
+Because all the devs in fstab lines are also added to host_devs, so no need
+do same wait in fstab-sys module anymore.
 
---device will accept device node name as the param.
+[v2->v3]: do not add slave devices to host_devs
+          wait for persistent dev name in initramfs
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut.8.asc |    3 +++
- dracut.sh    |    3 +++
- 2 files changed, 6 insertions(+)
+ dracut.sh                               |   16 ++++++++++++++++
+ modules.d/95fstab-sys/module-setup.sh   |    1 -
+ modules.d/95fstab-sys/wait-mount-dev.sh |   22 ----------------------
+ modules.d/99base/module-setup.sh        |    1 +
+ modules.d/99base/wait-host-devs.sh      |   20 ++++++++++++++++++++
+ 5 files changed, 37 insertions(+), 23 deletions(-)
 
 --- dracut.orig/dracut.sh
 +++ dracut/dracut.sh
-@@ -133,6 +133,7 @@ Creates initial ramdisk images for prelo
-   --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
-                         Mount device [DEV] on mountpoint [MP] with fil=
-esystem
-                         [FSTYPE] and options [FSOPTS] in the initramfs
-+  --device "[DEV]"      Bring up [DEV] in initramfs
-   -i, --include [SOURCE] [TARGET]
-                         Include the files in the SOURCE directory into=
- the
-                          Target directory in the final initramfs.
-@@ -261,6 +262,7 @@ TEMP=3D$(unset POSIXLY_CORRECT; getopt \
-     --long fscks: \
-     --long add-fstab: \
-     --long mount: \
-+    --long device: \
-     --long nofscks: \
-     --long ro-mnt \
-     --long kmoddir: \
-@@ -327,6 +329,7 @@ while :; do
-         --fscks)       push fscks_l              "$2"; shift;;
-         --add-fstab)   push add_fstab_l          "$2"; shift;;
-         --mount)       push fstab_lines          "$2"; shift;;
-+        --device)      push host_devs            "$2"; shift;;
-         --nofscks)     nofscks_l=3D"yes";;
-         --ro-mnt)      ro_mnt_l=3D"yes";;
-         -k|--kmoddir)  drivers_dir_l=3D"$2"; shift;;
---- dracut.orig/dracut.8.asc
-+++ dracut/dracut.8.asc
-@@ -321,6 +321,9 @@ provide a valid _/etc/fstab_.
-     Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<=
-filesystem
-     options>_ in the initramfs
-=20
-+**--device** _<device>_ ::
-+    Bring up _<device>_ in initramfs, _<device>_ should be the device =
-name
+@@ -903,6 +903,22 @@ done
+ 
+ dinfo "*** Including modules done ***"
+ 
++get_persistent_dev() {
++    local i _tmp
++    local _dev=${1##*/}
 +
- **-i, --include**=C2=A0_<SOURCE>_=C2=A0_<TARGET>_::
-     include the files in the SOURCE directory into the
-     TARGET directory in the final initramfs. If SOURCE is a file, it w=
-ill be
++    for i in /dev/disk/by-id/*; do
++        _tmp=$(readlink $i)
++        [ "${_tmp##*/}" = "$_dev" ] && echo $i && return
++    done
++}
++
++## save host_devs which we need bring up
++for _dev in ${host_devs[@]}; do
++    _pdev=$(get_persistent_dev $_dev)
++    [ -n "$_pdev" ] && echo $_pdev >> $initdir/etc/host_devs
++done
++
+ ## final stuff that has to happen
+ if [[ $no_kernel != yes ]]; then
+ 
+--- dracut.orig/modules.d/95fstab-sys/module-setup.sh
++++ dracut/modules.d/95fstab-sys/module-setup.sh
+@@ -13,5 +13,4 @@ depends() {
+ install() {
+     [ -f /etc/fstab.sys ] && inst_simple /etc/fstab.sys
+     inst_hook pre-pivot 00 "$moddir/mount-sys.sh"
+-    inst_hook cmdline 00 "$moddir/wait-mount-dev.sh"
+ }
+--- dracut.orig/modules.d/95fstab-sys/wait-mount-dev.sh
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#!/bin/sh
+-# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+-# ex: ts=8 sw=4 sts=4 et filetype=sh
+-
+-type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+-type det_fs >/dev/null 2>&1 || . /lib/fs-lib.sh
+-
+-fstab_wait_dev() {
+-    local _dev _mp _fs _opts _dump _pass _rest
+-    test -e "$1" || return 1
+-    while read _dev _mp _fs _opts _dump _pass _rest; do
+-        [ -z "${_dev%%#*}" ] && continue # Skip comment lines
+-        case "$_dev" in
+-        /dev/?*)
+-            wait_for_dev $_dev;;
+-        *) ;;
+-        esac
+-    done < $1
+-    return 0
+-}
+-
+-[ -f /etc/fstab ] && fstab_wait_dev /etc/fstab
+--- dracut.orig/modules.d/99base/module-setup.sh
++++ dracut/modules.d/99base/module-setup.sh
+@@ -41,6 +41,7 @@ install() {
+     dracut_install switch_root || dfatal "Failed to install switch_root"
+ 
+     inst_simple "$moddir/dracut-lib.sh" "/lib/dracut-lib.sh"
++    inst_hook cmdline 00 "$moddir/wait-host-devs.sh"
+     inst_hook cmdline 10 "$moddir/parse-root-opts.sh"
+     mkdir -p "${initdir}/var"
+     [ -x /lib/systemd/systemd-timestamp ] && inst /lib/systemd/systemd-timestamp
+--- /dev/null
++++ dracut/modules.d/99base/wait-host-devs.sh
+@@ -0,0 +1,20 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
++
++wait_host_devs() {
++    local _dev
++
++    while read _dev; do
++        case "$_dev" in
++        /dev/?*)
++            wait_for_dev $_dev
++            ;;
++        *) ;;
++        esac
++    done < $1
++}
++
++[ -f /etc/host_devs ] && wait_host_devs /etc/host_devs
