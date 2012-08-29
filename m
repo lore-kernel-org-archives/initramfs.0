@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] hide 'setsid --help' output in emergency_shell()
-Date: Tue, 28 Aug 2012 09:43:52 -0400
-Message-ID: <1346161432-5646-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH liveupdates] apply-live-updates.sh: handle updates for /run
+Date: Wed, 29 Aug 2012 18:58:15 -0400
+Message-ID: <1346281095-16549-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,29 +10,37 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-When emergency_shell() happens, it does 'setsid --help' to figure out if
-the setsid binary supports the '-c' flag (to set the controlling tty).
+/run will get mounted at $NEWROOT/run after switch_root, but it's not
+there yet. bind-mount it in place so updates for /run actually land in
+/run.
 
-This output shows up in the logs (and on-screen if you're using
-rd.debug), which keeps confusing people looking for other problems.
-
-Using "case" instead of "strstr" lets us avoid this.
+(also: remove a redundant check for existing directories. mkdir -p
+doesn't do anything if the directory already exists.)
 ---
- modules.d/99base/dracut-lib.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/90dmsquash-live/apply-live-updates.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index 60b4cb1..fbe6f91 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -890,7 +890,7 @@ _emergency_shell()
-             _ctty=/dev/$_ctty
-         fi
-         [ -c "$_ctty" ] || _ctty=/dev/tty1
--        strstr "$(setsid --help 2>/dev/null)" "ctty" && CTTY="-c"
-+        case "$(/usr/bin/setsid --help 2>&1)" in *--ctty*) CTTY="--ctty";; esac
-         setsid $CTTY /bin/sh -i -l 0<$_ctty 1>$_ctty 2>&1
-     fi
- }
+diff --git a/modules.d/90dmsquash-live/apply-live-updates.sh b/modules.d/90dmsquash-live/apply-live-updates.sh
+index 61da4bf..d620f2c 100755
+--- a/modules.d/90dmsquash-live/apply-live-updates.sh
++++ b/modules.d/90dmsquash-live/apply-live-updates.sh
+@@ -2,14 +2,16 @@
+ 
+ if [ -b /dev/mapper/live-rw ] && [ -d /updates ]; then
+     info "Applying updates to live image..."
++    mount -o bind /run $NEWROOT/run
+     # avoid overwriting symlinks (e.g. /lib -> /usr/lib) with directories
+     (
+         cd /updates
+         find . -depth -type d | while read dir; do
+-            [ -d "$NEWROOT/$dir" ] || mkdir -p "$NEWROOT/$dir"
++            mkdir -p "$NEWROOT/$dir"
+         done
+         find . -depth \! -type d | while read file; do
+             cp -a "$file" "$NEWROOT/$file"
+         done
+     )
++    umount $NEWROOT/run
+ fi
 -- 
 1.7.11.4
