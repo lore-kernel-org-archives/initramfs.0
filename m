@@ -1,45 +1,33 @@
-From: Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] Don't truncate the overlay file on a reset.
-Date: Wed, 29 Aug 2012 21:15:34 -0400
-Message-ID: <CAEcBt+XLgwWV7GDtrR18aZ6MR1GtZihcWub-CNxL0mr7NS_YpQ@mail.gmail.com>
-Mime-Version: 1.0
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:from:date:message-id:subject:to:cc:content-type;
-        bh=MEIncP0VP99dMzmhu//kWJ6VglaQXqgsp2e43FEEDag=;
-        b=Ea/VvdL7WRCJMR1GMBiU6ZycBhcu/QLl5RYNzSAGh9iF7vH375u9RyjMt9G7X4/EDJ
-         8K8/NrYe6JgCaP69/QsW6n2NOEEGrdZ9cR/8Q/c2VumIH4Vt/2tE5nZXQ3hNuBDpkJuR
-         u3asKffBnUPk2E5VJI3BJEDK/oOCjG0EKX6OBh1l58QQmofguW9KXrEntOp5DYRpVkMs
-         l54HxKD2SQZ5fKPJZFjAt2d2iumhEqPa9jHlMq7M4LnTdeoVWV+Xsy7Qc4mygtBxaIar
-         FnkAFyIjU82F8W+VnAoyPI5XZGgxk6RIE/EDzDHHjFKOkqSkKTaQ33GZ/3iFhSytgy9B
-         cbZg==
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+From: Thomas Renninger <trenn@suse.de>
+Subject: Early cpio decoder and ACPI table override via initrd making use of it
+Date: Thu, 30 Aug 2012 11:29:15 +0200
+Message-ID: <1346318957-5831-1-git-send-email-trenn@suse.de>
+Return-path: <linux-acpi-owner@vger.kernel.org>
+Sender: linux-acpi-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
+To: hpa@zytor.com
+Cc: linux-kernel@vger.kernel.org, lenb@kernel.org, robert.moore@intel.com, ming.m.lin@intel.com, initramfs@vger.kernel.org, bigeasy@linutronix.de, vojcek@tlen.pl, eric.piel@tremplin-utc.net, linux-acpi@vger.kernel.org, yinghai@kernel.org
 
-commit d0d4f29cdd0a0e6dd1170965decb282ef5511746
-Author: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
-Date:   Wed Aug 29 21:02:07 2012 -0400
+This is based on the early cpio decoder from hpa.
+The first patch is exactly the patch (41750d31fc9599fd81763e685) from git repo:
+kernel/git/hpa/linux-earlyinitramfs. Ony the Makefile was slightly
+adjusted to latest Linus kernel (3.6.0-rc3).
 
-    Don't truncate the overlay file on a reset.
+Because of the special requirements hpa mentioned, I gave up the cleaner
+callback approach. It may make sense to revive it if there are potential
+more users and let the very early code call the cpio decoder directly and
+let others use the callback interface I had made up.
 
-diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-index f8bfca6..62340a5 100755
---- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-+++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-@@ -98,7 +98,7 @@ do_live_overlay() {
-         if [ -f /run/initramfs/overlayfs$pathspec -a -w
-/run/initramfs/overlayfs$pathspec ]; then
-             losetup $OVERLAY_LOOPDEV /run/initramfs/overlayfs$pathspec
-             if [ -n "$reset_overlay" ]; then
--                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1 2>/dev/null
-+                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1
-conv=notrunc 2>/dev/null
-             fi
-             setup="yes"
-         fi
+Anyway, it would be great to see these two patches showing up in a
+mainline branch and linux-next asap, so that they can slip in with the next
+(3.7) merge window.
+
+Working on ACPI features or debugging ACPI problems is a nightmare on Linux
+currently. ACPI table overrding via initrd makes working on such problems
+a lot easier.
+
+   Thomas
+
