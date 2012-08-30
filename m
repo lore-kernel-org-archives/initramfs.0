@@ -1,46 +1,45 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH liveupdates] apply-live-updates.sh: handle updates for /run
-Date: Wed, 29 Aug 2012 18:58:15 -0400
-Message-ID: <1346281095-16549-1-git-send-email-wwoods@redhat.com>
+From: Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] Don't truncate the overlay file on a reset.
+Date: Wed, 29 Aug 2012 21:15:34 -0400
+Message-ID: <CAEcBt+XLgwWV7GDtrR18aZ6MR1GtZihcWub-CNxL0mr7NS_YpQ@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:from:date:message-id:subject:to:cc:content-type;
+        bh=MEIncP0VP99dMzmhu//kWJ6VglaQXqgsp2e43FEEDag=;
+        b=Ea/VvdL7WRCJMR1GMBiU6ZycBhcu/QLl5RYNzSAGh9iF7vH375u9RyjMt9G7X4/EDJ
+         8K8/NrYe6JgCaP69/QsW6n2NOEEGrdZ9cR/8Q/c2VumIH4Vt/2tE5nZXQ3hNuBDpkJuR
+         u3asKffBnUPk2E5VJI3BJEDK/oOCjG0EKX6OBh1l58QQmofguW9KXrEntOp5DYRpVkMs
+         l54HxKD2SQZ5fKPJZFjAt2d2iumhEqPa9jHlMq7M4LnTdeoVWV+Xsy7Qc4mygtBxaIar
+         FnkAFyIjU82F8W+VnAoyPI5XZGgxk6RIE/EDzDHHjFKOkqSkKTaQ33GZ/3iFhSytgy9B
+         cbZg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
 
-/run will get mounted at $NEWROOT/run after switch_root, but it's not
-there yet. bind-mount it in place so updates for /run actually land in
-/run.
+commit d0d4f29cdd0a0e6dd1170965decb282ef5511746
+Author: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
+Date:   Wed Aug 29 21:02:07 2012 -0400
 
-(also: remove a redundant check for existing directories. mkdir -p
-doesn't do anything if the directory already exists.)
----
- modules.d/90dmsquash-live/apply-live-updates.sh | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+    Don't truncate the overlay file on a reset.
 
-diff --git a/modules.d/90dmsquash-live/apply-live-updates.sh b/modules.d/90dmsquash-live/apply-live-updates.sh
-index 61da4bf..d620f2c 100755
---- a/modules.d/90dmsquash-live/apply-live-updates.sh
-+++ b/modules.d/90dmsquash-live/apply-live-updates.sh
-@@ -2,14 +2,16 @@
- 
- if [ -b /dev/mapper/live-rw ] && [ -d /updates ]; then
-     info "Applying updates to live image..."
-+    mount -o bind /run $NEWROOT/run
-     # avoid overwriting symlinks (e.g. /lib -> /usr/lib) with directories
-     (
-         cd /updates
-         find . -depth -type d | while read dir; do
--            [ -d "$NEWROOT/$dir" ] || mkdir -p "$NEWROOT/$dir"
-+            mkdir -p "$NEWROOT/$dir"
-         done
-         find . -depth \! -type d | while read file; do
-             cp -a "$file" "$NEWROOT/$file"
-         done
-     )
-+    umount $NEWROOT/run
- fi
--- 
-1.7.11.4
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh
+b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+index f8bfca6..62340a5 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
++++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+@@ -98,7 +98,7 @@ do_live_overlay() {
+         if [ -f /run/initramfs/overlayfs$pathspec -a -w
+/run/initramfs/overlayfs$pathspec ]; then
+             losetup $OVERLAY_LOOPDEV /run/initramfs/overlayfs$pathspec
+             if [ -n "$reset_overlay" ]; then
+-                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1 2>/dev/null
++                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1
+conv=notrunc 2>/dev/null
+             fi
+             setup="yes"
+         fi
