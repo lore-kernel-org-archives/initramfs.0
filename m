@@ -1,35 +1,62 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 2/2] ACPI: Override arbitrary ACPI tables via initrd for debugging
-Date: Thu, 30 Aug 2012 11:34:11 +0200
-Message-ID: <201208301134.12717.trenn@suse.de>
-References: <1346318957-5831-1-git-send-email-trenn@suse.de> <1346318957-5831-3-git-send-email-trenn@suse.de>
+From: Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] Don't truncate the overlay file on a reset.
+Date: Thu, 30 Aug 2012 20:19:08 -0400
+Message-ID: <CAEcBt+XQLRA-PZ4m7SjhTw3qASkg3s57PYHKOG56g0f5xtdz7w@mail.gmail.com>
+References: <CAEcBt+XLgwWV7GDtrR18aZ6MR1GtZihcWub-CNxL0mr7NS_YpQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1346318957-5831-3-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+         :cc:content-type;
+        bh=Sl6wSeJQ3ABJjWTWHxpCo5ywj3zeVAYRTGR4acS1m+8=;
+        b=azONDinDXALQtdJAkQSp+1IS2huqD/ov40rZTxDFhRUvhVDA+gfTl7X57zzaV2FEmT
+         X+kwdK0WumGSLLeXfEg6TUc9uR9wRz0ukrCjo/9XPQxhza9JPJCRLSw8TN/ZAzXVhoZN
+         /jHG6z8X7qXtQeUloTm8HHeBsOqHUoXTVpP67JxnwOqyxMtlgoIKDU+HLwrSyjLLsmgY
+         ajrCt0Wld3B+IF35GQBR72YZ4IyAJecOlWQ7mfKmD/+/ogPC88xXviTCPInN4FN+Da/W
+         XbcK9nYgak8xvxb/sReyr48qIILscaEeJG5eADW9yj694PqhJyUUln22HMxn54zs5GCa
+         9mVg==
+In-Reply-To: <CAEcBt+XLgwWV7GDtrR18aZ6MR1GtZihcWub-CNxL0mr7NS_YpQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: Text/Plain; charset="us-ascii"
-To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lenb-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, robert.moore-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, bigeasy-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, vojcek-wYtBgQxc//8@public.gmane.org, eric.piel-VkQ1JFuSMpfAbQlEx87xDw@public.gmane.org, linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
 
-On Thursday, August 30, 2012 11:29:17 AM Thomas Renninger wrote:
-> Details can be found in:
-> Documentation/acpi/initrd_table_override.txt
-> 
-> Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-> CC: eric.piel-VkQ1JFuSMpfAbQlEx87xDw@public.gmane.org
-> CC: vojcek-wYtBgQxc//8@public.gmane.org
-> CC: Lin Ming <ming.m.lin-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Lin Ming's address is not valid anymore?:
-<ming.m.lin-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>: host mga01.intel.com[192.55.52.88] said: 550 #5.1.0
-    Address rejected. (in reply to RCPT TO command)
+On Wed, Aug 29, 2012 at 9:15 PM, Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> commit d0d4f29cdd0a0e6dd1170965decb282ef5511746
+> Author: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
+> Date:   Wed Aug 29 21:02:07 2012 -0400
+>
+>     Don't truncate the overlay file on a reset.
+>
+> diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> index f8bfca6..62340a5 100755
+> --- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> +++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> @@ -98,7 +98,7 @@ do_live_overlay() {
+>          if [ -f /run/initramfs/overlayfs$pathspec -a -w
+> /run/initramfs/overlayfs$pathspec ]; then
+>              losetup $OVERLAY_LOOPDEV /run/initramfs/overlayfs$pathspec
+>              if [ -n "$reset_overlay" ]; then
+> -                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1 2>/dev/null
+> +                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1
+> conv=notrunc 2>/dev/null
+>              fi
+>              setup="yes"
+>          fi
 
-Please remove it from CC list if you reply on one of these.
+Void the above patch.
 
-Would be great if it can get removed from CC list in the patch
-without the need of resending (if the patches are fine).
+I don't know why the overlay is NOT truncated without the notrunc
+conversion argument to dd.
 
-Thanks,
+However, my testing shows that this bug is fixed by using the fsync
+conversion argument,
+https://bugzilla.redhat.com/show_bug.cgi?id=832884
 
-   Thomas
+A revised patch file is attached to the bug ticket.
+
+        --Fred
