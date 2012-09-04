@@ -1,62 +1,50 @@
-From: Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] Don't truncate the overlay file on a reset.
-Date: Thu, 30 Aug 2012 20:19:08 -0400
-Message-ID: <CAEcBt+XQLRA-PZ4m7SjhTw3qASkg3s57PYHKOG56g0f5xtdz7w@mail.gmail.com>
-References: <CAEcBt+XLgwWV7GDtrR18aZ6MR1GtZihcWub-CNxL0mr7NS_YpQ@mail.gmail.com>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/2] lib: Add early cpio decoder
+Date: Tue, 04 Sep 2012 10:00:09 -0700
+Message-ID: <50463399.70506@zytor.com>
+References: <1346318957-5831-1-git-send-email-trenn@suse.de> <1346318957-5831-2-git-send-email-trenn@suse.de>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:in-reply-to:references:from:date:message-id:subject:to
-         :cc:content-type;
-        bh=Sl6wSeJQ3ABJjWTWHxpCo5ywj3zeVAYRTGR4acS1m+8=;
-        b=azONDinDXALQtdJAkQSp+1IS2huqD/ov40rZTxDFhRUvhVDA+gfTl7X57zzaV2FEmT
-         X+kwdK0WumGSLLeXfEg6TUc9uR9wRz0ukrCjo/9XPQxhza9JPJCRLSw8TN/ZAzXVhoZN
-         /jHG6z8X7qXtQeUloTm8HHeBsOqHUoXTVpP67JxnwOqyxMtlgoIKDU+HLwrSyjLLsmgY
-         ajrCt0Wld3B+IF35GQBR72YZ4IyAJecOlWQ7mfKmD/+/ogPC88xXviTCPInN4FN+Da/W
-         XbcK9nYgak8xvxb/sReyr48qIILscaEeJG5eADW9yj694PqhJyUUln22HMxn54zs5GCa
-         9mVg==
-In-Reply-To: <CAEcBt+XLgwWV7GDtrR18aZ6MR1GtZihcWub-CNxL0mr7NS_YpQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1346318957-5831-2-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lenb-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, robert.moore-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, Fenghua Yu <fenghua.yu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bigeasy-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, vojcek-wYtBgQxc//8@public.gmane.org, eric.piel-VkQ1JFuSMpfAbQlEx87xDw@public.gmane.org, linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, "H. Peter Anvin" <hpa-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 
-On Wed, Aug 29, 2012 at 9:15 PM, Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> commit d0d4f29cdd0a0e6dd1170965decb282ef5511746
-> Author: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
-> Date:   Wed Aug 29 21:02:07 2012 -0400
+On 08/30/2012 02:29 AM, Thomas Renninger wrote:
+> From: "H. Peter Anvin" <hpa-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 >
->     Don't truncate the overlay file on a reset.
+> Add a simple cpio decoder without library dependencies for the purpose
+> of extracting components from the initramfs blob for early kernel
+> uses.  Intended consumers so far are microcode and ACPI override.
 >
-> diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> index f8bfca6..62340a5 100755
-> --- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> +++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> @@ -98,7 +98,7 @@ do_live_overlay() {
->          if [ -f /run/initramfs/overlayfs$pathspec -a -w
-> /run/initramfs/overlayfs$pathspec ]; then
->              losetup $OVERLAY_LOOPDEV /run/initramfs/overlayfs$pathspec
->              if [ -n "$reset_overlay" ]; then
-> -                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1 2>/dev/null
-> +                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1
-> conv=notrunc 2>/dev/null
->              fi
->              setup="yes"
->          fi
+> Signed-off-by: H. Peter Anvin <hpa-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+> CC: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+> Link: http://lkml.kernel.org/r/201203261651.29640.trenn-l3A5Bk7waGM@public.gmane.org
+> Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 
-Void the above patch.
+I was trying to figure out if there is a way to do what you want 
+(support for multiple files) without the problems of the callback 
+interface.  I think it is actually fairly straightforward; we need a 
+prefix iterator (so you can give it a string like "kernel/acpi/" rather 
+than a full filename) and it needs to be able to accept a "last" pointer 
+so it can resume scanning at the point it last left off.  That should be 
+a pretty trivial change.
 
-I don't know why the overlay is NOT truncated without the notrunc
-conversion argument to dd.
+The other thing we presumably want to do -- and this is generic -- is to 
+be able to handle multiple sources for the initramfs; at the very least 
+there is built in vs provided from the boot loader.  I had originally 
+intended to just handle that by calling the earlycpio function once per 
+block, but the "last left off" bit makes that a little harder.  Need to 
+think about that a little bit.
 
-However, my testing shows that this bug is fixed by using the fsync
-conversion argument,
-https://bugzilla.redhat.com/show_bug.cgi?id=832884
+I am guessing that this may not need to be something we need from the 
+very beginning, or am I wrong?
 
-A revised patch file is attached to the bug ticket.
+	-hpa
 
-        --Fred
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
