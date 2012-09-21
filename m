@@ -1,56 +1,60 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2 v2] use lib function ismounted in convertfs module
-Date: Thu, 20 Sep 2012 10:38:04 +0200
-Message-ID: <505AD5EC.9020704@redhat.com>
-References: <20120917100110.GA18642@darkstar.nay.redhat.com>
+From: Michael Prokop <mika@debian.org>
+Subject: initramfs-tools 0.108 release
+Date: Fri, 21 Sep 2012 12:59:04 +0200
+Message-ID: <2012-09-21T12-56-01@devnull.michael-prokop.at>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20120917100110.GA18642-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="R+WA+n3pAWWgNWUs"
+Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane.org@lists.debian.org>
+Content-Disposition: inline
+Resent-Message-ID: <iqC2aZ3GoVC.A.HwF.boEXQB@bendel>
+List-Id: <initramfs.vger.kernel.org>
+List-URL: <http://lists.debian.org/debian-kernel/>
+List-Post: <mailto:debian-kernel@lists.debian.org>
+List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
+List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
+List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
+To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
 
-Hmm, I want the convertfs.sh script to be dracut independent, so other it can be
-used as a standalone script for the conversion.
 
-Am 17.09.2012 12:01, schrieb Dave Young:
-> 
-> convertfs module use a private function of ismounted(), this is
-> duplicate of the one in dracut-lib.sh.
-> 
-> Change to use global ismounted
-> 
-> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/30convertfs/convertfs.sh |    9 ++-------
->  1 file changed, 2 insertions(+), 7 deletions(-)
-> 
-> --- dracut.orig/modules.d/30convertfs/convertfs.sh
-> +++ dracut/modules.d/30convertfs/convertfs.sh
-> @@ -9,6 +9,8 @@ if [[ ! -d "$ROOT" ]]; then
->      exit 1
->  fi
->  
-> +type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-> +
->  if [[ "$ROOT" -ef / ]]; then
->      echo "Can't convert the running system."
->      echo "Please boot with 'rd.convertfs' on the kernel command line,"
-> @@ -73,13 +75,6 @@ if [[ ! -e "$testfile" ]]; then
->  fi
->  rm -f "$testfile"
->  
-> -ismounted() {
-> -    while read a m a; do
-> -        [[ "$m" = "$1" ]] && return 0
-> -    done < /proc/mounts
-> -    return 1
-> -}
-> -
->  # clean up after ourselves no matter how we die.
->  cleanup() {
->      echo "Something failed. Move back to the original state"
-> 
+--R+WA+n3pAWWgNWUs
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+Hi,
+
+on behalf of the initramfs-tools developers I'm announcing a new
+release, which most importantly fixes a keymap issue (see bug
+report http://bugs.debian.org/619711 for details).
+
+,---- [ git shortlog ]
+| Michael Prokop (2):
+|       Use setupcon to install system's keymap
+|       Releasing version 0.108
+|
+| Petr Baudis (1):
+|       initramfs-tools: allow disabling initrd for make deb-pkg
+|
+| maximilian attems (2):
+|       hook-functions: add hid-generic module
+|       debian/control: Scratch 2.6 mention
+`----
+
+regards,
+-mika-
+
+--R+WA+n3pAWWgNWUs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAlBcSHgACgkQ2N9T+zficuiJlQCfRCuOJJYD9+RuEXB6bkXNoISo
+J8YAn3MGnaQ/neVBO9RYtVfT92XEk6nW
+=NiO4
+-----END PGP SIGNATURE-----
+
+--R+WA+n3pAWWgNWUs--
+
