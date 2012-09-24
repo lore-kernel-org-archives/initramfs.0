@@ -1,33 +1,58 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] use by-uuid firstly in get_persistent_dev
-Date: Mon, 24 Sep 2012 10:16:26 +0800
-Message-ID: <20120924021626.GA4603@dhcp-16-143.nay.redhat.com>
+From: Thomas Renninger <trenn@suse.de>
+Subject: Re: [PATCH 2/2] ACPI: Override arbitrary ACPI tables via initrd for debugging
+Date: Mon, 24 Sep 2012 08:40:28 +0200
+Message-ID: <201209240840.29342.trenn@suse.de>
+References: <1348234085-39220-1-git-send-email-trenn@suse.de> <201209230317.04050.trenn@suse.de> <505E8F44.9020208@kernel.org>
 Mime-Version: 1.0
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Return-path: <linux-acpi-owner@vger.kernel.org>
+In-Reply-To: <505E8F44.9020208@kernel.org>
+Sender: linux-acpi-owner@vger.kernel.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: Text/Plain; charset="us-ascii"
+To: Len Brown <lenb@kernel.org>
+Cc: hpa@zytor.com, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, eric.piel@tremplin-utc.net, vojcek@tlen.pl
 
-For devices with filesystem, udev /dev/disk/by-uuid/* links are always
-reliable. So improve the get_persistent_dev() by using by-uuid/* firstly,
-and fallback to use by-id/*
-
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut-functions.sh |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- dracut.orig/dracut-functions.sh
-+++ dracut/dracut-functions.sh
-@@ -245,7 +245,7 @@ get_persistent_dev() {
-     _dev=$(udevadm info --query=name --name="$1" 2>/dev/null)
-     [ -z "$_dev" ] && return
+On Sunday 23 September 2012 06:25:40 Len Brown wrote:
+> > +config ACPI_INITRD_TABLE_OVERRIDE
+> > +       bool
+> > +       default y
+> 
+> Do distros in addition to SuSE concur they want to ship this way?
+Whether distros ship this in their enterprise, community or just in
+a -debug kernel flavor is up to them.
+I cannot see why this cannot be enabled by default on all.
+That is what the TAINT flag is for...
  
--    for i in /dev/disk/by-id/*; do
-+    for i in /dev/disk/by-uuid/* /dev/disk/by-id/*; do
-         _tmp=$(udevadm info --query=name --name="$i" 2>/dev/null)
-         if [ "$_tmp" = "$_dev" ]; then
-             echo $i
+> The last time we tried to make debugging easier we added
+> ACPI_CUSTOM_METHOD, which allowed root to over-ride an AML method
+> on a running system.  Distro security-minded people were not amused.
+Yep and therefore you have to remove this one from the tools for
+ACPI debugging you listed.
+The issue is/was, that root can inject code at runtime which is then
+executed in kernel environment.
+Afaik there are "security" provisions or say setups, which do
+hide modprobe/insmod and do not allow root to load any kernel drivers 
+or similar.
+If one can write the kernel or initrd which gets booted, I guess there
+are not much security restrictions anymore you could put on this user...
+But thanks for the pointer, I'll go and double check with some
+security guys.
+
+> thanks,
+> -Len Brown, Intel Open Source Technology Center
+> 
+> ps I noticed your reference to acpidump in the README.
+> That reminded me to push it to the kernel source tree.
+> Its new home will be tools/power/acpi
+This is the one which I tried to/did adjust to acpica headers?
+This sounds like a very good idea. I'll adjust the docs.
+
+pss: Can this tool live there as well:
+ftp://ftp.suse.com/pub/people/trenn/sources/ec/ec_access.c
+It's the userspace tool for examining EC values (and changes) via
+ec_sys debug driver and a corresponding /sys/kernel/debug/.. file.
+It's more ore less doing the same what the old thinkpad_acpi driver
+could, but offers this to all machines with an EC device.
+
+    Thomas
