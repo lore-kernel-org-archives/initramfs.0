@@ -1,34 +1,59 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [RESEND] Early cpio decoder and ACPI table override via initrd making use of it
-Date: Tue, 25 Sep 2012 16:55:55 +0200
-Message-ID: <1348584961-1476-1-git-send-email-trenn@suse.de>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+From: Thomas Renninger <trenn@suse.de>
+Subject: [PATCH 2/6] X86 ACPI: Introduce x86 arch specific arch_reserve_mem_area() for e820 handling
+Date: Tue, 25 Sep 2012 16:55:57 +0200
+Message-ID: <1348584961-1476-3-git-send-email-trenn@suse.de>
+References: <1348584961-1476-1-git-send-email-trenn@suse.de>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1348584961-1476-1-git-send-email-trenn@suse.de>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
-Cc: lenb-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, robert.moore-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+To: hpa@zytor.com
+Cc: lenb@kernel.org, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, Thomas Renninger <trenn@suse.de>
 
-Hi,
+This is needed for ACPI table overriding via initrd. Beside reserving
+memblocks, X86 also requires to flag the memory area to E820_RESERVED or
+E820_ACPI in the e820 mappings to be able to io(re)map it later.
 
-this is the updated version with following changes as suggested
-by Len and Yinghai:
-  - spelling corrections
-  - macro hiding in header files
-  - splitting up patches
+Signed-off-by: Thomas Renninger <trenn@suse.de>
+---
+ arch/x86/kernel/acpi/boot.c |    6 ++++++
+ include/linux/acpi.h        |    9 +++++++++
+ 2 files changed, 15 insertions(+), 0 deletions(-)
 
-There shouldn't be any functional changes since the last version.
-
-I guess the only part missing is a more explicit ack from Len than
-"this is not a nak"?
-Then this can go into linux-next through a X86 branch pushed by
-hpa (as there are quite some x86 specific parts)?
-
-The patches are on top of latest Linus tree.
-
-Thanks,
-
-    Thomas
-
+diff --git a/arch/x86/kernel/acpi/boot.c b/arch/x86/kernel/acpi/boot.c
+index b2297e5..6b75777 100644
+--- a/arch/x86/kernel/acpi/boot.c
++++ b/arch/x86/kernel/acpi/boot.c
+@@ -1700,3 +1700,9 @@ int __acpi_release_global_lock(unsigned int *lock)
+ 	} while (unlikely (val != old));
+ 	return old & 0x1;
+ }
++
++void __init arch_reserve_mem_area(acpi_physical_address addr, size_t size)
++{
++	e820_add_region(addr, size, E820_ACPI);
++	update_e820();
++}
+diff --git a/include/linux/acpi.h b/include/linux/acpi.h
+index 4f2a762..bf6a0ad 100644
+--- a/include/linux/acpi.h
++++ b/include/linux/acpi.h
+@@ -430,4 +430,13 @@ acpi_status acpi_os_prepare_sleep(u8 sleep_state,
+ #define acpi_os_set_prepare_sleep(func, pm1a_ctrl, pm1b_ctrl) do { } while (0)
+ #endif
+ 
++#if CONFIG_X86
++void arch_reserve_mem_area(acpi_physical_address addr, size_t size);
++#else
++static inline void void arch_reserve_mem_area(acpi_physical_address addr,
++					      size_t size)
++{
++}
++#endif /* CONFIG_X86 */
++
+ #endif	/*_LINUX_ACPI_H*/
+-- 
+1.7.6.1
