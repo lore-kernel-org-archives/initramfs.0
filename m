@@ -1,213 +1,228 @@
-From: Thomas Renninger <trenn@suse.de>
-Subject: [PATCH 3/6] ACPI: Store valid ACPI tables passed via early initrd in reserved memblock areas
-Date: Tue, 25 Sep 2012 16:55:58 +0200
-Message-ID: <1348584961-1476-4-git-send-email-trenn@suse.de>
-References: <1348584961-1476-1-git-send-email-trenn@suse.de>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1348584961-1476-1-git-send-email-trenn@suse.de>
-Sender: linux-kernel-owner@vger.kernel.org
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 3/6] ACPI: Store valid ACPI tables passed via early initrd in reserved memblock areas
+Date: Tue, 25 Sep 2012 08:15:01 -0700
+Message-ID: <033d1d5e-7110-44af-9cef-ec7a2c815f38@email.android.com>
+References: <1348584961-1476-1-git-send-email-trenn@suse.de> <1348584961-1476-4-git-send-email-trenn@suse.de>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1348584961-1476-4-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: hpa@zytor.com
-Cc: lenb@kernel.org, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, Thomas Renninger <trenn@suse.de>
+To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Cc: lenb-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, robert.moore-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
 
-A later patch will compare them with ACPI tables that get loaded at boot or
-runtime and if criteria match, a stored one is loaded.
+I think you got an explicit NAK for this being default y.
 
-Signed-off-by: Thomas Renninger <trenn@suse.de>
----
- arch/x86/kernel/setup.c |    2 +
- drivers/acpi/Kconfig    |    9 ++++
- drivers/acpi/osl.c      |  122 +++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/acpi.h    |    8 +++
- 4 files changed, 141 insertions(+), 0 deletions(-)
+Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org> wrote:
 
-diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index f4b9b80..764e543 100644
---- a/arch/x86/kernel/setup.c
-+++ b/arch/x86/kernel/setup.c
-@@ -941,6 +941,8 @@ void __init setup_arch(char **cmdline_p)
- 
- 	reserve_initrd();
- 
-+	acpi_initrd_override((void *)initrd_start, initrd_end - initrd_start);
-+
- 	reserve_crashkernel();
- 
- 	vsmp_init();
-diff --git a/drivers/acpi/Kconfig b/drivers/acpi/Kconfig
-index 8099895..a508f77 100644
---- a/drivers/acpi/Kconfig
-+++ b/drivers/acpi/Kconfig
-@@ -261,6 +261,15 @@ config ACPI_CUSTOM_DSDT
- 	bool
- 	default ACPI_CUSTOM_DSDT_FILE != ""
- 
-+config ACPI_INITRD_TABLE_OVERRIDE
-+	bool
-+	default y
-+	help
-+	  This option provides functionality to override arbitrary ACPI tables
-+	  via initrd. No functional change if no ACPI tables are passed via
-+	  initrd, therefore it's safe to say Y.
-+	  See Documentation/acpi/initrd_table_override.txt for details
-+
- config ACPI_BLACKLIST_YEAR
- 	int "Disable ACPI for systems before Jan 1st this year" if X86_32
- 	default 0
-diff --git a/drivers/acpi/osl.c b/drivers/acpi/osl.c
-index 9eaf708..b20b079 100644
---- a/drivers/acpi/osl.c
-+++ b/drivers/acpi/osl.c
-@@ -534,6 +534,128 @@ acpi_os_predefined_override(const struct acpi_predefined_names *init_val,
- 	return AE_OK;
- }
- 
-+#ifdef CONFIG_ACPI_INITRD_TABLE_OVERRIDE
-+#include <linux/earlycpio.h>
-+#include <linux/memblock.h>
-+
-+static u64 acpi_tables_addr;
-+static int all_tables_size;
-+
-+/* Copied from acpica/tbutils.c:acpi_tb_checksum() */
-+u8 __init acpi_table_checksum(u8 *buffer, u32 length)
-+{
-+	u8 sum = 0;
-+	u8 *end = buffer + length;
-+
-+	while (buffer < end)
-+		sum = (u8) (sum + *(buffer++));
-+	return sum;
-+}
-+
-+/* All but ACPI_SIG_RSDP and ACPI_SIG_FACS: */
-+static const char * const table_sigs[] = {
-+	ACPI_SIG_BERT, ACPI_SIG_CPEP, ACPI_SIG_ECDT, ACPI_SIG_EINJ,
-+	ACPI_SIG_ERST, ACPI_SIG_HEST, ACPI_SIG_MADT, ACPI_SIG_MSCT,
-+	ACPI_SIG_SBST, ACPI_SIG_SLIT, ACPI_SIG_SRAT, ACPI_SIG_ASF,
-+	ACPI_SIG_BOOT, ACPI_SIG_DBGP, ACPI_SIG_DMAR, ACPI_SIG_HPET,
-+	ACPI_SIG_IBFT, ACPI_SIG_IVRS, ACPI_SIG_MCFG, ACPI_SIG_MCHI,
-+	ACPI_SIG_SLIC, ACPI_SIG_SPCR, ACPI_SIG_SPMI, ACPI_SIG_TCPA,
-+	ACPI_SIG_UEFI, ACPI_SIG_WAET, ACPI_SIG_WDAT, ACPI_SIG_WDDT,
-+	ACPI_SIG_WDRT, ACPI_SIG_DSDT, ACPI_SIG_FADT, ACPI_SIG_PSDT,
-+	ACPI_SIG_RSDT, ACPI_SIG_XSDT, ACPI_SIG_SSDT, NULL };
-+
-+/* Non-fatal errors: Affected tables/files are ignored */
-+#define INVALID_TABLE(x, path, name)					\
-+	{ pr_err("ACPI OVERRIDE: " x " [%s%s]\n", path, name); continue; }
-+
-+#define ACPI_HEADER_SIZE sizeof(struct acpi_table_header)
-+
-+/* Must not increase 10 or needs code modification below */
-+#define ACPI_OVERRIDE_TABLES 10
-+
-+void __init acpi_initrd_override(void *data, size_t size)
-+{
-+	int sig, no, table_nr = 0, total_offset = 0;
-+	long offset = 0;
-+	struct acpi_table_header *table;
-+	char cpio_path[32] = "kernel/firmware/acpi/";
-+	struct cpio_data file;
-+	struct cpio_data early_initrd_files[ACPI_OVERRIDE_TABLES];
-+	char *p;
-+
-+	if (data == NULL || size == 0)
-+		return;
-+
-+	for (no = 0; no < ACPI_OVERRIDE_TABLES; no++) {
-+		file = find_cpio_data(cpio_path, data, size, &offset);
-+		if (!file.data)
-+			break;
-+
-+		data += offset;
-+		size -= offset;
-+
-+		if (file.size < sizeof(struct acpi_table_header))
-+			INVALID_TABLE("Table smaller than ACPI header",
-+				      cpio_path, file.name);
-+
-+		table = file.data;
-+
-+		for (sig = 0; table_sigs[sig]; sig++)
-+			if (!memcmp(table->signature, table_sigs[sig], 4))
-+				break;
-+
-+		if (!table_sigs[sig])
-+			INVALID_TABLE("Unknown signature",
-+				      cpio_path, file.name);
-+		if (file.size != table->length)
-+			INVALID_TABLE("File length does not match table length",
-+				      cpio_path, file.name);
-+		if (acpi_table_checksum(file.data, table->length))
-+			INVALID_TABLE("Bad table checksum",
-+				      cpio_path, file.name);
-+
-+		pr_info("%4.4s ACPI table found in initrd [%s%s][0x%x]\n",
-+			table->signature, cpio_path, file.name, table->length);
-+
-+		all_tables_size += table->length;
-+		early_initrd_files[table_nr].data = file.data;
-+		early_initrd_files[table_nr].size = file.size;
-+		table_nr++;
-+	}
-+	if (table_nr == 0)
-+		return;
-+
-+	acpi_tables_addr =
-+		memblock_find_in_range(0, max_low_pfn_mapped << PAGE_SHIFT,
-+				       all_tables_size, PAGE_SIZE);
-+	if (!acpi_tables_addr) {
-+		WARN_ON(1);
-+		return;
-+	}
-+	/*
-+	 * Only calling e820_add_reserve does not work and the
-+	 * tables are invalid (memory got used) later.
-+	 * memblock_reserve works as expected and the tables won't get modified.
-+	 * But it's not enough on X86 because ioremap will
-+	 * complain later (used by acpi_os_map_memory) that the pages
-+	 * that should get mapped are not marked "reserved".
-+	 * Both memblock_reserve and e820_add_region (via arch_reserve_mem_area)
-+	 * works fine.
-+	 */
-+	memblock_reserve(acpi_tables_addr, acpi_tables_addr + all_tables_size);
-+	arch_reserve_mem_area(acpi_tables_addr, all_tables_size);
-+
-+	p = early_ioremap(acpi_tables_addr, all_tables_size);
-+
-+	for (no = 0; no < table_nr; no++) {
-+		memcpy(p + total_offset, early_initrd_files[no].data,
-+		       early_initrd_files[no].size);
-+		total_offset += early_initrd_files[no].size;
-+	}
-+	early_iounmap(p, all_tables_size);
-+}
-+#endif /* CONFIG_ACPI_INITRD_TABLE_OVERRIDE */
-+
- acpi_status
- acpi_os_table_override(struct acpi_table_header * existing_table,
- 		       struct acpi_table_header ** new_table)
-diff --git a/include/linux/acpi.h b/include/linux/acpi.h
-index bf6a0ad..ee81cdc 100644
---- a/include/linux/acpi.h
-+++ b/include/linux/acpi.h
-@@ -76,6 +76,14 @@ typedef int (*acpi_table_handler) (struct acpi_table_header *table);
- 
- typedef int (*acpi_table_entry_handler) (struct acpi_subtable_header *header, const unsigned long end);
- 
-+#ifdef CONFIG_ACPI_INITRD_TABLE_OVERRIDE
-+void acpi_initrd_override(void *data, size_t size);
-+#else
-+static inline void acpi_initrd_override(void *data, size_t size)
-+{
-+}
-+#endif
-+
- char * __acpi_map_table (unsigned long phys_addr, unsigned long size);
- void __acpi_unmap_table(char *map, unsigned long size);
- int early_acpi_boot_init(void);
+>A later patch will compare them with ACPI tables that get loaded at
+>boot or
+>runtime and if criteria match, a stored one is loaded.
+>
+>Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+>---
+> arch/x86/kernel/setup.c |    2 +
+> drivers/acpi/Kconfig    |    9 ++++
+>drivers/acpi/osl.c      |  122
+>+++++++++++++++++++++++++++++++++++++++++++++++
+> include/linux/acpi.h    |    8 +++
+> 4 files changed, 141 insertions(+), 0 deletions(-)
+>
+>diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+>index f4b9b80..764e543 100644
+>--- a/arch/x86/kernel/setup.c
+>+++ b/arch/x86/kernel/setup.c
+>@@ -941,6 +941,8 @@ void __init setup_arch(char **cmdline_p)
+> 
+> 	reserve_initrd();
+> 
+>+	acpi_initrd_override((void *)initrd_start, initrd_end -
+>initrd_start);
+>+
+> 	reserve_crashkernel();
+> 
+> 	vsmp_init();
+>diff --git a/drivers/acpi/Kconfig b/drivers/acpi/Kconfig
+>index 8099895..a508f77 100644
+>--- a/drivers/acpi/Kconfig
+>+++ b/drivers/acpi/Kconfig
+>@@ -261,6 +261,15 @@ config ACPI_CUSTOM_DSDT
+> 	bool
+> 	default ACPI_CUSTOM_DSDT_FILE != ""
+> 
+>+config ACPI_INITRD_TABLE_OVERRIDE
+>+	bool
+>+	default y
+>+	help
+>+	  This option provides functionality to override arbitrary ACPI
+>tables
+>+	  via initrd. No functional change if no ACPI tables are passed via
+>+	  initrd, therefore it's safe to say Y.
+>+	  See Documentation/acpi/initrd_table_override.txt for details
+>+
+> config ACPI_BLACKLIST_YEAR
+> 	int "Disable ACPI for systems before Jan 1st this year" if X86_32
+> 	default 0
+>diff --git a/drivers/acpi/osl.c b/drivers/acpi/osl.c
+>index 9eaf708..b20b079 100644
+>--- a/drivers/acpi/osl.c
+>+++ b/drivers/acpi/osl.c
+>@@ -534,6 +534,128 @@ acpi_os_predefined_override(const struct
+>acpi_predefined_names *init_val,
+> 	return AE_OK;
+> }
+> 
+>+#ifdef CONFIG_ACPI_INITRD_TABLE_OVERRIDE
+>+#include <linux/earlycpio.h>
+>+#include <linux/memblock.h>
+>+
+>+static u64 acpi_tables_addr;
+>+static int all_tables_size;
+>+
+>+/* Copied from acpica/tbutils.c:acpi_tb_checksum() */
+>+u8 __init acpi_table_checksum(u8 *buffer, u32 length)
+>+{
+>+	u8 sum = 0;
+>+	u8 *end = buffer + length;
+>+
+>+	while (buffer < end)
+>+		sum = (u8) (sum + *(buffer++));
+>+	return sum;
+>+}
+>+
+>+/* All but ACPI_SIG_RSDP and ACPI_SIG_FACS: */
+>+static const char * const table_sigs[] = {
+>+	ACPI_SIG_BERT, ACPI_SIG_CPEP, ACPI_SIG_ECDT, ACPI_SIG_EINJ,
+>+	ACPI_SIG_ERST, ACPI_SIG_HEST, ACPI_SIG_MADT, ACPI_SIG_MSCT,
+>+	ACPI_SIG_SBST, ACPI_SIG_SLIT, ACPI_SIG_SRAT, ACPI_SIG_ASF,
+>+	ACPI_SIG_BOOT, ACPI_SIG_DBGP, ACPI_SIG_DMAR, ACPI_SIG_HPET,
+>+	ACPI_SIG_IBFT, ACPI_SIG_IVRS, ACPI_SIG_MCFG, ACPI_SIG_MCHI,
+>+	ACPI_SIG_SLIC, ACPI_SIG_SPCR, ACPI_SIG_SPMI, ACPI_SIG_TCPA,
+>+	ACPI_SIG_UEFI, ACPI_SIG_WAET, ACPI_SIG_WDAT, ACPI_SIG_WDDT,
+>+	ACPI_SIG_WDRT, ACPI_SIG_DSDT, ACPI_SIG_FADT, ACPI_SIG_PSDT,
+>+	ACPI_SIG_RSDT, ACPI_SIG_XSDT, ACPI_SIG_SSDT, NULL };
+>+
+>+/* Non-fatal errors: Affected tables/files are ignored */
+>+#define INVALID_TABLE(x, path, name)					\
+>+	{ pr_err("ACPI OVERRIDE: " x " [%s%s]\n", path, name); continue; }
+>+
+>+#define ACPI_HEADER_SIZE sizeof(struct acpi_table_header)
+>+
+>+/* Must not increase 10 or needs code modification below */
+>+#define ACPI_OVERRIDE_TABLES 10
+>+
+>+void __init acpi_initrd_override(void *data, size_t size)
+>+{
+>+	int sig, no, table_nr = 0, total_offset = 0;
+>+	long offset = 0;
+>+	struct acpi_table_header *table;
+>+	char cpio_path[32] = "kernel/firmware/acpi/";
+>+	struct cpio_data file;
+>+	struct cpio_data early_initrd_files[ACPI_OVERRIDE_TABLES];
+>+	char *p;
+>+
+>+	if (data == NULL || size == 0)
+>+		return;
+>+
+>+	for (no = 0; no < ACPI_OVERRIDE_TABLES; no++) {
+>+		file = find_cpio_data(cpio_path, data, size, &offset);
+>+		if (!file.data)
+>+			break;
+>+
+>+		data += offset;
+>+		size -= offset;
+>+
+>+		if (file.size < sizeof(struct acpi_table_header))
+>+			INVALID_TABLE("Table smaller than ACPI header",
+>+				      cpio_path, file.name);
+>+
+>+		table = file.data;
+>+
+>+		for (sig = 0; table_sigs[sig]; sig++)
+>+			if (!memcmp(table->signature, table_sigs[sig], 4))
+>+				break;
+>+
+>+		if (!table_sigs[sig])
+>+			INVALID_TABLE("Unknown signature",
+>+				      cpio_path, file.name);
+>+		if (file.size != table->length)
+>+			INVALID_TABLE("File length does not match table length",
+>+				      cpio_path, file.name);
+>+		if (acpi_table_checksum(file.data, table->length))
+>+			INVALID_TABLE("Bad table checksum",
+>+				      cpio_path, file.name);
+>+
+>+		pr_info("%4.4s ACPI table found in initrd [%s%s][0x%x]\n",
+>+			table->signature, cpio_path, file.name, table->length);
+>+
+>+		all_tables_size += table->length;
+>+		early_initrd_files[table_nr].data = file.data;
+>+		early_initrd_files[table_nr].size = file.size;
+>+		table_nr++;
+>+	}
+>+	if (table_nr == 0)
+>+		return;
+>+
+>+	acpi_tables_addr =
+>+		memblock_find_in_range(0, max_low_pfn_mapped << PAGE_SHIFT,
+>+				       all_tables_size, PAGE_SIZE);
+>+	if (!acpi_tables_addr) {
+>+		WARN_ON(1);
+>+		return;
+>+	}
+>+	/*
+>+	 * Only calling e820_add_reserve does not work and the
+>+	 * tables are invalid (memory got used) later.
+>+	 * memblock_reserve works as expected and the tables won't get
+>modified.
+>+	 * But it's not enough on X86 because ioremap will
+>+	 * complain later (used by acpi_os_map_memory) that the pages
+>+	 * that should get mapped are not marked "reserved".
+>+	 * Both memblock_reserve and e820_add_region (via
+>arch_reserve_mem_area)
+>+	 * works fine.
+>+	 */
+>+	memblock_reserve(acpi_tables_addr, acpi_tables_addr +
+>all_tables_size);
+>+	arch_reserve_mem_area(acpi_tables_addr, all_tables_size);
+>+
+>+	p = early_ioremap(acpi_tables_addr, all_tables_size);
+>+
+>+	for (no = 0; no < table_nr; no++) {
+>+		memcpy(p + total_offset, early_initrd_files[no].data,
+>+		       early_initrd_files[no].size);
+>+		total_offset += early_initrd_files[no].size;
+>+	}
+>+	early_iounmap(p, all_tables_size);
+>+}
+>+#endif /* CONFIG_ACPI_INITRD_TABLE_OVERRIDE */
+>+
+> acpi_status
+> acpi_os_table_override(struct acpi_table_header * existing_table,
+> 		       struct acpi_table_header ** new_table)
+>diff --git a/include/linux/acpi.h b/include/linux/acpi.h
+>index bf6a0ad..ee81cdc 100644
+>--- a/include/linux/acpi.h
+>+++ b/include/linux/acpi.h
+>@@ -76,6 +76,14 @@ typedef int (*acpi_table_handler) (struct
+>acpi_table_header *table);
+> 
+>typedef int (*acpi_table_entry_handler) (struct acpi_subtable_header
+>*header, const unsigned long end);
+> 
+>+#ifdef CONFIG_ACPI_INITRD_TABLE_OVERRIDE
+>+void acpi_initrd_override(void *data, size_t size);
+>+#else
+>+static inline void acpi_initrd_override(void *data, size_t size)
+>+{
+>+}
+>+#endif
+>+
+> char * __acpi_map_table (unsigned long phys_addr, unsigned long size);
+> void __acpi_unmap_table(char *map, unsigned long size);
+> int early_acpi_boot_init(void);
+
 -- 
-1.7.6.1
+Sent from my mobile phone. Please excuse brevity and lack of formatting.
