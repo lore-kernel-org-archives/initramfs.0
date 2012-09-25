@@ -1,11 +1,11 @@
 From: Thomas Renninger <trenn@suse.de>
-Subject: [PATCH 6/6] ACPI: Document ACPI table overriding via initrd
-Date: Tue, 25 Sep 2012 16:56:01 +0200
-Message-ID: <1348584961-1476-7-git-send-email-trenn@suse.de>
+Subject: [PATCH 4/6] ACPI: Implement physical address table override
+Date: Tue, 25 Sep 2012 16:55:59 +0200
+Message-ID: <1348584961-1476-5-git-send-email-trenn@suse.de>
 References: <1348584961-1476-1-git-send-email-trenn@suse.de>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-acpi-owner@vger.kernel.org>
 In-Reply-To: <1348584961-1476-1-git-send-email-trenn@suse.de>
-Sender: linux-kernel-owner@vger.kernel.org
+Sender: linux-acpi-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -13,111 +13,95 @@ Content-Transfer-Encoding: 7bit
 To: hpa@zytor.com
 Cc: lenb@kernel.org, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, Thomas Renninger <trenn@suse.de>
 
+Previous patches stored ACPI tables provided via initrd in a memblock reserved
+area.
+If a table is loaded and the table type of an initrd provided one matches,
+the one from initrd is prefered.
+In case of a SSDT table, the OEM table id also has to match.
+
+ACPI tables can be loaded at boot time (static table pointers in XSDT),
+but also dynamically any time later via ASL commands load() or loadTable().
+The override mechanism always works.
+
+
 Signed-off-by: Thomas Renninger <trenn@suse.de>
 ---
- Documentation/acpi/initrd_table_override.txt |   94 ++++++++++++++++++++++++++
- 1 files changed, 94 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/acpi/initrd_table_override.txt
+ drivers/acpi/osl.c |   60 ++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 56 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/acpi/initrd_table_override.txt b/Documentation/acpi/initrd_table_override.txt
-new file mode 100644
-index 0000000..35c3f54
---- /dev/null
-+++ b/Documentation/acpi/initrd_table_override.txt
-@@ -0,0 +1,94 @@
-+Overriding ACPI tables via initrd
-+=================================
+diff --git a/drivers/acpi/osl.c b/drivers/acpi/osl.c
+index b20b079..007224b 100644
+--- a/drivers/acpi/osl.c
++++ b/drivers/acpi/osl.c
+@@ -681,12 +681,64 @@ acpi_os_table_override(struct acpi_table_header * existing_table,
+ 
+ acpi_status
+ acpi_os_physical_table_override(struct acpi_table_header *existing_table,
+-				acpi_physical_address * new_address,
+-				u32 *new_table_length)
++				acpi_physical_address *address,
++				u32 *table_length)
+ {
+-	return AE_SUPPORT;
+-}
++#ifndef CONFIG_ACPI_INITRD_TABLE_OVERRIDE
++	*table_length = 0;
++	*address = 0;
++	return AE_OK;
++#else
++	int table_offset = 0;
++	struct acpi_table_header *table;
 +
-+1) Introduction (What is this about)
-+2) What is this for
-+3) How does it work
-+4) References (Where to retrieve userspace tools)
++	*table_length = 0;
++	*address = 0;
 +
-+1) What is this about
-+---------------------
++	if (!acpi_tables_addr)
++		return AE_OK;
 +
-+If the ACPI_INITRD_TABLE_OVERRIDE compile option is true, it is possible to
-+override nearly any ACPI table provided by the BIOS with an instrumented,
-+modified one.
++	do {
++		if (table_offset + ACPI_HEADER_SIZE > all_tables_size) {
++			WARN_ON(1);
++			return AE_OK;
++		}
 +
-+For a full list of ACPI tables that can be overridden, take a look at
-+the char *table_sigs[MAX_ACPI_SIGNATURE]; definition in drivers/acpi/osl.c
-+All ACPI tables iasl (Intel's ACPI compiler and disassembler) knows should
-+be overridable, except:
-+   - ACPI_SIG_RSDP (has a signature of 6 bytes)
-+   - ACPI_SIG_FACS (does not have an ordinary ACPI table header)
-+Both could get implemented as well.
++		table = acpi_os_map_memory(acpi_tables_addr + table_offset,
++					   ACPI_HEADER_SIZE);
 +
++		if (table_offset + table->length > all_tables_size) {
++			acpi_os_unmap_memory(table, ACPI_HEADER_SIZE);
++			WARN_ON(1);
++			return AE_OK;
++		}
+ 
++		table_offset += table->length;
 +
-+2) What is this for
-+-------------------
++		if (memcmp(existing_table->signature, table->signature, 4)) {
++			acpi_os_unmap_memory(table,
++				     ACPI_HEADER_SIZE);
++			continue;
++		}
 +
-+Please keep in mind that this is a debug option.
-+ACPI tables should not get overridden for productive use.
-+If BIOS ACPI tables are overridden the kernel will get tainted with the
-+TAINT_OVERRIDDEN_ACPI_TABLE flag.
-+Complain to your platform/BIOS vendor if you find a bug which is so sever
-+that a workaround is not accepted in the Linux kernel.
++		/* Only override tables with matching oem id */
++		if (memcmp(table->oem_table_id, existing_table->oem_table_id,
++			   ACPI_OEM_TABLE_ID_SIZE)) {
++			acpi_os_unmap_memory(table,
++				     ACPI_HEADER_SIZE);
++			continue;
++		}
 +
-+Still, it can and should be enabled in any kernel, because:
-+  - There is no functional change with not instrumented initrds
-+  - It provides a powerful feature to easily debug and test ACPI BIOS table
-+    compatibility with the Linux kernel.
++		table_offset -= table->length;
++		*table_length = table->length;
++		acpi_os_unmap_memory(table, ACPI_HEADER_SIZE);
++		*address = acpi_tables_addr + table_offset;
++		break;
++	} while (table_offset + ACPI_HEADER_SIZE < all_tables_size);
 +
-+
-+3) How does it work
-+-------------------
-+
-+# Extract the machine's ACPI tables:
-+cd /tmp
-+acpidump >acpidump
-+acpixtract -a acpidump
-+# Disassemble, modify and recompile them:
-+iasl -d *.dat
-+# For example add this statement into a _PRT (PCI Routing Table) function
-+# of the DSDT:
-+Store("HELLO WORLD", debug)
-+iasl -sa dsdt.dsl
-+# Add the raw ACPI tables to an uncompressed cpio archive.
-+# They must be put into a /kernel/firmware/acpi directory inside the
-+# cpio archive.
-+# The uncompressed cpio archive must be the first.
-+# Other, typically compressed cpio archives, must be
-+# concatenated on top of the uncompressed one.
-+mkdir -p kernel/firmware/acpi
-+cp dsdt.aml kernel/firmware/acpi
-+# A maximum of: #define ACPI_OVERRIDE_TABLES 10
-+# tables are  currently allowed (see osl.c):
-+iasl -sa facp.dsl
-+iasl -sa ssdt1.dsl
-+cp facp.aml kernel/firmware/acpi
-+cp ssdt1.aml kernel/firmware/acpi
-+# Create the uncompressed cpio archive and concatenate the original initrd
-+# on top:
-+find kernel | cpio -H newc --create > /boot/instrumented_initrd
-+cat /boot/initrd >>/boot/instrumented_initrd
-+# reboot with increased acpi debug level, e.g. boot params:
-+acpi.debug_level=0x2 acpi.debug_layer=0xFFFFFFFF
-+# and check your syslog:
-+[    1.268089] ACPI: PCI Interrupt Routing Table [\_SB_.PCI0._PRT]
-+[    1.272091] [ACPI Debug]  String [0x0B] "HELLO WORLD"
-+
-+iasl is able to disassemble and recompile quite a lot different,
-+also static ACPI tables.
-+
-+
-+4) Where to retrieve userspace tools
-+------------------------------------
-+
-+iasl and acpixtract are part of Intel's ACPICA project:
-+http://acpica.org/
-+and should be packaged by distributions (for example in the acpica package
-+on SUSE).
-+
-+acpidump can be found in Len Browns pmtools:
-+ftp://kernel.org/pub/linux/kernel/people/lenb/acpi/utils/pmtools/acpidump
-+This tool is also part of the acpica package on SUSE.
-+Alternatively, used ACPI tables can be retrieved via sysfs in latest kernels:
-+/sys/firmware/acpi/tables
++	return AE_OK;
++#endif
++}
+ 
+ static irqreturn_t acpi_irq(int irq, void *dev_id)
+ {
 -- 
 1.7.6.1
+
