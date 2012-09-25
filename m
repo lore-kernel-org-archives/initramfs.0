@@ -1,36 +1,40 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH cleanups] livenet: simplify writing net.ifaces
-Date: Tue, 25 Sep 2012 12:10:58 -0400
-Message-ID: <1348589458-13212-1-git-send-email-wwoods@redhat.com>
+From: Daniel Drake <dsd-2X9k7bc8m7Mdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] busybox: fix installation from /sbin/busybox
+Date: Tue, 25 Sep 2012 18:42:28 -0400 (EDT)
+Message-ID: <20120925224228.25BC8FAABE@dev.laptop.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-commit db2b12f removed the rd.neednet argument and uses /tmp/net.ifaces
-instead. This means we don't need to mess with CMDLINE.
+"inst busybox" no longer seems to work when busybox is at
+/sbin/busybox. Reproduced on Fedora 18 (dracut-023-39.git20120910).
+
+Use type -P to find the full path to busybox to solve this problem.
 ---
- modules.d/90livenet/parse-livenet.sh | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ modules.d/05busybox/module-setup.sh | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/90livenet/parse-livenet.sh b/modules.d/90livenet/parse-livenet.sh
-index 365eca1..0e61870 100755
---- a/modules.d/90livenet/parse-livenet.sh
-+++ b/modules.d/90livenet/parse-livenet.sh
-@@ -9,10 +9,7 @@
- updates=$(getarg live.updates=)
- if [ -n "$updates" ]; then
-     # make sure network comes up even if we're doing a local live device
--    if [ -z "$netroot" ]; then
--	echo > /tmp/net.ifaces
--	unset CMDLINE
--    fi
-+    [ -z "$netroot" ] && >> /tmp/net.ifaces
-     echo "$updates" > /tmp/liveupdates.info
-     echo '[ -e /tmp/liveupdates.done ]' > \
-         $hookdir/initqueue/finished/liveupdates.sh
+diff --git a/modules.d/05busybox/module-setup.sh b/modules.d/05busybox/module-setup.sh
+index 2e9ead8..e0ef178 100755
+--- a/modules.d/05busybox/module-setup.sh
++++ b/modules.d/05busybox/module-setup.sh
+@@ -13,9 +13,10 @@ depends() {
+ }
+ 
+ install() {
+-    local _i _progs _path
+-    inst busybox /usr/bin/busybox
+-    for _i in `/sbin/busybox | sed -ne '1,/Currently/!{s/,//g; s/busybox//g; p}'`
++    local _i _progs _path _busybox
++    _busybox=$(type -P busybox)
++    inst $_busybox /usr/bin/busybox
++    for _i in `$_busybox | sed -ne '1,/Currently/!{s/,//g; s/busybox//g; p}'`
+     do
+         _progs="$_progs $_i"
+     done
 -- 
 1.7.11.4
