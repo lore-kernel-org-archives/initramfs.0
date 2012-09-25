@@ -1,46 +1,36 @@
-From: Thomas Renninger <trenn@suse.de>
-Subject: [PATCH] ACPI: Only allow users with CAP_SYS_RAWIO rights to overwrite ACPI funcs at runtime
-Date: Tue, 25 Sep 2012 17:25:11 +0200
-Message-ID: <201209251725.13085.trenn@suse.de>
-References: <1348234085-39220-1-git-send-email-trenn@suse.de> <201209240840.29342.trenn@suse.de> <20120924102159.346d0735@pyramind.ukuu.org.uk>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-acpi-owner@vger.kernel.org>
-In-Reply-To: <20120924102159.346d0735@pyramind.ukuu.org.uk>
-Sender: linux-acpi-owner@vger.kernel.org
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH cleanups] livenet: simplify writing net.ifaces
+Date: Tue, 25 Sep 2012 12:10:58 -0400
+Message-ID: <1348589458-13212-1-git-send-email-wwoods@redhat.com>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: Text/Plain; charset="us-ascii"
-To: Len Brown <lenb@kernel.org>
-Cc: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, eric.piel@tremplin-utc.net, vojcek@tlen.pl
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-ACPI: Only allow users with CAP_SYS_RAWIO rights to overwrite ACPI funcs at runtime
-
-and tab align file_operations callbacks.
-
-Signed-off-by: Thomas Renninger <trenn@suse.de>
+commit db2b12f removed the rd.neednet argument and uses /tmp/net.ifaces
+instead. This means we don't need to mess with CMDLINE.
 ---
- drivers/acpi/custom_method.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
+ modules.d/90livenet/parse-livenet.sh | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/drivers/acpi/custom_method.c b/drivers/acpi/custom_method.c
-index 5d42c24..9a0294d 100644
---- a/drivers/acpi/custom_method.c
-+++ b/drivers/acpi/custom_method.c
-@@ -72,9 +72,15 @@ static ssize_t cm_write(struct file *file, const char __user * user_buf,
- 	return count;
- }
- 
-+static int open_check_acc(struct inode *inode, struct file *filp)
-+{
-+	return capable(CAP_SYS_RAWIO) ? 0 : -EPERM;
-+}
-+
- static const struct file_operations cm_fops = {
--	.write = cm_write,
--	.llseek = default_llseek,
-+	.write	= cm_write,
-+	.llseek	= default_llseek,
-+	.open	= open_check_acc,
- };
- 
- static int __init acpi_custom_method_init(void)
+diff --git a/modules.d/90livenet/parse-livenet.sh b/modules.d/90livenet/parse-livenet.sh
+index 365eca1..0e61870 100755
+--- a/modules.d/90livenet/parse-livenet.sh
++++ b/modules.d/90livenet/parse-livenet.sh
+@@ -9,10 +9,7 @@
+ updates=$(getarg live.updates=)
+ if [ -n "$updates" ]; then
+     # make sure network comes up even if we're doing a local live device
+-    if [ -z "$netroot" ]; then
+-	echo > /tmp/net.ifaces
+-	unset CMDLINE
+-    fi
++    [ -z "$netroot" ] && >> /tmp/net.ifaces
+     echo "$updates" > /tmp/liveupdates.info
+     echo '[ -e /tmp/liveupdates.done ]' > \
+         $hookdir/initqueue/finished/liveupdates.sh
+-- 
+1.7.11.4
