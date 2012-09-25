@@ -1,43 +1,46 @@
 From: Thomas Renninger <trenn@suse.de>
-Subject: Re: [PATCH 2/6] X86 ACPI: Introduce x86 arch specific arch_reserve_mem_area() for e820 handling
-Date: Tue, 25 Sep 2012 17:12:17 +0200
-Message-ID: <201209251712.17678.trenn@suse.de>
-References: <1348584961-1476-1-git-send-email-trenn@suse.de> <1348584961-1476-3-git-send-email-trenn@suse.de>
+Subject: [PATCH] ACPI: Only allow users with CAP_SYS_RAWIO rights to overwrite ACPI funcs at runtime
+Date: Tue, 25 Sep 2012 17:25:11 +0200
+Message-ID: <201209251725.13085.trenn@suse.de>
+References: <1348234085-39220-1-git-send-email-trenn@suse.de> <201209240840.29342.trenn@suse.de> <20120924102159.346d0735@pyramind.ukuu.org.uk>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1348584961-1476-3-git-send-email-trenn@suse.de>
-Sender: linux-kernel-owner@vger.kernel.org
+Return-path: <linux-acpi-owner@vger.kernel.org>
+In-Reply-To: <20120924102159.346d0735@pyramind.ukuu.org.uk>
+Sender: linux-acpi-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: Text/Plain; charset="us-ascii"
-To: hpa@zytor.com
-Cc: lenb@kernel.org, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org
+To: Len Brown <lenb@kernel.org>
+Cc: Alan Cox <alan@lxorguk.ukuu.org.uk>, hpa@zytor.com, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, eric.piel@tremplin-utc.net, vojcek@tlen.pl
 
-On Tuesday, September 25, 2012 04:55:57 PM Thomas Renninger wrote:
-> This is needed for ACPI table overriding via initrd. Beside reserving
-> memblocks, X86 also requires to flag the memory area to E820_RESERVED or
-> E820_ACPI in the e820 mappings to be able to io(re)map it later.
-...
+ACPI: Only allow users with CAP_SYS_RAWIO rights to overwrite ACPI funcs at runtime
 
-> index 4f2a762..bf6a0ad 100644
-> --- a/include/linux/acpi.h
-> +++ b/include/linux/acpi.h
-> @@ -430,4 +430,13 @@ acpi_status acpi_os_prepare_sleep(u8 sleep_state,
->  #define acpi_os_set_prepare_sleep(func, pm1a_ctrl, pm1b_ctrl) do { } while (0)
->  #endif
->  
-> +#if CONFIG_X86
-> +void arch_reserve_mem_area(acpi_physical_address addr, size_t size);
-> +#else
-> +static inline void void arch_reserve_mem_area(acpi_physical_address addr,
+and tab align file_operations callbacks.
 
-Argh: ...void void... 
-I made sure every single patch compiles, so that no typo slips
-in, I haven't compiled it on an other arch and there ... a typo
-slipped in.
+Signed-off-by: Thomas Renninger <trenn@suse.de>
+---
+ drivers/acpi/custom_method.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
 
-Can this get manually fixed?
-Tell me and I can also resend.
-
-    Thomas
-
+diff --git a/drivers/acpi/custom_method.c b/drivers/acpi/custom_method.c
+index 5d42c24..9a0294d 100644
+--- a/drivers/acpi/custom_method.c
++++ b/drivers/acpi/custom_method.c
+@@ -72,9 +72,15 @@ static ssize_t cm_write(struct file *file, const char __user * user_buf,
+ 	return count;
+ }
+ 
++static int open_check_acc(struct inode *inode, struct file *filp)
++{
++	return capable(CAP_SYS_RAWIO) ? 0 : -EPERM;
++}
++
+ static const struct file_operations cm_fops = {
+-	.write = cm_write,
+-	.llseek = default_llseek,
++	.write	= cm_write,
++	.llseek	= default_llseek,
++	.open	= open_check_acc,
+ };
+ 
+ static int __init acpi_custom_method_init(void)
