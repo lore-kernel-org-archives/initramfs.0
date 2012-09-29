@@ -1,76 +1,49 @@
 From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Subject: Please help: dracut arbitrary mount patches
-Date: Fri, 28 Sep 2012 18:02:18 +0200
-Message-ID: <1372852.Im5eztC4Lj@ernie>
+Subject: Re: Please help: dracut arbitrary mount patches
+Date: Sat, 29 Sep 2012 13:32:33 +0200
+Message-ID: <11836606.BNsmZLgfmA@ernie>
+References: <1372852.Im5eztC4Lj@ernie>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2825322.aCvemeSjdA"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; boundary="nextPart1901201.eI4CxoD5vd"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1372852.Im5eztC4Lj@ernie>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
---nextPart2825322.aCvemeSjdA
-Content-Type: multipart/mixed; boundary="nextPart6277176.bu1h6jfJQX"
+--nextPart1901201.eI4CxoD5vd
+Content-Type: multipart/mixed; boundary="nextPart9922506.J9llheLqkc"
 Content-Transfer-Encoding: 7Bit
 
 This is a multi-part message in MIME format.
 
---nextPart6277176.bu1h6jfJQX
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
-
-Hello everyone!
-
-I wrote some patches [1] to allow mounting arbitrary devices to arbitra=
-ry=20
-locations using the cmdline. The master branch contains a merge of all=20=
-
-branches, of which there are 4:
-* fstab-mount: Framework to allow mounting via cmdline
-* tmpfs: Add support for non-root tmpfs mounts
-* nfsmounts: Support for non-root nfs mounts
-* aufs: Support for root aufs mounts
-
-During the cmdline hook I create a /run/fstab.early file (various parse=
--*.sh=20
-scripts, calling into fs-lib.sh), which I mount during the pre-mount ho=
-ok (fs-
-lib/mount-early.sh).
-
-So far the theory. In practice this does not work at all, because my pr=
-e-mount=20
-hook is being executed way too early =E2=80=94 during the cmdline hook =
-phase.
-
-In the attached log this is the part starting from:
-[    9.924763] dracut: Mounting from /run/fstab.early
-It even seems that it tries to execute the mount hook during the cmdlin=
-e=20
-phase:
-[   10.447205] dracut Warning: /sysroot has no proper rootfs layout, ig=
-noring=20
-and removing offending mount hook
-
-It further does not seem as if an IP address is ever requested via DHCP=
-, which=20
-I would expect from the ip=3D cmdline parameter.
-
-I have absolutely no idea why that happens and am stuck since a while. =
-If you=20
-have the time, it would be nice if you could have a look at the patches=
- and=20
-maybe give me a hint why this happens.
-
-Best regards,
-Dennis
-
-[1] https://github.com/devurandom/dracut
---nextPart6277176.bu1h6jfJQX
-Content-Disposition: attachment; filename="blade-02-boot.log"
+--nextPart9922506.J9llheLqkc
 Content-Transfer-Encoding: 7Bit
-Content-Type: text/x-log; charset="utf-8"; name="blade-02-boot.log"
+Content-Type: text/plain; charset="us-ascii"
+
+Hello again!
+
+I noticed two bugs in my code (copy/paste error in fstab_mount and missing 
+empty parameter handling in add_early_mount) and fixed them. (New log 
+attached.)
+
+Now it seems to work a little bit better, but apparently it never runs 
+dhclient, despite the ip=eth0:dhcp cmdline parameter.
+That makes mount.nfs timeout, which causes /run/ro to be empty, and hence the 
+aufs /sysroot to be empty, too. This makes dracut throw away the aufs root 
+handler.
+
+So the mayor question seems to be: How do I make 40network actually get the 
+interface up?
+
+Kind regards,
+Dennis
+--nextPart9922506.J9llheLqkc
+Content-Disposition: attachment; filename="blade-02-boot.20120929.log"
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/x-log; charset="UTF-8"; name="blade-02-boot.20120929.log"
 
 Please wait, loading kernel...
 
@@ -110,7 +83,7 @@ Building dt structure...
 Device tree strings 0x00000000037c1000 -> 0x00000000037c18e3
 Device tree struct  0x00000000037c2000 -> 0x00000000037cb000
 [    0.000000] Using Cell machine description
-[    0.000000] Found initrd at 0xc000000003000000:0xc0000000036bfda0
+[    0.000000] Found initrd at 0xc000000003000000:0xc0000000036bff0c
 [    0.000000] bootconsole [udbg0] enabled
 [    0.000000] CPU maps initialized for 2 threads per core
 [    0.000000] Starting Linux PPC64 #2 SMP Sat Sep 15 15:34:12 CEST 2012
@@ -160,119 +133,119 @@ Device tree struct  0x00000000037c2000 -> 0x00000000037cb000
 [    0.000000] mpic: ISU size: 128, shift: 7, mask: 7f
 [    0.000000] mpic: Initializing for 128 sources
 [    0.000000] /axon@30000000000/interrupt-controller: hooking up to IRQ 299
-[    0.000000] clocksource: timebase mult[2580c564] shift[24] registered
+[    0.000000] clocksource: timebase mult[2580c4ee] shift[24] registered
 [    0.000000] Console: colour dummy device 80x25
-[    0.065080] pid_max: default: 32768 minimum: 301
-[    0.095094] Dentry cache hash table entries: 1048576 (order: 11, 8388608 bytes)
-[    0.150696] Inode-cache hash table entries: 524288 (order: 10, 4194304 bytes)
-[    0.198524] Mount-cache hash table entries: 256
-[    0.227207] Brought up 4 CPUs
-[    0.245124] devtmpfs: initialized
-[    0.292417] NET: Registered protocol family 16
-[    0.320285] IOMMU: Using strong ordering for fixed mapping
-[    0.354760] IOMMU table initialized, virtual merging enabled
-[    0.390536] IOMMU: Using strong ordering for fixed mapping
-[    0.448200] PCI: Probing PCI hardware
-[    0.482697] iommu: missing iommu for ? (node -1)
-[    0.509912] iommu: missing iommu for ? (node -1)
-[    0.538980] bio: create slab <bio-0> at 0
-[    0.562876] vgaarb: loaded
-[    0.579035] Switching to clocksource timebase
-[    0.611167] NET: Registered protocol family 2
-[    0.637526] IP route cache hash table entries: 262144 (order: 9, 2097152 bytes)
-[    0.685242] TCP established hash table entries: 524288 (order: 11, 8388608 bytes)
-[    0.737194] TCP bind hash table entries: 65536 (order: 8, 1048576 bytes)
-[    0.779117] TCP: Hash tables configured (established 524288 bind 65536)
-[    0.818283] TCP: reno registered
-[    0.837604] UDP hash table entries: 4096 (order: 5, 131072 bytes)
-[    0.874158] UDP-Lite hash table entries: 4096 (order: 5, 131072 bytes)
-[    0.913518] Unpacking initramfs...
-[    3.629841] Freeing initrd memory: 6912k freed
-[    3.657276] iommu: missing iommu for ? (node -1)
-[    3.684675] Setting up PCI bus /axon@10000000000/plb5/plb4/pcix@4000004600000000
-[    3.728761] PCI host bridge /axon@10000000000/plb5/plb4/pcix@4000004600000000  ranges:
-[    3.776121]   IO 0x0000014608000000..0x000001460800ffff -> 0x0000000000000000
-[    3.818829]  MEM 0x0000014780000000..0x00000147bfffffff -> 0x0000000080000000
-[    3.862059]  MEM 0x00000147c0000000..0x00000147ffffffff -> 0x00000000c0000000 Prefetch
-[    3.909560] of-pci 14600000000.pcix: PCI host bridge to bus 0000:00
-[    3.946960] pci_bus 0000:00: root bus resource [io  0x10000-0x1ffff] (bus address [0x0000-0xffff])
-[    4.000603] pci_bus 0000:00: root bus resource [mem 0x14780000000-0x147bfffffff] (bus address [0x80000000-0xbfffffff])
-[    4.064667] pci_bus 0000:00: root bus resource [mem 0x147c0000000-0x147ffffffff pref] (bus address [0xc0000000-0xffffffff])
-[    4.133133] Setting up PCI bus /axon@10000000000/plb5/pciex@a00000a000000000
-[    4.174897] PCI host bridge /axon@10000000000/plb5/pciex@a00000a000000000  ranges:
-[    4.220199]   IO 0x000001a100000000..0x000001a10000ffff -> 0x0000000000000000
-[    4.262903]  MEM 0x000001c080000000..0x000001c0bfffffff -> 0x0000000080000000
-[    4.306133]  MEM 0x000001c0c0000000..0x000001c0ffffffff -> 0x00000000c0000000 Prefetch
-[    4.353615] of-pci D18000002400.pciex: PCI host bridge to bus 0001:00
-[    4.392073] pci_bus 0001:00: root bus resource [io  0x21000-0x30fff] (bus address [0x0000-0xffff])
-[    4.445720] pci_bus 0001:00: root bus resource [mem 0x1c080000000-0x1c0bfffffff] (bus address [0x80000000-0xbfffffff])
-[    4.509787] pci_bus 0001:00: root bus resource [mem 0x1c0c0000000-0x1c0ffffffff pref] (bus address [0xc0000000-0xffffffff])
-[    4.577133] irq: no irq domain found for /axon@10000000000/plb5/pciex-utl@a00000a000004000 !
-[    4.627473] pci 0001:00:00.0: PCI bridge to [bus 01-01]
-[    4.658711] Setting up PCI bus /axon@10000000000/plb5/pciex@a00000a200000000
-[    4.700686] PCI host bridge /axon@10000000000/plb5/pciex@a00000a200000000  ranges:
-[    4.745991]   IO 0x000001a300000000..0x000001a30000ffff -> 0x0000000000000000
-[    4.788703]  MEM 0x000001d080000000..0x000001d0bfffffff -> 0x0000000080000000
-[    4.831930]  MEM 0x000001d0c0000000..0x000001d0ffffffff -> 0x00000000c0000000 Prefetch
-[    4.879405] of-pci D18000002800.pciex: PCI host bridge to bus 0002:00
-[    4.917869] pci_bus 0002:00: root bus resource [io  0x32000-0x41fff] (bus address [0x0000-0xffff])
-[    4.971517] pci_bus 0002:00: root bus resource [mem 0x1d080000000-0x1d0bfffffff] (bus address [0x80000000-0xbfffffff])
-[    5.035582] pci_bus 0002:00: root bus resource [mem 0x1d0c0000000-0x1d0ffffffff pref] (bus address [0xc0000000-0xffffffff])
-[    5.102921] irq: no irq domain found for /axon@10000000000/plb5/pciex-utl@a00000a200004000 !
-[    5.153270] pci 0002:00:00.0: PCI bridge to [bus 01-01]
-[    5.184527] Setting up PCI bus /axon@30000000000/plb5/plb4/pcix@4000004600000000
-[    5.228574] PCI host bridge /axon@30000000000/plb5/plb4/pcix@4000004600000000  ranges:
-[    5.275955]   IO 0x0000034608000000..0x000003460800ffff -> 0x0000000000000000
-[    5.318665]  MEM 0x0000034780000000..0x00000347bfffffff -> 0x0000000080000000
-[    5.361898]  MEM 0x00000347c0000000..0x00000347ffffffff -> 0x00000000c0000000 Prefetch
-[    5.409395] of-pci 34600000000.pcix: PCI host bridge to bus 0003:00
-[    5.446792] pci_bus 0003:00: root bus resource [io  0x43000-0x52fff] (bus address [0x0000-0xffff])
-[    5.500440] pci_bus 0003:00: root bus resource [mem 0x34780000000-0x347bfffffff] (bus address [0x80000000-0xbfffffff])
-[    5.564503] pci_bus 0003:00: root bus resource [mem 0x347c0000000-0x347ffffffff pref] (bus address [0xc0000000-0xffffffff])
-[    5.633217] Setting up PCI bus /axon@30000000000/plb5/pciex@a00000a000000000
-[    5.674993] PCI host bridge /axon@30000000000/plb5/pciex@a00000a000000000  ranges:
-[    5.720291]   IO 0x000003a100000000..0x000003a10000ffff -> 0x0000000000000000
-[    5.763000]  MEM 0x000003c080000000..0x000003c0bfffffff -> 0x0000000080000000
-[    5.806231]  MEM 0x000003c0c0000000..0x000003c0ffffffff -> 0x00000000c0000000 Prefetch
-[    5.853713] of-pci D38000002400.pciex: PCI host bridge to bus 0004:00
-[    5.892175] pci_bus 0004:00: root bus resource [io  0x54000-0x63fff] (bus address [0x0000-0xffff])
-[    5.945817] pci_bus 0004:00: root bus resource [mem 0x3c080000000-0x3c0bfffffff] (bus address [0x80000000-0xbfffffff])
-[    6.009881] pci_bus 0004:00: root bus resource [mem 0x3c0c0000000-0x3c0ffffffff pref] (bus address [0xc0000000-0xffffffff])
-[    6.077270] irq: no irq domain found for /axon@30000000000/plb5/pciex-utl@a00000a000004000 !
-[    6.127640] pci 0004:00:00.0: PCI bridge to [bus 01-01]
-[    6.158876] Setting up PCI bus /axon@30000000000/plb5/pciex@a00000a200000000
-[    6.200836] PCI host bridge /axon@30000000000/plb5/pciex@a00000a200000000  ranges:
-[    6.246157]   IO 0x000003a300000000..0x000003a30000ffff -> 0x0000000000000000
-[    6.288851]  MEM 0x000003d080000000..0x000003d0bfffffff -> 0x0000000080000000
-[    6.332079]  MEM 0x000003d0c0000000..0x000003d0ffffffff -> 0x00000000c0000000 Prefetch
-[    6.379570] of-pci D38000002800.pciex: PCI host bridge to bus 0005:00
-[    6.418023] pci_bus 0005:00: root bus resource [io  0x65000-0x74fff] (bus address [0x0000-0xffff])
-[    6.471666] pci_bus 0005:00: root bus resource [mem 0x3d080000000-0x3d0bfffffff] (bus address [0x80000000-0xbfffffff])
-[    6.535731] pci_bus 0005:00: root bus resource [mem 0x3d0c0000000-0x3d0ffffffff pref] (bus address [0xc0000000-0xffffffff])
-[    6.603122] irq: no irq domain found for /axon@30000000000/plb5/pciex-utl@a00000a200004000 !
-[    6.654989] pci 0005:00:00.0: PCI bridge to [bus 01-01]
-[    6.686422] iommu: missing iommu for ? (node -1)
-[    6.721963] iommu: missing iommu for ? (node -1)
-[    6.755449] msgmni has been set to 15888
-[    6.778625] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 253)
-[    6.822723] io scheduler noop registered
-[    6.846156] io scheduler deadline registered
-[    6.871873] io scheduler cfq registered (default)
-[    6.989527] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
-[    7.027371] iommu: missing iommu for ? (node -1)
-[    7.077334] serial8250.0: ttyS0 at MMIO 0x14540000200 (irq = 16) is a U6_16550A
-[    7.120760] console [ttyS0] enabled, bootconsole disabled
-[    7.120760] console [ttyS0] enabled, bootconsole disabled
-[    7.207011] serial8250.0: ttyS1 at MMIO 0x14540000300 (irq = 17) is a U6_16550A
-[    7.272658] serial8250.0: ttyS2 at MMIO 0x34540000200 (irq = 18) is a U6_16550A
-[    7.338099] serial8250.0: ttyS3 at MMIO 0x34540000300 (irq = 19) is a U6_16550A
-[    7.382641] mousedev: PS/2 mouse device common for all mice
-[    7.416102] cpuidle: using governor ladder
-[    7.440664] cpuidle: using governor menu
-[    7.464599] TCP: cubic registered
-[    7.484523] Key type dns_resolver registered
-[    7.512392] /usr/src/linux-3.5.3-gentoo/drivers/rtc/hctosys.c: unable to open rtc device (rtc0)
-[    7.569478] Freeing unused kernel memory: 1996k freed
+[    0.065082] pid_max: default: 32768 minimum: 301
+[    0.095096] Dentry cache hash table entries: 1048576 (order: 11, 8388608 bytes)
+[    0.150701] Inode-cache hash table entries: 524288 (order: 10, 4194304 bytes)
+[    0.198526] Mount-cache hash table entries: 256
+[    0.227208] Brought up 4 CPUs
+[    0.245126] devtmpfs: initialized
+[    0.292299] NET: Registered protocol family 16
+[    0.320208] IOMMU: Using strong ordering for fixed mapping
+[    0.354711] IOMMU table initialized, virtual merging enabled
+[    0.390415] IOMMU: Using strong ordering for fixed mapping
+[    0.447602] PCI: Probing PCI hardware
+[    0.482141] iommu: missing iommu for ? (node -1)
+[    0.509387] iommu: missing iommu for ? (node -1)
+[    0.538464] bio: create slab <bio-0> at 0
+[    0.562360] vgaarb: loaded
+[    0.578520] Switching to clocksource timebase
+[    0.610686] NET: Registered protocol family 2
+[    0.637051] IP route cache hash table entries: 262144 (order: 9, 2097152 bytes)
+[    0.684750] TCP established hash table entries: 524288 (order: 11, 8388608 bytes)
+[    0.736716] TCP bind hash table entries: 65536 (order: 8, 1048576 bytes)
+[    0.778648] TCP: Hash tables configured (established 524288 bind 65536)
+[    0.817815] TCP: reno registered
+[    0.837137] UDP hash table entries: 4096 (order: 5, 131072 bytes)
+[    0.873689] UDP-Lite hash table entries: 4096 (order: 5, 131072 bytes)
+[    0.913058] Unpacking initramfs...
+[    3.630839] Freeing initrd memory: 6912k freed
+[    3.658290] iommu: missing iommu for ? (node -1)
+[    3.685712] Setting up PCI bus /axon@10000000000/plb5/plb4/pcix@4000004600000000
+[    3.729804] PCI host bridge /axon@10000000000/plb5/plb4/pcix@4000004600000000  ranges:
+[    3.777164]   IO 0x0000014608000000..0x000001460800ffff -> 0x0000000000000000
+[    3.819873]  MEM 0x0000014780000000..0x00000147bfffffff -> 0x0000000080000000
+[    3.863102]  MEM 0x00000147c0000000..0x00000147ffffffff -> 0x00000000c0000000 Prefetch
+[    3.910596] of-pci 14600000000.pcix: PCI host bridge to bus 0000:00
+[    3.948004] pci_bus 0000:00: root bus resource [io  0x10000-0x1ffff] (bus address [0x0000-0xffff])
+[    4.001646] pci_bus 0000:00: root bus resource [mem 0x14780000000-0x147bfffffff] (bus address [0x80000000-0xbfffffff])
+[    4.065710] pci_bus 0000:00: root bus resource [mem 0x147c0000000-0x147ffffffff pref] (bus address [0xc0000000-0xffffffff])
+[    4.134182] Setting up PCI bus /axon@10000000000/plb5/pciex@a00000a000000000
+[    4.175995] PCI host bridge /axon@10000000000/plb5/pciex@a00000a000000000  ranges:
+[    4.221294]   IO 0x000001a100000000..0x000001a10000ffff -> 0x0000000000000000
+[    4.263997]  MEM 0x000001c080000000..0x000001c0bfffffff -> 0x0000000080000000
+[    4.307229]  MEM 0x000001c0c0000000..0x000001c0ffffffff -> 0x00000000c0000000 Prefetch
+[    4.354711] of-pci D18000002400.pciex: PCI host bridge to bus 0001:00
+[    4.393168] pci_bus 0001:00: root bus resource [io  0x21000-0x30fff] (bus address [0x0000-0xffff])
+[    4.446815] pci_bus 0001:00: root bus resource [mem 0x1c080000000-0x1c0bfffffff] (bus address [0x80000000-0xbfffffff])
+[    4.510882] pci_bus 0001:00: root bus resource [mem 0x1c0c0000000-0x1c0ffffffff pref] (bus address [0xc0000000-0xffffffff])
+[    4.578224] irq: no irq domain found for /axon@10000000000/plb5/pciex-utl@a00000a000004000 !
+[    4.628570] pci 0001:00:00.0: PCI bridge to [bus 01-01]
+[    4.659810] Setting up PCI bus /axon@10000000000/plb5/pciex@a00000a200000000
+[    4.701781] PCI host bridge /axon@10000000000/plb5/pciex@a00000a200000000  ranges:
+[    4.747086]   IO 0x000001a300000000..0x000001a30000ffff -> 0x0000000000000000
+[    4.789799]  MEM 0x000001d080000000..0x000001d0bfffffff -> 0x0000000080000000
+[    4.833025]  MEM 0x000001d0c0000000..0x000001d0ffffffff -> 0x00000000c0000000 Prefetch
+[    4.880500] of-pci D18000002800.pciex: PCI host bridge to bus 0002:00
+[    4.918965] pci_bus 0002:00: root bus resource [io  0x32000-0x41fff] (bus address [0x0000-0xffff])
+[    4.972612] pci_bus 0002:00: root bus resource [mem 0x1d080000000-0x1d0bfffffff] (bus address [0x80000000-0xbfffffff])
+[    5.036676] pci_bus 0002:00: root bus resource [mem 0x1d0c0000000-0x1d0ffffffff pref] (bus address [0xc0000000-0xffffffff])
+[    5.104008] irq: no irq domain found for /axon@10000000000/plb5/pciex-utl@a00000a200004000 !
+[    5.154373] pci 0002:00:00.0: PCI bridge to [bus 01-01]
+[    5.185621] Setting up PCI bus /axon@30000000000/plb5/plb4/pcix@4000004600000000
+[    5.229668] PCI host bridge /axon@30000000000/plb5/plb4/pcix@4000004600000000  ranges:
+[    5.277051]   IO 0x0000034608000000..0x000003460800ffff -> 0x0000000000000000
+[    5.319760]  MEM 0x0000034780000000..0x00000347bfffffff -> 0x0000000080000000
+[    5.362993]  MEM 0x00000347c0000000..0x00000347ffffffff -> 0x00000000c0000000 Prefetch
+[    5.410487] of-pci 34600000000.pcix: PCI host bridge to bus 0003:00
+[    5.447886] pci_bus 0003:00: root bus resource [io  0x43000-0x52fff] (bus address [0x0000-0xffff])
+[    5.501534] pci_bus 0003:00: root bus resource [mem 0x34780000000-0x347bfffffff] (bus address [0x80000000-0xbfffffff])
+[    5.565599] pci_bus 0003:00: root bus resource [mem 0x347c0000000-0x347ffffffff pref] (bus address [0xc0000000-0xffffffff])
+[    5.634333] Setting up PCI bus /axon@30000000000/plb5/pciex@a00000a000000000
+[    5.676135] PCI host bridge /axon@30000000000/plb5/pciex@a00000a000000000  ranges:
+[    5.721437]   IO 0x000003a100000000..0x000003a10000ffff -> 0x0000000000000000
+[    5.764146]  MEM 0x000003c080000000..0x000003c0bfffffff -> 0x0000000080000000
+[    5.807377]  MEM 0x000003c0c0000000..0x000003c0ffffffff -> 0x00000000c0000000 Prefetch
+[    5.854856] of-pci D38000002400.pciex: PCI host bridge to bus 0004:00
+[    5.893321] pci_bus 0004:00: root bus resource [io  0x54000-0x63fff] (bus address [0x0000-0xffff])
+[    5.946964] pci_bus 0004:00: root bus resource [mem 0x3c080000000-0x3c0bfffffff] (bus address [0x80000000-0xbfffffff])
+[    6.011028] pci_bus 0004:00: root bus resource [mem 0x3c0c0000000-0x3c0ffffffff pref] (bus address [0xc0000000-0xffffffff])
+[    6.078422] irq: no irq domain found for /axon@30000000000/plb5/pciex-utl@a00000a000004000 !
+[    6.128789] pci 0004:00:00.0: PCI bridge to [bus 01-01]
+[    6.160016] Setting up PCI bus /axon@30000000000/plb5/pciex@a00000a200000000
+[    6.201983] PCI host bridge /axon@30000000000/plb5/pciex@a00000a200000000  ranges:
+[    6.247304]   IO 0x000003a300000000..0x000003a30000ffff -> 0x0000000000000000
+[    6.289997]  MEM 0x000003d080000000..0x000003d0bfffffff -> 0x0000000080000000
+[    6.333226]  MEM 0x000003d0c0000000..0x000003d0ffffffff -> 0x00000000c0000000 Prefetch
+[    6.380714] of-pci D38000002800.pciex: PCI host bridge to bus 0005:00
+[    6.419169] pci_bus 0005:00: root bus resource [io  0x65000-0x74fff] (bus address [0x0000-0xffff])
+[    6.472813] pci_bus 0005:00: root bus resource [mem 0x3d080000000-0x3d0bfffffff] (bus address [0x80000000-0xbfffffff])
+[    6.536877] pci_bus 0005:00: root bus resource [mem 0x3d0c0000000-0x3d0ffffffff pref] (bus address [0xc0000000-0xffffffff])
+[    6.604270] irq: no irq domain found for /axon@30000000000/plb5/pciex-utl@a00000a200004000 !
+[    6.656141] pci 0005:00:00.0: PCI bridge to [bus 01-01]
+[    6.687581] iommu: missing iommu for ? (node -1)
+[    6.722818] iommu: missing iommu for ? (node -1)
+[    6.756356] msgmni has been set to 15888
+[    6.779564] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 253)
+[    6.823662] io scheduler noop registered
+[    6.847094] io scheduler deadline registered
+[    6.872801] io scheduler cfq registered (default)
+[    6.963336] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[    7.001104] iommu: missing iommu for ? (node -1)
+[    7.051031] serial8250.0: ttyS0 at MMIO 0x14540000200 (irq = 16) is a U6_16550A
+[    7.094475] console [ttyS0] enabled, bootconsole disabled
+[    7.094475] console [ttyS0] enabled, bootconsole disabled
+[    7.180695] serial8250.0: ttyS1 at MMIO 0x14540000300 (irq = 17) is a U6_16550A
+[    7.246269] serial8250.0: ttyS2 at MMIO 0x34540000200 (irq = 18) is a U6_16550A
+[    7.311656] serial8250.0: ttyS3 at MMIO 0x34540000300 (irq = 19) is a U6_16550A
+[    7.356174] mousedev: PS/2 mouse device common for all mice
+[    7.389619] cpuidle: using governor ladder
+[    7.414183] cpuidle: using governor menu
+[    7.438144] TCP: cubic registered
+[    7.458097] Key type dns_resolver registered
+[    7.486004] /usr/src/linux-3.5.3-gentoo/drivers/rtc/hctosys.c: unable to open rtc device (rtc0)
+[    7.542947] Freeing unused kernel memory: 1996k freed
 + ismounted /dev
 + findmnt /dev
 + mount -t devtmpfs -o mode=0755,nosuid,strictatime devtmpfs /dev
@@ -289,7 +262,7 @@ Device tree struct  0x00000000037c2000 -> 0x00000000037cb000
 + ismounted /dev/pts
 + findmnt /dev/pts
 + mkdir -m 0755 /dev/pts
-+ mount -t devpts -o gid=5,mode=620,noexec,nosu[    7.884538] dracut: dracut-dracut-
++ mount -t devpts -o gid=5,mode=620,noexec,nosu[    7.859384] dracut: dracut-dracut-
 id devpts /dev/pts
 + ismounted /dev/shm
 + findmnt /dev/shm
@@ -303,7 +276,7 @@ id devpts /dev/pts
 + mount --move /newrun /run
 + rm -fr /newrun
 + trap emergency_shell Signal caught! 0
-+ [ -d /run/initramf[    8.122566] aufs 3.5-20120813
++ [ -d /run/initramf[    8.101958] aufs 3.5-20120813
 s ]
 + udevadm --version
 + UDEVVERSION=171
@@ -315,29 +288,29 @@ s ]
 + mkfifo /run/initramfs/loginit.pipe
 + + exec
 loginit
-dracut: + [ -f /etc/initrd-rele[    8.273704] NET: Registered protocol family 1
+dracut: + [ -f /etc/initrd-rele[    8.248227] NET: Registered protocol family 1
 ase ]
 dracut: + . /etc/initrd-release
 dracut: + NAME=Dracut
 dracut: + VERSION=dracut-
 dracut: + ID=dracut
-dracut: + VERSION[    8.368534] NET: Registered protocol family 10
+dracut: + VERSION[    8.342717] NET: Registered protocol family 10
 _ID=
 dracut: + PRETTY_NAME=dracut- (Initramfs)
 dracut: + ANSI_COLOR=0;34
 dracut: + [ -n dracut- ]
-dracut: + info dracut-drac[    8.468424] RPC: Registered named UNIX socket transport module.
+dracut: + info dracut-drac[    8.442851] RPC: Registered named UNIX socket transport module.
 ut-
 dracut: + check_quiet
 dracut: + [ -z  ]
-dracut: + DRACUT_[    8.519554] RPC: Registered udp transport module.
+dracut: + DRACUT_[    8.493465] RPC: Registered udp transport module.
 QUIET=yes
 dracut: + getargbool 0 rd.info -d -y rdinfo
-dracut: [    8.581105] RPC: Registered tcp transport module.
+dracut: [    8.554981] RPC: Registered tcp transport module.
 + local _b
 dracut: + unset _b
 dracut: + local _default
-dracut[    8.642663] RPC: Registered tcp NFSv4.1 backchannel transport module.
+dracut[    8.616540] RPC: Registered tcp NFSv4.1 backchannel transport module.
 : + _default=0
 dracut: + shift
 dracut: + getarg rd.info -d -y rdinfo
@@ -350,7 +323,7 @@ dracut: + _b=0
 dracut: + [ -n 0 ]
 dracut: + [ 0 = 0 ]
 dracut: + return 1
-dra[    8.829554] udevd[137]: starting version 171
+dra[    8.802801] udevd[137]: starting version 171
 cut: + getargbool 0 rd.debug -d -y rdinitdebug
 dracut: + local _b
 dracut: + unset _b
@@ -404,15 +377,16 @@ dracut: + [ -e //lib/dracut/hooks/cmdline/00-wait-host-devs.sh ]
 dracut: + . //lib/dracut/hooks/cmdline/00-wait-host-devs.sh
 dracut: + type getarg
 dracut: + [ -f /etc/host_devs ]
-dracut: + [ -e //lib/dracut/hooks/cmdline/01-parse-kernel.sh ]
-dracut: + . //lib/dracut/hooks/cmdline/01-parse-kernel.sh
+dracut: + [ -e //li[    9.602378] tg3.c:v3.123 (March 21, 2012)
+b/dracut/hooks/cmdline/01-parse-kernel.sh ]
+dracut: + . //lib/d[    9.638675] tg3 0000:00:01.0: enabling device (0140 -> 0142)
+racut/hooks/cmdline/01-parse-kernel.sh
 dracut: + getargs rd.driver.pre -d rdloaddriver=
 dracut: + debug_off
-[    9.722105] tg3.c:v3.123 (March 21, 2012)
+[    9.742058] dracut: Mounting from /run/fstab.early
 
 dracut: + return 1
-dracut: + getargs rd.driver.blacklist -d rd[    9.764905] tg3 0000:00:01.0: enabling device (0140 -> 0142)
-blacklist=
+dracut: + getargs rd.driver.blacklist -d rdblacklist=
 dracut: + debug_off
 dracut: + set +x
 dracut: + return 1
@@ -420,126 +394,116 @@ dracut: + getargs rd.driver.post -d rdinsmodpost=
 dracut: + debug_off
 dracut: + set +x
 dracut: + return 1
-dracut: + [[    9.924763] dracut: Mounting from /run/fstab.early
- -n  ]
+dracut: + [ -n  ]
 dracut: + unset _do_insmodpost
-dracut: + [ -e //lib/dra[    9.974922] usbcore: registered new interface driver usbfs
-[   10.008261] tg3 0000:00:01.0: eth0: Tigon3 [partno(none) rev 2100] (PCIX:100MHz:64-bit) MAC address 00:1a:64:b8:06:f2
-[   10.008277] tg3 0000:00:01.0: eth0: attached PHY is serdes (1000Base-SX Ethernet) (WireSpeed[0], EEE[0])
-[   10.008291] tg3 0000:00:01.0: eth0: RXcsums[1] LinkChgREG[0] MIirq[0] ASF[1] TSOcap[0]
+dracut: + [ -e //lib/dra[    9.952971] usbcore: registered new interface driver usbfs
 cut/hooks/cmdline/10-parse-resume.sh ]
-dracut: + . //lib/dracut[   10.008303] tg3 0000:00:01.0: eth0: dma_rwctrl[769f4000] dma_mask[64-bit]
-[   10.011475] tg3 0000:00:01.1: enabling device (0140 -> 0142)
-[   10.022689] tg3 0000:00:01.1: eth1: Tigon3 [partno(none) rev 2100] (PCIX:100MHz:64-bit) MAC address 00:1a:64:b8:06:f3
-[   10.022706] tg3 0000:00:01.1: eth1: attached PHY is serdes (1000Base-SX Ethernet) (WireSpeed[0], EEE[0])
-[   10.022717] tg3 0000:00:01.1: eth1: RXcsums[1] LinkChgREG[0] MIirq[0] ASF[0] TSOcap[1]
-[   10.022728] tg3 0000:00:01.1: eth1: dma_rwctrl[769f4000] dma_mask[64-bit]
-[   10.056028] dracut: Mounting 192.168.100.1:/export/gentoo/root-ppc64
-[   10.142400] FS-Cache: Loaded
-[   10.243196] NFS: Registering the id_resolver key type
-[   10.243349] Key type id_resolver registered
-[   10.243355] Key type id_legacy registered
-[   10.243607] FS-Cache: Netfs 'nfs' registered for caching
-[   10.255315] dracut: mount.nfs: mount(2): Invalid argument
-[   10.256080] dracut: mount.nfs: an incorrect mount option was specified
-[   10.256858] dracut: mount.nfs: timeout set for Tue Sep 25 09:07:59 2012
-[   10.257607] dracut: mount.nfs: trying text-based options '0,vers=4,addr=192.168.100.1,clientaddr=0.0.0.0'
-[   10.293213] dracut: Mounting none
-[   10.312938] dracut: none on /run/rw type tmpfs (rw,size=1g)
-[   10.415282] aufs test_add:261:mount[248]: uid/gid/perm /run/ro 0/0/0755, 0/0/01777
-[   10.447205] dracut Warning: /sysroot has no proper rootfs layout, ignoring and removing offending mount hook
+dracut: + . //lib/dracut[   10.026183] tg3 0000:00:01.0: eth0: Tigon3 [partno(none) rev 2100] (PCIX:100MHz:64-bit) MAC address 00:1a:64:b8:06:f2
+[   10.064686] usbcore: registered new interface driver hub
+[   10.067495] usbcore: registered new device driver usb
+[   10.074801] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[   10.104051] dracut: Mounting 192.168.100.1:/export/gentoo/root-ppc64
+[   10.174183] FS-Cache: Loaded
+[   10.228070] NFS: Registering the id_resolver key type
+[   10.228219] Key type id_resolver registered
+[   10.228226] Key type id_legacy registered
+[   10.228508] FS-Cache: Netfs 'nfs' registered for caching
+[   10.243770] ehci_hcd 0003:00:01.2: enabling device (0140 -> 0142)
+[   10.245816] ehci_hcd 0003:00:01.2: EHCI Host Controller
+[   10.246263] ehci_hcd 0003:00:01.2: new USB bus registered, assigned bus number 1
+[   10.269817] ehci_hcd 0003:00:01.2: irq 21, io mem 0x34780002000
+[   10.275458] ehci_hcd 0003:00:01.2: USB 2.0 started, EHCI 1.00
+[   10.279932] hub 1-0:1.0: USB hub found
+[   10.280050] hub 1-0:1.0: 5 ports detected
 /hooks/cmdline/10-parse-resume.sh
 dracut: + getarg resume=
-dra[   11.008731] usbcore: registered new interface driver hub
+dra[   10.594983] tg3 0000:00:01.0: eth0: attached PHY is serdes (1000Base-SX Ethernet) (WireSpeed[0], EEE[0])
 cut: + debug_off
 dracut: + set +x
 dracut: + return 1
-dracut: [   11.096045] usbcore: registered new device driver usb
+dracut: [   10.685133] tg3 0000:00:01.0: eth0: RXcsums[1] LinkChgREG[0] MIirq[0] ASF[1] TSOcap[0]
 + resume=
 dracut: + unset resume
 dracut: + getarg splash=
-dra[   11.137807] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+dra[   10.766010] tg3 0000:00:01.0: eth0: dma_rwctrl[769f4000] dma_mask[64-bit]
 cut: + debug_off
 dracut: + set +x
 dracut: + return 1
-dracut: + splash=
+dracut: [   10.871464] tg3 0000:00:01.1: enabling device (0140 -> 0142)
++ splash=
 dracut: + unset splash
-dracut: + [ -e //lib/dracut/hooks/cmdline/10-parse-root-opts.sh ]
-dracut: + . //lib/dracut/hooks/cmdline/10-parse-root-opts.sh
+dracut: + [ -e //lib/dracut/h[   10.916621] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+ooks/cmdline/10-parse-root-opts.sh ]
+dracut: + . //lib/dracut/h[   10.993130] tg3 0000:00:01.1: eth1: Tigon3 [partno(none) rev 2100] (PCIX:100MHz:64-bit) MAC address 00:1a:64:b8:06:f3
+ooks/cmdline/10-parse-root-opts.sh
 dracut: + getarg root=
-dracut: + debug_off
+drac[   11.075090] tg3 0000:00:01.1: eth1: attached PHY is serdes (1000Base-SX Ethernet) (WireSpeed[0], EEE[0])
+ut: + debug_off
 dracut: + set +x
 dracut: + return 0
-dracut: +[   11.345257] ehci_hcd 0003:00:01.2: enabling device (0140 -> 0142)
+dracut: +[   11.165288] tg3 0000:00:01.1: eth1: RXcsums[1] LinkChgREG[0] MIirq[0] ASF[0] TSOcap[1]
  root=aufs:/run/rw:/run/ro
 dracut: + getarg rootflags=
-dracut:[   11.412370] ehci_hcd 0003:00:01.2: EHCI Host Controller
+dracut:[   11.246143] tg3 0000:00:01.1: eth1: dma_rwctrl[769f4000] dma_mask[64-bit]
  + debug_off
 dracut: + set +x
 dracut: + return 1
-dracut: + rf[   11.474568] ehci_hcd 0003:00:01.2: new USB bus registered, assigned bus number 1
+dracut: + rf[   11.336923] ohci_hcd 0003:00:01.0: OHCI Host Controller
 lags=
 dracut: + getargbool 0 ro
 dracut: + local _b
-dracut: + [   11.573026] ehci_hcd 0003:00:01.2: irq 21, io mem 0x34780002000
+dracut: + [   11.385654] ohci_hcd 0003:00:01.0: new USB bus registered, assigned bus number 2
 unset _b
 dracut: + local _default
 dracut: + _default=0
-dracut[   11.626861] ehci_hcd 0003:00:01.2: USB 2.0 started, EHCI 1.00
+dracut[   11.462851] ohci_hcd 0003:00:01.0: irq 21, io mem 0x34780000000
 : + shift
 dracut: + getarg ro
 dracut: + debug_off
-dracut: + s[   11.689670] hub 1-0:1.0: USB hub found
-et +x
-dracut: + return 1
-dracut: + _b=
-dracut: + [ 1 -ne 0 -a[   11.744488] hub 1-0:1.0: 5 ports detected
- -z  ]
-dracut: + _b=0
-dracut: + [ -n 0 ]
-[   11.826903] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
-
-dracut: + return 1
-dracut: + getargbool 0 rw
-dracut: + local [   11.893251] ohci_hcd 0003:00:01.0: OHCI Host Controller
-_b
-dracut: + unset _b
-dracut: + local _default
-dracut: + _def[   11.937107] ohci_hcd 0003:00:01.0: new USB bus registered, assigned bus number 2
-ault=0
-dracut: + shift
-dracut: + getarg rw
-dracut: + debug_of[   12.014803] ohci_hcd 0003:00:01.0: irq 21, io mem 0x34780000000
-f
 dracut: + set +x
 dracut: + return 1
 dracut: + _b=
 dracut: + [ 1 -ne 0 -a -z  ]
 dracut: + _b=0
 dracut: + [ -n 0 ]
+[   11.612171] hub 2-0:1.0: USB hub found
+
+dracut: + return 1
+dracut: + getargbool 0 rw
+dracut: + local [   11.653883] hub 2-0:1.0: 3 ports detected
+_b
+dracut: + unset _b
+dracut: + local _default
+dracut: + _def[   11.723315] ohci_hcd 0003:00:01.1: OHCI Host Controller
+ault=0
+dracut: + shift
+dracut: + getarg rw
+dracut: + debug_of[   11.775975] ohci_hcd 0003:00:01.1: new USB bus registered, assigned bus number 3
+f
+dracut: + set +x
+dracut: + return 1
+dracut: + _b=
+dracut: [   11.853862] ohci_hcd 0003:00:01.1: irq 21, io mem 0x34780001000
++ [ 1 -ne 0 -a -z  ]
+dracut: + _b=0
+dracut: + [ -n 0 ]
 dracut: + [ 0 = 0 ]
 dracut: + return 1
 dracut: + rflags=
-dracut: + [   12.164600] hub 2-0:1.0: USB hub found
-getarg rootfstype=
+dracut: + getarg rootfstype=
 dracut: + debug_off
 dracut: + set +x
-dracu[   12.206075] hub 2-0:1.0: 3 ports detected
+dracu[   12.004128] hub 3-0:1.0: USB hub found
+[   12.045075] hub 3-0:1.0: 2 ports detected
 t: + return 1
 dracut: + fstype=
 dracut: + [ -z  ]
-dracut: + f[   12.264080] ohci_hcd 0003:00:01.1: OHCI Host Controller
-stype=auto
-dracut: + [ -e //lib/dracut/hooks/cmdline/20-parse-i[   12.328165] ohci_hcd 0003:00:01.1: new USB bus registered, assigned bus number 3
-[   12.346222] dracut Warning: Can't mount root filesystem
-18n.sh ]
-dracut: + . //lib/dracut/hooks/cmdline/20-parse-i18n.s[   12.437339] ohci_hcd 0003:00:01.1: irq 21, io mem 0x34780001000
-h
-dracut: + inst_key_val  /etc/vconsole.conf KEYMAP vconsole.ke[   12.520474] hub 3-0:1.0: USB hub found
-ymap -d KEYTABLE
+dracut: + fstype=auto
+dracut: + [ -e //lib/dracut/hooks/cmdline/20-parse-i18n.sh ]
+dracut: + . //lib/dracut/hooks/cmdline/20-parse-i18n.sh
+dracut: + inst_key_val  /etc/vconsole.conf KEYMAP vconsole.keymap -d KEYTABLE
 dracut: + local _value
-[   12.562164] hub 3-0:1.0: 2 ports detected
-
+dracut: + local _file
 dracut: + local _default
 dracut: + _default=
 dracut: + shift
@@ -669,9 +633,8 @@ dracut: + local _value
 dracut: + local _file
 dracut: + local _default
 dracut: + _default=
-/bin/sh: 0: can't access tty; job control turned off
 dracut: + shift
-dracut:/# dracut: + _file=/etc/locale.conf
+dracut: + _file=/etc/locale.conf
 dracut: + shift
 dracut: + getarg LC_ALL locale.LC_ALL
 dracut: + debug_off
@@ -796,7 +759,14 @@ dracut: + echo Adding early mount of nfs:192.168.100.1:/export/gentoo/root-ppc64
 dracut: Adding early mount of nfs:192.168.100.1:/export/gentoo/root-ppc64 to /run/ro
 dracut: + add_early_mount 192.168.100.1:/export/gentoo/root-ppc64 /run/ro nfs  0 0
 dracut: + local fs=192.168.100.1:/export/gentoo/root-ppc64 mountpoint=/run/ro fstype=nfs options= dump=0 pass=0
-dracut: + echo 192.168.100.1:/export/gentoo/root-ppc64 /run/ro nfs  0 0
+dracut: + [ 192.168.100.1:/export/gentoo/root-ppc64 ]
+dracut: + [ /run/ro ]
+dracut: + [ nfs ]
+dracut: + [  ]
+dracut: + options=defaults
+dracut: + [ 0 ]
+dracut: + [ 0 ]
+dracut: + echo 192.168.100.1:/export/gentoo/root-ppc64 /run/ro nfs defaults 0 0
 dracut: + unset nfsroot nfs server path fstype mountpoint fs options
 dracut: + [ -n  ]
 dracut: + [ -z aufs:/run/rw:/run/ro ]
@@ -880,6 +850,12 @@ dracut: + echo Adding early mount of tmpfs on /run/rw
 dracut: Adding early mount of tmpfs on /run/rw
 dracut: + add_early_mount none /run/rw tmpfs size=1g 0 0
 dracut: + local fs=none mountpoint=/run/rw fstype=tmpfs options=size=1g dump=0 pass=0
+dracut: + [ none ]
+dracut: + [ /run/rw ]
+dracut: + [ tmpfs ]
+dracut: + [ size=1g ]
+dracut: + [ 0 ]
+dracut: + [ 0 ]
 dracut: + echo none /run/rw tmpfs size=1g 0 0
 dracut: + mount_to_var /run/ro:nfs:192.168.100.1:/export/gentoo/root-ppc64
 dracut: + local arg=/run/ro:nfs:192.168.100.1:/export/gentoo/root-ppc64
@@ -1212,10 +1188,9 @@ dracut: + echo <30>dracut: Mounting from /run/fstab.early
 dracut: + [ yes != yes ]
 dracut: + read _dev _mp _fs _opts _dump _pass _rest
 dracut: + [ -z 192.168.100.1:/export/gentoo/root-ppc64 ]
-dracut: + [ ismounted /run/ro ]
-dracut: /init: 214: [: ismounted: unexpected operator
-dracut: + [  -gt 0 ]
-dracut: /init: 215: [: Illegal number:
+dracut: + ismounted /run/ro
+dracut: + findmnt /run/ro
+dracut: + [ 0 -gt 0 ]
 dracut: + det_fs 192.168.100.1:/export/gentoo/root-ppc64 nfs
 dracut: + local _dev=192.168.100.1:/export/gentoo/root-ppc64
 dracut: + local _orig=nfs
@@ -1238,42 +1213,50 @@ dracut: + [ -d /sysroot//run/ro ]
 dracut: + [ -d /run/ro ]
 dracut: + vinfo
 dracut: + read line
-dracut: + mount -v -t nfs -o 0 192.168.100.1:/export/gentoo/root-ppc64 /run/ro
-dracut: + info mount.nfs: mount(2): Invalid argument
+dracut: + mount -v -t nfs -o defaults 192.168.100.1:/export/gentoo/root-ppc64 /run/ro
+dracut: + info mount.nfs: mount(2): Connection timed out[  190.434746] dracut: mount.nfs: mount(2): Connection timed out
+
 dracut: + check_quiet
 dracut: + [ -z yes ]
-dracut: + echo <30>dracut: mount.nfs: mount(2): Invalid argument
+[  190.494779] dracut: mount.nfs: Connection timed out
+dracut: + echo <30>dracut: mount.nfs: mount(2): Connection timed[  190.549738] dracut: mount.nfs: timeout set for Sat Sep 29 05:41:02 2012
+ out
 dracut: + [ yes != yes ]
 dracut: + read line
-dracut: + info mount.nfs: an incorrect mount option was specified
+dracut: + i[  190.622435] dracut: mount.nfs: trying text-based options 'vers=4,addr=192.168.100.1,clientaddr=0.0.0.0'
+nfo mount.nfs: Connection timed out
 dracut: + check_quiet
 dracut: + [ -z yes ]
-dracut: + echo <30>dracut: mount.nfs: an incorrect mount option was specified
+dracut: + echo <30>dracut: mount.nfs: Connecti[  190.748818] dracut: Mounting none
+on timed out
 dracut: + [ yes != yes ]
 dracut: + read line
-dracut: + info mount.nfs: timeout set for Tue Sep 25 09:07:59 2012
+dra[  190.812709] dracut: none on /run/rw type tmpfs (rw,size=1g)
+cut: + info mount.nfs: timeout set for Sat Sep 29 05:41:02 2012
 dracut: + check_quiet
 dracut: + [ -z yes ]
-dracut: + echo <30>dracut: mount.nfs: timeout set for Tue Sep 25 09:07:59 2012
-dracut: + [ yes != yes ]
+dracut: + echo <30>dracut: mount.nfs: timeout set for Sat Sep 29 05:41:02 2012
+dr[  190.932629] aufs test_add:261:mount[265]: uid/gid/perm /run/ro 0/0/0755, 0/0/01777
+acut: + [ yes != yes ]
 dracut: + read line
-dracut: + info mount.nfs: trying text-based options '0,vers=4,addr=192.168.100.1,clientaddr=0.0.0.0'
+dracut: + info moun[  191.029049] dracut Warning: /sysroot has no proper rootfs layout, ignoring and removing offending mount hook
+t.nfs: trying text-based options 'vers=4,addr=192.168.100.1,clientaddr=0.0.0.0'
 dracut: + check_quiet
 dracut: + [ -z yes ]
-dracut: + echo <30>dracut: mount.nfs: trying text-based options '0,vers=4,addr=192.168.100.1,clientaddr=0.0.0.0'
+dracut: + echo <30>dracut: mount.nfs: trying text-based options 'vers=4,addr=192.168.100.1,clientaddr=0.0.0.0'
 dracut: + [ yes != yes ]
 dracut: + read line
 dracut: + read _dev _mp _fs _opts _dump _pass _rest
 dracut: + [ -z none ]
-dracut: + [ ismounted /run/rw ]
-dracut: /init: 214: [: ismounted: unexpected operator
+dracut: + ismounted /run/rw
+dracut: + findmnt /run/rw
 dracut: + [ 0 -gt 0 ]
 dracut: + det_fs none tmpfs
 dracut: + local _dev=none
 dracut: + local _orig=tmpfs
 dracut: + local _fs
-dracut: + read line
-dracut: + udevadm info --query=env --name=none
+dracut: + udevadm info --query=env+  --name=none
+dracut: read line
 dracut: device node not found
 dracut: + _fs=
 dracut: + _fs=auto
@@ -1288,9 +1271,9 @@ dracut: + echo <30>dracut: Mounting none
 dracut: + [ yes != yes ]
 dracut: + [ -d /sysroot//run/rw ]
 dracut: + [ -d /run/rw ]
-dracut: + vinfo
+dracut: + mount -v -t tmpfs+  -o size=1gvinfo none /run/rw
+dracut:
 dracut: + read line
-dracut: + mount -v -t tmpfs -o size=1g none /run/rw
 dracut: + info none on /run/rw type tmpfs (rw,size=1g)
 dracut: + check_quiet
 dracut: + [ -z yes ]
@@ -1325,7 +1308,8 @@ dracut: + mount -t aufs -o br=/run/rw:/run/ro none /sysroot
 dracut: + [ -f /sysroot/forcefsck ]
 dracut: + [ -f /sysroot/.autofsck ]
 dracut: + :
-dracut: + ismounted /sysroot
+dracut: [  192.237884] dracut Warning: Can't mount root filesystem
++ ismounted /sysroot
 dracut: + findmnt /sysroot
 dracut: + usable_root /sysroot
 dracut: + local _d
@@ -1376,8 +1360,9 @@ dracut: + [ -f /lib/dracut/hooks/mount/99-mount-virtfs.sh ]
 dracut: + . /lib/dracut/hooks/mount/99-mount-virtfs.sh
 dracut: + type getarg
 dracut: + [ -n aufs:/run/rw:/run/ro -a -z aufs:/run/rw:/run/ro ]
+/bin/sh: 0: can't access tty; job control turned off
 dracut: + :
-dracut: + ismounted /sysroot
+dracut:/# dracut: + ismounted /sysroot
 dracut: + findmnt /sysroot
 dracut: + i=2
 dracut: + [ 2 -gt 20 ]
@@ -1931,18 +1916,19 @@ dracut: + _ctty=/dev/ttyS0
 dracut: + [ -c /dev/ttyS0 ]
 dracut: + /usr/bin/setsid --help
 dracut: + setsid /bin/sh -i -l
---nextPart6277176.bu1h6jfJQX--
 
---nextPart2825322.aCvemeSjdA
+--nextPart9922506.J9llheLqkc--
+
+--nextPart1901201.eI4CxoD5vd
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.19 (GNU/Linux)
 
-iEYEABECAAYFAlBlygoACgkQjqfyF1DtJW6JiwCfTXpXngp8t4m6dfXkqlwHp/BH
-7d8An2NjnYvoa03VpKgSLowXw8BwzgPm
-=64bw
+iEYEABECAAYFAlBm3FUACgkQjqfyF1DtJW6cJACgilvRO1QGu3BPds5PDOwj13j4
+AUkAoLNAwbTmIxUjIpVsLrF2VnKHSkOS
+=yWGL
 -----END PGP SIGNATURE-----
 
---nextPart2825322.aCvemeSjdA--
+--nextPart1901201.eI4CxoD5vd--
