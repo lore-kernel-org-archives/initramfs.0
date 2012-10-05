@@ -1,36 +1,47 @@
-From: "Luck, Tony" <tony.luck@intel.com>
-Subject: [PATCH] X86 ACPI: Use #ifdef not #if for CONFIG_X86 check
-Date: Fri, 05 Oct 2012 15:05:34 -0700
-Message-ID: <506f59ae9600b36a4@agluck-desktop.sc.intel.com>
-References: <201209251712.17678.trenn@suse.de>
-Return-path: <linux-acpi-owner@vger.kernel.org>
-In-Reply-To: <201209251712.17678.trenn@suse.de>
-Sender: linux-acpi-owner@vger.kernel.org
+From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
+Subject: initramfs-tools 0.109 release
+Date: Sat, 6 Oct 2012 00:52:48 +0200
+Message-ID: <2012-10-06T00-49-24@devnull.michael-prokop.at>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="lwdfKABU4AhUWl+O"
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Thomas Renninger <trenn@suse.de>
-Cc: lenb@kernel.org, initramfs@vger.kernel.org, robert.moore@intel.com, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, yinghai@kernel.org, hpa@zytor.com
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-Fix a build warning on ia64:
 
-include/linux/acpi.h:437:5: warning: "CONFIG_X86" is not defined
+--lwdfKABU4AhUWl+O
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Tony Luck <tony.luck@intel.com>
+Hi,
 
----
+the initramfs-tools 0.109 release addresses #689336 to provide a
+check for loadkeys/setupcon and inform the user if KEYMAP=y is set
+(as done by crypsetup, see #689722) but one of the tools is missing.
 
-diff --git a/include/linux/acpi.h b/include/linux/acpi.h
-index 4f42332..f70f18d 100644
---- a/include/linux/acpi.h
-+++ b/include/linux/acpi.h
-@@ -434,7 +434,7 @@ void acpi_os_set_prepare_sleep(int (*func)(u8 sleep_state,
- 
- acpi_status acpi_os_prepare_sleep(u8 sleep_state,
- 				  u32 pm1a_control, u32 pm1b_control);
--#if CONFIG_X86
-+#ifdef CONFIG_X86
- void arch_reserve_mem_area(acpi_physical_address addr, size_t size);
- #else
- static inline void arch_reserve_mem_area(acpi_physical_address addr,
+git shortlog:
+
+  Michael Prokop (2):
+      keymap hook: provide warning message if loadkeys/setupcon are not available
+      Releasing version 0.109
+
+regards,
+-mika-
+
+--lwdfKABU4AhUWl+O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAlBvZMAACgkQ2N9T+zficuiaEQCdEymwpTAK6bUc9yHh2WbhwQn9
+bvsAn1ggU5EqXXA51FG1QHmfnrqEOu5r
+=47fL
+-----END PGP SIGNATURE-----
+
+--lwdfKABU4AhUWl+O--
