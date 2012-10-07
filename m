@@ -1,47 +1,35 @@
-From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
-Subject: initramfs-tools 0.109 release
-Date: Sat, 6 Oct 2012 00:52:48 +0200
-Message-ID: <2012-10-06T00-49-24@devnull.michael-prokop.at>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="lwdfKABU4AhUWl+O"
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 1/2] 90crypt: call systemd commands only if systemd binaries are there
+Date: Sun,  7 Oct 2012 15:29:02 +0200
+Message-ID: <1349616543-1471-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
+---
+ modules.d/90crypt/crypt-run-generator.sh | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
---lwdfKABU4AhUWl+O
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-Hi,
-
-the initramfs-tools 0.109 release addresses #689336 to provide a
-check for loadkeys/setupcon and inform the user if KEYMAP=y is set
-(as done by crypsetup, see #689722) but one of the tools is missing.
-
-git shortlog:
-
-  Michael Prokop (2):
-      keymap hook: provide warning message if loadkeys/setupcon are not available
-      Releasing version 0.109
-
-regards,
--mika-
-
---lwdfKABU4AhUWl+O
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAlBvZMAACgkQ2N9T+zficuiaEQCdEymwpTAK6bUc9yHh2WbhwQn9
-bvsAn1ggU5EqXXA51FG1QHmfnrqEOu5r
-=47fL
------END PGP SIGNATURE-----
-
---lwdfKABU4AhUWl+O--
+diff --git a/modules.d/90crypt/crypt-run-generator.sh b/modules.d/90crypt/crypt-run-generator.sh
+index 3264b29..bacdbbe 100755
+--- a/modules.d/90crypt/crypt-run-generator.sh
++++ b/modules.d/90crypt/crypt-run-generator.sh
+@@ -23,6 +23,9 @@ if strstr "$(cryptsetup --help)" "allow-discards"; then
+ fi
+ 
+ echo "$luks $dev none $allowdiscards" >> /etc/crypttab
+-systemctl daemon-reload
+-systemctl start cryptsetup.target
++
++if command -v systemctl >/dev/null; then
++    systemctl daemon-reload
++    systemctl start cryptsetup.target
++fi
+ exit 0
+-- 
+1.7.12
