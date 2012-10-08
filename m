@@ -1,49 +1,40 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] dracut-functions.sh: find_binary: path starting with variable
-Date: Sun,  7 Oct 2012 15:29:03 +0200
-Message-ID: <1349616543-1471-2-git-send-email-aidecoe@aidecoe.name>
-References: <1349616543-1471-1-git-send-email-aidecoe@aidecoe.name>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] return proper value in function dracut_install
+Date: Mon, 8 Oct 2012 17:40:08 +0800
+Message-ID: <20121008094008.GA19986@localhost.localdomain>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1349616543-1471-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Credits go to Alexander Tsoy <bugs+gentoo-C3g8GgeTu50ox3rIn2DAYQ@public.gmane.org> who provided the
-patch with following explanation:
+dracut_install should return the real return value, so module install function
+can detect the install failure.
 
-  I get messages "Skipping program $env{DM_SBIN_PATH}/..." when
-  generating initramfs. This happens because some udev rules contains
-  variables in path to command:
+Such as below in 99base:
+dracut_install switch_root || dfatal "Failed to install switch_root"
 
-  $ egrep -r 'IMPORT\{program\}=\"\$' /lib64/udev/rules.d/
-  /lib64/udev/rules.d/10-dm.rules:ENV{DM_COOKIE}=="?*", IMPORT{program}="$env{DM_SBIN_PATH}/dmsetup udevflags $env{DM_COOKIE}"
-
-  [...]
-
-  $ sudo dracut -f "" 3.5.4-hardened-r1
-  I: *** Including module: dm ***
-  I: Skipping program $env{DM_SBIN_PATH}/dmsetup using in udev rule 10-dm.rules as it cannot be found
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut-functions.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ dracut-functions.sh |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 8f59ff4..58b0b4d 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -45,7 +45,7 @@ find_binary() {
-         fi
-     fi
+--- dracut.orig/dracut-functions.sh
++++ dracut/dracut-functions.sh
+@@ -563,9 +563,12 @@ if [[ $DRACUT_INSTALL ]]; then
+     }
  
--    type -P $1
-+    type -P ${1##*/}
- }
+     dracut_install() {
++        local ret
+         #dinfo "initdir=$initdir $DRACUT_INSTALL -l $@"
+         $DRACUT_INSTALL ${initdir+-D "$initdir"} -a ${DRACUT_RESOLVE_DEPS+-l}  ${DRACUT_FIPS_MODE+-H} "$@"
+-        (($? != 0)) && derror $DRACUT_INSTALL ${initdir+-D "$initdir"} -a ${DRACUT_RESOLVE_DEPS+-l}  ${DRACUT_FIPS_MODE+-H} "$@" || :
++        ret=$?
++        (($ret != 0)) && derror $DRACUT_INSTALL ${initdir+-D "$initdir"} -a ${DRACUT_RESOLVE_DEPS+-l}  ${DRACUT_FIPS_MODE+-H} "$@" || :
++        return $ret
+     }
  
- if ! [[ $dracutbasedir ]]; then
--- 
-1.7.12
+     inst_library() {
