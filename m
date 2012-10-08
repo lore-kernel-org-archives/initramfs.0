@@ -1,40 +1,36 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] return proper value in function dracut_install
-Date: Mon, 8 Oct 2012 17:40:08 +0800
-Message-ID: <20121008094008.GA19986@localhost.localdomain>
-Mime-Version: 1.0
+From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Add rd.noverifyssl argument (#852229)
+Date: Mon,  8 Oct 2012 15:00:54 -0700
+Message-ID: <1349733654-24458-1-git-send-email-bcl@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-dracut_install should return the real return value, so module install function
-can detect the install failure.
+From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Such as below in 99base:
-dracut_install switch_root || dfatal "Failed to install switch_root"
-
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+This adds --insecure to the curl args so that self-signed certificates
+will be accepted.
 ---
- dracut-functions.sh |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ modules.d/45url-lib/url-lib.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
---- dracut.orig/dracut-functions.sh
-+++ dracut/dracut-functions.sh
-@@ -563,9 +563,12 @@ if [[ $DRACUT_INSTALL ]]; then
-     }
+diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
+index a8069ef..034a7cd 100755
+--- a/modules.d/45url-lib/url-lib.sh
++++ b/modules.d/45url-lib/url-lib.sh
+@@ -54,7 +54,8 @@ add_url_handler() {
  
-     dracut_install() {
-+        local ret
-         #dinfo "initdir=$initdir $DRACUT_INSTALL -l $@"
-         $DRACUT_INSTALL ${initdir+-D "$initdir"} -a ${DRACUT_RESOLVE_DEPS+-l}  ${DRACUT_FIPS_MODE+-H} "$@"
--        (($? != 0)) && derror $DRACUT_INSTALL ${initdir+-D "$initdir"} -a ${DRACUT_RESOLVE_DEPS+-l}  ${DRACUT_FIPS_MODE+-H} "$@" || :
-+        ret=$?
-+        (($ret != 0)) && derror $DRACUT_INSTALL ${initdir+-D "$initdir"} -a ${DRACUT_RESOLVE_DEPS+-l}  ${DRACUT_FIPS_MODE+-H} "$@" || :
-+        return $ret
-     }
+ export CURL_HOME="/run/initramfs/url-lib"
+ mkdir -p $CURL_HOME
+-curl_args="--location --retry 3 --fail --show-error --insecure"
++curl_args="--location --retry 3 --fail --show-error"
++getargbool 0 rd.noverifyssl && curl_args+=" --insecure"
  
-     inst_library() {
+ curl_fetch_url() {
+     local url="$1" outloc="$2"
+-- 
+1.7.11.4
