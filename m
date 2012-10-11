@@ -1,36 +1,18 @@
-From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Add rd.noverifyssl argument (#852229)
-Date: Mon,  8 Oct 2012 15:00:54 -0700
-Message-ID: <1349733654-24458-1-git-send-email-bcl@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 2/2] ssh-client: add urandom seeding
+Date: Thu, 11 Oct 2012 10:16:01 +0200
+Message-ID: <50768041.8000803@redhat.com>
+References: <20121011080757.285843621@redhat.com> <20121011080918.972371593@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20121011080918.972371593-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-This adds --insecure to the curl args so that self-signed certificates
-will be accepted.
----
- modules.d/45url-lib/url-lib.sh | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
-index a8069ef..034a7cd 100755
---- a/modules.d/45url-lib/url-lib.sh
-+++ b/modules.d/45url-lib/url-lib.sh
-@@ -54,7 +54,8 @@ add_url_handler() {
- 
- export CURL_HOME="/run/initramfs/url-lib"
- mkdir -p $CURL_HOME
--curl_args="--location --retry 3 --fail --show-error --insecure"
-+curl_args="--location --retry 3 --fail --show-error"
-+getargbool 0 rd.noverifyssl && curl_args+=" --insecure"
- 
- curl_fetch_url() {
-     local url="$1" outloc="$2"
--- 
-1.7.11.4
+Hmm, wouldn't that mean, that the generator is seeded with the _same_ seed on
+every reboot?
+How is this different from booting with no seed at all?
