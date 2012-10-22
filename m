@@ -1,52 +1,93 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 40network/ifup.sh: do_static() and do_ipv6auto return
- 0 if no errors.
-Date: Fri, 19 Oct 2012 13:00:07 +0200
-Message-ID: <508132B7.5090801@redhat.com>
-References: <1350549808-8891-1-git-send-email-chaowang@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dmraid/lvm/mdraid activation logic fix.
+Date: Mon, 22 Oct 2012 19:59:07 +0800
+Message-ID: <1350907147-26720-1-git-send-email-chaowang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1350549808-8891-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 18.10.2012 10:43, schrieb WANG Chao:
-> Commit a0be1ed removes some lines from do_static() and do_ipv6auto().
-> 
-> When $hostname is empty, do_static() and do_ipv6auto() will return 1
-> and fails to run setup_net at the last of ifup.sh
-> 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/40network/ifup.sh | 4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
-> index 95289c9..db233de 100755
-> --- a/modules.d/40network/ifup.sh
-> +++ b/modules.d/40network/ifup.sh
-> @@ -88,6 +88,8 @@ do_ipv6auto() {
->      wait_for_if_up $netif
->  
->      [ -n "$hostname" ] && echo "echo $hostname > /proc/sys/kernel/hostname" > /tmp/net.$netif.hostname
-> +
-> +    return 0
->  }
->  
->  # Handle static ip configuration
-> @@ -108,6 +110,8 @@ do_static() {
->  
->      [ -n "$gw" ] && echo ip route add default via $gw dev $netif > /tmp/net.$netif.gw
->      [ -n "$hostname" ] && echo "echo $hostname > /proc/sys/kernel/hostname" > /tmp/net.$netif.hostname
-> +
-> +    return 0
->  }
->  
->  # loopback is always handled the same way
-> 
+Current dmraid/lvm/mdraid activation logic looks like a mess.
 
-https://admin.fedoraproject.org/updates/dracut-024-5.git20121019.fc18
+Only activate dmraid/lvm/mdraid under any of the following conditions:
+1. User specify rd.dm.uuid/rd.md.uuid/rd.lvm.{vg,lv} on the cmdline.
+2. rd.dm/rd.md/rd.lvm != 0 and rd.auto=1
+
+On the contrary, disable activation when !(cond 1 or cond 2).
+
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/90dmraid/parse-dm.sh | 13 +++++--------
+ modules.d/90lvm/parse-lvm.sh   |  5 +++--
+ modules.d/90mdraid/parse-md.sh |  3 ++-
+ 3 files changed, 10 insertions(+), 11 deletions(-)
+
+diff --git a/modules.d/90dmraid/parse-dm.sh b/modules.d/90dmraid/parse-dm.sh
+index 76dfb5d..4bc903c 100755
+--- a/modules.d/90dmraid/parse-dm.sh
++++ b/modules.d/90dmraid/parse-dm.sh
+@@ -2,8 +2,11 @@
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ # nodmraid for anaconda / rc.sysinit compatibility
+-if ! getargbool 1 rd.dm -d -n rd_NO_DM || getarg "rd.dm=0" -d nodmraid; then
+-    info "rd.dm=0: removing DM RAID activation"
++
++DM_RAIDS=$(getargs rd.dm.uuid -d rd_DM_UUID=)
++
++if [ -z "$DM_RAIDS" ] && \
++    (! getargbool 0 rd.auto || ! getargbool 1 rd.dm -d -n rd_NO_DM -d -n nodmraid); then
+     udevproperty rd_NO_DM=1
+ fi
+ 
+@@ -16,9 +19,3 @@ if  ! command -v mdadm >/dev/null || ! getargbool 1 rd.md.ddf -n rd_NO_MDDDF -n
+     info "rd.md.ddf=0: no MD RAID for SNIA ddf raids"
+     udevproperty rd_NO_MDDDF=1
+ fi
+-
+-DM_RAIDS=$(getargs rd.dm.uuid -d rd_DM_UUID=)
+-
+-if [ -z "$DM_RAIDS" ] && ! getargbool 0 rd.auto; then
+-    udevproperty rd_NO_DM=1
+-fi
+diff --git a/modules.d/90lvm/parse-lvm.sh b/modules.d/90lvm/parse-lvm.sh
+index 3e6b371..655d6c6 100755
+--- a/modules.d/90lvm/parse-lvm.sh
++++ b/modules.d/90lvm/parse-lvm.sh
+@@ -1,14 +1,15 @@
+ #!/bin/sh
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
++
+ if [ -e /etc/lvm/lvm.conf ] && ! getargbool 1 rd.lvm.conf -d -n rd_NO_LVMCONF; then
+     rm -f /etc/lvm/lvm.conf
+ fi
+ 
+ LV_DEVS="$(getargs rd.lvm.vg -d rd_LVM_VG=) $(getargs rd.lvm.lv -d rd_LVM_LV=)"
+ 
+-if ! getargbool 1 rd.lvm -d -n rd_NO_LVM \
+-    || ( [ -z "$LV_DEVS" ] && ! getargbool 0 rd.auto ); then
++if [ -z "$LV_DEVS" ] && \
++    (! getargbool 0 rd.auto || ! getargbool 1 rd.lvm -d -n rd_NO_LVM ); then
+     info "rd.lvm=0: removing LVM activation"
+     rm -f /etc/udev/rules.d/64-lvm*.rules
+ else
+diff --git a/modules.d/90mdraid/parse-md.sh b/modules.d/90mdraid/parse-md.sh
+index 2de435b..80a19bc 100755
+--- a/modules.d/90mdraid/parse-md.sh
++++ b/modules.d/90mdraid/parse-md.sh
+@@ -4,7 +4,8 @@
+ 
+ MD_UUID=$(getargs rd.md.uuid -d rd_MD_UUID=)
+ 
+-if ( ! [ -n "$MD_UUID" ] && ! getargbool 0 rd.auto ) || ! getargbool 1 rd.md -d -n rd_NO_MD; then
++if [ -z "$MD_UUID" ] && \
++    (! getargbool 0 rd.auto || ! getargbool 1 rd.md -d -n rd_NO_MD); then
+     info "rd.md=0: removing MD RAID activation"
+     udevproperty rd_NO_MD=1
+ else
+-- 
+1.7.12.4
