@@ -1,93 +1,33 @@
-From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] dmraid/lvm/mdraid activation logic fix.
-Date: Mon, 22 Oct 2012 19:59:07 +0800
-Message-ID: <1350907147-26720-1-git-send-email-chaowang@redhat.com>
+From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] drop NEWROOT from module-setup.sh
+Date: Wed, 24 Oct 2012 13:06:11 -0400
+Message-ID: <1351098371-32307-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Current dmraid/lvm/mdraid activation logic looks like a mess.
-
-Only activate dmraid/lvm/mdraid under any of the following conditions:
-1. User specify rd.dm.uuid/rd.md.uuid/rd.lvm.{vg,lv} on the cmdline.
-2. rd.dm/rd.md/rd.lvm != 0 and rd.auto=1
-
-On the contrary, disable activation when !(cond 1 or cond 2).
-
-Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+This was almost certainly copy-pasted from mount-root.sh, but it's not
+valid here - dracut doesn't use NEWROOT outside of the initramfs.
 ---
- modules.d/90dmraid/parse-dm.sh | 13 +++++--------
- modules.d/90lvm/parse-lvm.sh   |  5 +++--
- modules.d/90mdraid/parse-md.sh |  3 ++-
- 3 files changed, 10 insertions(+), 11 deletions(-)
+ modules.d/95rootfs-block/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules.d/90dmraid/parse-dm.sh b/modules.d/90dmraid/parse-dm.sh
-index 76dfb5d..4bc903c 100755
---- a/modules.d/90dmraid/parse-dm.sh
-+++ b/modules.d/90dmraid/parse-dm.sh
-@@ -2,8 +2,11 @@
- # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
- # ex: ts=8 sw=4 sts=4 et filetype=sh
- # nodmraid for anaconda / rc.sysinit compatibility
--if ! getargbool 1 rd.dm -d -n rd_NO_DM || getarg "rd.dm=0" -d nodmraid; then
--    info "rd.dm=0: removing DM RAID activation"
-+
-+DM_RAIDS=$(getargs rd.dm.uuid -d rd_DM_UUID=)
-+
-+if [ -z "$DM_RAIDS" ] && \
-+    (! getargbool 0 rd.auto || ! getargbool 1 rd.dm -d -n rd_NO_DM -d -n nodmraid); then
-     udevproperty rd_NO_DM=1
- fi
+diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
+index 8254289..732aefb 100755
+--- a/modules.d/95rootfs-block/module-setup.sh
++++ b/modules.d/95rootfs-block/module-setup.sh
+@@ -15,7 +15,7 @@ check() {
+                 rootopts=$opts
+                 break
+             fi
+-        done < "$NEWROOT/etc/fstab"
++        done < /etc/fstab
  
-@@ -16,9 +19,3 @@ if  ! command -v mdadm >/dev/null || ! getargbool 1 rd.md.ddf -n rd_NO_MDDDF -n
-     info "rd.md.ddf=0: no MD RAID for SNIA ddf raids"
-     udevproperty rd_NO_MDDDF=1
- fi
--
--DM_RAIDS=$(getargs rd.dm.uuid -d rd_DM_UUID=)
--
--if [ -z "$DM_RAIDS" ] && ! getargbool 0 rd.auto; then
--    udevproperty rd_NO_DM=1
--fi
-diff --git a/modules.d/90lvm/parse-lvm.sh b/modules.d/90lvm/parse-lvm.sh
-index 3e6b371..655d6c6 100755
---- a/modules.d/90lvm/parse-lvm.sh
-+++ b/modules.d/90lvm/parse-lvm.sh
-@@ -1,14 +1,15 @@
- #!/bin/sh
- # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
- # ex: ts=8 sw=4 sts=4 et filetype=sh
-+
- if [ -e /etc/lvm/lvm.conf ] && ! getargbool 1 rd.lvm.conf -d -n rd_NO_LVMCONF; then
-     rm -f /etc/lvm/lvm.conf
- fi
- 
- LV_DEVS="$(getargs rd.lvm.vg -d rd_LVM_VG=) $(getargs rd.lvm.lv -d rd_LVM_LV=)"
- 
--if ! getargbool 1 rd.lvm -d -n rd_NO_LVM \
--    || ( [ -z "$LV_DEVS" ] && ! getargbool 0 rd.auto ); then
-+if [ -z "$LV_DEVS" ] && \
-+    (! getargbool 0 rd.auto || ! getargbool 1 rd.lvm -d -n rd_NO_LVM ); then
-     info "rd.lvm=0: removing LVM activation"
-     rm -f /etc/udev/rules.d/64-lvm*.rules
- else
-diff --git a/modules.d/90mdraid/parse-md.sh b/modules.d/90mdraid/parse-md.sh
-index 2de435b..80a19bc 100755
---- a/modules.d/90mdraid/parse-md.sh
-+++ b/modules.d/90mdraid/parse-md.sh
-@@ -4,7 +4,8 @@
- 
- MD_UUID=$(getargs rd.md.uuid -d rd_MD_UUID=)
- 
--if ( ! [ -n "$MD_UUID" ] && ! getargbool 0 rd.auto ) || ! getargbool 1 rd.md -d -n rd_NO_MD; then
-+if [ -z "$MD_UUID" ] && \
-+    (! getargbool 0 rd.auto || ! getargbool 1 rd.md -d -n rd_NO_MD); then
-     info "rd.md=0: removing MD RAID activation"
-     udevproperty rd_NO_MD=1
- else
+         [ "$rootfs" = "reiserfs" ] && journaldev=$(fs_get_option $rootopts "jdev")
+         [ "$rootfs" = "xfs" ] && journaldev=$(fs_get_option $rootopts "logdev")
 -- 
-1.7.12.4
+1.7.11.7
