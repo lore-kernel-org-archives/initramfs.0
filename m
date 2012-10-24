@@ -1,7 +1,7 @@
 From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] drop NEWROOT from module-setup.sh
-Date: Wed, 24 Oct 2012 13:06:11 -0400
-Message-ID: <1351098371-32307-1-git-send-email-wwoods@redhat.com>
+Subject: [PATCH] add 'swapoff' to initramfs to fix shutdown/reboot
+Date: Wed, 24 Oct 2012 13:06:28 -0400
+Message-ID: <1351098388-313-1-git-send-email-wwoods@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -10,24 +10,23 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This was almost certainly copy-pasted from mount-root.sh, but it's not
-valid here - dracut doesn't use NEWROOT outside of the initramfs.
+systemd shutdown/reboot won't work unless 'swapoff' is available.
 ---
- modules.d/95rootfs-block/module-setup.sh | 2 +-
+ modules.d/98systemd/module-setup.sh | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
-index 8254289..732aefb 100755
---- a/modules.d/95rootfs-block/module-setup.sh
-+++ b/modules.d/95rootfs-block/module-setup.sh
-@@ -15,7 +15,7 @@ check() {
-                 rootopts=$opts
-                 break
-             fi
--        done < "$NEWROOT/etc/fstab"
-+        done < /etc/fstab
+diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
+index 577bcb9..e60694e 100755
+--- a/modules.d/98systemd/module-setup.sh
++++ b/modules.d/98systemd/module-setup.sh
+@@ -83,7 +83,7 @@ install() {
+         $systemdsystemunitdir/initrd-switch-root.target \
+         $systemdsystemunitdir/initrd-switch-root.service \
+         $systemdsystemunitdir/umount.target \
+-        journalctl systemctl echo
++        journalctl systemctl echo swapoff
  
-         [ "$rootfs" = "reiserfs" ] && journaldev=$(fs_get_option $rootopts "jdev")
-         [ "$rootfs" = "xfs" ] && journaldev=$(fs_get_option $rootopts "logdev")
+     if [[ $hostonly ]]; then
+         dracut_install -o /etc/systemd/journald.conf \
 -- 
 1.7.11.7
