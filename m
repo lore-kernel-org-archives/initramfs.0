@@ -1,133 +1,76 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH] Fallback to external blkid and path_id in udev rules for <udev-176.
-Date: Thu,  1 Nov 2012 11:06:22 +0100
-Message-ID: <1351764382-7702-1-git-send-email-aidecoe@aidecoe.name>
+From: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] Fix rd.blacklist.driver when no /etc/modprobe.d exists
+Date: Tue,  6 Nov 2012 00:39:04 +0100
+Message-ID: <1352158744-14408-1-git-send-email-kwizart@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id:x-mailer;
+        bh=c5dM/rsfDCJt5k1AmhJQMo8eTHFUNMde6p7oHynckuI=;
+        b=KOJDBLrSKflt+J9Rfba0DLMLqtuShTmV2qSpMX+biw8pbLkb1j3hlWKhwAZWIKVCXT
+         4VDQKTnqbQ9DmicbgbqCO6oEcyICYh7KAkO8ttpaRVawuUK9k9o5Zzzx6bonqHI4vDBr
+         JD3Nfrit+x0olUqUU38Cqj8Ax9ducPU3w0zZ+G4wxVA+04GqTRoSiv/jFm0gzOzBbtE6
+         x9xpY3msIqNtOBnceNiUjGDTofxygdZFKQ61aiYzXB0TfQ48ORJpWQs0wCO3qVa6r5mp
+         TbWHHlI09udogTDEOs9trv5ToHHv+7RkTZLO4og14YRDK/a6Im6387MZcgenQw1Gwpo4
+         pq7Q==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Cc: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Starting with commit 24a38bc1cbe461c344ce61c7e10b6d51d5689c93 dracut
-uses udev builtins but still depends on >=udev-166 in dracut.spec.  This
-patch makes dracut work with older udev again.
+This bug was reported as http://bugzilla.redhat.com/873220#c2
 
-All credits go to Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>; see
+As the /etc/modprobe.d isn't created in the boot process
+nor bundled within the initramfs, the initramfsblacklist.conf
+cannot be created.
 
-  https://bugs.gentoo.org/show_bug.cgi?id=437700
+Instead, the /usr/lib/modprobe.d directory is available and using it
+will restore the blacklist behavior.
 ---
- modules.d/95udev-rules/59-persistent-storage.rules |  8 +++----
- modules.d/95udev-rules/61-persistent-storage.rules |  2 +-
- modules.d/95udev-rules/module-setup.sh             |  2 ++
- modules.d/95udev-rules/udev-rules-prepare.sh       | 25 ++++++++++++++++++++++
- modules.d/99base/init.sh                           |  2 +-
- 5 files changed, 33 insertions(+), 6 deletions(-)
- create mode 100644 modules.d/95udev-rules/udev-rules-prepare.sh
+ modules.d/90kernel-modules/parse-kernel.sh | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/95udev-rules/59-persistent-storage.rules b/modules.d/95udev-rules/59-persistent-storage.rules
-index f2756ee..c221cda 100644
---- a/modules.d/95udev-rules/59-persistent-storage.rules
-+++ b/modules.d/95udev-rules/59-persistent-storage.rules
-@@ -3,8 +3,8 @@ ACTION!="add|change", GOTO="ps_end"
- # Also don't process disks that are slated to be a multipath device
- ENV{DM_MULTIPATH_DEVICE_PATH}=="?*", GOTO="ps_end"
+diff --git a/modules.d/90kernel-modules/parse-kernel.sh b/modules.d/90kernel-modules/parse-kernel.sh
+index 485528b..7470905 100755
+--- a/modules.d/90kernel-modules/parse-kernel.sh
++++ b/modules.d/90kernel-modules/parse-kernel.sh
+@@ -2,6 +2,15 @@
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
  
--KERNEL=="cciss[0-9]*", IMPORT{builtin}="blkid"
--KERNEL=="nbd[0-9]*", IMPORT{builtin}="blkid"
-+KERNEL=="cciss[0-9]*", IMPORT BLKID
-+KERNEL=="nbd[0-9]*", IMPORT BLKID
- 
- 
- KERNEL!="md[0-9]*|md_d[0-9]*|md/*", KERNEL!="md*", GOTO="md_end"
-@@ -21,7 +21,7 @@ ATTR{md/array_state}=="|clear|inactive", GOTO="md_end"
- LABEL="md_ignore_state"
- 
- IMPORT{program}="/sbin/mdadm --detail --export $tempnode"
--IMPORT{builtin}="blkid"
-+IMPORT BLKID
- OPTIONS+="link_priority=100"
- OPTIONS+="watch"
- LABEL="md_end"
-@@ -34,7 +34,7 @@ ENV{DM_NAME}!="?*", GOTO="ps_end"
- ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}=="1", GOTO="ps_end"
- ENV{DM_UUID}=="CRYPT-TEMP-?*", GOTO="ps_end"
- ENV{DM_UUID}!="?*", ENV{DM_NAME}=="temporary-cryptsetup-?*", GOTO="ps_end"
--IMPORT{builtin}="blkid"
-+IMPORT BLKID
- 
- 
- LABEL="ps_end"
-diff --git a/modules.d/95udev-rules/61-persistent-storage.rules b/modules.d/95udev-rules/61-persistent-storage.rules
-index 7dbd151..37148b0 100644
---- a/modules.d/95udev-rules/61-persistent-storage.rules
-+++ b/modules.d/95udev-rules/61-persistent-storage.rules
-@@ -12,7 +12,7 @@ GOTO="pss_end"
- 
- LABEL="do_pss"
- # by-path (parent device path)
--ENV{DEVTYPE}=="disk", ENV{ID_PATH}=="", DEVPATH!="*/virtual/*", IMPORT{builtin}="path_id"
-+ENV{DEVTYPE}=="disk", ENV{ID_PATH}=="", DEVPATH!="*/virtual/*", IMPORT PATH_ID
- ENV{DEVTYPE}=="disk", ENV{ID_PATH}=="?*", SYMLINK+="disk/by-path/$env{ID_PATH}"
- ENV{DEVTYPE}=="partition", ENV{ID_PATH}=="?*", SYMLINK+="disk/by-path/$env{ID_PATH}-part%n"
- 
-diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-rules/module-setup.sh
-index 533dfeb..54a192e 100755
---- a/modules.d/95udev-rules/module-setup.sh
-+++ b/modules.d/95udev-rules/module-setup.sh
-@@ -74,5 +74,7 @@ install() {
-         inst_script "$moddir/load-modules.sh" /lib/udev/load-modules.sh
- 
-     inst_libdir_file "libnss_files*"
++_modprobe_d=/etc/modprobe.d
++if [ -d /usr/lib/modprobe.d ] ; then
++    _modprobe_d=/usr/lib/modprobe.d
++elif [ -d /lib/modprobe.d ] ; then
++    _modprobe_d=/lib/modprobe.d
++elif [ ! -d $_modprobe_d ] ; then
++    mkdir -p $_modprobe_d
++fi
 +
-+    inst_hook pre-udev 10 "$moddir/udev-rules-prepare.sh"
- }
+ for i in $(getargs rd.driver.pre -d rdloaddriver=); do
+     (
+         IFS=,
+@@ -15,15 +24,15 @@ for i in $(getargs rd.driver.blacklist -d rdblacklist=); do
+     (
+         IFS=,
+         for p in $i; do
+-            echo "blacklist $p" >> /etc/modprobe.d/initramfsblacklist.conf
++            echo "blacklist $p" >>  $_modprobe_d/initramfsblacklist.conf
+         done
+     )
+ done
  
-diff --git a/modules.d/95udev-rules/udev-rules-prepare.sh b/modules.d/95udev-rules/udev-rules-prepare.sh
-new file mode 100644
-index 0000000..08263ea
---- /dev/null
-+++ b/modules.d/95udev-rules/udev-rules-prepare.sh
-@@ -0,0 +1,25 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+for f in /etc/udev/rules.d/*-persistent-storage.rules; do
-+    [ -e "$f" ] || continue
-+    while read line; do
-+        if [ "${line%%IMPORT PATH_ID}" != "$line" ]; then
-+            if [ $UDEVVERSION -ge 174 ]; then
-+                printf '%sIMPORT{builtin}="path_id"\n' "${line%%IMPORT PATH_ID}"
-+            else
-+                printf '%sIMPORT{program}="path_id %%p"\n' "${line%%IMPORT PATH_ID}"
-+            fi
-+        elif [ "${line%%IMPORT BLKID}" != "$line" ]; then
-+            if [ $UDEVVERSION -ge 176 ]; then
-+                printf '%sIMPORT{builtin}="blkid"\n' "${line%%IMPORT BLKID}"
-+            else
-+                printf '%sIMPORT{program}="/sbin/blkid -o udev -p $tempnode"\n' "${line%%IMPORT BLKID}"
-+            fi
-+        else
-+            echo "$line"
-+        fi
-+    done < "${f}" > "${f}.new"
-+    mv "${f}.new" "$f"
-+done
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index 16c8958..0259053 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -83,7 +83,7 @@ trap "emergency_shell Signal caught!" 0
+ for p in $(getargs rd.driver.post -d rdinsmodpost=); do
+-    echo "blacklist $p" >> /etc/modprobe.d/initramfsblacklist.conf
++    echo "blacklist $p" >>  $_modprobe_d/initramfsblacklist.conf
+     _do_insmodpost=1
+ done
  
- [ -d /run/initramfs ] || mkdir -p -m 0755 /run/initramfs
- 
--UDEVVERSION=$(udevadm --version)
-+export UDEVVERSION=$(udevadm --version)
- if [ $UDEVVERSION -gt 166 ]; then
-     # newer versions of udev use /run/udev/rules.d
-     export UDEVRULESD=/run/udev/rules.d
+ [ -n "$_do_insmodpost" ] && initqueue --settled --unique --onetime insmodpost.sh
+-unset _do_insmodpost
++unset _do_insmodpost _modprobe_d
 -- 
-1.7.12.4
+1.7.11.7
