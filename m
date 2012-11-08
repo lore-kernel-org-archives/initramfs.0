@@ -1,76 +1,60 @@
-From: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] Fix rd.blacklist.driver when no /etc/modprobe.d exists
-Date: Tue,  6 Nov 2012 00:39:04 +0100
-Message-ID: <1352158744-14408-1-git-send-email-kwizart@gmail.com>
+From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Subject: [patch RFC 4/6] Wait for link ready before use the interface
+Date: Thu, 08 Nov 2012 11:40:22 +0800
+Message-ID: <20121108034317.594728251@redhat.com>
+References: <20121108034018.789330224@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=from:to:cc:subject:date:message-id:x-mailer;
-        bh=c5dM/rsfDCJt5k1AmhJQMo8eTHFUNMde6p7oHynckuI=;
-        b=KOJDBLrSKflt+J9Rfba0DLMLqtuShTmV2qSpMX+biw8pbLkb1j3hlWKhwAZWIKVCXT
-         4VDQKTnqbQ9DmicbgbqCO6oEcyICYh7KAkO8ttpaRVawuUK9k9o5Zzzx6bonqHI4vDBr
-         JD3Nfrit+x0olUqUU38Cqj8Ax9ducPU3w0zZ+G4wxVA+04GqTRoSiv/jFm0gzOzBbtE6
-         x9xpY3msIqNtOBnceNiUjGDTofxygdZFKQ61aiYzXB0TfQ48ORJpWQs0wCO3qVa6r5mp
-         TbWHHlI09udogTDEOs9trv5ToHHv+7RkTZLO4og14YRDK/a6Im6387MZcgenQw1Gwpo4
-         pq7Q==
+Content-Disposition: inline; filename=network-wait-for-link-ready-before-use.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-This bug was reported as http://bugzilla.redhat.com/873220#c2
+Some network driver will take long time to initialize. We have an example
+in a HP machine which take about one minute for this. The callback such as
+"ip link set <dev> up" will fail, afterwards setup for network will also
+fail.
 
-As the /etc/modprobe.d isn't created in the boot process
-nor bundled within the initramfs, the initramfsblacklist.conf
-cannot be created.
+Fix this by add a new function wait_for_if_link, wait the link ready before
+use it.
 
-Instead, the /usr/lib/modprobe.d directory is available and using it
-will restore the blacklist behavior.
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/90kernel-modules/parse-kernel.sh | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+ modules.d/40network/net-lib.sh |   17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/90kernel-modules/parse-kernel.sh b/modules.d/90kernel-modules/parse-kernel.sh
-index 485528b..7470905 100755
---- a/modules.d/90kernel-modules/parse-kernel.sh
-+++ b/modules.d/90kernel-modules/parse-kernel.sh
-@@ -2,6 +2,15 @@
- # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
- # ex: ts=8 sw=4 sts=4 et filetype=sh
+--- dracut.orig/modules.d/40network/net-lib.sh
++++ dracut/modules.d/40network/net-lib.sh
+@@ -316,6 +316,19 @@ parse_ifname_opts() {
  
-+_modprobe_d=/etc/modprobe.d
-+if [ -d /usr/lib/modprobe.d ] ; then
-+    _modprobe_d=/usr/lib/modprobe.d
-+elif [ -d /lib/modprobe.d ] ; then
-+    _modprobe_d=/lib/modprobe.d
-+elif [ ! -d $_modprobe_d ] ; then
-+    mkdir -p $_modprobe_d
-+fi
+ }
+ 
++# some network driver need long time to initialize, wait before it's ready.
++wait_for_if_link() {
++    local cnt=0
++    local li
++    while [ $cnt -lt 600 ]; do
++        li=$(ip -o link show dev $1 2>/dev/null)
++        [ -n "$li" ] && return 0
++        sleep 0.1
++        cnt=$(($cnt+1))
++    done
++    return 1
++}
 +
- for i in $(getargs rd.driver.pre -d rdloaddriver=); do
-     (
-         IFS=,
-@@ -15,15 +24,15 @@ for i in $(getargs rd.driver.blacklist -d rdblacklist=); do
-     (
-         IFS=,
-         for p in $i; do
--            echo "blacklist $p" >> /etc/modprobe.d/initramfsblacklist.conf
-+            echo "blacklist $p" >>  $_modprobe_d/initramfsblacklist.conf
-         done
-     )
- done
+ wait_for_if_up() {
+     local cnt=0
+     local li
+@@ -340,6 +353,8 @@ wait_for_route_ok() {
+ }
  
- for p in $(getargs rd.driver.post -d rdinsmodpost=); do
--    echo "blacklist $p" >> /etc/modprobe.d/initramfsblacklist.conf
-+    echo "blacklist $p" >>  $_modprobe_d/initramfsblacklist.conf
-     _do_insmodpost=1
- done
+ linkup() {
+-    ip link set $1 up 2>/dev/null && wait_for_if_up $1 2>/dev/null
++    wait_for_if_link $1 2>/dev/null\
++     && ip link set $1 up 2>/dev/null\
++     && wait_for_if_up $1 2>/dev/null
+ }
  
- [ -n "$_do_insmodpost" ] && initqueue --settled --unique --onetime insmodpost.sh
--unset _do_insmodpost
-+unset _do_insmodpost _modprobe_d
--- 
-1.7.11.7
