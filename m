@@ -1,23 +1,28 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch RFC 1/6] Move wait for if functions to net lib
-Date: Thu, 08 Nov 2012 17:50:24 +0800
-Message-ID: <509B8060.6000801@redhat.com>
-References: <20121108034018.789330224@redhat.com> <20121108034317.171739916@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Subject: [patch RFC 0/6] network fixes for link waiting
+Date: Thu, 08 Nov 2012 11:40:18 +0800
+Message-ID: <20121108034018.789330224@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20121108034317.171739916-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-There's some problem with my mta and smtp server.
-Looks like 0/6 and 5/6 are lost.
+Here is a patch set for some network cleanup and fixes:
+01-network-move-wait-for-if-function-to-net-lib.patch
+02-network-add-function-linkup.patch
+03-network-use-linkup-function.patch
+04-network-wait-for-link-ready-before-use.patch
+05-network-get-ifaces-for-udev-rule-use.patch
+06-network-wait-interface-up-at-early-stage.patch
 
-Will resend this series.
+Tested kdump with a nic which delay abouth 60s while initializing.
 
--- 
-Thanks
+Please help to review especially for the patch 3/6 which replace some ip link
+up with a function linkup.
+
+--
+Thanks a lot
 Dave
