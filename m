@@ -1,54 +1,155 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch RFC 5/6 resend] Get ifaces for udev rule use
-Date: Fri, 09 Nov 2012 09:42:53 +0800
-Message-ID: <509C5F9D.8010202@redhat.com>
-References: <20121108095856.GA24413@localhost.localdomain>
+Subject: [PATCH] split plymouth module
+Date: Mon, 12 Nov 2012 17:24:41 +0800
+Message-ID: <20121112092441.GA16091@localhost.localdomain>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20121108095856.GA24413-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-Please ignore this. Last post 5/6 got received as well.
+Kdump module will need the drm and kms kernel modules so user can see the
+emergency shell at least.
 
-They were rejected by vger.kernel.org maybe because I use local postfix
-sendmail. After adding a relay server they were sent out finally..
+Fix this by split 50plymouth module to 50drm and 50plymouth. Moving the
+installkernel part to 50drm so user can use drm directly without adding
+extra plymouth utils.
 
-On 11/08/2012 05:58 PM, Dave Young wrote:
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/50drm/module-setup.sh |   63 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
 
-> Get ifaces for udev rule use
-> 
-> In case without BOOTIF, but /tmp/ifaces are already created.
-> net-genrule.sh will fall to bring up all net interfaces.
-> 
-> Fix by reading from /tmp/ifaces before generating rules instead.
-> 
-> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/40network/net-genrules.sh |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> --- dracut.orig/modules.d/40network/net-genrules.sh
-> +++ dracut/modules.d/40network/net-genrules.sh
-> @@ -19,6 +19,8 @@ if [ -z "$netroot" ] && [ ! -e "/tmp/net
->      return
->  fi
->  
-> +[ -e /tmp/net.ifaces ] && read IFACES < /tmp/net.ifaces
-> +
->  # Write udev rules
->  {
->      # bridge: attempt only the defined interface
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Thanks
-Dave
+--- /dev/null
++++ dracut/modules.d/50drm/module-setup.sh
+@@ -0,0 +1,63 @@
++#!/bin/bash
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++check() {
++    return 0
++}
++
++depends() {
++    return 0
++}
++
++installkernel() {
++    local _modname
++    # Include KMS capable drm drivers
++
++    drm_module_filter() {
++        local _drm_drivers='drm_crtc_init'
++        local _ret
++        # subfunctions inherit following FDs
++        local _merge=8 _side2=9
++        function nmf1() {
++            local _fname _fcont
++            while read _fname; do
++                case "$_fname" in
++                    *.ko)    _fcont="$(<        $_fname)" ;;
++                    *.ko.gz) _fcont="$(gzip -dc $_fname)" ;;
++                    *.ko.xz) _fcont="$(xz -dc   $_fname)" ;;
++                esac
++                [[   $_fcont =~ $_drm_drivers
++                && ! $_fcont =~ iw_handler_get_spy ]] \
++                && echo "$_fname"
++            done
++        }
++        function rotor() {
++            local _f1 _f2
++            while read _f1; do
++                echo "$_f1"
++                if read _f2; then
++                    echo "$_f2" 1>&${_side2}
++                fi
++            done | nmf1 1>&${_merge}
++        }
++        # Use two parallel streams to filter alternating modules.
++        set +x
++        eval "( ( rotor ) ${_side2}>&1 | nmf1 ) ${_merge}>&1"
++        [[ $debug ]] && set -x
++        return 0
++    }
++
++    for _modname in $(find_kernel_modules_by_path drivers/gpu/drm \
++        | drm_module_filter) ; do
++        # if the hardware is present, include module even if it is not currently loaded,
++        # as we could e.g. be in the installer; nokmsboot boot parameter will disable
++        # loading of the driver if needed
++        if [[ $hostonly ]] && modinfo -F alias $_modname | sed -e 's,\?,\.,g' -e 's,\*,\.\*,g' \
++            | grep -qxf - /sys/bus/pci/devices/*/modalias; then
++            hostonly='' instmods $_modname
++            continue
++        fi
++        instmods $_modname
++    done
++}
+--- dracut.orig/modules.d/50plymouth/module-setup.sh
++++ dracut/modules.d/50plymouth/module-setup.sh
+@@ -8,59 +8,7 @@ check() {
+ }
+ 
+ depends() {
+-    return 0
+-}
+-
+-installkernel() {
+-    local _modname
+-    # Include KMS capable drm drivers
+-
+-    drm_module_filter() {
+-        local _drm_drivers='drm_crtc_init'
+-        local _ret
+-        # subfunctions inherit following FDs
+-        local _merge=8 _side2=9
+-        function nmf1() {
+-            local _fname _fcont
+-            while read _fname; do
+-                case "$_fname" in
+-                    *.ko)    _fcont="$(<        $_fname)" ;;
+-                    *.ko.gz) _fcont="$(gzip -dc $_fname)" ;;
+-                    *.ko.xz) _fcont="$(xz -dc   $_fname)" ;;
+-                esac
+-                [[   $_fcont =~ $_drm_drivers
+-                && ! $_fcont =~ iw_handler_get_spy ]] \
+-                && echo "$_fname"
+-            done
+-        }
+-        function rotor() {
+-            local _f1 _f2
+-            while read _f1; do
+-                echo "$_f1"
+-                if read _f2; then
+-                    echo "$_f2" 1>&${_side2}
+-                fi
+-            done | nmf1 1>&${_merge}
+-        }
+-        # Use two parallel streams to filter alternating modules.
+-        set +x
+-        eval "( ( rotor ) ${_side2}>&1 | nmf1 ) ${_merge}>&1"
+-        [[ $debug ]] && set -x
+-        return 0
+-    }
+-
+-    for _modname in $(find_kernel_modules_by_path drivers/gpu/drm \
+-        | drm_module_filter) ; do
+-        # if the hardware is present, include module even if it is not currently loaded,
+-        # as we could e.g. be in the installer; nokmsboot boot parameter will disable
+-        # loading of the driver if needed
+-        if [[ $hostonly ]] && modinfo -F alias $_modname | sed -e 's,\?,\.,g' -e 's,\*,\.\*,g' \
+-            | grep -qxf - /sys/bus/pci/devices/*/modalias; then
+-            hostonly='' instmods $_modname
+-            continue
+-        fi
+-        instmods $_modname
+-    done
++    echo drm
+ }
+ 
+ install() {
