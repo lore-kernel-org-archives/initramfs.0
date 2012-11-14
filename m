@@ -1,155 +1,45 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] split plymouth module
-Date: Mon, 12 Nov 2012 17:24:41 +0800
-Message-ID: <20121112092441.GA16091@localhost.localdomain>
+Subject: Re: [patch RFC 0/6] network fixes for link waiting
+Date: Wed, 14 Nov 2012 16:49:50 +0800
+Message-ID: <50A35B2E.9050206@redhat.com>
+References: <20121108034018.789330224@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20121108034018.789330224-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-Kdump module will need the drm and kms kernel modules so user can see the
-emergency shell at least.
+Even with this series we still need add rd.retry=90 to make it work.
+How about increase the default rd.retry value in dracut?
 
-Fix this by split 50plymouth module to 50drm and 50plymouth. Moving the
-installkernel part to 50drm so user can use drm directly without adding
-extra plymouth utils.
+On 11/08/2012 11:40 AM, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Tested-by: Chao Wang <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/50drm/module-setup.sh |   63 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 63 insertions(+)
+> Here is a patch set for some network cleanup and fixes:
+> 01-network-move-wait-for-if-function-to-net-lib.patch
+> 02-network-add-function-linkup.patch
+> 03-network-use-linkup-function.patch
+> 04-network-wait-for-link-ready-before-use.patch
+> 05-network-get-ifaces-for-udev-rule-use.patch
+> 06-network-wait-interface-up-at-early-stage.patch
+> 
+> Tested kdump with a nic which delay abouth 60s while initializing.
+> 
+> Please help to review especially for the patch 3/6 which replace some ip link
+> up with a function linkup.
+> 
+> --
+> Thanks a lot
+> Dave
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---- /dev/null
-+++ dracut/modules.d/50drm/module-setup.sh
-@@ -0,0 +1,63 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+check() {
-+    return 0
-+}
-+
-+depends() {
-+    return 0
-+}
-+
-+installkernel() {
-+    local _modname
-+    # Include KMS capable drm drivers
-+
-+    drm_module_filter() {
-+        local _drm_drivers='drm_crtc_init'
-+        local _ret
-+        # subfunctions inherit following FDs
-+        local _merge=8 _side2=9
-+        function nmf1() {
-+            local _fname _fcont
-+            while read _fname; do
-+                case "$_fname" in
-+                    *.ko)    _fcont="$(<        $_fname)" ;;
-+                    *.ko.gz) _fcont="$(gzip -dc $_fname)" ;;
-+                    *.ko.xz) _fcont="$(xz -dc   $_fname)" ;;
-+                esac
-+                [[   $_fcont =~ $_drm_drivers
-+                && ! $_fcont =~ iw_handler_get_spy ]] \
-+                && echo "$_fname"
-+            done
-+        }
-+        function rotor() {
-+            local _f1 _f2
-+            while read _f1; do
-+                echo "$_f1"
-+                if read _f2; then
-+                    echo "$_f2" 1>&${_side2}
-+                fi
-+            done | nmf1 1>&${_merge}
-+        }
-+        # Use two parallel streams to filter alternating modules.
-+        set +x
-+        eval "( ( rotor ) ${_side2}>&1 | nmf1 ) ${_merge}>&1"
-+        [[ $debug ]] && set -x
-+        return 0
-+    }
-+
-+    for _modname in $(find_kernel_modules_by_path drivers/gpu/drm \
-+        | drm_module_filter) ; do
-+        # if the hardware is present, include module even if it is not currently loaded,
-+        # as we could e.g. be in the installer; nokmsboot boot parameter will disable
-+        # loading of the driver if needed
-+        if [[ $hostonly ]] && modinfo -F alias $_modname | sed -e 's,\?,\.,g' -e 's,\*,\.\*,g' \
-+            | grep -qxf - /sys/bus/pci/devices/*/modalias; then
-+            hostonly='' instmods $_modname
-+            continue
-+        fi
-+        instmods $_modname
-+    done
-+}
---- dracut.orig/modules.d/50plymouth/module-setup.sh
-+++ dracut/modules.d/50plymouth/module-setup.sh
-@@ -8,59 +8,7 @@ check() {
- }
- 
- depends() {
--    return 0
--}
--
--installkernel() {
--    local _modname
--    # Include KMS capable drm drivers
--
--    drm_module_filter() {
--        local _drm_drivers='drm_crtc_init'
--        local _ret
--        # subfunctions inherit following FDs
--        local _merge=8 _side2=9
--        function nmf1() {
--            local _fname _fcont
--            while read _fname; do
--                case "$_fname" in
--                    *.ko)    _fcont="$(<        $_fname)" ;;
--                    *.ko.gz) _fcont="$(gzip -dc $_fname)" ;;
--                    *.ko.xz) _fcont="$(xz -dc   $_fname)" ;;
--                esac
--                [[   $_fcont =~ $_drm_drivers
--                && ! $_fcont =~ iw_handler_get_spy ]] \
--                && echo "$_fname"
--            done
--        }
--        function rotor() {
--            local _f1 _f2
--            while read _f1; do
--                echo "$_f1"
--                if read _f2; then
--                    echo "$_f2" 1>&${_side2}
--                fi
--            done | nmf1 1>&${_merge}
--        }
--        # Use two parallel streams to filter alternating modules.
--        set +x
--        eval "( ( rotor ) ${_side2}>&1 | nmf1 ) ${_merge}>&1"
--        [[ $debug ]] && set -x
--        return 0
--    }
--
--    for _modname in $(find_kernel_modules_by_path drivers/gpu/drm \
--        | drm_module_filter) ; do
--        # if the hardware is present, include module even if it is not currently loaded,
--        # as we could e.g. be in the installer; nokmsboot boot parameter will disable
--        # loading of the driver if needed
--        if [[ $hostonly ]] && modinfo -F alias $_modname | sed -e 's,\?,\.,g' -e 's,\*,\.\*,g' \
--            | grep -qxf - /sys/bus/pci/devices/*/modalias; then
--            hostonly='' instmods $_modname
--            continue
--        fi
--        instmods $_modname
--    done
-+    echo drm
- }
- 
- install() {
+
+
+-- 
+Thanks
+Dave
