@@ -1,42 +1,119 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] dracut: document team cmdline
-Date: Thu, 15 Nov 2012 22:58:29 +0800
-Message-ID: <1352991509-31740-2-git-send-email-amwang@redhat.com>
-References: <1352991509-31740-1-git-send-email-amwang@redhat.com>
+From: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: NBD boot problem
+Date: Mon, 19 Nov 2012 17:55:16 +0100
+Message-ID: <CAKzfqkcG7bevrABQ723KC9EdOMMOJUcR+dMcBQ2vktOJg3pp1g@mail.gmail.com>
+References: <CAKzfqkcPKGzWKd+xFnhfh4fN1y70+foYyTSqEQTE-B70uod1GA@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1352991509-31740-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+         :content-type;
+        bh=WCXroDyX+6euZFuMf+JU/l5HL7NQvgAbhfjoz/gAWAw=;
+        b=BehevlmOi+kkh0PJDGm+xGJqSa0X0lQYfPQsQnC8gWskDX+JKD+98hgLM7kR9omAJZ
+         vj3VAeBBLEuWMbhnS4E0m6177sw8gAKavkgEdBgbiCPn84Ud7tG5nxqyrxXoCn0bCAS2
+         KrKFYTX4Wa4BZUoletF71RtmlvRo8kMNlwTRup1FazkmiN+/7/zCzznwPTFsEBxHOHuh
+         2skcrJTxMQknWXMHrTN+B+hyQHzWGfrqsq/3dWgJWlr00G6CsoMjtVbK/BVAA6yHphqS
+         YDusL6DdugyG8lItqnAdFylz3eknhOFZte6HPSSsJlyj3ZwsdQ27p+34UqiB5P27aB7V
+         drQA==
+In-Reply-To: <CAKzfqkcPKGzWKd+xFnhfh4fN1y70+foYyTSqEQTE-B70uod1GA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Document team= in dracut.cmdline.
+Fixed in 024, thx to whoever made that happen :)
 
-Cc: Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.cmdline.7.asc |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index 2a74604..c2eec5e 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -411,6 +411,10 @@ interface name. Better name it "bootnet" or "bluesocket".
-     then its values should be separated by semicolon.
-     Bond without parameters assumes bond=bond0:eth0,eth1:mode=balance-rr
- 
-+**team =_<teammaster>_:_<teamslaves>_**::
-+    Setup team device <teammaster> on top of <teamslaves>.
-+    <teamslaves> is a comma-separated list of physical (ethernet) interfaces.
-+
- **bridge=_<bridgename>_:_<ethnames>_**::
-     Setup bridge <bridgename> with <ethnames>. <ethnames> is a comma-separated
-     list of physical (ethernet) interfaces. Bridge without parameters assumes bridge=br0:eth0
--- 
-1.7.7.6
+On Sat, Aug 25, 2012 at 4:21 PM, Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> My Gentoo Dracut 023 image won't boot from an nbd block device.
+>
+> The booting image connects to the nbd export, but continues looping
+> some checks until it says it won't boot. The the correct mount command
+> shows up in /lib/dracut/hooks/mount/01-1151-nbd.sh and I can even use
+> that command to actually mount the disk when I get dropped to the
+> shell:
+> /bin/mount -t squashfs -o ro /dev/nbd0 /sysroot
+>
+> pxelinux append: APPEND initrd=ltsp/i686/nbdtest-initramfs-3.3.8
+> root=dhcp init=/sbin/init-ltsp
+> dnsmasq http opt: option:root-path,nbd:192.168.0.1:ltsp:squashfs:ro
+>
+>
+> The loop (with help of rdinitdebug and rdudevdebug flags)
+> /lib/dracut-lib.sh@319(check_finished): local f
+> /lib/dracut-lib.sh@320(check_finished): for f in
+> '$hookdir/initqueue/finished/*.sh'
+> /lib/dracut-lib.sh@321(check_finished): '['
+> /lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh = '/li$
+> /lib/dracut-lib.sh@322(check_finished): '[' -e
+> /lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh ']'
+> /lib/dracut-lib.sh@322(check_finished): .
+> /lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh
+> //lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh@1(source): '['
+> -f /tmp/setup_net_eth0.ok ']'
+> /lib/dracut-lib.sh@320(check_finished): for f in
+> '$hookdir/initqueue/finished/*.sh'
+> /lib/dracut-lib.sh@321(check_finished): '['
+> /lib/dracut/hooks/initqueue/finished/dhcp.sh = '/lib/dracut/$
+> /lib/dracut-lib.sh@322(check_finished): '[' -e
+> /lib/dracut/hooks/initqueue/finished/dhcp.sh ']'
+> /lib/dracut-lib.sh@322(check_finished): .
+> /lib/dracut/hooks/initqueue/finished/dhcp.sh
+> //lib/dracut/hooks/initqueue/finished/dhcp.sh@1(source): '[' -d
+> /sysroot/proc -o -e /dev/root ']'
+> /lib/dracut-lib.sh@322(check_finished): return 1
+> /init@172(): udevadm settle --timeout=0
+> /init@174(): for job in '$hookdir/initqueue/settled/*.sh'
+> /init@175(): '[' -e /lib/dracut/hooks/initqueue/settled/nbd.sh ']'
+> /init@176(): job=/lib/dracut/hooks/initqueue/settled/nbd.sh
+> /init@176(): . /lib/dracut/hooks/initqueue/settled/nbd.sh
+> //lib/dracut/hooks/initqueue/settled/nbd.sh@1(): '[' -e /dev/root ']'
+> ///lib/dracut/hooks/initqueue/settled/nbd.sh@1(): udevadm info
+> --query=env --name=/dev/nbd0
+> //lib/dracut/hooks/initqueue/settled/nbd.sh@1(): info='UDEV_LOG=3
+> DEVPATH=/devices/virtual/block/nbd0
+> MAJOR=43
+> MINOR=0
+> DEVNAME=nbd0
+> DEVTYPE=disk
+> SUBSYSTEM=block'
+> //lib/dracut/hooks/initqueue/settled/nbd.sh@1(): '[' -z 'UDEV_LOG=3
+> DEVPATH=/devices/virtual/block/nbd0
+> MAJOR=43
+> MINOR=0
+> DEVNAME=nbd0
+> DEVTYPE=disk
+> SUBSYSTEM=block' ']'
+> /init@177(): check_finished
+> /lib/dracut-lib.sh@319(check_finished): local f
+> /lib/dracut-lib.sh@320(check_finished): for f in
+> '$hookdir/initqueue/finished/*.sh'
+> /lib/dracut-lib.sh@321(check_finished): '['
+> /lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh = '/li$
+> /lib/dracut-lib.sh@322(check_finished): '[' -e
+> /lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh ']'
+> /lib/dracut-lib.sh@322(check_finished): .
+> /lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh
+> //lib/dracut/hooks/initqueue/finished/dhclient-eth0.sh@1(source): '['
+> -f /tmp/setup_net_eth0.ok ']'
+> /lib/dracut-lib.sh@320(check_finished): for f in
+> '$hookdir/initqueue/finished/*.sh'
+> /lib/dracut-lib.sh@321(check_finished): '['
+> /lib/dracut/hooks/initqueue/finished/dhcp.sh = '/lib/dracut/$
+> /lib/dracut-lib.sh@322(check_finished): '[' -e
+> /lib/dracut/hooks/initqueue/finished/dhcp.sh ']'
+> /lib/dracut-lib.sh@322(check_finished): .
+> /lib/dracut/hooks/initqueue/finished/dhcp.sh
+> //lib/dracut/hooks/initqueue/finished/dhcp.sh@1(source): '[' -d
+> /sysroot/proc -o -e /dev/root ']'
+> /lib/dracut-lib.sh@322(check_finished): return 1
+> /init@180(): udevadm settle --timeout=0
+> /init@183(): sleep 0.5
+> /init@186(): '[' 1 -gt 40 ']'
+> /init@194(): main_loop=2
+> /init@195(): '[' 2 -gt 60 ']'
+> /init@154(): :
+> /init@156(): check_finished
+>
+> Not sure if a bug or me doing something wrong.
