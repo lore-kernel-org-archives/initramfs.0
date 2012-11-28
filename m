@@ -1,226 +1,73 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2 v2] Add memory usage trace to diffrent hook points
-Date: Wed, 28 Nov 2012 16:45:24 +0800
-Message-ID: <50B5CF24.6090006@redhat.com>
-References: <20121126023852.GA6886@localhost.localdomain> <20121127223330.GG6964@redhat.com>
+From: Mahesh J Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Firmware assisted dump support in dracut
+Date: Wed, 28 Nov 2012 21:42:35 +0530
+Message-ID: <20121128161234.GA8991@in.ibm.com>
+Reply-To: mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20121127223330.GG6964-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+Hi Harald,
 
+Last year I worked on adding Firmware assisted dump (fadump) support in
+PowerLinux (ppc64). This feature is now accepted upstream Linux kernel and the
+documentation is available at http://lwn.net/Articles/488132/
 
-Port mkdumprd memory trace functions wrote by jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-For kdump, memory usage tracing is important because there's limited
-memory in kdump 2nd kernel.
+Like kdump, fadump also exports the memory dump through /proc/vmcore in ELF
+format. This enables us to reuse the existing kdump infrastructure for dump
+capture and filtering. However, unlike kdump, fadump does not use kexec-based
+approach, instead it depends on Power firmware to preserve the memory dump and
+reboot into new kernel. This is what happens in fadump after crash:
 
-Add a rd.memdebug cmdline for this. set rd.memdebug=<X> will set the
-debug level to X which is the debug verbose level.
+1. At the crash, kernel informs power firmware that kernel has crashed.
+2. Firmware takes the control and reboots the entire system preserving only the
+memory (resets all other devices).
+3. The reboot follows the normal booting process (non-kexec).
+4. The boot loader loads the default kernel and initrd from /boot
 
-the format of cmdline is like below:
-<level>[+]:<type>
-<level> is the debug level
-[+] means debug level >= <level>
-<type> is the debug info type, as for this patch I added mem, iomem, slab
-mem is for /proc/meminfo, iomem is for /proc/iomem, slab is for /proc/slabinfo
-Also shortmem is the stripped /proc/meminfo which only includes 3 lines of
-Memfree, Cached and Slab, for example:
-MemFree:         6327176 kB
-Cached:           741916 kB
-Slab:              77284 kB
+I am working on integrating fadump with existing kdump infrastructure. The
+current kdump infrastructure builds a separate initrd (whenever there is a
+change detected in kdump config file /etc/kdump.conf) which then gets loaded
+into memory by kexec tool for use by kdump kernel. But, in the fadump approach,
+the second kernel (after crash) always use the default (OS built) initramfs.
+Hence, to support fadump, change is required to introduce dump capturing steps
+in default initramfs itself. Hence the possible approaches I am looking into
+are:
 
-I added several trace point to the begin of several init hooks
-At cmdline hooks I'm adding trace of "1+:mem 1+:iomem 3+:slab"
-For other hooks I'm adding trace of "1:shortmem 2+:mem 3+:slab"
+1. Rebuild the default initramfs every time when there is a change detected in
+kdump config file (/etc/kdump.conf)
+   This approach would modify existing initramfs in place. I did work on this
+   approach by enhancing mkdumprd (tool from kexec-tools package) to extract
+   and rebuild default initramfs with dump capturing steps.  After discussing
+   with Vivek Goyal, he suggested that better approach to add code to dracut
+   for rebuilding boot initramfs instead of enhancing mkdumprd.  This means
+   introducing a new dracut module that will be responsible for introducing
+   dump capture steps inside the rebuilt initramfs by pulling required modules
+   e.g. ssh, nfs etc. depending on /etc/kdump.conf
 
-This means:
-rd.memdebug=1)
-  cmdline hook: print mem and iomem
-  other hooks: print shortmem
-rd.memdebug=2)
-  cmdline hook: print mem and iomem
-  other hooks: print mem
-rd.memdebug=3):
-  cmdline hook: print mem iomem, and slabinfo
-  other hooks: print mem and slabinfo
-*):
-  do not print any mem debug info
+   Now the question is whether it is possible for dracut to rebuild boot
+   initramfs in place? if Yes, is there any issues in rebuilding of boot
+   initramfs everytime when there is a change in /etc/kdump.conf?
 
-[v1->v2]: update to use getargnum with <minval> as argument
-          print iomem info at cmdline hook as well
+2. Make dracut tool fadump aware and it will build fadump aware initrd (default
+OS initrd) during kernel install. Once built, this initrd should never be
+rebuilt again. Which means the default initramfs will contain vmcore capture
+steps. This approach would pack all possible dracut modules (nfs, ssh, bonding
+etc.) so that the default initrd will be capable of supporting all possible
+dump target. Hence this approach will bloat the initramfs. On my Power test
+system, the size of the default initrd generated without any changes is 16M.
+With the above approach this size jumps to 27M.
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.cmdline.7.asc                      |    4 +
- modules.d/98systemd/dracut-cmdline.sh     |    1 
- modules.d/98systemd/dracut-initqueue.sh   |    1 
- modules.d/98systemd/dracut-pre-pivot.sh   |    1 
- modules.d/98systemd/dracut-pre-trigger.sh |    1 
- modules.d/98systemd/dracut-pre-udev.sh    |    1 
- modules.d/99base/dracut-lib.sh            |   90 ++++++++++++++++++++++++++++++
- 7 files changed, 99 insertions(+)
+Since both the above approaches would require changes to dracut package, I would
+like to know your views on above approaches.
 
---- dracut.orig/modules.d/98systemd/dracut-cmdline.sh
-+++ dracut/modules.d/98systemd/dracut-cmdline.sh
-@@ -18,6 +18,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook cmdline" 1+:mem 1+:iomem 3+:slab
- # run scriptlets to parse the command line
- getarg 'rd.break=cmdline' -d 'rdbreak=cmdline' && emergency_shell -n cmdline "Break before cmdline"
- source_hook cmdline
---- dracut.orig/modules.d/98systemd/dracut-initqueue.sh
-+++ dracut/modules.d/98systemd/dracut-initqueue.sh
-@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook initqueue" 1:shortmem 2+:mem 3+:slab
- getarg 'rd.break=initqueue' -d 'rdbreak=initqueue' && emergency_shell -n initqueue "Break before initqueue"
- 
- RDRETRY=$(getarg rd.retry -d 'rd_retry=')
---- dracut.orig/modules.d/98systemd/dracut-pre-pivot.sh
-+++ dracut/modules.d/98systemd/dracut-pre-pivot.sh
-@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook pre-pivot" 1:shortmem 2+:mem 3+:slab
- # pre pivot scripts are sourced just before we doing cleanup and switch over
- # to the new root.
- getarg 'rd.break=pre-pivot' 'rdbreak=pre-pivot' && emergency_shell -n pre-pivot "Break pre-pivot"
---- dracut.orig/modules.d/98systemd/dracut-pre-trigger.sh
-+++ dracut/modules.d/98systemd/dracut-pre-trigger.sh
-@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook pre-trigger" 1:shortmem 2+:mem 3+:slab
- getargbool 0 rd.udev.info -n -y rdudevinfo && udevadm control --log-priority=info
- getargbool 0 rd.udev.debug -n -y rdudevdebug && udevadm control --log-priority=debug
- udevproperty "hookdir=$hookdir"
---- dracut.orig/modules.d/98systemd/dracut-pre-udev.sh
-+++ dracut/modules.d/98systemd/dracut-pre-udev.sh
-@@ -9,6 +9,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook pre-udev" 1:shortmem 2+:mem 3+:slab
- # pre pivot scripts are sourced just before we doing cleanup and switch over
- # to the new root.
- getarg 'rd.break=pre-udev' 'rdbreak=pre-udev' && emergency_shell -n pre-udev "Break pre-udev"
---- dracut.orig/dracut.cmdline.7.asc
-+++ dracut/dracut.cmdline.7.asc
-@@ -134,6 +134,10 @@ Debug
-     set -x for the dracut shell and logs to dmesg, console and
-     _/run/initramfs/init.log_
- 
-+**rd.memdebug=[0-3]**::
-+    print memory usage debug info, set the verbose level from 1 to 3
-+    print nothing when set rd.memdebug=0
-+
- **rd.break**::
-     drop to a shell at the end
- 
---- dracut.orig/modules.d/99base/dracut-lib.sh
-+++ dracut/modules.d/99base/dracut-lib.sh
-@@ -998,3 +998,93 @@ listlist() {
- are_lists_eq() {
-     listlist "$1" "$2" "$3" "$4" && listlist "$1" "$3" "$2" "$4"
- }
-+
-+setmemdebug() {
-+    if [ -z "$DEBUG_MEM_LEVEL" ]; then
-+        export DEBUG_MEM_LEVEL=$(getargnum 0 0 3 rd.memdebug)
-+    fi
-+}
-+
-+setmemdebug
-+
-+# parameters: msg [trace_level:trace]...
-+function make_trace_mem()
-+{
-+    msg=$1
-+    shift
-+    if [ "$DEBUG_MEM_LEVEL" -gt 0 ]; then
-+        make_trace show_memstats $DEBUG_MEM_LEVEL "[debug_mem]" "$msg" "$@"
-+    fi
-+}
-+
-+# parameters: func log_level prefix msg [trace_level:trace]...
-+function make_trace()
-+{
-+    func=$1
-+    shift
-+
-+    log_level=`echo "$1" | grep -o '^[0-9]\+'`
-+    shift
-+
-+    prefix=$1
-+    shift
-+
-+    msg=$1
-+    shift
-+
-+    if [ -z "$log_level" ]; then
-+        return
-+    fi
-+
-+    msg=`echo "$msg" | sed 's/^\s\+//'`
-+
-+    msg_printed=0
-+    while [ $# -gt 0 ]; do
-+        trace_level=`echo "$1" | grep -o '^[0-9]\+'`
-+        trace_in_higher_levels=`echo "$1" | grep -o '+'`
-+        trace=`echo $1 | sed "s/^.*://"`
-+
-+        if [ -z "$trace_level" ]; then
-+            trace_level=0
-+        fi
-+
-+        insert_trace=0
-+        if [ -n "$trace_in_higher_levels" ]; then
-+            if [ "$log_level" -ge "$trace_level" ]; then
-+                insert_trace=1
-+            fi
-+        else
-+            if [ "$log_level" -eq "$trace_level" ]; then
-+                insert_trace=1
-+            fi
-+        fi
-+
-+        if [ $insert_trace -eq 1 ]; then
-+            if [ $msg_printed -eq 0 ]; then
-+                echo "$prefix $msg"
-+                msg_printed=1
-+            fi
-+            $func $trace
-+        fi
-+        shift
-+    done
-+}
-+
-+# parameters: type
-+show_memstats()
-+{
-+    case $1 in
-+        shortmem)
-+            cat /proc/meminfo  | grep -e "^MemFree" -e "^Cached" -e "^Slab"
-+            ;;
-+        mem)
-+            cat /proc/meminfo
-+            ;;
-+        slab)
-+            cat /proc/slabinfo
-+            ;;
-+        iomem)
-+            cat /proc/iomem
-+            ;;
-+    esac
-+}
+Thanks,
+-Mahesh.
+-- 
+Mahesh J Salgaonkar
