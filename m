@@ -1,80 +1,174 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Firmware assisted dump support in dracut
-Date: Fri, 30 Nov 2012 10:31:57 -0500
-Message-ID: <20121130153157.GD12982@redhat.com>
-References: <20121128161234.GA8991@in.ibm.com>
- <50B73598.804@redhat.com>
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] dracut: add team device support
+Date: Sat, 01 Dec 2012 11:24:31 +0800
+Message-ID: <1354332271.9680.2.camel@cr0>
+References: <1352991509-31740-1-git-send-email-amwang@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <50B73598.804-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1352991509-31740-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Thu, Nov 29, 2012 at 11:14:48AM +0100, Harald Hoyer wrote:
+Ping...
 
-[..]
-> >    Now the question is whether it is possible for dracut to rebuild boot
-> >    initramfs in place? if Yes, is there any issues in rebuilding of boot
-> >    initramfs everytime when there is a change in /etc/kdump.conf?
-> 
-> dracut is called by /sbin/new-kernel-package. dracut is not a service, which is
-> run on every boot. So, no, dracut can't watch files and build an initramfs on
-> itsself.
-> 
-> Of course such a service could be created and create the initramfs on shutdown,
-> if any of the files, which should be watched, have changed.
-> 
-> This of course is a dangerous automatism, which might as well lead to a
-> unbootable system. Further steps (with grubby) would have to make sure, the last
-> bootable entry is still there, along with the last kernel version.
-> 
-> I was already thinking about creating such a monster, but this would involve to
-> reinvent the current /sbin/new-kernel-package / grubby infrastructure, which has
-> to be done anyway in the next years. The first step was to create a common
-> configuration file format for all the bootloaders, which they parse and display.
-> 
-> http://harald.fedorapeople.org/downloads/boot-unification.pdf
-> A simple boot manager parsing the config layout as a reference implementation:
-> http://freedesktop.org/wiki/Software/gummiboot
-> 
-> Next step is to patch grub2 to parse those config files and display the menu
-> entries.
-> 
-> Next step is to enhance /sbin/new-kernel-package and obsolete grubby.
-> 
-> Then, I think we are ready to create such a service.
+Any review? Harald?
 
-Once we create the infrastructure where we can regenerate the
-initramfs, then kdump service should be able to detect change in
-files and call relevant hook (new-kernel-package or whatever).
-
-So important point here seems to be that yes we will regenrate initramfs
-but we need to do it in such a way so that we retain the old bootable
-kernel/initramfs around in case new initramfs fails to boot.
-
-So this is like installing new kernel execpt the fact that there is no
-new kernel. It is old kernel but new initramfs. 
-
+On Thu, 2012-11-15 at 22:58 +0800, Cong Wang wrote:
+> This patch adds the initial support for team device.
+> A new cmdline team= is introduced for it.
 > 
-> > 
-> > 2. Make dracut tool fadump aware and it will build fadump aware initrd (default
-> > OS initrd) during kernel install. Once built, this initrd should never be
-> > rebuilt again. Which means the default initramfs will contain vmcore capture
-> > steps. This approach would pack all possible dracut modules (nfs, ssh, bonding
-> > etc.) so that the default initrd will be capable of supporting all possible
-> > dump target. Hence this approach will bloat the initramfs. On my Power test
-> > system, the size of the default initrd generated without any changes is 16M.
-> > With the above approach this size jumps to 27M.
+> Note, currently we don't support stacked devices
+> on/under team, it is tricky and can be added on request.
 > 
-> Yeah, this is crazy.
+> Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>
+> Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/40network/ifup.sh         |   20 +++++++++++++++
+>  modules.d/40network/module-setup.sh |    4 ++-
+>  modules.d/40network/net-genrules.sh |    5 ++++
+>  modules.d/40network/parse-team.sh   |   45 +++++++++++++++++++++++++++++++++++
+>  4 files changed, 73 insertions(+), 1 deletions(-)
+>  create mode 100755 modules.d/40network/parse-team.sh
+> 
+> diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+> index db233de..d5ec4e0 100755
+> --- a/modules.d/40network/ifup.sh
+> +++ b/modules.d/40network/ifup.sh
+> @@ -28,6 +28,15 @@ if [ -e /tmp/bond.info ]; then
+>      done
+>  fi
+>  
+> +if [ -e /tmp/team.info ]; then
+> +    . /tmp/team.info
+> +    for slave in $teamslaves ; do
+> +        if [ "$netif" = "$slave" ] ; then
+> +            netif=$teammaster
+> +        fi
+> +    done
+> +fi
+> +
+>  # bridge this interface?
+>  if [ -e /tmp/bridge.info ]; then
+>      . /tmp/bridge.info
+> @@ -167,6 +176,17 @@ if [ -e /tmp/bond.info ]; then
+>      fi
+>  fi
+>  
+> +if [ -e /tmp/team.info ]; then
+> +    . /tmp/team.info
+> +    if [ "$netif" = "$teammaster" ] && [ ! -e /tmp/net.$teammaster.up ] ; then
+> +        # team needs slaves to be down
+> +        for slave in $teamslaves ; do
+> +            ip link set $slave down
+> +        done
+> +        teamd -d -f /etc/teamd/$teammaster.conf
+> +        ip link set $teammaster up
+> +    fi
+> +fi
+>  
+>  # XXX need error handling like dhclient-script
+>  
+> diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+> index da0f447..f2a8f73 100755
+> --- a/modules.d/40network/module-setup.sh
+> +++ b/modules.d/40network/module-setup.sh
+> @@ -64,7 +64,7 @@ installkernel() {
+>      { find_kernel_modules_by_path drivers/net; if [ "$_arch" = "s390" -o "$_arch" = "s390x" ]; then find_kernel_modules_by_path drivers/s390/net; fi; } \
+>          | net_module_filter | instmods
+>  
+> -    instmods =drivers/net/phy ecb arc4 bridge stp llc ipv6 bonding 8021q af_packet virtio_net
+> +    instmods =drivers/net/phy ecb arc4 bridge stp llc ipv6 bonding 8021q af_packet virtio_net =drivers/net/team
+>  }
+>  
+>  install() {
+> @@ -72,6 +72,7 @@ install() {
+>      dracut_install ip arping dhclient sed
+>      dracut_install -o ping ping6
+>      dracut_install -o brctl
+> +    dracut_install -o teamd teamdctl teamnl
+>      inst_script "$moddir/ifup.sh" "/sbin/ifup"
+>      inst_script "$moddir/netroot.sh" "/sbin/netroot"
+>      inst_script "$moddir/dhclient-script.sh" "/sbin/dhclient-script"
+> @@ -82,6 +83,7 @@ install() {
+>      inst_hook cmdline 91 "$moddir/dhcp-root.sh"
+>      inst_hook cmdline 95 "$moddir/parse-vlan.sh"
+>      inst_hook cmdline 96 "$moddir/parse-bond.sh"
+> +    inst_hook cmdline 96 "$moddir/parse-team.sh"
+>      inst_hook cmdline 97 "$moddir/parse-bridge.sh"
+>      inst_hook cmdline 98 "$moddir/parse-ip-opts.sh"
+>      inst_hook cmdline 99 "$moddir/parse-ifname.sh"
+> diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
+> index 6a58ab5..f5cd200 100755
+> --- a/modules.d/40network/net-genrules.sh
+> +++ b/modules.d/40network/net-genrules.sh
+> @@ -34,6 +34,11 @@ fi
+>          IFACES+=" ${bondslaves%% *}"
+>      fi
+>  
+> +    if [ -e /tmp/team.info ]; then
+> +        . /tmp/team.info
+> +        IFACES+=" ${teamslaves}"
+> +    fi
+> +
+>      if [ -e /tmp/vlan.info ]; then
+>          . /tmp/vlan.info
+>          IFACES+=" $phydevice"
+> diff --git a/modules.d/40network/parse-team.sh b/modules.d/40network/parse-team.sh
+> new file mode 100755
+> index 0000000..182a5b7
+> --- /dev/null
+> +++ b/modules.d/40network/parse-team.sh
+> @@ -0,0 +1,45 @@
+> +#!/bin/sh
+> +#
+> +# Format:
+> +#       team=<teammaster>:<teamslaves>
+> +#
+> +#       teamslaves is a comma-separated list of physical (ethernet) interfaces
+> +#
+> +
+> +# return if team already parsed
+> +[ -n "$teammaster" ] && return
+> +
+> +# Check if team parameter is valid
+> +if getarg team= >/dev/null ; then
+> +    :
+> +fi
+> +
+> +# We translate list of slaves to space-separated here to mwke it easier to loop over them in ifup
+> +parseteam() {
+> +    local v=${1}:
+> +    set --
+> +    while [ -n "$v" ]; do
+> +        set -- "$@" "${v%%:*}"
+> +        v=${v#*:}
+> +    done
+> +
+> +    unset teammaster teamslaves
+> +    case $# in
+> +    2)  teammaster=$1; teamslaves=$(str_replace "$2" "," " ") ;;
+> +    *)  die "team= requires two parameters" ;;
+> +    esac
+> +}
+> +
+> +unset teammaster teamslaves
+> +
+> +if getarg team>/dev/null; then
+> +    # Read team= parameters if they exist
+> +    team="$(getarg team=)"
+> +    if [ ! "$team" = "team" ]; then
+> +        parseteam "$(getarg team=)"
+> +    fi
+> +    # Make it suitable for initscripts export
+> +    echo "teammaster=$teammaster" > /tmp/team.info
+> +    echo "teamslaves=\"$teamslaves\"" >> /tmp/team.info
+> +    return
+> +fi
 
-In the long term being able to regenerate initramfs in response to kdump
-configuration changes should prove to be a better way of doing things.
 
-Thanks
-Vivek
