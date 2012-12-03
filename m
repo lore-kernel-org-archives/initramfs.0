@@ -1,7 +1,7 @@
-From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/2] dracut: add team device support
-Date: Sat, 01 Dec 2012 11:24:31 +0800
-Message-ID: <1354332271.9680.2.camel@cr0>
+Date: Mon, 03 Dec 2012 11:11:45 +0800
+Message-ID: <50BC1871.4050009@redhat.com>
 References: <1352991509-31740-1-git-send-email-amwang@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -10,14 +10,11 @@ In-Reply-To: <1352991509-31740-1-git-send-email-amwang-H+wXaHxf7aLQT0dZR+AlfA@pu
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Ping...
+On 11/15/2012 10:58 PM, Cong Wang wrote:
 
-Any review? Harald?
-
-On Thu, 2012-11-15 at 22:58 +0800, Cong Wang wrote:
 > This patch adds the initial support for team device.
 > A new cmdline team= is introduced for it.
 > 
@@ -84,6 +81,19 @@ On Thu, 2012-11-15 at 22:58 +0800, Cong Wang wrote:
 >  
 > -    instmods =drivers/net/phy ecb arc4 bridge stp llc ipv6 bonding 8021q af_packet virtio_net
 > +    instmods =drivers/net/phy ecb arc4 bridge stp llc ipv6 bonding 8021q af_packet virtio_net =drivers/net/team
+
+
+
+40network installs all related kernel modules. This will create a big
+initramfs though some of them are not used at all.
+
+I'm thinking it's better to conditionally install them. In the long run
+maybe network module should be splited to to multiple modules.
+
+And for now I think it's better to install them only if there's team
+related user space tools in running system.
+
+
 >  }
 >  
 >  install() {
@@ -140,6 +150,14 @@ On Thu, 2012-11-15 at 22:58 +0800, Cong Wang wrote:
 > +if getarg team= >/dev/null ; then
 > +    :
 > +fi
+
+
+I do not understand why there's above checking, looks like it's useless.
+At the bottom of this file it's also checked.
+
+Is it intend to do some checking about the user space tools existence in
+if ... fi?
+
 > +
 > +# We translate list of slaves to space-separated here to mwke it easier to loop over them in ifup
 > +parseteam() {
@@ -172,3 +190,7 @@ On Thu, 2012-11-15 at 22:58 +0800, Cong Wang wrote:
 > +fi
 
 
+
+-- 
+Thanks
+Dave
