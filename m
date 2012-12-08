@@ -1,127 +1,48 @@
-From: Mahesh Jagannath Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Firmware assisted dump support in dracut
-Date: Thu, 06 Dec 2012 11:51:37 +0530
-Message-ID: <50C03971.4050104@linux.vnet.ibm.com>
-References: <20121128161234.GA8991@in.ibm.com> <50B73598.804@redhat.com>
+From: Robert Buchholz <robert.buchholz-oPu9J1iYZYchFhg+JK9F0w@public.gmane.org>
+Subject: dracut allow-discards, remaining issue
+Date: Sat, 08 Dec 2012 17:35:05 +0100
+Message-ID: <1354984505.3578.26.camel@saul>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <50B73598.804-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/29/2012 03:44 PM, Harald Hoyer wrote:
-> Am 28.11.2012 17:12, schrieb Mahesh J Salgaonkar:
->> Hi Harald,
->>
->> Last year I worked on adding Firmware assisted dump (fadump) support in
->> PowerLinux (ppc64). This feature is now accepted upstream Linux kernel and the
->> documentation is available at http://lwn.net/Articles/488132/
->>
->> Like kdump, fadump also exports the memory dump through /proc/vmcore in ELF
->> format. This enables us to reuse the existing kdump infrastructure for dump
->> capture and filtering. However, unlike kdump, fadump does not use kexec-based
->> approach, instead it depends on Power firmware to preserve the memory dump and
->> reboot into new kernel. This is what happens in fadump after crash:
->>
->> 1. At the crash, kernel informs power firmware that kernel has crashed.
->> 2. Firmware takes the control and reboots the entire system preserving only the
->> memory (resets all other devices).
->> 3. The reboot follows the normal booting process (non-kexec).
->> 4. The boot loader loads the default kernel and initrd from /boot
->>
->> I am working on integrating fadump with existing kdump infrastructure. The
->> current kdump infrastructure builds a separate initrd (whenever there is a
->> change detected in kdump config file /etc/kdump.conf) which then gets loaded
->> into memory by kexec tool for use by kdump kernel. But, in the fadump approach,
->> the second kernel (after crash) always use the default (OS built) initramfs.
->> Hence, to support fadump, change is required to introduce dump capturing steps
->> in default initramfs itself. Hence the possible approaches I am looking into
->> are:
->>
->> 1. Rebuild the default initramfs every time when there is a change detected in
->> kdump config file (/etc/kdump.conf)
->>    This approach would modify existing initramfs in place. I did work on this
->>    approach by enhancing mkdumprd (tool from kexec-tools package) to extract
->>    and rebuild default initramfs with dump capturing steps.  After discussing
->>    with Vivek Goyal, he suggested that better approach to add code to dracut
->>    for rebuilding boot initramfs instead of enhancing mkdumprd.  This means
->>    introducing a new dracut module that will be responsible for introducing
->>    dump capture steps inside the rebuilt initramfs by pulling required modules
->>    e.g. ssh, nfs etc. depending on /etc/kdump.conf
->>
->>    Now the question is whether it is possible for dracut to rebuild boot
->>    initramfs in place? if Yes, is there any issues in rebuilding of boot
->>    initramfs everytime when there is a change in /etc/kdump.conf?
-> 
-> dracut is called by /sbin/new-kernel-package. dracut is not a service, which is
-> run on every boot. So, no, dracut can't watch files and build an initramfs on
-> itsself.
-> 
+Hello Harald / list,
 
-Normally user would restart kdump service after changing kdump config
-file. Idea is to invoke dracut through kdump service, as it already
-watches and detect changes in kdump config files.
+thanks for merging my patch to the allow-discards code recently (this is
+in the 90crypt module) and addressing the problem of the missing
+getargbool default. However, there's still some issues remaining:
 
-I was wondering if dracut allow us to insert/install additional dracut
-modules to already existing initramfs? OR does it rebuild initramfs all
-over again?
+The getargbool logic should really go before the "if discarduuids=..." 
+case (instead of being an elif to it). Currently, the elif guard will
+always return false, because if the configured option were '1' or 'on'
+or any other string, the first case ('getargs...') would already be
+triggered.
 
-> Of course such a service could be created and create the initramfs on shutdown,
-> if any of the files, which should be watched, have changed.
-> 
-> This of course is a dangerous automatism, which might as well lead to a
-> unbootable system. Further steps (with grubby) would have to make sure, the last
-> bootable entry is still there, along with the last kernel version.
-> 
-> I was already thinking about creating such a monster, but this would involve to
-> reinvent the current /sbin/new-kernel-package / grubby infrastructure, which has
-> to be done anyway in the next years. The first step was to create a common
-> configuration file format for all the bootloaders, which they parse and display.
-> 
-> http://harald.fedorapeople.org/downloads/boot-unification.pdf
-> A simple boot manager parsing the config layout as a reference implementation:
-> http://freedesktop.org/wiki/Software/gummiboot
-> 
-> Next step is to patch grub2 to parse those config files and display the menu
-> entries.
+This shows that there is a conflict in 'allow-dicards' being an option
+with UUID substring matching as well as a boolean interpretation. If the
+user sets the option to '1' (which is True), it is not clear whether
+only LUKS devices with a UUID starting with 1 should allow discards
+(prefix-matching, this is the case now) or whether this should be
+enabled for all devices. On the other hand, the getargbool logic is not
+strict enough for handling the first 'if' case: If a user configured a
+specific UUID (say, luks-2345), it must be ensured discards is not
+enabled for all other devices. Thus, the getargbool function cannot be
+used: It considers all non-empty strings (except "0" and "no") to be
+True.
 
-I think once such a infrastructure exists, things would be much easier.
-Also, would it be possible to make such a infrastructure OS crash aware,
-so that it can load different initramfs in crash scenario and default
-initramfs in a normal boot process. I am not sure how practical this
-idea would be to implement.
+This whole thing either needs two options (allow-discards-for-device and
+allow-discards-for-all-devices) or a special boolean parser that only
+considers "1" and "yes" to be True, and everything else to be false.
+Documentation should be changed to mention that "1" is not considered a
+partial luks UUID.
 
-> 
-> Next step is to enhance /sbin/new-kernel-package and obsolete grubby.
-> 
-> Then, I think we are ready to create such a service.
-> 
->>
->> 2. Make dracut tool fadump aware and it will build fadump aware initrd (default
->> OS initrd) during kernel install. Once built, this initrd should never be
->> rebuilt again. Which means the default initramfs will contain vmcore capture
->> steps. This approach would pack all possible dracut modules (nfs, ssh, bonding
->> etc.) so that the default initrd will be capable of supporting all possible
->> dump target. Hence this approach will bloat the initramfs. On my Power test
->> system, the size of the default initrd generated without any changes is 16M.
->> With the above approach this size jumps to 27M.
-> 
-> Yeah, this is crazy.
-> 
->>
->> Since both the above approaches would require changes to dracut package, I would
->> like to know your views on above approaches.
->>
->> Thanks,
->> -Mahesh.
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+Cheers,
+
+Robert Buchholz
+
+PS: Please CC me on replies.
