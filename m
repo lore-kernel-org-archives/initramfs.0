@@ -1,137 +1,104 @@
 From: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] iscsi unit files and helper script
-Date: Tue, 11 Dec 2012 14:43:16 -0800
-Message-ID: <20121211224316.GB5307@straylight.hirudinean.org>
+Subject: Re: [systemd-devel] [RFC] iscsid / systemd / dracut integration
+ effort
+Date: Tue, 11 Dec 2012 15:26:46 -0800
+Message-ID: <20121211232646.GC5307@straylight.hirudinean.org>
 References: <1355177316-25803-1-git-send-email-cleech@redhat.com>
- <1355177316-25803-4-git-send-email-cleech@redhat.com>
- <50C7A9D7.8080900@cs.wisc.edu>
+ <50C67697.7020208@gmail.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <50C7A9D7.8080900-hcNo3dDEHLuVc3sceRu5cw@public.gmane.org>
+In-Reply-To: <50C67697.7020208-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mike Christie <michaelc-hcNo3dDEHLuVc3sceRu5cw@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+To: =?iso-8859-1?B?IkrzaGFubiBCLiBHdfBtdW5kc3NvbiI=?= <johannbg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, agrover-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On Tue, Dec 11, 2012 at 03:47:03PM -0600, Mike Christie wrote:
-> Thanks for working on this. Just one question. Is this patch for some
-> other package? How does it relate to the unit files in Tomasz's
-> patchset? He unit files with the same name.
+On Mon, Dec 10, 2012 at 11:56:07PM +0000, "J=F3hann B. Gu=F0mundsson" w=
+rote:
+> On 12/10/2012 10:08 PM, Chris Leech wrote:
+> >
+> >2) Proper ordering of the iscsi.service for non-root filesystems.
+> >
+> >Any and all feedback and/or help welcome.
+> >
+>=20
+> Looking the unit file for iscsid I do believe I missed this (
+> basically the same as multipath unit ) since you know it's early
+> boot special, root and all that ;)
+>=20
+> [Unit]
+>=20
+> # Before or After lvm2-activation-early.service
+> DefaultDependencies=3Dno
+> Conflicts=3Dshutdown.target
+>=20
+> [Install]
+> WantedBy=3Dsysinit.target
 
-I just diffed against an empty directory to show what I was testing
-with, it might have made more sense for this to not be a patch but I was
-on a roll.
+Thanks, this got me going in the right direction.  These unit files
+seems to be working much better for me, with the startup and shutdown
+ordering between iscsi, iscsid, and remote-fs mounts sorted out.  I'm
+not sure about the tgtd/targetcli stuff, not sure what the original nee=
+d
+there was.
 
-There's a difference between running as forking or simple here, but
-that's not a big deal.  And I've been making changes to my iscsi.service
-for automatic starting and stoping of sessions today, getting the
-ordering right to not run into problems with automatic mount points.
-
-I haven't run into any problems with the patches I posted, but I'm not
-happy with the unit files just yet.
+My non-root test install with /home on iSCSI also has a swap partition
+on it, and that's still causing me all sorts of trouble if I don't
+comment it out in fstab.  Trying to order all this before swap.target
+blew up in my face pretty good.
 
 - Chris
 
-> On 12/10/2012 04:08 PM, Chris Leech wrote:
-> > iSCSI service and socket files, and the iscsi_mark_root_nodes helper script to
-> > preserve sessions started in the initramfs.
-> > 
-> > diff -Naur a/iscsid.service b/iscsid.service
-> > --- a/iscsid.service	1969-12-31 16:00:00.000000000 -0800
-> > +++ b/iscsid.service	2012-12-10 13:38:38.643307001 -0800
-> > @@ -0,0 +1,9 @@
-> > +[Unit]
-> > +Description=Open-iSCSI
-> > +Documentation=man:iscsid(8) man:iscsiadm(8)
-> > +After=network.target NetworkManager-wait-online.service iscsiuio.service tgtd.service targetcli.service
-> > +
-> > +[Service]
-> > +Type=simple
-> > +ExecStart=/usr/sbin/iscsid -f -n
-> > +ExecStop=/sbin/iscsiadm -k 0 2
-> > diff -Naur a/iscsid.socket b/iscsid.socket
-> > --- a/iscsid.socket	1969-12-31 16:00:00.000000000 -0800
-> > +++ b/iscsid.socket	2012-12-10 13:38:38.643307001 -0800
-> > @@ -0,0 +1,9 @@
-> > +[Unit]
-> > +Description=Open-iSCSI iscsid Socket
-> > +Documentation=man:iscsid(8) man:iscsiadm(8)
-> > +
-> > +[Socket]
-> > +ListenStream=@ISCSIADM_ABSTRACT_NAMESPACE
-> > +
-> > +[Install]
-> > +WantedBy=sockets.target
-> > diff -Naur a/iscsi.service b/iscsi.service
-> > --- a/iscsi.service	1969-12-31 16:00:00.000000000 -0800
-> > +++ b/iscsi.service	2012-12-10 13:38:38.643307001 -0800
-> > @@ -0,0 +1,18 @@
-> > +[Unit]
-> > +Description=Login and scanning of iSCSI devices
-> > +Documentation=man:iscsiadm(8) man:iscsid(8)
-> > +#Requires=iscsid.service
-> > +#BindTo=iscsid.service
-> > +After=network.target NetworkManager-wait-online.service iscsid.service
-> > +ConditionPathExists=/etc/iscsi/initiatorname.iscsi
-> > +
-> > +[Service]
-> > +Type=oneshot
-> > +ExecStart=/usr/libexec/iscsi_mark_root_nodes
-> > +ExecStart=/sbin/iscsiadm -m node --loginall=automatic
-> > +ExecStop=/bin/sync
-> > +ExecStop=/sbin/iscsiadm -m node --logoutall=automatic
-> > +RemainAfterExit=true
-> > +
-> > +[Install]
-> > +WantedBy=remote-fs.target
-> > diff -Naur a/iscsiuio.service b/iscsiuio.service
-> > --- a/iscsiuio.service	1969-12-31 16:00:00.000000000 -0800
-> > +++ b/iscsiuio.service	2012-12-10 13:38:38.643307001 -0800
-> > @@ -0,0 +1,11 @@
-> > +[Unit]
-> > +Description=iSCSI UserSpace I/O driver
-> > +Documentation=man:iscsiuio(8)
-> > +Requires=iscsid.service
-> > +BindTo=iscsid.service
-> > +Before=iscsid.service
-> > +After=network.target NetworkManager-wait-online.service
-> > +
-> > +[Service]
-> > +Type=simple
-> > +ExecStart=/usr/sbin/iscsiuio -f
-> > diff -Naur a/iscsiuio.socket b/iscsiuio.socket
-> > --- a/iscsiuio.socket	1969-12-31 16:00:00.000000000 -0800
-> > +++ b/iscsiuio.socket	2012-12-10 13:38:38.643307001 -0800
-> > @@ -0,0 +1,9 @@
-> > +[Unit]
-> > +Description=Open-iSCSI iscsiuio
-> > +Documentation=man:iscsiuio(8)
-> > +
-> > +[Socket]
-> > +ListenStream=@ISCSID_UIP_ABSTRACT_NAMESPACE
-> > +
-> > +[Install]
-> > +WantedBy=sockets.target
-> > diff -Naur a/usr/libexec/iscsi_mark_root_nodes b/usr/libexec/iscsi_mark_root_nodes
-> > --- a/usr/libexec/iscsi_mark_root_nodes	1969-12-31 16:00:00.000000000 -0800
-> > +++ b/usr/libexec/iscsi_mark_root_nodes	2012-12-10 13:38:47.322082141 -0800
-> > @@ -0,0 +1,14 @@
-> > +#!/bin/bash
-> > +
-> > +ISCSIADM=/sbin/iscsiadm
-> > +SESSION_FILE=/run/initramfs/iscsi.sessions
-> > +
-> > +if [ ! -f $SESSION_FILE ] ; then
-> > +  exit 0
-> > +fi
-> > +
-> > +while read t num i target; do
-> > +  ip=${i%:*}
-> > +  $ISCSIADM -m node -p $ip -T $target -o update -n node.startup -v onboot
-> > +done < $SESSION_FILE
-> > +
-> > 
-> 
+--- iscsi.service ---
+
+[Unit]
+Description=3DLogin and scanning of iSCSI devices
+Documentation=3Dman:iscsiadm(8) man:iscsid(8)
+DefaultDependencies=3Dno
+Conflicts=3Dshutdown.target
+After=3Dsystemd-remount-fs.service network.target iscsid.service iscsiu=
+io.service
+Before=3Dremote-fs.target
+ConditionPathExists=3D/etc/iscsi/initiatorname.iscsi
+
+[Service]
+Type=3Doneshot
+ExecStart=3D/usr/libexec/iscsi_mark_root_nodes
+ExecStart=3D/sbin/iscsiadm -m node --loginall=3Dautomatic
+ExecStop=3D/bin/sync
+ExecStop=3D/sbin/iscsiadm -m node --logoutall=3Dautomatic
+RemainAfterExit=3Dtrue
+
+[Install]
+WantedBy=3Dsysinit.target
+
+--- iscsid.service ---
+
+[Unit]
+Description=3DOpen-iSCSI
+Documentation=3Dman:iscsid(8) man:iscsiadm(8)
+DefaultDependencies=3Dno
+Conflicts=3Dshutdown.target
+After=3Dnetwork.target tgtd.service targetcli.service
+Before=3Dremote-fs-pre.target
+
+[Service]
+Type=3Dsimple
+ExecStart=3D/usr/sbin/iscsid -f -n
+ExecStop=3D/sbin/iscsiadm -k 0 2
+
+--- iscsid.socket ---
+
+[Unit]
+Description=3DOpen-iSCSI iscsid Socket
+Documentation=3Dman:iscsid(8) man:iscsiadm(8)
+
+[Socket]
+ListenStream=3D@ISCSIADM_ABSTRACT_NAMESPACE
+
+[Install]
+WantedBy=3Dsockets.target
+
