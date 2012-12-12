@@ -1,10 +1,10 @@
 From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [patch 6/6 v3] Wait for interface up at the early stage
-Date: Wed, 12 Dec 2012 12:23:26 +0800
-Message-ID: <20121212042614.570389277@redhat.com>
+Subject: [patch 1/6 v3] Move wait for if functions to net lib
+Date: Wed, 12 Dec 2012 12:23:21 +0800
+Message-ID: <20121212042613.066368951@redhat.com>
 References: <20121212042320.618863612@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=patch6
+Content-Disposition: inline; filename=patch1
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -13,62 +13,95 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-In case long delay of network driver initqueue will exit before net dev is
-ready. We have no chance to setup it then.
-For dhcp, when we finish the setup there will be a setup_net_<dev>.ok. Doing
-same for static ip case. Also add a check to initqueue when we generate udev
-rules to ensure it's early enough.
-
-[v1->v2]: only wait for bootdev or it's possible to cause boot fail for 
-waiting for non-bootdev. For example bond0->eth0, set bond0 as bootdev and
-dhcp, we only need to wait bond0 setup ok.
+net-lib.sh are created for net related functions, move the wait_for_if* to
+net-lib.sh naturally.
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/40network/ifup.sh         |    1 +
- modules.d/40network/net-genrules.sh |    9 +++++++++
- 2 files changed, 10 insertions(+)
+ modules.d/40network/dhclient-script.sh |    1 +
+ modules.d/40network/net-lib.sh         |   23 +++++++++++++++++++++++
+ modules.d/95fcoe/fcoe-up.sh            |    1 +
+ modules.d/99base/dracut-lib.sh         |   23 -----------------------
+ 4 files changed, 25 insertions(+), 23 deletions(-)
 
---- dracut.orig/modules.d/40network/net-genrules.sh
-+++ dracut/modules.d/40network/net-genrules.sh
-@@ -43,6 +43,10 @@ fi
-         [ -e /tmp/net.ifaces ] && read IFACES < /tmp/net.ifaces
-     fi
+--- dracut.orig/modules.d/99base/dracut-lib.sh
++++ dracut/modules.d/99base/dracut-lib.sh
+@@ -481,29 +481,6 @@ else
+     }
+ fi
  
-+    if [ -e /tmp/net.bootdev ]; then
-+        bootdev=$(cat /tmp/net.bootdev)
-+    fi
-+
-     ifup='/sbin/ifup $env{INTERFACE}'
-     [ -z "$netroot" ] && ifup="$ifup -m"
+-wait_for_if_up() {
+-    local cnt=0
+-    local li
+-    while [ $cnt -lt 200 ]; do
+-        li=$(ip -o link show up dev $1)
+-        [ -n "$li" ] && return 0
+-        sleep 0.1
+-        cnt=$(($cnt+1))
+-    done
+-    return 1
+-}
+-
+-wait_for_route_ok() {
+-    local cnt=0
+-    while [ $cnt -lt 200 ]; do
+-        li=$(ip route show)
+-        [ -n "$li" ] && [ -z "${li##*$1*}" ] && return 0
+-        sleep 0.1
+-        cnt=$(($cnt+1))
+-    done
+-    return 1
+-}
+-
+ # root=nfs:[<server-ip>:]<root-dir>[:<nfs-options>]
+ # root=nfs4:[<server-ip>:]<root-dir>[:<nfs-options>]
+ nfsroot_to_var() {
+--- dracut.orig/modules.d/40network/net-lib.sh
++++ dracut/modules.d/40network/net-lib.sh
+@@ -322,3 +322,26 @@ parse_ifname_opts() {
+     esac
  
-@@ -51,14 +55,19 @@ fi
-     if [ -n "$BOOTIF" ] ; then
-         BOOTIF=$(fix_bootif "$BOOTIF")
-         printf 'ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="%s", RUN+="%s"\n' "$BOOTIF" "/sbin/initqueue --onetime $ifup"
-+        echo "[ -f /tmp/setup_net_${BOOTIF}.ok ]" >$hookdir/initqueue/finished/wait-${BOOTIF}.sh
- 
-     # If we have to handle multiple interfaces, handle only them.
-     elif [ -n "$IFACES" ] ; then
-         for iface in $IFACES ; do
-             printf 'SUBSYSTEM=="net", ENV{INTERFACE}=="%s", RUN+="%s"\n' "$iface" "/sbin/initqueue --onetime $ifup"
-+            if [ "$bootdev" = "$iface" ]; then
-+                echo "[ -f /tmp/setup_net_${iface}.ok ]" >$hookdir/initqueue/finished/wait-$iface.sh
-+            fi
-         done
- 
-     # Default: We don't know the interface to use, handle all
-+    # Fixme: waiting for the interface as well.
-     else
-         # if you change the name of "91-default-net.rules", also change modules.d/80cms/cmssetup.sh
-         printf 'SUBSYSTEM=="net", RUN+="%s"\n' "/sbin/initqueue --onetime $ifup" > /etc/udev/rules.d/91-default-net.rules
---- dracut.orig/modules.d/40network/ifup.sh
-+++ dracut/modules.d/40network/ifup.sh
-@@ -109,6 +109,7 @@ do_static() {
-     [ -n "$gw" ] && echo ip route add default via $gw dev $netif > /tmp/net.$netif.gw
-     [ -n "$hostname" ] && echo "echo $hostname > /proc/sys/kernel/hostname" > /tmp/net.$netif.hostname
- 
-+    > /tmp/setup_net_${netif}.ok
-     return 0
  }
++
++wait_for_if_up() {
++    local cnt=0
++    local li
++    while [ $cnt -lt 200 ]; do
++        li=$(ip -o link show up dev $1)
++        [ -n "$li" ] && return 0
++        sleep 0.1
++        cnt=$(($cnt+1))
++    done
++    return 1
++}
++
++wait_for_route_ok() {
++    local cnt=0
++    while [ $cnt -lt 200 ]; do
++        li=$(ip route show)
++        [ -n "$li" ] && [ -z "${li##*$1*}" ] && return 0
++        sleep 0.1
++        cnt=$(($cnt+1))
++    done
++    return 1
++}
+--- dracut.orig/modules.d/40network/dhclient-script.sh
++++ dracut/modules.d/40network/dhclient-script.sh
+@@ -51,6 +51,7 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ export PS4="dhclient.$interface.$$ + "
+ exec >>/run/initramfs/loginit.pipe 2>>/run/initramfs/loginit.pipe
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
++type ip_to_var >/dev/null 2>&1 || . /lib/net-lib.sh
  
+ # We already need a set netif here
+ netif=$interface
+--- dracut.orig/modules.d/95fcoe/fcoe-up.sh
++++ dracut/modules.d/95fcoe/fcoe-up.sh
+@@ -16,6 +16,7 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ export PS4="fcoe-up.$1.$$ + "
+ exec >>/run/initramfs/loginit.pipe 2>>/run/initramfs/loginit.pipe
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
++type ip_to_var >/dev/null 2>&1 || . /lib/net-lib.sh
+ 
+ netif=$1
+ dcb=$2
