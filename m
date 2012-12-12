@@ -1,156 +1,63 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] network: support multiple bonding interfaces
-Date: Wed, 12 Dec 2012 14:45:04 +0800
-Message-ID: <3a4c80307e5f44719a4fdc77e53063e1a8575614.1355294587.git.bhe@redhat.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+From: Tomasz Torcz <tomek-e+FrjxkDqoI/dUmziOgvOQ@public.gmane.org>
+Subject: Re: [systemd-devel] [RFC] iscsid / systemd / dracut integration
+ effort
+Date: Wed, 12 Dec 2012 21:45:46 +0100
+Message-ID: <20121212204545.GA23313@mother.jarsat.pl>
+References: <1355177316-25803-1-git-send-email-cleech@redhat.com>
+ <50C67697.7020208@gmail.com>
+ <20121211232646.GC5307@straylight.hirudinean.org>
+Reply-To: open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
+Mime-Version: 1.0
+Return-path: <open-iscsi+bncBDRLB3EU6IJRB66ZUODAKGQEFLKBH7Y-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=20120806;
+        h=x-beenthere:received-spf:date:from:to:cc:subject:message-id
+         :mail-followup-to:references:mime-version:in-reply-to:user-agent
+         :x-original-sender:x-original-authentication-results:reply-to
+         :precedence:mailing-list:list-id:x-google-group-id:list-post
+         :list-help:list-archive:sender:list-subscribe:list-unsubscribe
+         :content-type:content-disposition;
+        bh=F1EdJcfeqGc7Vrry5M+FGD6fs4t5SNMPdoX4fgqrlSM=;
+        b=Z+Oezb1V4CTdBlFSp2YdRLwfx5ABgA5sUvjMStAPGYWUyzPx58oyngSGfCdjG3fzrW
+         sE7gCmjKUyFBd43lKe76rKnHtRRuYaCybOrHzTlYm6Jt5efJuwYOIX/1+XSE0pUMyxa/
+         D1pDA+1FpNQgfUtfjm2qI/ZrF0LRYTnd3y5+sH8hx2Ru+OTGb/VBklwLWINKkO2DQC/K
+         dEW2HyNdm4CalG8wXGOzUfBCz/z7L4GiN/XrEfL6mMTKmWfbFYOUzhZZDD1CySfcI7Fi
+         RVhR5x/ujUBoD8dMExqW3asihP4a 
+In-Reply-To: <20121211232646.GC5307-r8IHplWLGbA5tHQWs+pTeqPFFGjUI2lm2LY78lusg7I@public.gmane.org>
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+List-Post: <http://groups.google.com/group/open-iscsi/post?hl=en_US>, <mailto:open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>
+List-Help: <http://groups.google.com/support/?hl=en_US>, <mailto:open-iscsi+help-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>
+List-Archive: <http://groups.google.com/group/open-iscsi?hl=en_US>
+Sender: open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
+List-Subscribe: <http://groups.google.com/group/open-iscsi/subscribe?hl=en_US>,
+ <mailto:open-iscsi+subscribe-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>
+List-Unsubscribe: <http://groups.google.com/group/open-iscsi/subscribe?hl=en_US>,
+ <mailto:googlegroups-manage+856124926423+unsubscribe-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>
+Content-Disposition: inline
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
+Cc: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, =?utf-8?B?IkrDs2hhbm4gQi4gR3XDsG11bmRzc29uIg==?= <johannbg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, agrover-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> 
+On Tue, Dec 11, 2012 at 03:26:46PM -0800, Chris Leech wrote:
+> Thanks, this got me going in the right direction.  These unit files
+> seems to be working much better for me, with the startup and shutdown
+> ordering between iscsi, iscsid, and remote-fs mounts sorted out.  I'm
+> not sure about the tgtd/targetcli stuff, not sure what the original need
+> there was.
 
-Currently dracut only support 1 bond, namyly bond0 by default. However multiple
-bonds configuration may be needed. For example in kdump, in 1st kernel, more
-than one bonds may be configured, and bondX other than bond0 is used as output
-interface to remote host which will store dump core. This patch can solve this
-problem, to write real bond information to initramfs, 2nd kdump kernel will
-use it to create the relevant bondX interface.
+  "After tgtd" was added in Fedora for cases when system accesses targets
+exported by the same system. So targets would be configured first, and
+only then accessed by iscsid.  "after tgtd" was added, "after targetcli" is natural
+expansion of it.
 
-Tested-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/40network/ifup.sh         |   15 ++++++++++-----
- modules.d/40network/net-genrules.sh |    9 ++++++---
- modules.d/40network/parse-bond.sh   |    6 +++---
- modules.d/40network/parse-bridge.sh |    6 ------
- modules.d/45ifcfg/write-ifcfg.sh    |    9 +++++----
- 5 files changed, 24 insertions(+), 21 deletions(-)
-
-diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
-index 70bc161..c425b25 100755
---- a/modules.d/40network/ifup.sh
-+++ b/modules.d/40network/ifup.sh
-@@ -19,14 +19,18 @@ type ip_to_var >/dev/null 2>&1 || . /lib/net-lib.sh
- netif=$1
- 
- # enslave this interface to bond?
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
-+for i in /tmp/bond.*.info; do
-+    [ -e "$i" ] || continue
-+    unset bondslaves
-+    unset bondname
-+    . "$i"
-     for slave in $bondslaves ; do
-         if [ "$netif" = "$slave" ] ; then
-             netif=$bondname
-+            break 2
-         fi
-     done
--fi
-+done
- 
- # bridge this interface?
- if [ -e /tmp/bridge.info ]; then
-@@ -122,11 +126,12 @@ if [ "$netif" = "lo" ] ; then
- fi
- 
- # start bond if needed
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
-+if [ -e /tmp/bond.${netif}.info ]; then
-+    . /tmp/bond.${netif}.info
- 
-     if [ "$netif" = "$bondname" ] && [ ! -e /tmp/net.$bondname.up ] ; then # We are master bond device
-         modprobe bonding
-+        echo "+$netif" >  /sys/class/net/bonding_masters
-         ip link set $netif down
- 
-         # Stolen from ifup-eth
-diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
-index d2197ff..abb6087 100755
---- a/modules.d/40network/net-genrules.sh
-+++ b/modules.d/40network/net-genrules.sh
-@@ -28,11 +28,14 @@ fi
-     fi
- 
-     # bond: attempt only the defined interface (override bridge defines)
--    if [ -e /tmp/bond.info ]; then
--        . /tmp/bond.info
-+    for i in /tmp/bond.*.info; do
-+        [ -e "$i" ] || continue
-+        unset bondslaves
-+        unset bondname
-+        . "$i"
-         # It is enough to fire up only one
-         IFACES+=" ${bondslaves%% *}"
--    fi
-+    done
- 
-     if [ -e /tmp/vlan.info ]; then
-         . /tmp/vlan.info
-diff --git a/modules.d/40network/parse-bond.sh b/modules.d/40network/parse-bond.sh
-index 983eb3a..25c51b8 100755
---- a/modules.d/40network/parse-bond.sh
-+++ b/modules.d/40network/parse-bond.sh
-@@ -54,8 +54,8 @@ if getarg bond >/dev/null; then
-     fi
-     # Make it suitable for initscripts export
-     bondoptions=$(str_replace "$bondoptions" ";" ",")
--    echo "bondname=$bondname" > /tmp/bond.info
--    echo "bondslaves=\"$bondslaves\"" >> /tmp/bond.info
--    echo "bondoptions=\"$bondoptions\"" >> /tmp/bond.info
-+    echo "bondname=$bondname" > /tmp/bond.${bondname}.info
-+    echo "bondslaves=\"$bondslaves\"" >> /tmp/bond.${bondname}.info
-+    echo "bondoptions=\"$bondoptions\"" >> /tmp/bond.${bondname}.info
-     return
- fi
-diff --git a/modules.d/40network/parse-bridge.sh b/modules.d/40network/parse-bridge.sh
-index 1f027bb..8c305c0 100755
---- a/modules.d/40network/parse-bridge.sh
-+++ b/modules.d/40network/parse-bridge.sh
-@@ -37,12 +37,6 @@ parsebridge() {
- unset bridgename ethnames
- 
- iface=eth0
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
--    if [ -n "$bondname" ] ; then
--        iface=$bondname
--    fi
--fi
- 
- # Parse bridge for bridgename and ethnames
- if bridge="$(getarg bridge)"; then
-diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
-index ae37358..57dbe60 100755
---- a/modules.d/45ifcfg/write-ifcfg.sh
-+++ b/modules.d/45ifcfg/write-ifcfg.sh
-@@ -9,10 +9,6 @@ udevadm settle --timeout=30
- 
- read IFACES < /tmp/net.ifaces
- 
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
--fi
--
- if [ -e /tmp/bridge.info ]; then
-     . /tmp/bridge.info
- fi
-@@ -89,6 +85,11 @@ for netif in $IFACES ; do
-     # bridge?
-     unset bridge
-     unset bond
-+    unset bondslaves
-+    unset bondname
-+    unset bondoptions
-+    [ -e /tmp/bond.${netif}.info ] && . /tmp/bond.${netif}.info
-+
-     uuid=$(cat /proc/sys/kernel/random/uuid)
-     if [ "$netif" = "$bridgename" ]; then
-         bridge=yes
 -- 
-1.7.1
+Tomasz Torcz                 Morality must always be based on practicality.
+xmpp: zdzichubg-veJsmC5npURmR6Xm/wNWPw@public.gmane.org                -- Baron Vladimir Harkonnen
+
+-- 
+You received this message because you are subscribed to the Google Groups "open-iscsi" group.
+To post to this group, send email to open-iscsi-/JYPxA39Uh5TLH3MbocFF+G/Ez6ZCGd0@public.gmane.org
+To unsubscribe from this group, send email to open-iscsi+unsubscribe-/JYPxA39Uh5TLH3MbocFF+G/Ez6ZCGd0@public.gmane.org
+For more options, visit this group at http://groups.google.com/group/open-iscsi?hl=en.
+
