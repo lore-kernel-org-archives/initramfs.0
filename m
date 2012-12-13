@@ -1,31 +1,38 @@
-From: Andy Grover <agrover-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [systemd-devel] [RFC] iscsid / systemd / dracut integration effort
-Date: Wed, 12 Dec 2012 16:45:46 -0800
-Message-ID: <50C9253A.6060409@redhat.com>
-References: <1355177316-25803-1-git-send-email-cleech@redhat.com> <50C67697.7020208@gmail.com> <20121211232646.GC5307@straylight.hirudinean.org> <20121212204545.GA23313@mother.jarsat.pl>
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] dracut: add team device support
+Date: Thu, 13 Dec 2012 13:12:00 +0800
+Message-ID: <1355375520.14802.22.camel@cr0>
+References: <1352991509-31740-1-git-send-email-amwang@redhat.com>
+	 <50BC1871.4050009@redhat.com> <1354505223.28101.11.camel@cr0>
+	 <20121203142452.GB3054@minipsycho.orion> <20121204221839.GE5738@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20121212204545.GA23313-bmXekecGUa3k6X4NQihNpw@public.gmane.org>
+In-Reply-To: <20121204221839.GE5738-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, =?ISO-8859-1?Q?=22J=F3hann_B=2E_Gu=F0mundsson=22?= <johannbg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 12/12/2012 12:45 PM, Tomasz Torcz wrote:
-> On Tue, Dec 11, 2012 at 03:26:46PM -0800, Chris Leech wrote:
->> Thanks, this got me going in the right direction.  These unit files
->> seems to be working much better for me, with the startup and shutdown
->> ordering between iscsi, iscsid, and remote-fs mounts sorted out.  I'm
->> not sure about the tgtd/targetcli stuff, not sure what the original need
->> there was.
+On Tue, 2012-12-04 at 17:18 -0500, Vivek Goyal wrote:
 > 
->   "After tgtd" was added in Fedora for cases when system accesses targets
-> exported by the same system. So targets would be configured first, and
-> only then accessed by iscsid.  "after tgtd" was added, "after targetcli" is natural
-> expansion of it.
+> Will they be included in host only mode too (-H, --host-only) ? We use 
+> hostonly option for building kdump initramfs. So if root is not on team
+> device, will it still be included.
+> 
+> If no, it is fine but if yes, then we need to fix it. We try very hard to
+> keep kdump initramfs size small.
 
-See, I figured target should come after initiator, so target could
-re-export iscsi-initiator-backed block devices :-)
+Actually, instmods() checks hostonly flag and calls
+module_is_host_only() to check if the module is loaded by the first
+kernel. So, we don't need to worry about it at all. Same for
+`dracut_install -o`
 
--- Andy
+I am going to fix the active-backup mode, but it seems the latest teamd
+is still not ready for this, it at least should not error out when any
+port in the config file disappears. I am still checking this with Jiri.
+
+Good news is that teamdctl now can connect to teamd via unix socket.
+
+Thanks!
