@@ -1,43 +1,36 @@
-From: dave-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org (Dave Young)
-Subject: [PATCH] use linkup in dhclient-script.sh
-Date: Sun, 06 Jan 2013 14:17:54 +0800
-Message-ID: <20130106061754.A96B664097@darkstar.nay.redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>
+Subject: [patch dracut] fix teamd exec in case config does not include devname
+Date: Thu, 10 Jan 2013 14:24:18 +0100
+Message-ID: <1357824258-908-1-git-send-email-jiri@resnulli.us>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
+In case that configuration file did not include name of team device,
+teamd would not start. Fix this by adding "-t" parameter.
 
-linkup is a wrapper function for waiting interface ready and up.
-change to use linkup as what we do in ifup script.
-
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Jiri Pirko <jiri-rHqAuBHg3fBzbRFIqnYvSA@public.gmane.org>
 ---
- modules.d/40network/dhclient-script.sh |    6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ modules.d/40network/ifup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---- dracut.orig/modules.d/40network/dhclient-script.sh
-+++ dracut/modules.d/40network/dhclient-script.sh
-@@ -25,8 +25,7 @@ setup_interface() {
-         if ! ip link set $netif mtu $mtu ; then
-             ip link set $netif down
-             ip link set $netif mtu $mtu
--            ip link set $netif up
--            wait_for_if_up $netif
-+            linkup $netif
-         fi
-     fi
- 
-@@ -62,8 +61,7 @@ netif=$interface
- case $reason in
-     PREINIT)
-         echo "dhcp: PREINIT $netif up"
--        ip link set $netif up
--        wait_for_if_up $netif
-+        linkup $netif
-         ;;
-     BOUND)
-         echo "dhcp: BOND setting $netif"
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index 216b1e3..1e271da 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -187,7 +187,7 @@ if [ -e /tmp/team.info ]; then
+             fi
+         done
+         # Do not add slaves now
+-        teamd -d -U -n -f /etc/teamd/$teammaster.conf
++        teamd -d -U -n -f -t $teammaster /etc/teamd/$teammaster.conf
+         for slave in $working_slaves; do
+             # team requires the slaves to be down before joining team
+             ip link set $slave down
+-- 
+1.8.1
