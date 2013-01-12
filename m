@@ -1,103 +1,43 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2 v2] Add memory usage trace to diffrent hook points
-Date: Fri, 11 Jan 2013 11:00:12 +0100
-Message-ID: <50EFE2AC.7020704@redhat.com>
-References: <20121126023852.GA6886@localhost.localdomain> <20121127223330.GG6964@redhat.com> <50B5CF24.6090006@redhat.com> <50EFD5D8.1070508@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 1/2] dracut-functions.sh: support for alternative udev dirs - udevaltdirs
+Date: Sat, 12 Jan 2013 20:48:47 +0100
+Message-ID: <1358020128-20693-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <50EFD5D8.1070508-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-Am 11.01.2013 10:05, schrieb Dave Young:
-> 
-> Hello harald
-> 
-> What's your opinion about this patch? Could you take a look at it?
->> --- dracut.orig/modules.d/99base/dracut-lib.sh
->> +++ dracut/modules.d/99base/dracut-lib.sh
->> @@ -998,3 +998,93 @@ listlist() {
->>  are_lists_eq() {
->>      listlist "$1" "$2" "$3" "$4" && listlist "$1" "$3" "$2" "$4"
->>  }
->> +
->> +setmemdebug() {
->> +    if [ -z "$DEBUG_MEM_LEVEL" ]; then
->> +        export DEBUG_MEM_LEVEL=$(getargnum 0 0 3 rd.memdebug)
->> +    fi
->> +}
->> +
->> +setmemdebug
->> +
->> +# parameters: msg [trace_level:trace]...
->> +function make_trace_mem()
->> +{
->> +    msg=$1
->> +    shift
->> +    if [ "$DEBUG_MEM_LEVEL" -gt 0 ]; then
->> +        make_trace show_memstats $DEBUG_MEM_LEVEL "[debug_mem]" "$msg" "$@"
->> +    fi
->> +}
->> +
->> +# parameters: func log_level prefix msg [trace_level:trace]...
->> +function make_trace()
->> +{
->> +    func=$1
->> +    shift
->> +
->> +    log_level=`echo "$1" | grep -o '^[0-9]\+'`
+It is required for Gentoo which moves udev from / to /usr and supports
+both /lib/udev and /usr/lib/udev for compatibility with other packages.
 
-* use $() instead of ``
+Credits go to Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>.
+---
+ dracut-functions.sh | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-
-* grep is overkill use simple shell functions
-
-There are in modules.d/99base/dracut-lib.sh
-strstr()
-str_starts()
-str_ends()
-
-* or use "case"
-
-case "$1" in
-    [0-9]*) log_level=$1;;
-esac
-
->> +    shift
->> +
->> +    prefix=$1
->> +    shift
->> +
->> +    msg=$1
->> +    shift
->> +
->> +    if [ -z "$log_level" ]; then
->> +        return
->> +    fi
->> +
->> +    msg=`echo "$msg" | sed 's/^\s\+//'`
-
-sed is overkill for this. Use
-${var%%...}
-${var%...}
-${var#...}
-${var##...}
-
-$ msg="foo+bar baz"
-$ echo ${msg#*+}
-bar baz
-
-
->> +
->> +    msg_printed=0
->> +    while [ $# -gt 0 ]; do
->> +        trace_level=`echo "$1" | grep -o '^[0-9]\+'`
->> +        trace_in_higher_levels=`echo "$1" | grep -o '+'`
->> +        trace=`echo $1 | sed "s/^.*://"`
-
-same same
-
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index 5481368..5b6394e 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -901,6 +901,15 @@ inst_rules() {
+     inst_dir "$_target"
+     for _rule in "$@"; do
+         if [ "${_rule#/}" = "$_rule" ]; then
++            for r in ${udevaltdirs}; do
++                [[ "$r" = "${udevdir}" ]] && continue
++                if [[ -f $r/rules.d/$_rule ]]; then
++                    _found="$r/rules.d/$_rule"
++                    inst_rule_programs "$_found"
++                    inst_rule_group_owner "$_found"
++                    inst_simple "$_found" "${udevdir}/rules.d/${_found##*/}"
++                fi
++            done
+             for r in ${udevdir}/rules.d /etc/udev/rules.d; do
+                 if [[ -f $r/$_rule ]]; then
+                     _found="$r/$_rule"
+-- 
+1.8.1
