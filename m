@@ -1,38 +1,73 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] gentoo.conf: let udevdir= be handled by pkg-config and use udevaltdirs
-Date: Sat, 12 Jan 2013 20:48:48 +0100
-Message-ID: <1358020128-20693-2-git-send-email-aidecoe@aidecoe.name>
-References: <1358020128-20693-1-git-send-email-aidecoe@aidecoe.name>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] add function getargnum
+Date: Mon, 14 Jan 2013 16:57:29 +0800
+Message-ID: <50F3C879.6020009@redhat.com>
+References: <20121126023847.GA6884@localhost.localdomain> <50EFE278.6040509@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1358020128-20693-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <50EFE278.6040509-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-To avoid need of rebuild after udev update/downgrade let udevdir= be set
-dynamically with pkg-config.  Use udevaltdirs to search for rules both
-in old and new locations.
----
- dracut.conf.d/gentoo.conf.example | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+On 01/11/2013 05:59 PM, Harald Hoyer wrote:
+> Am 26.11.2012 03:38, schrieb Dave Young:
+>>
+>>
+>> For cmdline argument with numeric value, add a new function getargnum
+>> It will get proper value with default value as $1, max value as $2.
+>> valid result will be echo to stdout, for nul or value not valid it will just
+>> echo the default value.
+>>
+>> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> ---
+>>  modules.d/99base/dracut-lib.sh |   19 +++++++++++++++++++
+>>  1 file changed, 19 insertions(+)
+>>
+>> --- dracut.orig/modules.d/99base/dracut-lib.sh
+>> +++ dracut/modules.d/99base/dracut-lib.sh
+>> @@ -167,6 +167,25 @@ getargbool() {
+>>      return 0
+>>  }
+>>  
+>> +# getargnum <defaultval> <maxval> <args...>
+>> +# Will echo the arg if it's in range [0 - maxval].
+>> +# If it's not set or it's not valid, will set it <defaultval>.
+>> +getargnum() {
+>> +    local _b
+>> +    unset _b
+>> +    local _default
+>> +    local _max
+>> +    _default=$1; shift
+>> +    _max=$1; shift
+>> +    _b=$(getarg "$@")
+>> +    [ $? -ne 0 -a -z "$_b" ] && _b=$_default
+>> +    if [ -n "$_b" ]; then
+>> +        [[ "$_b" =~ ^[0-9]+$ ]] && _b=$(($_b)) && \
+> 
+> we can't use "=~" because it's not posix shell. We restricted ourselves to dash
+> syntax in the initramfs. sorry.
 
-diff --git a/dracut.conf.d/gentoo.conf.example b/dracut.conf.d/gentoo.conf.example
-index 1361a30..b78e5c6 100644
---- a/dracut.conf.d/gentoo.conf.example
-+++ b/dracut.conf.d/gentoo.conf.example
-@@ -1,7 +1,8 @@
- # /etc/dracut.conf.d/gentoo.conf
- # dracut config file customized for Gentoo Base System release 2
- 
--udevdir=/lib/udev
-+udevdir=
-+udevaltdirs="/lib/udev /usr/lib/udev"
- ro_mnt=yes
- 
- #
+Will fix, thanks for review.
+
+> 
+> 
+>> +        [[ $_b -ge 0 && $_b -le $_max ]] && echo $_b && return
+>> +    fi
+>> +    echo $_default
+>> +}
+>> +
+>>  _dogetargs() {
+>>      debug_off
+>>      local _o _found _key
+>>
+> 
+
+
 -- 
-1.8.1
+Thanks
+Dave
+
