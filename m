@@ -1,10 +1,10 @@
 From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 1/2 V3] add function getargnum
-Date: Thu, 17 Jan 2013 16:55:50 +0800
-Message-ID: <20130117085724.062434676@redhat.com>
+Subject: [PATCH 2/2 V3] Add memory usage trace to diffrent hook points
+Date: Thu, 17 Jan 2013 16:55:51 +0800
+Message-ID: <20130117085724.212324334@redhat.com>
 References: <20130117085549.207542806@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=patch1
+Content-Disposition: inline; filename=patch2
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -13,55 +13,215 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-For cmdline argument with numeric value, add a new function getargnum
-It will get proper value with default value as $1, min value as $2,
-max value as $3, and param name as $4. valid result will be echo to stdout.
-for nul or value not valid it will just echo the default value.
-Note: The values should be >=0
+Port mkdumprd memory trace functions wrote by jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+For kdump, memory usage tracing is important because there's limited
+memory in kdump 2nd kernel.
 
-[v1->v2]: add arg <minval>
-[v2->v3]: do not use bash string match =~
+Add a rd.memdebug cmdline for this. set rd.memdebug=<X> will set the
+debug level to X which is the debug verbose level.
+
+the format of cmdline is like below:
+<level>[+]:<type>
+<level> is the debug level
+[+] means debug level >= <level>
+<type> is the debug info type, as for this patch I added mem, iomem, slab
+mem is for /proc/meminfo, iomem is for /proc/iomem, slab is for /proc/slabinfo
+Also shortmem is the stripped /proc/meminfo which only includes 3 lines of
+Memfree, Cached and Slab, for example:
+MemFree:         6327176 kB
+Cached:           741916 kB
+Slab:              77284 kB
+
+I added several trace point to the begin of several init hooks
+At cmdline hooks I'm adding trace of "1+:mem 1+:iomem 3+:slab"
+For other hooks I'm adding trace of "1:shortmem 2+:mem 3+:slab"
+
+This means:
+rd.memdebug=1)
+  cmdline hook: print mem and iomem
+  other hooks: print shortmem
+rd.memdebug=2)
+  cmdline hook: print mem and iomem
+  other hooks: print mem
+rd.memdebug=3):
+  cmdline hook: print mem iomem, and slabinfo
+  other hooks: print mem and slabinfo
+*):
+  do not print any mem debug info
+
+[v1->v2]: update to use getargnum with <minval> as argument
+          print iomem info at cmdline hook as well
+[v2->v3]: harald: use $() instead of ``
+                  use bash string match instead of grep and pipe.
 
 Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/99base/dracut-lib.sh |   29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ dracut.cmdline.7.asc                      |    4 +
+ modules.d/98systemd/dracut-cmdline.sh     |    1 
+ modules.d/98systemd/dracut-initqueue.sh   |    1 
+ modules.d/98systemd/dracut-pre-pivot.sh   |    1 
+ modules.d/98systemd/dracut-pre-trigger.sh |    1 
+ modules.d/98systemd/dracut-pre-udev.sh    |    1 
+ modules.d/99base/dracut-lib.sh            |   91 ++++++++++++++++++++++++++++++
+ 7 files changed, 100 insertions(+)
 
+--- dracut.orig/modules.d/98systemd/dracut-cmdline.sh
++++ dracut/modules.d/98systemd/dracut-cmdline.sh
+@@ -18,6 +18,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
+ 
+ source_conf /etc/conf.d
+ 
++make_trace_mem "hook cmdline" 1+:mem 1+:iomem 3+:slab
+ # run scriptlets to parse the command line
+ getarg 'rd.break=cmdline' -d 'rdbreak=cmdline' && emergency_shell -n cmdline "Break before cmdline"
+ source_hook cmdline
+--- dracut.orig/modules.d/98systemd/dracut-initqueue.sh
++++ dracut/modules.d/98systemd/dracut-initqueue.sh
+@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
+ 
+ source_conf /etc/conf.d
+ 
++make_trace_mem "hook initqueue" 1:shortmem 2+:mem 3+:slab
+ getarg 'rd.break=initqueue' -d 'rdbreak=initqueue' && emergency_shell -n initqueue "Break before initqueue"
+ 
+ RDRETRY=$(getarg rd.retry -d 'rd_retry=')
+--- dracut.orig/modules.d/98systemd/dracut-pre-pivot.sh
++++ dracut/modules.d/98systemd/dracut-pre-pivot.sh
+@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
+ 
+ source_conf /etc/conf.d
+ 
++make_trace_mem "hook pre-pivot" 1:shortmem 2+:mem 3+:slab
+ # pre pivot scripts are sourced just before we doing cleanup and switch over
+ # to the new root.
+ getarg 'rd.break=pre-pivot' 'rdbreak=pre-pivot' && emergency_shell -n pre-pivot "Break pre-pivot"
+--- dracut.orig/modules.d/98systemd/dracut-pre-trigger.sh
++++ dracut/modules.d/98systemd/dracut-pre-trigger.sh
+@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
+ 
+ source_conf /etc/conf.d
+ 
++make_trace_mem "hook pre-trigger" 1:shortmem 2+:mem 3+:slab
+ getargbool 0 rd.udev.info -n -y rdudevinfo && udevadm control --log-priority=info
+ getargbool 0 rd.udev.debug -n -y rdudevdebug && udevadm control --log-priority=debug
+ udevproperty "hookdir=$hookdir"
+--- dracut.orig/modules.d/98systemd/dracut-pre-udev.sh
++++ dracut/modules.d/98systemd/dracut-pre-udev.sh
+@@ -9,6 +9,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
+ 
+ source_conf /etc/conf.d
+ 
++make_trace_mem "hook pre-udev" 1:shortmem 2+:mem 3+:slab
+ # pre pivot scripts are sourced just before we doing cleanup and switch over
+ # to the new root.
+ getarg 'rd.break=pre-udev' 'rdbreak=pre-udev' && emergency_shell -n pre-udev "Break pre-udev"
+--- dracut.orig/dracut.cmdline.7.asc
++++ dracut/dracut.cmdline.7.asc
+@@ -143,6 +143,10 @@ It should be attached to any report abou
+     If systemd is not active, the logs are written to dmesg and _/run/initramfs/init.log_.
+     If "quiet" is set, it also logs to the console.
+ 
++**rd.memdebug=[0-3]**::
++    print memory usage debug info, set the verbose level from 1 to 3
++    print nothing when set rd.memdebug=0
++
+ **rd.break**::
+     drop to a shell at the end
+ 
 --- dracut.orig/modules.d/99base/dracut-lib.sh
 +++ dracut/modules.d/99base/dracut-lib.sh
-@@ -167,6 +167,35 @@ getargbool() {
-     return 0
+@@ -994,3 +994,94 @@ listlist() {
+ are_lists_eq() {
+     listlist "$1" "$2" "$3" "$4" && listlist "$1" "$3" "$2" "$4"
  }
- 
-+isdigit() {
-+    case "$1" in
-+        *[!0-9]*|"") return 1;;
-+    esac
 +
-+    return 0
-+}
-+
-+# getargnum <defaultval> <minval> <maxval> <arg>
-+# Will echo the arg if it's in range [minval - maxval].
-+# If it's not set or it's not valid, will set it <defaultval>.
-+# Note all values are required to be >= 0 here.
-+# <defaultval> should be with [minval -maxval].
-+getargnum() {
-+    local _b
-+    unset _b
-+    local _default _min _max
-+    _default=$1; shift
-+    _min=$1; shift
-+    _max=$1; shift
-+    _b=$(getarg "$1")
-+    [ $? -ne 0 -a -z "$_b" ] && _b=$_default
-+    if [ -n "$_b" ]; then
-+        isdigit "$_b" && _b=$(($_b)) && \
-+        [[ $_b -ge $_min && $_b -le $_max ]] && echo $_b && return
++setmemdebug() {
++    if [ -z "$DEBUG_MEM_LEVEL" ]; then
++        export DEBUG_MEM_LEVEL=$(getargnum 0 0 3 rd.memdebug)
 +    fi
-+    echo $_default
 +}
 +
- _dogetargs() {
-     debug_off
-     local _o _found _key
++setmemdebug
++
++# parameters: msg [trace_level:trace]...
++function make_trace_mem()
++{
++    msg=$1
++    shift
++    if [ "$DEBUG_MEM_LEVEL" -gt 0 ]; then
++        make_trace show_memstats $DEBUG_MEM_LEVEL "[debug_mem]" "$msg" "$@"
++    fi
++}
++
++# parameters: func log_level prefix msg [trace_level:trace]...
++function make_trace()
++{
++    func=$1
++    shift
++
++    log_level=$1
++    shift
++
++    prefix=$1
++    shift
++
++    msg=$1
++    shift
++
++    if [ -z "$log_level" ]; then
++        return
++    fi
++
++    msg=$(echo $msg)
++
++    msg_printed=0
++    while [ $# -gt 0 ]; do
++        trace=${1%%:*}
++        trace_level=${trace%%+}
++        [ "$trace" != "$trace_level" ] && trace_in_higher_levels="yes"
++        trace=${1##*:}
++
++        if [ -z "$trace_level" ]; then
++            trace_level=0
++        fi
++
++        insert_trace=0
++        if [ -n "$trace_in_higher_levels" ]; then
++            if [ "$log_level" -ge "$trace_level" ]; then
++                insert_trace=1
++            fi
++        else
++            if [ "$log_level" -eq "$trace_level" ]; then
++                insert_trace=1
++            fi
++        fi
++
++        if [ $insert_trace -eq 1 ]; then
++            if [ $msg_printed -eq 0 ]; then
++                echo "$prefix $msg"
++                msg_printed=1
++            fi
++            $func $trace
++        fi
++        shift
++    done
++}
++
++# parameters: type
++show_memstats()
++{
++    case $1 in
++        shortmem)
++            cat /proc/meminfo  | grep -e "^MemFree" -e "^Cached" -e "^Slab"
++            ;;
++        mem)
++            cat /proc/meminfo
++            ;;
++        slab)
++            cat /proc/slabinfo
++            ;;
++        iomem)
++            cat /proc/iomem
++            ;;
++    esac
++}
