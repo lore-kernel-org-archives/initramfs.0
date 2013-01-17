@@ -1,227 +1,115 @@
-From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 2/2 V3] Add memory usage trace to diffrent hook points
-Date: Thu, 17 Jan 2013 16:55:51 +0800
-Message-ID: <20130117085724.212324334@redhat.com>
-References: <20130117085549.207542806@redhat.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/3] Add an exception handle check function
+Date: Thu, 17 Jan 2013 18:03:49 +0800
+Message-ID: <50F7CC85.5060303@redhat.com>
+References: <76d7b2f339455dcea6a2827b004bfcd9c6fa2315.1356080083.git.bhe@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=patch2
+In-Reply-To: <76d7b2f339455dcea6a2827b004bfcd9c6fa2315.1356080083.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Port mkdumprd memory trace functions wrote by jstancek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-For kdump, memory usage tracing is important because there's limited
-memory in kdump 2nd kernel.
+On 12/21/2012 04:55 PM, Baoquan He wrote:
+> In some cases, exception happened, default handling is called. However,
+> user may not like the handling, want to specify a handler for these
+> exceptions.
+> 
+> Add an exception handle check function. Call it where exceptions happened,
+> and specify a extra special handler. If user want the special handler handles
+> this exception, related cmdline is added.
+> 
+> Then Dracut will check the cmdline, if related cmdline exists, call the
+> specified handler; if not, call the default handler.
+> 
+> The function can be called like below:
+> exception_handle_check -h continue_on_fail
 
-Add a rd.memdebug cmdline for this. set rd.memdebug=<X> will set the
-debug level to X which is the debug verbose level.
+I think exception_handle is not a good name, how about use "failaction"
+instead?
 
-the format of cmdline is like below:
-<level>[+]:<type>
-<level> is the debug level
-[+] means debug level >= <level>
-<type> is the debug info type, as for this patch I added mem, iomem, slab
-mem is for /proc/meminfo, iomem is for /proc/iomem, slab is for /proc/slabinfo
-Also shortmem is the stripped /proc/meminfo which only includes 3 lines of
-Memfree, Cached and Slab, for example:
-MemFree:         6327176 kB
-Cached:           741916 kB
-Slab:              77284 kB
+And maybe use below action names:
+failaction=continue/shell
 
-I added several trace point to the begin of several init hooks
-At cmdline hooks I'm adding trace of "1+:mem 1+:iomem 3+:slab"
-For other hooks I'm adding trace of "1:shortmem 2+:mem 3+:slab"
+IMHO, reboot is not useful for usual initrd. For kdump add a "continue"
+is enough because kdump module will handle failure of itself as long as
+dracut ignore previous failures.
 
-This means:
-rd.memdebug=1)
-  cmdline hook: print mem and iomem
-  other hooks: print shortmem
-rd.memdebug=2)
-  cmdline hook: print mem and iomem
-  other hooks: print mem
-rd.memdebug=3):
-  cmdline hook: print mem iomem, and slabinfo
-  other hooks: print mem and slabinfo
-*):
-  do not print any mem debug info
+These 3 patches should better to be one patch. Or split them to 2
+patches as below
+1/2: make emergency_shell as a fail action
+2/2: add a new fail action of "continue"
 
-[v1->v2]: update to use getargnum with <minval> as argument
-          print iomem info at cmdline hook as well
-[v2->v3]: harald: use $() instead of ``
-                  use bash string match instead of grep and pipe.
+> 
+> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/99base/dracut-lib.sh |   40 ++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 40 insertions(+), 0 deletions(-)
+> 
+> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+> index cc6c7e8..35ed3a3 100755
+> --- a/modules.d/99base/dracut-lib.sh
+> +++ b/modules.d/99base/dracut-lib.sh
+> @@ -938,6 +938,46 @@ emergency_shell()
+>      [ -e /run/initramfs/.die ] && exit 1
+>  }
+>  
+> +exception_handle_check()
+> +{
+> +    local action_wanted
+> +    if [ "$1" = "-h" ]; then
+> +        [ $# -le 1 ] && echo "No exception handler specified" && emergency_shell
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.cmdline.7.asc                      |    4 +
- modules.d/98systemd/dracut-cmdline.sh     |    1 
- modules.d/98systemd/dracut-initqueue.sh   |    1 
- modules.d/98systemd/dracut-pre-pivot.sh   |    1 
- modules.d/98systemd/dracut-pre-trigger.sh |    1 
- modules.d/98systemd/dracut-pre-udev.sh    |    1 
- modules.d/99base/dracut-lib.sh            |   91 ++++++++++++++++++++++++++++++
- 7 files changed, 100 insertions(+)
+Not necessary use "-h", just make shell as the default action.
 
---- dracut.orig/modules.d/98systemd/dracut-cmdline.sh
-+++ dracut/modules.d/98systemd/dracut-cmdline.sh
-@@ -18,6 +18,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook cmdline" 1+:mem 1+:iomem 3+:slab
- # run scriptlets to parse the command line
- getarg 'rd.break=cmdline' -d 'rdbreak=cmdline' && emergency_shell -n cmdline "Break before cmdline"
- source_hook cmdline
---- dracut.orig/modules.d/98systemd/dracut-initqueue.sh
-+++ dracut/modules.d/98systemd/dracut-initqueue.sh
-@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook initqueue" 1:shortmem 2+:mem 3+:slab
- getarg 'rd.break=initqueue' -d 'rdbreak=initqueue' && emergency_shell -n initqueue "Break before initqueue"
- 
- RDRETRY=$(getarg rd.retry -d 'rd_retry=')
---- dracut.orig/modules.d/98systemd/dracut-pre-pivot.sh
-+++ dracut/modules.d/98systemd/dracut-pre-pivot.sh
-@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook pre-pivot" 1:shortmem 2+:mem 3+:slab
- # pre pivot scripts are sourced just before we doing cleanup and switch over
- # to the new root.
- getarg 'rd.break=pre-pivot' 'rdbreak=pre-pivot' && emergency_shell -n pre-pivot "Break pre-pivot"
---- dracut.orig/modules.d/98systemd/dracut-pre-trigger.sh
-+++ dracut/modules.d/98systemd/dracut-pre-trigger.sh
-@@ -10,6 +10,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook pre-trigger" 1:shortmem 2+:mem 3+:slab
- getargbool 0 rd.udev.info -n -y rdudevinfo && udevadm control --log-priority=info
- getargbool 0 rd.udev.debug -n -y rdudevdebug && udevadm control --log-priority=debug
- udevproperty "hookdir=$hookdir"
---- dracut.orig/modules.d/98systemd/dracut-pre-udev.sh
-+++ dracut/modules.d/98systemd/dracut-pre-udev.sh
-@@ -9,6 +9,7 @@ type getarg >/dev/null 2>&1 || . /lib/dr
- 
- source_conf /etc/conf.d
- 
-+make_trace_mem "hook pre-udev" 1:shortmem 2+:mem 3+:slab
- # pre pivot scripts are sourced just before we doing cleanup and switch over
- # to the new root.
- getarg 'rd.break=pre-udev' 'rdbreak=pre-udev' && emergency_shell -n pre-udev "Break pre-udev"
---- dracut.orig/dracut.cmdline.7.asc
-+++ dracut/dracut.cmdline.7.asc
-@@ -143,6 +143,10 @@ It should be attached to any report abou
-     If systemd is not active, the logs are written to dmesg and _/run/initramfs/init.log_.
-     If "quiet" is set, it also logs to the console.
- 
-+**rd.memdebug=[0-3]**::
-+    print memory usage debug info, set the verbose level from 1 to 3
-+    print nothing when set rd.memdebug=0
-+
- **rd.break**::
-     drop to a shell at the end
- 
---- dracut.orig/modules.d/99base/dracut-lib.sh
-+++ dracut/modules.d/99base/dracut-lib.sh
-@@ -994,3 +994,94 @@ listlist() {
- are_lists_eq() {
-     listlist "$1" "$2" "$3" "$4" && listlist "$1" "$3" "$2" "$4"
- }
-+
-+setmemdebug() {
-+    if [ -z "$DEBUG_MEM_LEVEL" ]; then
-+        export DEBUG_MEM_LEVEL=$(getargnum 0 0 3 rd.memdebug)
-+    fi
-+}
-+
-+setmemdebug
-+
-+# parameters: msg [trace_level:trace]...
-+function make_trace_mem()
-+{
-+    msg=$1
-+    shift
-+    if [ "$DEBUG_MEM_LEVEL" -gt 0 ]; then
-+        make_trace show_memstats $DEBUG_MEM_LEVEL "[debug_mem]" "$msg" "$@"
-+    fi
-+}
-+
-+# parameters: func log_level prefix msg [trace_level:trace]...
-+function make_trace()
-+{
-+    func=$1
-+    shift
-+
-+    log_level=$1
-+    shift
-+
-+    prefix=$1
-+    shift
-+
-+    msg=$1
-+    shift
-+
-+    if [ -z "$log_level" ]; then
-+        return
-+    fi
-+
-+    msg=$(echo $msg)
-+
-+    msg_printed=0
-+    while [ $# -gt 0 ]; do
-+        trace=${1%%:*}
-+        trace_level=${trace%%+}
-+        [ "$trace" != "$trace_level" ] && trace_in_higher_levels="yes"
-+        trace=${1##*:}
-+
-+        if [ -z "$trace_level" ]; then
-+            trace_level=0
-+        fi
-+
-+        insert_trace=0
-+        if [ -n "$trace_in_higher_levels" ]; then
-+            if [ "$log_level" -ge "$trace_level" ]; then
-+                insert_trace=1
-+            fi
-+        else
-+            if [ "$log_level" -eq "$trace_level" ]; then
-+                insert_trace=1
-+            fi
-+        fi
-+
-+        if [ $insert_trace -eq 1 ]; then
-+            if [ $msg_printed -eq 0 ]; then
-+                echo "$prefix $msg"
-+                msg_printed=1
-+            fi
-+            $func $trace
-+        fi
-+        shift
-+    done
-+}
-+
-+# parameters: type
-+show_memstats()
-+{
-+    case $1 in
-+        shortmem)
-+            cat /proc/meminfo  | grep -e "^MemFree" -e "^Cached" -e "^Slab"
-+            ;;
-+        mem)
-+            cat /proc/meminfo
-+            ;;
-+        slab)
-+            cat /proc/slabinfo
-+            ;;
-+        iomem)
-+            cat /proc/iomem
-+            ;;
-+    esac
-+}
+Add a functions like get_fail_action(), and do_fail_action(), call them
+at different points.
+
+> +        action_wanted=$2; 
+> +        case "$action_wanted" in
+> +        continue_on_fail)
+> +            ;;
+> +        reboot)
+> +            ;;
+> +        emergency_shell)
+> +            ;;
+> +        *)
+> +            echo "Wrong exception handler input: $action_wanted"
+> +            action_wanted=emergency_shell
+> +        esac
+> +    else
+> +        action_wanted=emergency_shell
+> +    fi
+> +
+> +    case "$action_wanted" in
+> +    continue_on_fail)
+> +        action=$(getarg rd.exceptionhandler=)
+> +        [ -z "$action" -o  "$action" != "continue_on_fail" ]  && emergency_shell
+> +        ;;
+> +    emergency_shell)
+> +        emergency_shell
+> +        ;;
+> +    reboot)
+> +        reboot -f
+> +        ;;
+> +    *) #default
+> +        ##impossible come here
+> +        ;;
+> +    esac
+> +
+> +    return 0
+> +}
+> +
+>  # Retain the values of these variables but ensure that they are unexported
+>  # This is a POSIX-compliant equivalent of bash's "export -n"
+>  export_n()
+> 
+
+
+-- 
+Thanks
+Dave
+
