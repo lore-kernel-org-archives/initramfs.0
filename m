@@ -1,7 +1,7 @@
 From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/6] rootfs-block: Support lilo style device numbers.
-Date: Wed, 23 Jan 2013 20:15:04 +0000
-Message-ID: <1358972106-2395-5-git-send-email-colin@mageia.org>
+Subject: [PATCH 5/6] i18n: Run console_init prior to udev startup.
+Date: Wed, 23 Jan 2013 20:15:05 +0000
+Message-ID: <1358972106-2395-6-git-send-email-colin@mageia.org>
 References: <1358972106-2395-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1358972106-2395-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
@@ -13,50 +13,44 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-Lilo supplies root=900 rather than root=/dev/md0. Similarly it would say root=801 rather
-than root=/dev/sda1.
+In some cases udev will initialise the encrypted disks and ask for a
+password before it initialises the console.
 
-This patch simply interprets that number and creates appropriate udev rules
-to create the /dev/root symlink as needed.
+This can result in the password for encrypted partitions being asked for
+with the wrong keymap loaded.
+
+So this patch just attempts to initialise things statically. It might
+fail but udev will do it properly later anyway.
 ---
- modules.d/95rootfs-block/block-genrules.sh | 11 ++++++++++-
- modules.d/95rootfs-block/parse-block.sh    |  4 ++++
- 2 files changed, 14 insertions(+), 1 deletion(-)
+ modules.d/10i18n/i18n-pre-udev.sh | 7 +++++++
+ modules.d/10i18n/module-setup.sh  | 1 +
+ 2 files changed, 8 insertions(+)
+ create mode 100755 modules.d/10i18n/i18n-pre-udev.sh
 
-diff --git a/modules.d/95rootfs-block/block-genrules.sh b/modules.d/95rootfs-block/block-genrules.sh
-index 7f894ee..161183e 100755
---- a/modules.d/95rootfs-block/block-genrules.sh
-+++ b/modules.d/95rootfs-block/block-genrules.sh
-@@ -2,7 +2,16 @@
- # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
- # ex: ts=8 sw=4 sts=4 et filetype=sh
- 
--if [ "${root%%:*}" = "block" ]; then
-+if [ -n "$rootdevnum" ]; then
-+    major=$(( 0x$rootdevnum / 256 ))
-+    minor=$(( 0x$rootdevnum - ( $major * 256 ) ))
-+    {
-+        printf 'ACTION=="add|change", ENV{MAJOR}=="%d", ENV{MINOR}=="%d", SYMLINK+="root"\n' \
-+            $major $minor
-+    } >> /etc/udev/rules.d/99-root.rules
+diff --git a/modules.d/10i18n/i18n-pre-udev.sh b/modules.d/10i18n/i18n-pre-udev.sh
+new file mode 100755
+index 0000000..2033948
+--- /dev/null
++++ b/modules.d/10i18n/i18n-pre-udev.sh
+@@ -0,0 +1,7 @@
++#!/bin/sh
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
 +
-+    wait_for_dev /dev/root
-+elif [ "${root%%:*}" = "block" ]; then
-     {
-         printf 'KERNEL=="%s", SYMLINK+="root"\n' \
-             ${root#block:/dev/}
-diff --git a/modules.d/95rootfs-block/parse-block.sh b/modules.d/95rootfs-block/parse-block.sh
-index 3745352..9efc51f 100755
---- a/modules.d/95rootfs-block/parse-block.sh
-+++ b/modules.d/95rootfs-block/parse-block.sh
-@@ -19,4 +19,8 @@ case "$root" in
-     /dev/*)
-         root="block:${root}"
-         rootok=1 ;;
-+    [1-9][0-9][0-9])
-+        rootdevnum=$root
-+        root=block:/dev/root
-+        rootok=1 ;;
- esac
++if [ -x /lib/udev/console_init -a -e /dev/tty0 ]; then
++    /lib/udev/console_init /dev/tty0
++fi
+diff --git a/modules.d/10i18n/module-setup.sh b/modules.d/10i18n/module-setup.sh
+index 1ed1db6..21b0c05 100755
+--- a/modules.d/10i18n/module-setup.sh
++++ b/modules.d/10i18n/module-setup.sh
+@@ -89,6 +89,7 @@ install() {
+         inst ${moddir}/console_init.sh /lib/udev/console_init
+         inst_rules ${moddir}/10-console.rules
+         inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
++        inst_hook pre-udev 10 "$moddir/i18n-pre-udev.sh"
+     }
+ 
+     install_all_kbd() {
 -- 
 1.8.1
