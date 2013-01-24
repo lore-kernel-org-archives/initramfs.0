@@ -1,54 +1,83 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Colin Guthrie <colin-iHtYJnzJly4@public.gmane.org>
 Subject: Re: [PATCH 2/6] lvm: Ensure LVM is initialised in non-hostonly mode.
-Date: Thu, 24 Jan 2013 12:32:02 +0100
-Message-ID: <51011BB2.3010409@redhat.com>
-References: <1358972106-2395-1-git-send-email-colin@mageia.org> <1358972106-2395-3-git-send-email-colin@mageia.org>
+Date: Thu, 24 Jan 2013 11:40:54 +0000
+Message-ID: <51011DC6.2040304@guthr.ie>
+References: <1358972106-2395-1-git-send-email-colin@mageia.org> <1358972106-2395-3-git-send-email-colin@mageia.org> <51011BB2.3010409@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1358972106-2395-3-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <51011BB2.3010409-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 23.01.2013 21:15, schrieb Colin Guthrie:
-> This is a bit of a hack, but it's needed if /usr is on LVM.
-> ---
->  modules.d/90lvm/module-setup.sh          | 3 +++
->  modules.d/90lvm/non-hostonly-init-lvm.sh | 8 ++++++++
->  2 files changed, 11 insertions(+)
->  create mode 100644 modules.d/90lvm/non-hostonly-init-lvm.sh
+'Twas brillig, and Harald Hoyer at 24/01/13 11:32 did gyre and gimble:
+> Am 23.01.2013 21:15, schrieb Colin Guthrie:
+>> This is a bit of a hack, but it's needed if /usr is on LVM.
+>> ---
+>>  modules.d/90lvm/module-setup.sh          | 3 +++
+>>  modules.d/90lvm/non-hostonly-init-lvm.sh | 8 ++++++++
+>>  2 files changed, 11 insertions(+)
+>>  create mode 100644 modules.d/90lvm/non-hostonly-init-lvm.sh
+>>
+>> diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
+>> index a537b1a..611379a 100755
+>> --- a/modules.d/90lvm/module-setup.sh
+>> +++ b/modules.d/90lvm/module-setup.sh
+>> @@ -49,6 +49,9 @@ install() {
+>>              sed -i -e 's/\(^[[:space:]]*\)use_lvmetad[[:space:]]*=[[:space:]]*[[:digit:]]/\1use_lvmetad = 0/' ${initdir}/etc/lvm/lvm.conf
+>>          fi
+>>      fi
+>> +    if ! [[ $hostonly ]]; then
+>> +        inst_hook pre-udev 30 "$moddir/non-hostonly-init-lvm.sh"
+>> +    fi
+>>  
+>>      inst_rules 11-dm-lvm.rules
+>>      # Gentoo ebuild for LVM2 prior to 2.02.63-r1 doesn't install above rules
+>> diff --git a/modules.d/90lvm/non-hostonly-init-lvm.sh b/modules.d/90lvm/non-hostonly-init-lvm.sh
+>> new file mode 100644
+>> index 0000000..2e9212c
+>> --- /dev/null
+>> +++ b/modules.d/90lvm/non-hostonly-init-lvm.sh
+>> @@ -0,0 +1,8 @@
+>> +#!/bin/sh
+>> +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+>> +# ex: ts=8 sw=4 sts=4 et filetype=sh
+>> +
+>> +printf 'cancel_wait_for_dev /dev/non-hostonly-lvm; rm "$job";' \
+>> +    "$hookdir" >> $hookdir/initqueue/timeout/non-hostonly-lvm.sh
+>> +
+>> +wait_for_dev "/dev/non-hostonly-lvm"
+>>
 > 
-> diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
-> index a537b1a..611379a 100755
-> --- a/modules.d/90lvm/module-setup.sh
-> +++ b/modules.d/90lvm/module-setup.sh
-> @@ -49,6 +49,9 @@ install() {
->              sed -i -e 's/\(^[[:space:]]*\)use_lvmetad[[:space:]]*=[[:space:]]*[[:digit:]]/\1use_lvmetad = 0/' ${initdir}/etc/lvm/lvm.conf
->          fi
->      fi
-> +    if ! [[ $hostonly ]]; then
-> +        inst_hook pre-udev 30 "$moddir/non-hostonly-init-lvm.sh"
-> +    fi
->  
->      inst_rules 11-dm-lvm.rules
->      # Gentoo ebuild for LVM2 prior to 2.02.63-r1 doesn't install above rules
-> diff --git a/modules.d/90lvm/non-hostonly-init-lvm.sh b/modules.d/90lvm/non-hostonly-init-lvm.sh
-> new file mode 100644
-> index 0000000..2e9212c
-> --- /dev/null
-> +++ b/modules.d/90lvm/non-hostonly-init-lvm.sh
-> @@ -0,0 +1,8 @@
-> +#!/bin/sh
-> +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-> +# ex: ts=8 sw=4 sts=4 et filetype=sh
-> +
-> +printf 'cancel_wait_for_dev /dev/non-hostonly-lvm; rm "$job";' \
-> +    "$hookdir" >> $hookdir/initqueue/timeout/non-hostonly-lvm.sh
-> +
-> +wait_for_dev "/dev/non-hostonly-lvm"
-> 
+> huh? what does this try to do? This only ensures, that the timeout is reached.
 
-huh? what does this try to do? This only ensures, that the timeout is reached.
+Well..... it's been a while, so my memory is fuzzy, but this was meant
+to "solve" the problem of a non-hostonly initrd (i.e. one without
+etc/cmdline.d/90lvm.conf), but where the system has a /usr on LVM but /
+on a normal partition. i.e. it should initialise all volume groups it
+finds in order to mount /usr.
+
+In that setup I don't think lvm was initialised properly because the
+initqueue loop was never entered at all and thus nothing actually
+triggered the lvm vgchange.
+
+So all this does is ensure the loop is run at least once, which triggers
+the LVM init.
+
+I'm going from memory here so a bit hazy - the explanation might not be
+totally bang on. I'll see if I can test a non-hostonly initrd with that
+kind of disk layout in my VMs to confirm it's still needed as I guess
+there is a chance the "never run the initqueue" issue has been factored
+out since 017 which is when I think I wrote this :)
+
+Cheers
+
+Col
+
+-- 
+
+Colin Guthrie
+  http://colin.guthr.ie/
