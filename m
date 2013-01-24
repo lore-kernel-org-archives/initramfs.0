@@ -1,65 +1,97 @@
-From: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] Add an exception handle check function
-Date: Thu, 24 Jan 2013 11:12:46 +0800
-Message-ID: <5100A6AE.5020003@redhat.com>
-References: <76d7b2f339455dcea6a2827b004bfcd9c6fa2315.1356080083.git.bhe@redhat.com> <50F7CC85.5060303@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/6] dm/md: Only include UUIDs once in the command line.
+Date: Thu, 24 Jan 2013 12:26:50 +0100
+Message-ID: <51011A7A.3060302@redhat.com>
+References: <1358972106-2395-1-git-send-email-colin@mageia.org> <1358972106-2395-2-git-send-email-colin@mageia.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <50F7CC85.5060303-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1358972106-2395-2-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01/17/2013 06:03 PM, Dave Young wrote:
->> In some cases, exception happened, default handling is called. However,
->> >  user may not like the handling, want to specify a handler for these
->> >  exceptions.
->> >  
->> >  Add an exception handle check function. Call it where exceptions happened,
->> >  and specify a extra special handler. If user want the special handler handles
->> >  this exception, related cmdline is added.
->> >  
->> >  Then Dracut will check the cmdline, if related cmdline exists, call the
->> >  specified handler; if not, call the default handler.
->> >  
->> >  The function can be called like below:
->> >  exception_handle_check -h continue_on_fail
-> I think exception_handle is not a good name, how about use "failaction"
-> instead?
->
-> And maybe use below action names:
-> failaction=continue/shell
->
-> IMHO, reboot is not useful for usual initrd. For kdump add a "continue"
-> is enough because kdump module will handle failure of itself as long as
-> dracut ignore previous failures.
->
-> These 3 patches should better to be one patch. Or split them to 2
-> patches as below
-> 1/2: make emergency_shell as a fail action
-> 2/2: add a new fail action of "continue"
->
-I hesitated to name this function, maybe failaction is a good name.
+Am 23.01.2013 21:15, schrieb Colin Guthrie:
+> This shouldn't really cause any problems, but it's nice to be neat.
+> 
+> Also make the lvm check more efficient when running in kernel_only mode.
+> ---
+>  modules.d/90dmraid/module-setup.sh | 7 +++++--
+>  modules.d/90lvm/module-setup.sh    | 6 +++---
+>  modules.d/90mdraid/module-setup.sh | 7 +++++--
+>  3 files changed, 13 insertions(+), 7 deletions(-)
+> 
+> diff --git a/modules.d/90dmraid/module-setup.sh b/modules.d/90dmraid/module-setup.sh
+> index eb949dc..c3bddb7 100755
+> --- a/modules.d/90dmraid/module-setup.sh
+> +++ b/modules.d/90dmraid/module-setup.sh
+> @@ -3,7 +3,7 @@
+>  # ex: ts=8 sw=4 sts=4 et filetype=sh
+>  
+>  check() {
+> -    local _rootdev
+> +    local _rootdev _activated
+>      # if we don't have dmraid installed on the host system, no point
+>      # in trying to support it in the initramfs.
+>      type -P dmraid >/dev/null || return 1
+> @@ -32,7 +32,10 @@ check() {
+>  
+>          [[ ${DM_NAME} ]] || return 1
+>          if ! [[ $kernel_only ]]; then
+> -            echo " rd.dm.uuid=${DM_NAME} " >> "${initdir}/etc/cmdline.d/90dmraid.conf"
+> +            if ! strstr " ${_activated[*]} " " ${DM_NAME} "; then
+> +                echo " rd.dm.uuid=${DM_NAME} " >> "${initdir}/etc/cmdline.d/90dmraid.conf"
+> +                push _activated "${DM_NAME}"
+> +            fi
+>          fi
+>          return 0
+>      }
+> diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
+> index cefd3e9..a537b1a 100755
+> --- a/modules.d/90lvm/module-setup.sh
+> +++ b/modules.d/90lvm/module-setup.sh
+> @@ -12,11 +12,11 @@ check() {
+>          eval $(udevadm info --query=property --name=/dev/block/$1|egrep '(DM_VG_NAME|DM_LV_NAME|DM_UDEV_DISABLE_DISK_RULES_FLAG)=')
+>          [[ "$DM_UDEV_DISABLE_DISK_RULES_FLAG" = "1" ]] && return 1
+>          [[ ${DM_VG_NAME} ]] && [[ ${DM_LV_NAME} ]] || return 1
+> -        if ! strstr " ${_activated[*]} " " ${DM_VG_NAME}/${DM_LV_NAME} "; then
+> -            if ! [[ $kernel_only ]]; then
+> +        if ! [[ $kernel_only ]]; then
+> +            if ! strstr " ${_activated[*]} " " ${DM_VG_NAME}/${DM_LV_NAME} "; then
+>                  echo " rd.lvm.lv=${DM_VG_NAME}/${DM_LV_NAME} " >> "${initdir}/etc/cmdline.d/90lvm.conf"
+> +                push _activated "${DM_VG_NAME}/${DM_LV_NAME}"
+>              fi
+> -            push _activated "${DM_VG_NAME}/${DM_LV_NAME}"
+>          fi
+>          return 0
+>      }
+> diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
+> index 3b5620c..116b822 100755
+> --- a/modules.d/90mdraid/module-setup.sh
+> +++ b/modules.d/90mdraid/module-setup.sh
+> @@ -3,7 +3,7 @@
+>  # ex: ts=8 sw=4 sts=4 et filetype=sh
+>  
+>  check() {
+> -    local _rootdev
+> +    local _rootdev _activated
+>      # No mdadm?  No mdraid support.
+>      type -P mdadm >/dev/null || return 1
+>  
+> @@ -21,7 +21,10 @@ check() {
+>  
+>          [[ ${MD_UUID} ]] || return 1
+>          if ! [[ $kernel_only ]]; then
+> -            echo " rd.md.uuid=${MD_UUID} " >> "${initdir}/etc/cmdline.d/90mdraid.conf"
+> +            if ! strstr " ${_activated[*]} " " ${MD_UUID} "; then
+> +                echo " rd.md.uuid=${MD_UUID} " >> "${initdir}/etc/cmdline.d/90mdraid.conf"
+> +                push _activated "${MD_UUID}"
+> +            fi
+>          fi
+>          return 0
+>      }
+> 
 
-I thought at least there were 3 options, 'continue_on_fail', 
-'emergency_shell'  and 'reboot'. After thinking, maybe 'reboot' is not 
-necessary. After all rebooting system may not be wanted by user after a 
-fail occurred,.
-
-If only 'continue_on_fail' and 'emergency_shell', things will be easier. 
-The only question is all insert point of the failaction will take the 
-same action. e.g mount loop for rootfs, inirqueue loop and dump target 
-mount loop, if user add the  cmdline:
-failaction=continue_on_fail
-Then all insert point will do the continue on fail.
-
-Anyway, I will repost based on two options 'continue_on_fail' and 
-'emergency_shell'.
-
-Baoquan
-Thanks a lot!
-
-
+which reminds me to rename push to var_push :)
