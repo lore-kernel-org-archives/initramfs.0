@@ -1,83 +1,60 @@
-From: Colin Guthrie <colin-iHtYJnzJly4@public.gmane.org>
-Subject: Re: [PATCH 2/6] lvm: Ensure LVM is initialised in non-hostonly mode.
-Date: Thu, 24 Jan 2013 11:40:54 +0000
-Message-ID: <51011DC6.2040304@guthr.ie>
-References: <1358972106-2395-1-git-send-email-colin@mageia.org> <1358972106-2395-3-git-send-email-colin@mageia.org> <51011BB2.3010409@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/6] i18n: Run console_init prior to udev startup.
+Date: Thu, 24 Jan 2013 13:03:39 +0100
+Message-ID: <5101231B.20509@redhat.com>
+References: <1358972106-2395-1-git-send-email-colin@mageia.org> <1358972106-2395-6-git-send-email-colin@mageia.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51011BB2.3010409-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1358972106-2395-6-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-'Twas brillig, and Harald Hoyer at 24/01/13 11:32 did gyre and gimble:
-> Am 23.01.2013 21:15, schrieb Colin Guthrie:
->> This is a bit of a hack, but it's needed if /usr is on LVM.
->> ---
->>  modules.d/90lvm/module-setup.sh          | 3 +++
->>  modules.d/90lvm/non-hostonly-init-lvm.sh | 8 ++++++++
->>  2 files changed, 11 insertions(+)
->>  create mode 100644 modules.d/90lvm/non-hostonly-init-lvm.sh
->>
->> diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
->> index a537b1a..611379a 100755
->> --- a/modules.d/90lvm/module-setup.sh
->> +++ b/modules.d/90lvm/module-setup.sh
->> @@ -49,6 +49,9 @@ install() {
->>              sed -i -e 's/\(^[[:space:]]*\)use_lvmetad[[:space:]]*=[[:space:]]*[[:digit:]]/\1use_lvmetad = 0/' ${initdir}/etc/lvm/lvm.conf
->>          fi
->>      fi
->> +    if ! [[ $hostonly ]]; then
->> +        inst_hook pre-udev 30 "$moddir/non-hostonly-init-lvm.sh"
->> +    fi
->>  
->>      inst_rules 11-dm-lvm.rules
->>      # Gentoo ebuild for LVM2 prior to 2.02.63-r1 doesn't install above rules
->> diff --git a/modules.d/90lvm/non-hostonly-init-lvm.sh b/modules.d/90lvm/non-hostonly-init-lvm.sh
->> new file mode 100644
->> index 0000000..2e9212c
->> --- /dev/null
->> +++ b/modules.d/90lvm/non-hostonly-init-lvm.sh
->> @@ -0,0 +1,8 @@
->> +#!/bin/sh
->> +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
->> +# ex: ts=8 sw=4 sts=4 et filetype=sh
->> +
->> +printf 'cancel_wait_for_dev /dev/non-hostonly-lvm; rm "$job";' \
->> +    "$hookdir" >> $hookdir/initqueue/timeout/non-hostonly-lvm.sh
->> +
->> +wait_for_dev "/dev/non-hostonly-lvm"
->>
+Am 23.01.2013 21:15, schrieb Colin Guthrie:
+> In some cases udev will initialise the encrypted disks and ask for a
+> password before it initialises the console.
 > 
-> huh? what does this try to do? This only ensures, that the timeout is reached.
+> This can result in the password for encrypted partitions being asked for
+> with the wrong keymap loaded.
+> 
+> So this patch just attempts to initialise things statically. It might
+> fail but udev will do it properly later anyway.
+> ---
+>  modules.d/10i18n/i18n-pre-udev.sh | 7 +++++++
+>  modules.d/10i18n/module-setup.sh  | 1 +
+>  2 files changed, 8 insertions(+)
+>  create mode 100755 modules.d/10i18n/i18n-pre-udev.sh
+> 
+> diff --git a/modules.d/10i18n/i18n-pre-udev.sh b/modules.d/10i18n/i18n-pre-udev.sh
+> new file mode 100755
+> index 0000000..2033948
+> --- /dev/null
+> +++ b/modules.d/10i18n/i18n-pre-udev.sh
+> @@ -0,0 +1,7 @@
+> +#!/bin/sh
+> +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+> +# ex: ts=8 sw=4 sts=4 et filetype=sh
+> +
+> +if [ -x /lib/udev/console_init -a -e /dev/tty0 ]; then
+> +    /lib/udev/console_init /dev/tty0
+> +fi
+> diff --git a/modules.d/10i18n/module-setup.sh b/modules.d/10i18n/module-setup.sh
+> index 1ed1db6..21b0c05 100755
+> --- a/modules.d/10i18n/module-setup.sh
+> +++ b/modules.d/10i18n/module-setup.sh
+> @@ -89,6 +89,7 @@ install() {
+>          inst ${moddir}/console_init.sh /lib/udev/console_init
+>          inst_rules ${moddir}/10-console.rules
+>          inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
+> +        inst_hook pre-udev 10 "$moddir/i18n-pre-udev.sh"
+>      }
+>  
+>      install_all_kbd() {
+> 
 
-Well..... it's been a while, so my memory is fuzzy, but this was meant
-to "solve" the problem of a non-hostonly initrd (i.e. one without
-etc/cmdline.d/90lvm.conf), but where the system has a /usr on LVM but /
-on a normal partition. i.e. it should initialise all volume groups it
-finds in order to mount /usr.
+On an initramfs with systemd inside, this was already fixed.
 
-In that setup I don't think lvm was initialised properly because the
-initqueue loop was never entered at all and thus nothing actually
-triggered the lvm vgchange.
-
-So all this does is ensure the loop is run at least once, which triggers
-the LVM init.
-
-I'm going from memory here so a bit hazy - the explanation might not be
-totally bang on. I'll see if I can test a non-hostonly initrd with that
-kind of disk layout in my VMs to confirm it's still needed as I guess
-there is a chance the "never run the initqueue" issue has been factored
-out since 017 which is when I think I wrote this :)
-
-Cheers
-
-Col
-
--- 
-
-Colin Guthrie
-  http://colin.guthr.ie/
+Will make this probably conditionally.
