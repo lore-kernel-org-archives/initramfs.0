@@ -1,44 +1,38 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Out of tree drivers missing from initramfs
-Date: Fri, 25 Jan 2013 13:08:52 +0100
-Message-ID: <510275D4.7080401@redhat.com>
-References: <alpine.DEB.2.02.1301221612280.31163@jlaw-desktop.mno.stratus.com> <50FFFF93.2080209@redhat.com> <alpine.DEB.2.02.1301241718240.31163@jlaw-desktop.mno.stratus.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Dan=20Hor=C3=A1k?= <dan-mBPqX7VnFd4@public.gmane.org>
+Subject: [PATCH] set peer for point-to-point connections
+Date: Fri, 25 Jan 2013 14:23:58 +0100
+Message-ID: <1359120238-9428-1-git-send-email-dan@danny.cz>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <alpine.DEB.2.02.1301241718240.31163-ceYW5R1vr2hcrvxNGtJwk767FWEIOpWeVpNB7YpNyf8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Joe Lawrence <Joe.Lawrence-7+ureL1bLXNBDgjK7y7TUQ@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 24.01.2013 23:26, schrieb Joe Lawrence:
-> On Wed, 23 Jan 2013, Harald Hoyer wrote:
-> 
->> Am 22.01.2013 23:04, schrieb Joe Lawrence:
->>
->>> 2 - Do modules underneath /lib/modules/ver/{updates,extras} need to 
->>>     include their respective directory structure (ie, 'drivers/scsi'). 
->>
->> yes
-> 
-> Is this a dracut requirement, general convention, etc?  I tried to search 
-> google for a definitive document on updates/extra modules and couldn't 
-> find much aside from Documentation/kbuild/modules.txt in the kernel tree.
-> 
-> This change is easy enough to make, but I'd like to get it right. :)
->  
->> Thanks for reporting this, will fix this bug!
-> 
-> See below for one possible solution.  It may be more correct to filter on 
-> kernel* and updates* and extra*, but as proof of concept, it 
-> successfully built a initramfs with a driver located at:
-> 
->   /updates/lsb-ft/drivers/scsi/mpt2sas/mpt2sas.ko
-> 
-> Regards,
-> 
-> -- Joe
+---
+ modules.d/40network/ifup.sh |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-perfekt. patch merged
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index 6c3133e..f64b16f 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -107,12 +107,13 @@ do_static() {
+     linkup $netif
+     [ -n "$macaddr" ] && ip link set address $macaddr dev $netif
+     [ -n "$mtu" ] && ip link set mtu $mtu dev $netif
++    [ -n "$srv" ] && peer="peer $srv"
+     if strstr $ip '*:*:*'; then
+         # note no ip addr flush for ipv6
+-        ip addr add $ip/$mask dev $netif
++        ip addr add $ip/$mask $peer dev $netif
+     else
+         ip addr flush dev $netif
+-        ip addr add $ip/$mask brd + dev $netif
++        ip addr add $ip/$mask $peer brd + dev $netif
+     fi
+ 
+     [ -n "$gw" ] && echo ip route add default via $gw dev $netif > /tmp/net.$netif.gw
+-- 
+1.7.7.6
