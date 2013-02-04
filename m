@@ -1,32 +1,35 @@
-From: =?UTF-8?q?Dan=20Hor=C3=A1k?= <dan-mBPqX7VnFd4@public.gmane.org>
-Subject: [PATCH] fix CTC example in rd.znet
-Date: Mon, 28 Jan 2013 08:35:28 +0100
-Message-ID: <1359358528-4119-1-git-send-email-dan@danny.cz>
+From: Florian Feldhaus <florian.feldhaus-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Dracut fails to install libraries on Debian / Ubuntu systems
+Date: Mon, 4 Feb 2013 10:22:27 +0000 (UTC)
+Message-ID: <loom.20130204T110507-984@post.gmane.org>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The CTC interface uses 2 channels.
----
- dracut.cmdline.7.asc |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Due to the multiarch approach of debian [1] some libraries such as 
+libnss_files* are not located in /lib64 but instead in 
+/lib/x86_64-linux-gnu . As the dracut function inst_libdir_file() only 
+searches in the /lib and /lib64 folders without checking their 
+subfolders, some required libraries are not included on Debian / Ubuntu 
+systems. There is an unsolved bug report on Ubuntu launchpad from 2011 
+with more details [2].
 
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index ea2d30b..62372a5 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -600,7 +600,7 @@ ZNET
- +
- ----
- rd.znet=qeth,0.0.0600,0.0.0601,0.0.0602,layer2=1,portname=foo
--rd.znet=ctc,0.0.0600,0.0.0601,0.0.0602,protocol=bar
-+rd.znet=ctc,0.0.0600,0.0.0601,protocol=bar
- ----
- 
- Plymouth Boot Splash
--- 
-1.7.7.6
+I would like to propose two different solutions and be glad to create a
+patch for one of them, as soon as I could get some feedback what 
+approach would be best:
+1) Include /lib/x86_64-linux-gnu when detecting the libdirs in 
+dracut-functions.sh
+2) Change inst_libdir_file() to recursively search the lib folders for
+the required libraries e.g. by using the find utility
+
+I would be glad if we could solve this issue, as it blocks using dracut
+with NFSv3 on Debian / Ubuntu systems.
+
+--Florian
+
+[1] http://wiki.debian.org/Multiarch/TheCaseForMultiarch
+[2] https://bugs.launchpad.net/ubuntu/+source/dracut/+bug/882282
