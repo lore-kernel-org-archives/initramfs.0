@@ -1,38 +1,49 @@
-From: Joe Lawrence <Joe.Lawrence-7+ureL1bLXNBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: MD Raid1 driver missing from hostonly initramfs
-Date: Wed, 13 Feb 2013 15:17:52 -0500 (EST)
-Message-ID: <alpine.DEB.2.02.1302131513310.11804@jlaw-desktop.mno.stratus.com>
-References: <alpine.DEB.2.02.1301251127050.31163@jlaw-desktop.mno.stratus.com>
+From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
+Subject: Re: [PATCH] crypt: Fix device detection.
+Date: Wed, 13 Feb 2013 22:25:59 +0000
+Message-ID: <511C12F7.5020902@colin.guthr.ie>
+References: <1360715138-19755-1-git-send-email-colin@mageia.org> <511B708A.60106@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <alpine.DEB.2.02.1301251127050.31163-ceYW5R1vr2hcrvxNGtJwk767FWEIOpWeVpNB7YpNyf8@public.gmane.org>
+In-Reply-To: <511B708A.60106-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Joe Lawrence <Joe.Lawrence-7+ureL1bLXNBDgjK7y7TUQ@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, 25 Jan 2013, Joe Lawrence wrote:
-
-> Hi Harald,
+'Twas brillig, and Harald Hoyer at 13/02/13 10:52 did gyre and gimble:
+> Am 13.02.2013 01:25, schrieb Colin Guthrie:
+>> The host device/fs rework led to a regression in crypt detection.
+>> It was only checking the host filesystems, not it's slaves and thus
+>> never detected if crypt support was needed.
+>>
+>> Code now mirrors the lvm module's check
+>>
+>> https://bugs.mageia.org/show_bug.cgi?id=9040
+>> ---
 > 
-> Another bug report... when I run dracut in host-only mode on an MD raid1
-> install, the raid1.ko driver is not included in the initramfs.
+> Does this commit fix the issue instead?
+> 
+> http://git.kernel.org/?p=boot/dracut/dracut.git;a=commitdiff;h=19bab59c48ba6edbdf9d6d9f339baef250bdd4a6
 
-[ ... snip ... ]
+ACK, that commit also fixes the issue on my test system.
 
-In case anyone else hits this, turns out this was fallout from: 
+Thanks :)
 
-Wed Jan 23 commit c8d685c9d3860e49f39a9c85ffebbb4c4fec341f 
-dracut-functions.sh: cope with optional field #7 in mountinfo
-
-that was fixed in commit:
-
-Tue Feb 5 commit 19bab59c48ba6edbdf9d6d9f339baef250bdd4a6 
-dracut.sh: reverting return value change
+Col
 
 
-Regards,
+-- 
 
--- Joe
+Colin Guthrie
+gmane(at)colin.guthr.ie
+http://colin.guthr.ie/
+
+Day Job:
+  Tribalogic Limited http://www.tribalogic.net/
+Open Source:
+  Mageia Contributor http://www.mageia.org/
+  PulseAudio Hacker http://www.pulseaudio.org/
+  Trac Hacker http://trac.edgewall.org/
