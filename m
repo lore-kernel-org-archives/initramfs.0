@@ -1,47 +1,48 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH] crypt: Fix device detection.
-Date: Wed, 13 Feb 2013 11:19:49 +0000
-Message-ID: <511B76D5.5020004@colin.guthr.ie>
-References: <1360715138-19755-1-git-send-email-colin@mageia.org> <511B708A.60106@redhat.com>
+From: Andreas Mohr <andi@lisas.de>
+Subject: Re: [REGRESSION] [nailed] USB boot failure: USB: EHCI: make ehci-pci
+ a separate driver
+Date: Wed, 13 Feb 2013 17:13:53 +0100
+Message-ID: <20130213161353.GA17177@rhlx01.hs-esslingen.de>
+References: <511B7009.6030501@colin.guthr.ie>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <511B708A.60106-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <511B7009.6030501@colin.guthr.ie>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Colin Guthrie <gmane@colin.guthr.ie>
+Cc: initramfs@vger.kernel.org, linux-kernel@vger.kernel.org
 
-'Twas brillig, and Harald Hoyer at 13/02/13 10:52 did gyre and gimble:
-> Am 13.02.2013 01:25, schrieb Colin Guthrie:
->> The host device/fs rework led to a regression in crypt detection.
->> It was only checking the host filesystems, not it's slaves and thus
->> never detected if crypt support was needed.
->>
->> Code now mirrors the lvm module's check
->>
->> https://bugs.mageia.org/show_bug.cgi?id=9040
->> ---
-> 
-> Does this commit fix the issue instead?
-> 
-> http://git.kernel.org/?p=boot/dracut/dracut.git;a=commitdiff;h=19bab59c48ba6edbdf9d6d9f339baef250bdd4a6
+[not sure about CCs - I readded both initramfs-tools and lkml]
 
-I'll test tonight in my VM.
+> I think you actually want both: ehci-pci and ehci-platform (tho' perhaps
+> the module deps mean only the -pci one is needed)
 
-Col
+Err, yeah, that's probably more precise.
 
+> Either way I already posted a patch about this a while back:
 
--- 
+> See: "[PATCH 6/6] kernel-modules: Add ehci support for kernel 3.8+"
 
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
+OK, I've seen it, but:
+which file does it touch?? That's a complete mystery to me
+(the initramfs-tools git checkout here does not contain that path).
 
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+> (admittedly perhaps that should have been 3.7 rather than 3.8)!
+
+Hmm, the patch was introduced in early moments from 3.7 prior to
+3.8-rc1. Thus one could say that the non-covered window is only
+a part of the small 3.8-rc1 step which is used by devel people only.
+OTOH to retain the very important development property
+of properly working regression bisects over all versions
+(of regressions *other* than this USB boot effect, that is),
+even that smallish window ought to be fully covered.
+If it thus is decided to be a sizeable versioning issue,
+then it really should be downgraded to 3.7 very soon,
+in order to prevent a support window coverage issue.
+
+Thanks,
+
+Andreas Mohr
