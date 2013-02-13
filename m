@@ -1,48 +1,53 @@
-From: Andreas Mohr <andi@lisas.de>
+From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
 Subject: Re: [REGRESSION] [nailed] USB boot failure: USB: EHCI: make ehci-pci
  a separate driver
-Date: Wed, 13 Feb 2013 17:13:53 +0100
-Message-ID: <20130213161353.GA17177@rhlx01.hs-esslingen.de>
-References: <511B7009.6030501@colin.guthr.ie>
+Date: Wed, 13 Feb 2013 16:26:27 +0000
+Message-ID: <511BBEB3.3070607@colin.guthr.ie>
+References: <20130213161353.GA17177@rhlx01.hs-esslingen.de>
 Mime-Version: 1.0
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <511B7009.6030501@colin.guthr.ie>
-Sender: linux-kernel-owner@vger.kernel.org
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20130213161353.GA17177-p/qQFhXj4MHA4IYVXhSI5GHfThorsUsI@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Colin Guthrie <gmane@colin.guthr.ie>
-Cc: initramfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Andreas Mohr <andi-5+Cda9B46AM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-[not sure about CCs - I readded both initramfs-tools and lkml]
+'Twas brillig, and Andreas Mohr at 13/02/13 16:13 did gyre and gimble:
+> [not sure about CCs - I readded both initramfs-tools and lkml]
 
-> I think you actually want both: ehci-pci and ehci-platform (tho' perhaps
-> the module deps mean only the -pci one is needed)
+Sorry about CC's I read mail via gmane's NNTP interface and it mangles
+the address for the initramfs list which makes it a pain to reply-all
+properly. If someone who manages this stuff could ask a gmane.org admin
+to lift the mangling that would be good. There are other places to
+harvest the same email addresses if someone really wants to!
 
-Err, yeah, that's probably more precise.
+>> Either way I already posted a patch about this a while back:
+> 
+>> See: "[PATCH 6/6] kernel-modules: Add ehci support for kernel 3.8+"
+> 
+> OK, I've seen it, but:
+> which file does it touch?? That's a complete mystery to me
+> (the initramfs-tools git checkout here does not contain that path).
 
-> Either way I already posted a patch about this a while back:
+Oh, oops, my bad sorry. I didn't read your mail properly and didn't see
+the initramfs-tools bit. The patch is against dracut, so obviously won't
+apply nicely :D
 
-> See: "[PATCH 6/6] kernel-modules: Add ehci support for kernel 3.8+"
+Sorry for the confusion.
 
-OK, I've seen it, but:
-which file does it touch?? That's a complete mystery to me
-(the initramfs-tools git checkout here does not contain that path).
+Col
 
-> (admittedly perhaps that should have been 3.7 rather than 3.8)!
+-- 
 
-Hmm, the patch was introduced in early moments from 3.7 prior to
-3.8-rc1. Thus one could say that the non-covered window is only
-a part of the small 3.8-rc1 step which is used by devel people only.
-OTOH to retain the very important development property
-of properly working regression bisects over all versions
-(of regressions *other* than this USB boot effect, that is),
-even that smallish window ought to be fully covered.
-If it thus is decided to be a sizeable versioning issue,
-then it really should be downgraded to 3.7 very soon,
-in order to prevent a support window coverage issue.
+Colin Guthrie
+gmane(at)colin.guthr.ie
+http://colin.guthr.ie/
 
-Thanks,
-
-Andreas Mohr
+Day Job:
+  Tribalogic Limited http://www.tribalogic.net/
+Open Source:
+  Mageia Contributor http://www.mageia.org/
+  PulseAudio Hacker http://www.pulseaudio.org/
+  Trac Hacker http://trac.edgewall.org/
