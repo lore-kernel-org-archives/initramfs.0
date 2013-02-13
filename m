@@ -1,40 +1,62 @@
-From: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] make nbd port check more robust
-Date: Sat, 9 Feb 2013 12:54:20 +0100
-Message-ID: <CAKzfqketd_0n7x2tuPXRg5UtxOReDBhDCxELnOiEOE4Bjt0fSg@mail.gmail.com>
-Mime-Version: 1.0
+From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] crypt: Fix device detection.
+Date: Wed, 13 Feb 2013 00:25:38 +0000
+Message-ID: <1360715138-19755-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:x-received:date:message-id:subject:from:to
-         :content-type;
-        bh=2ROiIq4uYxodhIXM+y5v7ZHOeZ5qkyjTCtZYvc2Anvk=;
-        b=e3NokxaytPdvY5c3hm5SJXpz73Yw0nEZ9F/xmkL/NFQM8DkTe4QZgN5d4sW1sh239t
-         X4hWMNEV/SnelIxW2MFbb5ofEfm3QKNBe9yrM2QKAuRELYKWf5pVY8J7KqPuwbwQzDIX
-         5PVFM4KCcNkpaLLGCz43meQdVzV71D0KGlmUygPM5RFhD6WWCs93gTHELTmpwJrmrrvk
-         YNmw6L/2+E0stc4FgrsRVNlyXNkjDcn9FZX9MHKiV1mdOULewEbLQBmOliOM/KWya5Pn
-         Pv147x0ePZO4PzaQq7Brz5Dr/HJIWyeFRs9fH6UE8W61U8GadyVUYhZ+63WUOBf45dWV
-         UzUw==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-The following change makes the check for the nbd port or named export
-more robust.
-I wasn't sure whether to include sed in the dracut_install() of
-module-setup.sh since net already does that (and nbd depends on that).
+The host device/fs rework led to a regression in crypt detection.
+It was only checking the host filesystems, not it's slaves and thus
+never detected if crypt support was needed.
 
---- modules.d/95nbd/nbdroot.sh.orig     2013-02-09 12:37:26.804648073 +0100
-+++ modules.d/95nbd/nbdroot.sh  2013-02-09 12:41:55.522345127 +0100
-@@ -31,7 +31,7 @@
- nbdopts=${root#*:}
+Code now mirrors the lvm module's check
 
- # If nbdport not an integer, then assume name based import
--if [ "${nbdport%[0-9]}" = "$nbdport" ]; then
-+if [ ! -z $(echo "$nbdport" | sed s/[0-9]//g) ]; then
-     nbdport="-N $nbdport"
- fi
+https://bugs.mageia.org/show_bug.cgi?id=9040
+---
 
-regards, Wim
+I've not specifically checked, but other modules might also have been affected by this change in behaviour.
+
+
+ modules.d/90crypt/module-setup.sh | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
+index 5c1c71b..9980f3f 100755
+--- a/modules.d/90crypt/module-setup.sh
++++ b/modules.d/90crypt/module-setup.sh
+@@ -8,15 +8,9 @@ check() {
+     type -P cryptsetup >/dev/null || return 1
+ 
+     check_crypt() {
+-        local dev=$1 fs=$2
+-        [[ $fs = "crypto_LUKS" ]] || return 1
+-        ID_FS_UUID=$(udevadm info --query=property --name=$dev \
+-            | while read line; do
+-                [[ ${line#ID_FS_UUID} = $line ]] && continue
+-                eval "$line"
+-                echo $ID_FS_UUID
+-                break
+-                done)
++        local ID_FS_TYPE ID_FS_UUID
++        eval $(udevadm info --query=property --name=/dev/block/$1|egrep '(ID_FS_TYPE|ID_FS_UUID)=')
++        [[ ${ID_FS_TYPE} = "crypto_LUKS" ]] || return 1
+         [[ ${ID_FS_UUID} ]] || return 1
+         if ! [[ $kernel_only ]]; then
+             echo " rd.luks.uuid=luks-${ID_FS_UUID} " >> "${initdir}/etc/cmdline.d/90crypt.conf"
+@@ -25,7 +19,7 @@ check() {
+     }
+ 
+     [[ $hostonly ]] || [[ $mount_needs ]] && {
+-        for_each_host_dev_fs check_crypt || return 1
++        for_each_host_dev_and_slaves check_crypt || return 1
+     }
+ 
+     return 0
+-- 
+1.8.1.3
