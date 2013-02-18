@@ -1,49 +1,70 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH] crypt: Fix device detection.
-Date: Wed, 13 Feb 2013 22:25:59 +0000
-Message-ID: <511C12F7.5020902@colin.guthr.ie>
-References: <1360715138-19755-1-git-send-email-colin@mageia.org> <511B708A.60106@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH v2 1/2] Add parameter continue_on_fail to make dracut continue after initqueue timeout
+Date: Mon, 18 Feb 2013 14:21:42 +0800
+Message-ID: <f882d74cd041626d5af732d048514a2832a72dc1.1361167889.git.bhe@redhat.com>
+References: <cover.1361167889.git.bhe@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <511B708A.60106-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <cover.1361167889.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <cover.1361167889.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+References: <cover.1361167889.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-'Twas brillig, and Harald Hoyer at 13/02/13 10:52 did gyre and gimble:
-> Am 13.02.2013 01:25, schrieb Colin Guthrie:
->> The host device/fs rework led to a regression in crypt detection.
->> It was only checking the host filesystems, not it's slaves and thus
->> never detected if crypt support was needed.
->>
->> Code now mirrors the lvm module's check
->>
->> https://bugs.mageia.org/show_bug.cgi?id=9040
->> ---
-> 
-> Does this commit fix the issue instead?
-> 
-> http://git.kernel.org/?p=boot/dracut/dracut.git;a=commitdiff;h=19bab59c48ba6edbdf9d6d9f339baef250bdd4a6
+In kdump, When the dump device was removed, dracut will drop to shell
+during second kernel boot. That means kdump isn't even started. But
+in this case, if the target isn't presented, we should dump to a rootfs
+device as a default action.
 
-ACK, that commit also fixes the issue on my test system.
+In this patch, add a new parameter continue_on_fail. After initqueue
+timeout, detect whether this parameter is specified. If yes,continue.
+If not, enter into emergency_shell.
 
-Thanks :)
+For later extending, user need give timeout point. E.g, use this
+parameter like below:
+    continue_on_fail=initqueue
 
-Col
+dracut.cmdline.7.asc: add the relevant description
 
+Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut.cmdline.7.asc                    |    3 +++
+ modules.d/98systemd/dracut-initqueue.sh |    5 ++++-
+ 2 files changed, 7 insertions(+), 1 deletions(-)
 
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index 62372a5..31d2d84 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -121,6 +121,9 @@ Misc
+    specify the controlling terminal for the console.
+    This is useful, if you have multiple "console=" arguments.
+ 
++**continue_on_fail=**_{initqueue}_::
++    continue after initqueue timeout by specify the timeout point 'initqueue'
++
+ [[dracutkerneldebug]]
+ Debug
+ ~~~~~
+diff --git a/modules.d/98systemd/dracut-initqueue.sh b/modules.d/98systemd/dracut-initqueue.sh
+index 7de89e9..f889d20 100755
+--- a/modules.d/98systemd/dracut-initqueue.sh
++++ b/modules.d/98systemd/dracut-initqueue.sh
+@@ -61,7 +61,10 @@ while :; do
+     fi
+ 
+     main_loop=$(($main_loop+1))
+-    [ $main_loop -gt $RDRETRY ] && emergency_shell "Could not boot."
++    if [ $main_loop -gt $RDRETRY ]; then
++        getarg 'continue_on_fail=initqueue' && break
++        emergency_shell "Could not boot."
++    fi
+ done
+ 
+ unset job
 -- 
-
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
-
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+1.7.1
