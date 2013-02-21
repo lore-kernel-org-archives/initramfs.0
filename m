@@ -1,78 +1,42 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 0/2] add parameter continue_on_fail
-Date: Tue, 19 Feb 2013 16:02:21 +0800
-Message-ID: <5123318D.1030207@redhat.com>
-References: <cover.1361167889.git.bhe@redhat.com> <51220277.1010507@redhat.com> <51230787.7090706@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: lars-3XmpO8hA3EAAvxtiuMwx3w@public.gmane.org
+Subject: [PATCH] dracut: write initramfs to temp file then move into place
+Date: Thu, 21 Feb 2013 13:40:23 -0800
+Message-ID: <1361482823-30898-1-git-send-email-lars@pixar.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51230787.7090706-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: "Lars R. Damerow" <lars-3XmpO8hA3EAAvxtiuMwx3w@public.gmane.org>
 
-On 02/19/2013 01:03 PM, Baoquan wrote:
-> On 02/18/2013 06:29 PM, Harald Hoyer wrote:
-> 
->> Am 18.02.2013 07:21, schrieb Baoquan He:
->>> v1->v2:
->>>     Discard previous implementation, take a direct and simpler
->>>     method.
->>>
->>> By adding pamameter 'continue_on_fail=initqueue|mount_root',
->>> user can decide if continue after these points timeout. And
->>> can extend to other delay or loop point later if needed.
->>>
->>> Baoquan He (2):
->>>   Add parameter continue_on_fail to make dracut continue after
->>>     initqueue timeout
->>>   Continue when mount rootfs failed by specifing
->>>     'continue_on_fail=mount_root'
->>>
->>>  dracut.cmdline.7.asc                    |    3 +++
->>>  modules.d/98systemd/dracut-initqueue.sh |   10 ++++++++--
->>>  2 files changed, 11 insertions(+), 2 deletions(-)
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe initramfs" in
->>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
->> Why don't you just remove all "finished" scripts and install your own "finished"
->> checking scripts, when your kdump device is ready?
+From: "Lars R. Damerow" <lars-3XmpO8hA3EAAvxtiuMwx3w@public.gmane.org>
 
-Even if none of kdump devices are ready, kdump still need ignore
-previous failure of dracut, so kdump can handle it according to kdump
-config options user specified. ie. some customized scripts..
+We've been finding cases where multiple instances of dracut can be launched
+simultaneously, resulting in a corrupted initramfs file. This patch makes
+dracut write the initramfs to a new file, then move it into place atomically.
+---
+ dracut.sh | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-> 
-> Hi Harald,
-> 
-> Thanks for your comment.
-> 
-> Even though use "finished" scripts method, a parameter as switch to user
-> is necessary. There are various kdump targets, sometime maybe it's
-> unnecessary to continue on fail, because kdump target may not be started
-> in initqueue.
-> 
-> In initqueue, adding parameter and change are because when a specific
-> device failed to setup, later rootfs can be tried.
-> 
-> E.g For kdump, there can be 2 dump target, one is remote target through
-> network with higher priority, the other is local rootfs with lower
-> priority. So in initqueue, even though the network device failed to
-> setup, we need go ahead to try local rootfs dumping, but not entering
-> into emergency shell.
-> 
-> Baoquan
-> Thanks a lot!
-> 
-
-
+diff --git a/dracut.sh b/dracut.sh
+index 31cf2a5..da96aaa 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1103,10 +1103,11 @@ fi
+ rm -f "$outfile"
+ dinfo "*** Creating image file ***"
+ if ! ( umask 077; cd "$initdir"; find . |cpio -R 0:0 -H newc -o --quiet| \
+-    $compress > "$outfile"; ); then
+-    dfatal "dracut: creation of $outfile failed"
++    $compress > "$outfile.$$"; ); then
++    dfatal "dracut: creation of $outfile.$$ failed"
+     exit 1
+ fi
++mv $outfile.$$ $outfile
+ dinfo "*** Creating image file done ***"
+ 
+ dinfo "Wrote $outfile:"
 -- 
-Thanks
-Dave
-
+1.8.0
