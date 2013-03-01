@@ -1,48 +1,53 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] shutdown: move scripts instead of deleting them
-Date: Thu, 28 Feb 2013 16:57:26 -0500
-Message-ID: <1362088646-25881-1-git-send-email-wwoods@redhat.com>
+From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
+Subject: initramfs-tools 0.110 release
+Date: Fri, 1 Mar 2013 12:47:18 +0100
+Message-ID: <2013-03-01T12-42-40@devnull.michael-prokop.at>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="8P1HSweYDcXXzwPJ"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-Unlike every other rd.break=XXX breakpoint, shutdown happens *after* the
-shutdown scripts are run. Furthermore, shutdown deletes the scripts
-after they run.
 
-This makes debugging tricky if you have something that's supposed to
-dynamically generate shutdown scripts - they've all been deleted by the
-time the 'shutdown' shell starts.
+--8P1HSweYDcXXzwPJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-So just for the sake of clarity, move finished scripts out of the way
-to $hookdir/shutdown/done rather than deleting them outright.
----
- modules.d/99shutdown/shutdown.sh | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Hi,
 
-diff --git a/modules.d/99shutdown/shutdown.sh b/modules.d/99shutdown/shutdown.sh
-index 202ecb1..6f843f6 100755
---- a/modules.d/99shutdown/shutdown.sh
-+++ b/modules.d/99shutdown/shutdown.sh
-@@ -84,13 +84,14 @@ _check_shutdown() {
-         [ -e "$__f" ] || continue
-         ( . "$__f" $1 )
-         if [ $? -eq 0 ]; then
--            rm -f $__f
-+            mv -f $__f $hookdir/shutdown/done
-             __s=0
-         fi
-     done
-     return $__s
- }
- 
-+mkdir -p $hookdir/shutdown/done
- while _check_shutdown; do
- :
- done
--- 
-1.8.1.2
+we just uploaded initramfs-tools 0.110 to Debian/experimental,
+getting rid of deprecated references to '2.6' and making sure the
+changes in recent upstream kernel with the nfsv{2,3,4} split and the
+new ehci-pci module are adressed.
+
+The shortlog has the details:
+
+Ben Hutchings (2):
+      Bug#697319: [PATCH 1/2] Remove '2.6.' from initramfs wildcard in bug script (Closes: #697319)
+      Remove more references to linux-2.6 in manual page and comments
+
+Michael Prokop (3):
+      Install nfsv{2,3,4} kernel modules as used by Kernels >=3.6
+      include ehci-pci in auto_add_modules list
+      Releasing version 0.110
+
+regards,
+-mika-
+
+--8P1HSweYDcXXzwPJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAlEwlUYACgkQ2N9T+zficui48gCeOnRI5jBzM6DbACC5UY6OdWta
+Ur4An0tvWWlPML/3SSrCniFztWr1HXqF
+=HuqD
+-----END PGP SIGNATURE-----
+
+--8P1HSweYDcXXzwPJ--
