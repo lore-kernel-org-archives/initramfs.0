@@ -1,53 +1,29 @@
-From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
-Subject: initramfs-tools 0.110 release
-Date: Fri, 1 Mar 2013 12:47:18 +0100
-Message-ID: <2013-03-01T12-42-40@devnull.michael-prokop.at>
+From: Brian Mearns <bmearns-EkmVulN54Sk@public.gmane.org>
+Subject: Install a directory from dracut module
+Date: Wed, 6 Mar 2013 21:51:07 -0500
+Message-ID: <CABPDx51n7k8xUd2NeCe2OD5cBDPiG78YKmrJSvUPgS5gGnOwLg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="8P1HSweYDcXXzwPJ"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=x-received:mime-version:sender:from:date:x-google-sender-auth
+         :message-id:subject:to:content-type;
+        bh=S7Ft8oWSfT0xlG4FeCst+ox1vAFkEipc1mtc6PcC0XU=;
+        b=uwvorO7diyjiKRNIh695pegKC0Iadth3demqrrhRUKqKkNA1M14jF9V7jAJmIpHeDn
+         iWnwbSauAhVTJoJel4ITEoyvD9yTfWHv7cej51PB5SBK0TjeJT6kXyBrcrK0pawqK+Un
+         2aCcC1JjynvEPgt4319oZb0vD4K/OnYnyDGMkyBTO1V14S/Ka3fErZSLX1KADlv9DN/Q
+         djg/ILKzaHZzbrVw+bzi2twVWYLe2Bm0XEgszG/pUpzHlMypK0HLiFQIhhKvL2s6r1tI
+         CnNzLAB4Ckr5buVOy9eHwsk8ASPhJUON9DeQ41KSklw3UM2rRnDiJVSwpvfEOSzzSZ4k
+         dD9g==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+I want to recursively install a directory in the install() function of
+my module: is there an inst function for that, or can anyone suggest
+some shell script that will do it?
 
---8P1HSweYDcXXzwPJ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-Hi,
-
-we just uploaded initramfs-tools 0.110 to Debian/experimental,
-getting rid of deprecated references to '2.6' and making sure the
-changes in recent upstream kernel with the nfsv{2,3,4} split and the
-new ehci-pci module are adressed.
-
-The shortlog has the details:
-
-Ben Hutchings (2):
-      Bug#697319: [PATCH 1/2] Remove '2.6.' from initramfs wildcard in bug script (Closes: #697319)
-      Remove more references to linux-2.6 in manual page and comments
-
-Michael Prokop (3):
-      Install nfsv{2,3,4} kernel modules as used by Kernels >=3.6
-      include ehci-pci in auto_add_modules list
-      Releasing version 0.110
-
-regards,
--mika-
-
---8P1HSweYDcXXzwPJ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAlEwlUYACgkQ2N9T+zficui48gCeOnRI5jBzM6DbACC5UY6OdWta
-Ur4An0tvWWlPML/3SSrCniFztWr1HXqF
-=HuqD
------END PGP SIGNATURE-----
-
---8P1HSweYDcXXzwPJ--
+Thanks,
+-Brian
