@@ -1,63 +1,44 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut-026
-Date: Fri, 08 Mar 2013 11:38:57 +0100
-Message-ID: <5139BFC1.7000601@redhat.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 0/2] memory usage trace follow-ups
+Date: Mon, 11 Mar 2013 10:36:13 +0800
+Message-ID: <513D431D.9000206@redhat.com>
+References: <20130225063814.423057451@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20130225063814.423057451-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-Here comes a new dracut version. Thanks to all who have contributed to
-this release.
+On 02/25/2013 02:38 PM, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
+> Here is two patches to improve the memory usage trace feature:
+> 1/2: redirect memory tracing info to stderr
+> 2/2: add memory trace points in old init scripts
+> 
+> Please help to review
 
-The tarball can be found here:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/
-	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Hello Harald
 
-Git:
-	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+Any comments on these two patches for memory debug patches?
+If you think systemd is encouraged to use then I think only 1/2 is
+enough for us.
 
-Git Web:
-	http://git.kernel.org/?p=boot/dracut/dracut.git
+Thanks..
 
-Git Web RSS Feed:
-	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-	http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+> 
+> --
+> Thanks
+> Dave
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
 
-dracut-026
-==========
-- introduce /usr/lib/dracut/dracut.conf.d/ drop-in directory
+-- 
+Thanks
+Dave
 
-  /usr/lib/dracut/dracut.conf.d/*.conf can be overwritten by the same
-  filenames in /etc/dracut.conf.d.
-
-  Packages should use /usr/lib/dracut/dracut.conf.d rather than
-  /etc/dracut.conf.d for drop-in configuration files.
-
-  /etc/dracut.conf and /etc/dracut.conf.d belong to the system administrator.
-
-- uses systemd-198 native initrd units
-- totally rely on the fstab-generator in systemd mode for block devices
-- dracut systemd now uses dracut.target rather than basic.target
-- dracut systemd services optimize themselves away
-- fixed hostonly parameter generation
-- turn off curl globbing (fixes IPv6)
-- modify the udev rules on install and not runtime time
-- enable initramfs building without kernel modules (fixed regression)
-- in the initqueue/timeout,
-  reset the main loop counter, as we see new udev events or initqueue/work
-- fixed udev rule installation
