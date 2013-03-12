@@ -1,75 +1,95 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut-026: lsinitrd doesn't work with provided image
-Date: Tue, 12 Mar 2013 15:54:24 +0800
-Message-ID: <513EDF30.7090408@redhat.com>
-References: <CAKzfqkfwg_tW70VJbmgKg-Vs3O2DWLX36o0bMZhYvTL9U9QCRQ@mail.gmail.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: initrd-xxx.img create dracut not correct
+Date: Tue, 12 Mar 2013 09:37:19 +0100
+Message-ID: <513EE93F.1090909@redhat.com>
+References: <513964D9.7060700@gmail.com> <51398CEE.5090502@redhat.com> <513C528C.2010200@gmail.com> <513DA469.80505@redhat.com> <513E8164.8000908@gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAKzfqkfwg_tW70VJbmgKg-Vs3O2DWLX36o0bMZhYvTL9U9QCRQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <513E8164.8000908-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset="utf-8"
+To: yeyouqun <yeyouqun1981-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 03/12/2013 02:53 AM, Wim Muskee wrote:
-> hi,
-> 
-> In dracut-026:
-> # dracut /boot/initramfs-dracut-x86_64-3.3.8-gentoo 3.3.8-gentoo
-> # lsinitrd /boot/initramfs-dracut-x86_64-3.3.8-gentoo
-> 
-> No <initramfs file> specified and the default image
-> '/boot/initramfs-3.2.1-gentoo-r2.img}' cannot be accessed!
-> 
-> Usage: lsinitrd [-s] [<initramfs file> [<filename>]]
-> 
-> Looking at the lsinitrd, the provided image seems to be always
-> overwritten after it has been set from $1.
-> 
+Am 12.03.2013 02:14, schrieb yeyouqun:
+> =E4=BA=8E 2013-3-11 17:31, Harald Hoyer =E5=86=99=E9=81=93:
+>> Am 10.03.2013 10:29, schrieb yeyouqun:
+>>> =E4=BA=8E 2013-3-8 15:02, Harald Hoyer =E5=86=99=E9=81=93:
+>>>> Am 08.03.2013 05:11, schrieb yeyouqun:
+>>>>> Recently I upgraded linux kernel to 3.6.10 and upgrade dracut ver=
+sion to 024,
+>>>>> system starts up OK on 3.6.10. But when I upgraded kernel from 3.=
+6.10 to
+>>>>> 3.8.2,
+>>>>> dracut failed to start up the system. Message when start up reads=
+:
+>>>>>
+>>>>> ......
+>>>>>      dracut: dracut-dracut-024-
+>>>>>       rpcbind: cannot create socket for udp6
+>>>>>       rpcbind: cannot create socket for tcp6
+>>>>>       mount: unknoun filesys
+>>>>>       udev: starting version 147
+>>>>>       systend-udevd (139): /proc/139/oom_adj is deprecated, pleas=
+e use
+>>>>>       /proc/139/oom_score_adj instead.
+>>>>>       dracut Warning: Could not boot.
+>>>>>       dracut Warning: Could not boot.
+>>>>>       Dropping to debug shell.
+>>>>>       /bin/sh: can't access tty; job control turned off
+>>>>> ......
+>>>>>
+>>>>> But when I unpack the initrd-3.8.2.img, the /lib/modules director=
+y shows as
+>>>>> below:
+>>>>>
+>>>>> modules ---- 3.8.2
+>>>>>            |
+>>>>>            |__ 3.6.10
+>>>>>
+>>>>> all the kernel modules reside in "3.6.10" directory and other fil=
+es, such as
+>>>>> "modules.dep" and etc. reside in 3.8.2, I think this is the reaso=
+n why system
+>>>>> can't start up.
+>>>>>
+>>>>> I upgraded kernel by the steps as(in kernel source tree of 3.8.2)=
+:
+>>>>>
+>>>>>       make
+>>>>>       make modules_install
+>>>>>       make install
+>>>>>
+>>>>> Any one can tell how to fix this behavior of dracut?
+>>>> What's the output of:
+>>> output is two big, I appende it.
+>>>> # dracut --debug test.img 3.8.2
+>> /usr/lib/dracut/dracut-functions.sh@1377(dracut_kernel_post): xargs =
+-r modprobe
+>> -a -d / --ignore-install --show-depends --set-version 3.8.2
+>> /usr/lib/dracut/dracut-functions.sh@1382(dracut_kernel_post): [[ ins=
+mod =3D
+>> insmod ]]
+>> /usr/lib/dracut/dracut-functions.sh@1383(dracut_kernel_post): echo
+>> ///lib/modules/3.6.10/kernel/arch/x86/crypto/crc32c-intel.ko
+>>
+>>
+>> This looks fishy...
+>>
+>>
+>> What is the output of:
+>>
+>> # modprobe -a --ignore-install --show-depends --set-version 3.8.2 xo=
+r
+>>
+> [root@localhost mnt]# modprobe -a --ignore-install --show-depends --s=
+et-version
+> 3.8.2 xor
+> insmod /lib/modules/3.8.2/kernel/crypto/xor.ko
 
-The machine-id section should only be run in case without $1 as image name.
-Is below fix works for you?
+and what is the output of:
 
-diff --git a/lsinitrd.sh b/lsinitrd.sh
-index 7a09423..fe723f7 100755
---- a/lsinitrd.sh
-+++ b/lsinitrd.sh
-@@ -54,23 +54,23 @@ if [[ "$1" ]]; then
-         usage
-         exit 1
-     fi
--fi
--
--[[ -f /etc/machine-id ]] && read MACHINE_ID < /etc/machine-id
--
--if [[ $MACHINE_ID ]] && ( [[ -d /boot/${MACHINE_ID} ]] || [[ -L /boot/${MACHINE_ID} ]] ); then
--    image="/boot/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
- else
--    image="/boot/initramfs-${KERNEL_VERSION}.img}"
--fi
-+    [[ -f /etc/machine-id ]] && read MACHINE_ID < /etc/machine-id
- 
--if ! [[ -f "$image" ]]; then
--    {
-+    if [[ $MACHINE_ID ]] && ( [[ -d /boot/${MACHINE_ID} ]] || [[ -L /boot/${MACHINE_ID} ]] ); then
-+        image="/boot/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-+    else
-+        image="/boot/initramfs-${KERNEL_VERSION}.img}"
-+    fi
-+
-+    if ! [[ -f "$image" ]]; then
-+        {
-         echo "No <initramfs file> specified and the default image '$image' cannot be accessed!"
-         echo
--    } >&2
--    usage
--    exit 1
-+        } >&2
-+        usage
-+        exit 1
-+    fi
- fi
- 
- CAT=zcat
+# modprobe -a -d / --ignore-install --show-depends --set-version 3.8.2 =
+xor
