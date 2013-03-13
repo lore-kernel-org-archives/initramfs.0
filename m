@@ -1,93 +1,34 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Do not override user specified initramfs image name
-Date: Wed, 13 Mar 2013 15:26:54 +0800
-Message-ID: <51402A3E.5060207@redhat.com>
-References: <CAKzfqkfwg_tW70VJbmgKg-Vs3O2DWLX36o0bMZhYvTL9U9QCRQ@mail.gmail.com> <513EDF30.7090408@redhat.com> <CAKzfqkeUkknOwONqZkuZ8c56+5iNLxigLv+K70sSDXuvPaabZg@mail.gmail.com> <513F42EC.5030800@redhat.com> <513FDAF4.9030908@redhat.com> <514027FE.9090600@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Subject: [patch v2 1/3] print memdebug to stderr
+Date: Wed, 13 Mar 2013 15:59:24 +0800
+Message-ID: <20130313080318.507973383@redhat.com>
+References: <20130313075923.845431353@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <514027FE.9090600-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline; filename=mem-improve-1.patch
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 03/13/2013 03:17 PM, Harald Hoyer wrote:
-> Am 13.03.2013 02:48, schrieb Dave Young:
->>
->>
->> The code section for setting default initramfs image name is only for
->> the case that user has not specified image name argument.
->>
->> Moving the code to else section of below:
->>
->> if [[ "$1" ]]; then
->> ...
->> else
->> ...
->> fi
->>
->> Also remove the typo of trailing '}'
->>
->> Reported-by: Wim Muskee <wimmuskee-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> ---
->> diff --git a/lsinitrd.sh b/lsinitrd.sh
->> index 7a09423..fe723f7 100755
->> --- a/lsinitrd.sh
->> +++ b/lsinitrd.sh
->> @@ -54,23 +54,23 @@ if [[ "$1" ]]; then
->>          usage
->>          exit 1
->>      fi
->> -fi
->> -
->> -[[ -f /etc/machine-id ]] && read MACHINE_ID < /etc/machine-id
->> -
->> -if [[ $MACHINE_ID ]] && ( [[ -d /boot/${MACHINE_ID} ]] || [[ -L /boot/${MACHINE_ID} ]] ); then
->> -    image="/boot/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
->>  else
->> -    image="/boot/initramfs-${KERNEL_VERSION}.img}"
->> -fi
->> +    [[ -f /etc/machine-id ]] && read MACHINE_ID < /etc/machine-id
->>  
->> -if ! [[ -f "$image" ]]; then
->> -    {
->> +    if [[ $MACHINE_ID ]] && ( [[ -d /boot/${MACHINE_ID} ]] || [[ -L /boot/${MACHINE_ID} ]] ); then
->> +        image="/boot/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
->> +    else
->> +        image="/boot/initramfs-${KERNEL_VERSION}.img"
->> +    fi
->> +
->> +    if ! [[ -f "$image" ]]; then
->> +        {
->>          echo "No <initramfs file> specified and the default image '$image' cannot be accessed!"
->>          echo
->> -    } >&2
->> -    usage
->> -    exit 1
->> +        } >&2
->> +        usage
->> +        exit 1
->> +    fi
->>  fi
->>  
->>  CAT=zcat
->>
-> 
-> see
-> http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=727e68d0b5cb93eb6c6e00f0541b8519657a2597
-> and
-> http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=d928724c3cf464a495c11162042951887b80f5e6
-> 
-> already committed on 2013-03-11
-> 
-> 
+memory usage tracing outputs are debug info, so it should be moved to
+stderr instead of stdout.
 
-Good to know, thanks for tell.
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/99base/dracut-lib.sh |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
--- 
-Thanks
-Dave
-
+--- dracut.orig/modules.d/99base/dracut-lib.sh
++++ dracut/modules.d/99base/dracut-lib.sh
+@@ -1041,7 +1041,7 @@ make_trace_mem()
+     msg="$1"
+     shift
+     if [ -n "$DEBUG_MEM_LEVEL" ] && [ "$DEBUG_MEM_LEVEL" -gt 0 ]; then
+-        make_trace show_memstats $DEBUG_MEM_LEVEL "[debug_mem]" "$msg" "$@"
++        make_trace show_memstats $DEBUG_MEM_LEVEL "[debug_mem]" "$msg" "$@" >&2
+     fi
+ }
+ 
