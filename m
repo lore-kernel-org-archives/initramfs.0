@@ -1,32 +1,57 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] fix typo in dracut.conf.5.asc
-Date: Thu, 14 Mar 2013 13:48:06 -0400
-Message-ID: <1363283286-29312-1-git-send-email-wwoods@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCE] dracut-027
+Date: Tue, 26 Mar 2013 17:06:20 +0100
+Message-ID: <5151C77C.3020807@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-It's /etc/dracut.conf.d, not /etc/dracut/conf.d
----
- dracut.conf.5.asc | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-diff --git a/dracut.conf.5.asc b/dracut.conf.5.asc
-index 1cc810f..dbaa2e5 100644
---- a/dracut.conf.5.asc
-+++ b/dracut.conf.5.asc
-@@ -140,7 +140,7 @@ Files
- -----
- _/etc/dracut.conf_::
-     Old configuration file. You better use your own file in
--    _/etc/dracut/conf.d/_.
-+    _/etc/dracut.conf.d/_.
- 
- _/etc/dracut.conf.d/_::
-     Any _/etc/dracut.conf.d/*.conf_ file can overwrite the values in
--- 
-1.8.1.4
+The tarball can be found here:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/
+	ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+
+Git:
+	git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+	https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+
+Git Web:
+	http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+	http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+	http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+	http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+
+
+dracut-027
+==========
+- dracut now has bash-completion
+- require bash version 4
+- systemd module now requires systemd >= 199
+- dracut makes use of native systemd initrd units
+- added hooks for new-kernel-pkg and kernel-install
+- hostonly is now default for fedora
+- comply with the BootLoaderSpec paths
+  http://www.freedesktop.org/wiki/Specifications/BootLoaderSpec
+- added rescue module
+- host_fs_types is now a hashmap
+- new dracut argument "--regenerate-all"
+- new dracut argument "--noimageifnotneeded"
+- new man page dracut.bootup
+- install all host filesystem drivers
+- use -D_FILE_OFFSET_BITS=64 to build dracut-install
