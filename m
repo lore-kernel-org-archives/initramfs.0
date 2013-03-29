@@ -1,7 +1,7 @@
 From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v3] Let user specify the action after fail
-Date: Fri, 29 Mar 2013 16:06:50 +0800
-Message-ID: <9e6a8c7fe2d899d3e24f09f4eeef419a821b8030.1364544367.git.bhe@redhat.com>
+Subject: [PATCH v4] Let user specify the action after fail
+Date: Fri, 29 Mar 2013 18:36:16 +0800
+Message-ID: <30ace4e3dce0dbe9b75572e533d2084ce7c26977.1364553259.git.bhe@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -20,18 +20,23 @@ happens is needed by kdump.
 So here add a function action_on_fail() and cmdline parameter
 action_on_fail=<shell | continue>. Use action_to_fail() to replace
 emergency_shell which was called after failure. By $(getarg action_on_fail=),
-decice to drop into shell, or to leave away the failure and go ahead.
+decide to drop into shell, or to leave away the failure and go ahead.
+
+v3->v4:
+add handling of selinux policy loaded failure, and change code format to
+be consitent
 
 Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- dracut.cmdline.7.asc                    |    4 ++++
- modules.d/95rootfs-block/mount-root.sh  |    7 ++++---
- modules.d/98systemd/dracut-initqueue.sh |    2 +-
- modules.d/98systemd/dracut-mount.sh     |    2 +-
- modules.d/98usrmount/mount-usr.sh       |   14 ++++++++------
- modules.d/99base/dracut-lib.sh          |   17 +++++++++++++++++
- modules.d/99base/init.sh                |   12 ++++++------
- 7 files changed, 41 insertions(+), 17 deletions(-)
+ dracut.cmdline.7.asc                      |    4 ++++
+ modules.d/95rootfs-block/mount-root.sh    |    7 ++++---
+ modules.d/98selinux/selinux-loadpolicy.sh |    6 ++----
+ modules.d/98systemd/dracut-initqueue.sh   |    2 +-
+ modules.d/98systemd/dracut-mount.sh       |    2 +-
+ modules.d/98usrmount/mount-usr.sh         |   14 ++++++++------
+ modules.d/99base/dracut-lib.sh            |   18 ++++++++++++++++++
+ modules.d/99base/init.sh                  |   12 ++++++------
+ 8 files changed, 44 insertions(+), 21 deletions(-)
 
 diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
 index f1457d5..e777715 100644
@@ -66,6 +71,29 @@ index c7626c3..d020338 100755
              fi
              fsckoptions="$AUTOFSCK_OPT $fsckoptions"
          fi
+diff --git a/modules.d/98selinux/selinux-loadpolicy.sh b/modules.d/98selinux/selinux-loadpolicy.sh
+index d6e24d6..6f796b4 100755
+--- a/modules.d/98selinux/selinux-loadpolicy.sh
++++ b/modules.d/98selinux/selinux-loadpolicy.sh
+@@ -52,16 +52,14 @@ rd_load_policy()
+         if [ $ret -eq 3 -o $permissive -eq 0 ]; then
+             warn "Machine in enforcing mode."
+             warn "Not continuing"
+-            emergency_shell -n selinux
+-            exit 1
++            ! action_on_fail -n selinux && exit 1
+         fi
+         return 0
+     elif [ $permissive -eq 0 -a "$SELINUX" != "disabled" ]; then
+         warn "Machine in enforcing mode and cannot execute load_policy."
+         warn "To disable selinux, add selinux=0 to the kernel command line."
+         warn "Not continuing"
+-        emergency_shell -n selinux
+-        exit 1
++        ! action_on_fail -n selinux && exit 1
+     fi
+ }
+ 
 diff --git a/modules.d/98systemd/dracut-initqueue.sh b/modules.d/98systemd/dracut-initqueue.sh
 index c6fab30..2c71bf4 100755
 --- a/modules.d/98systemd/dracut-initqueue.sh
@@ -125,10 +153,10 @@ index 5aaefbc..823338b 100755
      fi
  }
 diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index e456b01..8bdabee 100755
+index e456b01..8d1bf0a 100755
 --- a/modules.d/99base/dracut-lib.sh
 +++ b/modules.d/99base/dracut-lib.sh
-@@ -975,6 +975,23 @@ emergency_shell()
+@@ -975,6 +975,24 @@ emergency_shell()
      [ -e /run/initramfs/.die ] && exit 1
  }
  
@@ -136,16 +164,17 @@ index e456b01..8bdabee 100755
 +{
 +    local _action=$(getarg action_on_fail=)
 +    case "$_action" in
-+    continue)
-+        return 0
-+        ;;
-+    shell)
-+        emergency_shell $@
-+        return 1
-+        ;;
-+    *)
-+        emergency_shell $@
-+        return 1
++        continue)
++            return 0
++            ;;
++        shell)
++            emergency_shell $@
++            return 1
++            ;;
++        *)
++            emergency_shell $@
++            return 1
++            ;;
 +    esac
 +}
 +
@@ -153,7 +182,7 @@ index e456b01..8bdabee 100755
  # This is a POSIX-compliant equivalent of bash's "export -n"
  export_n()
 diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index b441a27..af36910 100755
+index b441a27..64d7e3c 100755
 --- a/modules.d/99base/init.sh
 +++ b/modules.d/99base/init.sh
 @@ -79,7 +79,7 @@ if ! ismounted /run; then
@@ -197,7 +226,7 @@ index b441a27..af36910 100755
  	warn capsh --drop=$CAPS_INIT_DROP -- -c exec switch_root "$NEWROOT" "$INIT" $initargs
  	warn "failed."
 -	emergency_shell
-+        action_on_fail
++	action_on_fail
      }
  else
      unset RD_DEBUG
@@ -205,7 +234,7 @@ index b441a27..af36910 100755
  	warn "Something went very badly wrong in the initramfs.  Please "
  	warn "file a bug against dracut."
 -	emergency_shell
-+        action_on_fail
++	action_on_fail
      }
  fi
 -- 
