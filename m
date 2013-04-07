@@ -1,8 +1,8 @@
-From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] ifup.sh: Add support for bridge over team and vlan tagged
- team
-Date: Sun, 07 Apr 2013 14:47:44 +0800
-Message-ID: <51611690.4000502@redhat.com>
+From: Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] ifup.sh: Add support for bridge over team and vlan
+ tagged team
+Date: Sun, 07 Apr 2013 17:20:01 +0800
+Message-ID: <1365326401.7049.0.camel@cr0>
 References: <1364819680-1618-1-git-send-email-chaowang@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -11,71 +11,16 @@ In-Reply-To: <1364819680-1618-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@p
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jpirko-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jpirko-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 04/01/2013 08:34 PM, WANG Chao wrote:
+On Mon, 2013-04-01 at 20:34 +0800, WANG Chao wrote:
 > Team is the same network stack as bonding. Therefore give ifup the ability to
 > handle bridge over team and vlan tagged team as bonding too.
 > 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/40network/ifup.sh | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
-> index 582278f..815ab64 100755
-> --- a/modules.d/40network/ifup.sh
-> +++ b/modules.d/40network/ifup.sh
-> @@ -46,6 +46,8 @@ if [ -e /tmp/bridge.info ]; then
->          if [ "$netif" = "$ethname" ]; then
->              if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
->                  : # We need to really setup bond (recursive call)
-> +            elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
-> +                : # We need to really setup team (recursive call)
->              else
->                  netif="$bridgename"
->                  use_bridge='true'
-> @@ -59,6 +61,8 @@ if [ -e /tmp/vlan.info ]; then
->      if [ "$netif" = "$phydevice" ]; then
->          if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
->              : # We need to really setup bond (recursive call)
-> +        elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
-> +            : # We need to really setup team (recursive call)
->          else
->              netif="$vlanname"
->              use_vlan='true'
-> @@ -212,6 +216,8 @@ if [ -e /tmp/bridge.info ]; then
->          for ethname in $ethnames ; do
->              if [ "$ethname" = "$bondname" ] ; then
->                  DO_BOND_SETUP=yes ifup $bondname -m
-> +            elif [ "$ethname" = "$teammaster" ] ; then
-> +                DO_TEAM_SETUP=yes ifup $teammaster -m
->              else
->                  linkup $ethname
->              fi
-> @@ -235,6 +241,8 @@ if [ "$netif" = "$vlanname" ] && [ ! -e /tmp/net.$vlanname.up ]; then
->      modprobe 8021q
->      if [ "$phydevice" = "$bondname" ] ; then
->          DO_BOND_SETUP=yes ifup $phydevice -m
-> +    elif [ "$phydevice" = "$teammaster" ] ; then
-> +        DO_TEAM_SETUP=yes ifup $phydevice -m
->      else
->          linkup "$phydevice"
->      fi
-> 
 
-Hi, Harald
+Looks good to me.
 
-Team is one of the supported network devices in our kdump. And bridge over
-team and vlan tagged team is also required, while dracut is now lack of this
-ability. I tested this patch myself and it really solves the problem.
+Next time please mention how you test the patch in the changelog, it
+helps too.
 
-Can you or anyone else help to review this patch?
-
-(Actually, I've also got another patch to support bridge a vlan tagged
-interface upon this one. I'll send that to ML once this patch is merged)
-
-Thanks for your time.
-
-WANG Chao
