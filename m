@@ -1,47 +1,103 @@
-From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH v4] Let user specify the action after fail
-Date: Tue, 09 Apr 2013 11:15:54 +0200
-Message-ID: <5163DC4A.7060107@gmail.com>
-References: <30ace4e3dce0dbe9b75572e533d2084ce7c26977.1364553259.git.bhe@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] ifup.sh: Add support for bridge over a vlan tagged interface
+Date: Tue,  9 Apr 2013 18:56:40 +0800
+Message-ID: <1365505000-4831-1-git-send-email-chaowang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=x-received:message-id:date:from:user-agent:mime-version:to:cc
-         :subject:references:in-reply-to:content-type
-         :content-transfer-encoding;
-        bh=KxLouFHyOXCXm8kLOgdKDy5hqLgTKpQ8znzahNL3cZ4=;
-        b=JD2u+QQ4G4ARFVIUwDuq9IH4k8zLh8lF4yP7WCAvr7v8a9ep+VIulSkqUAwJCzSc6+
-         rDxYnbfyTiCEiOSa7nr99s0yonpaVGylesjVym1pv96QF3BoRxwNBrAN50PApJOt2vuk
-         QQmz3VOQ5rEhQMvVO4+9nt804BIgFWirGucnunrfZ2XiE3sOxR/TLAZ3Y2eTwq2xMvAL
-         I9kb7/8mwuSp4GyxuAENR9Gv/8GDWg76ZTY6xVphGlMOAkyLJJY8pjMS1BNNoMo4dUkf
-         IV+bY9o2x/1K1J4vfFHj49qFwaBQmtaoPp02OrfKY7oQud7wI/PrIMFOC3P9ZbSApBLi
-         qJOw==
-In-Reply-To: <30ace4e3dce0dbe9b75572e533d2084ce7c26977.1364553259.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 29.03.2013 11:36, schrieb Baoquan He:
-> Currently the default action is emergency_shell when failure happened
-> during system boot. In kdump, this default may not be expected. E.g,
-> if dump target is not rootfs, it does not matter if mount root failed.
-> Adding an action which allow dracut always go ahead though failure
-> happens is needed by kdump.
-> 
-> So here add a function action_on_fail() and cmdline parameter
-> action_on_fail=<shell | continue>. Use action_to_fail() to replace
-> emergency_shell which was called after failure. By $(getarg action_on_fail=),
-> decide to drop into shell, or to leave away the failure and go ahead.
-> 
-> v3->v4:
-> add handling of selinux policy loaded failure, and change code format to
-> be consitent
-> 
-> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
+This patch add support for bridge a vlan tagged interface, like
+br0 -> bond0.7 -> bond0 -> eth0
 
-applied and slightly edited
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+
+Hi, Harald
+
+I tested it in F19 with br0->bond0.7->bond0->eth0 and network is expected in
+2nd kernel.
+
+Thanks
+
+ modules.d/40network/ifup.sh | 33 +++++++++++++++++++--------------
+ 1 file changed, 19 insertions(+), 14 deletions(-)
+
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index 815ab64..e265841 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -39,6 +39,20 @@ if [ -e /tmp/team.info ]; then
+     done
+ fi
+ 
++if [ -e /tmp/vlan.info ]; then
++    . /tmp/vlan.info
++    if [ "$netif" = "$phydevice" ]; then
++        if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
++            : # We need to really setup bond (recursive call)
++        elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
++            : # We need to really setup team (recursive call)
++        else
++            netif="$vlanname"
++            use_vlan='true'
++        fi
++    fi
++fi
++
+ # bridge this interface?
+ if [ -e /tmp/bridge.info ]; then
+     . /tmp/bridge.info
+@@ -48,6 +62,8 @@ if [ -e /tmp/bridge.info ]; then
+                 : # We need to really setup bond (recursive call)
+             elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
+                 : # We need to really setup team (recursive call)
++            elif [ "$netif" = "$vlanname" ] && [ -n "$DO_VLAN_SETUP" ]; then
++                : # We need to really setup vlan (recursive call)
+             else
+                 netif="$bridgename"
+                 use_bridge='true'
+@@ -56,20 +72,6 @@ if [ -e /tmp/bridge.info ]; then
+     done
+ fi
+ 
+-if [ -e /tmp/vlan.info ]; then
+-    . /tmp/vlan.info
+-    if [ "$netif" = "$phydevice" ]; then
+-        if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
+-            : # We need to really setup bond (recursive call)
+-        elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
+-            : # We need to really setup team (recursive call)
+-        else
+-            netif="$vlanname"
+-            use_vlan='true'
+-        fi
+-    fi
+-fi
+-
+ # disable manual ifup while netroot is set for simplifying our logic
+ # in netroot case we prefer netroot to bringup $netif automaticlly
+ [ -n "$2" -a "$2" = "-m" ] && [ -z "$netroot" ] && manualup="$2"
+@@ -218,6 +220,8 @@ if [ -e /tmp/bridge.info ]; then
+                 DO_BOND_SETUP=yes ifup $bondname -m
+             elif [ "$ethname" = "$teammaster" ] ; then
+                 DO_TEAM_SETUP=yes ifup $teammaster -m
++            elif [ "$ethname" = "$vlanname" ]; then
++                DO_VLAN_SETUP=yes ifup $vlanname -m
+             else
+                 linkup $ethname
+             fi
+@@ -247,6 +251,7 @@ if [ "$netif" = "$vlanname" ] && [ ! -e /tmp/net.$vlanname.up ]; then
+         linkup "$phydevice"
+     fi
+     ip link add dev "$vlanname" link "$phydevice" type vlan id "$(get_vid $vlanname)"
++    ip link set "$vlanname" up
+ fi
+ 
+ # setup nameserver
+-- 
+1.8.2
