@@ -1,89 +1,68 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 2/2] Wait for logical interface to be up
-Date: Tue, 09 Apr 2013 11:04:04 +0800
-Message-ID: <51638524.4000508@redhat.com>
-References: <cover.1365413867.git.bhe@redhat.com> <9100182be23fd2ec4e42f0ba667bc09cab6ca056.1365413867.git.bhe@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] ifup.sh: Add support for bridge over team and vlan tagged
+ team
+Date: Tue, 09 Apr 2013 10:53:32 +0200
+Message-ID: <5163D70C.6090806@redhat.com>
+References: <1364819680-1618-1-git-send-email-chaowang@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <9100182be23fd2ec4e42f0ba667bc09cab6ca056.1365413867.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1364819680-1618-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jpirko-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 04/08/2013 05:47 PM, Baoquan He wrote:
-> If bootdev is logical interface like bond, bridge or vlan, we need
-> wait them up.
+Am 01.04.2013 14:34, schrieb WANG Chao:
+> Team is the same network stack as bonding. Therefore give ifup the ability to
+> handle bridge over team and vlan tagged team as bonding too.
 > 
-> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > ---
->  modules.d/40network/net-genrules.sh |   11 ++++++++++-
->  1 files changed, 10 insertions(+), 1 deletions(-)
+>  modules.d/40network/ifup.sh | 8 ++++++++
+>  1 file changed, 8 insertions(+)
 > 
-> diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
-> index 05fa5f3..be2f811 100755
-> --- a/modules.d/40network/net-genrules.sh
-> +++ b/modules.d/40network/net-genrules.sh
-> @@ -25,6 +25,7 @@ fi
->      if [ -e /tmp/bridge.info ]; then
->          . /tmp/bridge.info
->          IFACES="$IFACES ${ethnames%% *}"
-> +        MASTER_IFACES="$MASTER_IFACES $bridgename"
->      fi
->  
->      # bond: attempt only the defined interface (override bridge defines)
-> @@ -35,16 +36,19 @@ fi
->          . "$i"
->          # It is enough to fire up only one
->          IFACES="$IFACES ${bondslaves%% *}"
-> +        MASTER_IFACES="$MASTER_IFACES ${bondname}"
->      done
->  
->      if [ -e /tmp/team.info ]; then
->          . /tmp/team.info
->          IFACES="$IFACES ${teamslaves}"
-> +        MASTER_IFACES="$MASTER_IFACES ${teammaster}"
->      fi
->  
->      if [ -e /tmp/vlan.info ]; then
->          . /tmp/vlan.info
->          IFACES="$IFACES $phydevice"
-> +        MASTER_IFACES="$MASTER_IFACES ${vlanname}"
->      fi
->  
->      if [ -z "$IFACES" ]; then
-> @@ -56,7 +60,7 @@ fi
->      fi
->  
->      ifup='/sbin/ifup $env{INTERFACE}'
-> -    [ -z "$netroot" ] && ifup="$ifup -m"
-> +    [ -z "$netroot" ] && ifup="$ifup -m"
-
-Please remove change in above line.., otherwise these two patches looks
-good to me.
-
-
->  
->      # BOOTIF says everything, use only that one
->      BOOTIF=$(getarg 'BOOTIF=')
-> @@ -74,6 +78,11 @@ fi
+> diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+> index 582278f..815ab64 100755
+> --- a/modules.d/40network/ifup.sh
+> +++ b/modules.d/40network/ifup.sh
+> @@ -46,6 +46,8 @@ if [ -e /tmp/bridge.info ]; then
+>          if [ "$netif" = "$ethname" ]; then
+>              if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
+>                  : # We need to really setup bond (recursive call)
+> +            elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
+> +                : # We need to really setup team (recursive call)
+>              else
+>                  netif="$bridgename"
+>                  use_bridge='true'
+> @@ -59,6 +61,8 @@ if [ -e /tmp/vlan.info ]; then
+>      if [ "$netif" = "$phydevice" ]; then
+>          if [ "$netif" = "$bondname" ] && [ -n "$DO_BOND_SETUP" ] ; then
+>              : # We need to really setup bond (recursive call)
+> +        elif [ "$netif" = "$teammaster" ] && [ -n "$DO_TEAM_SETUP" ] ; then
+> +            : # We need to really setup team (recursive call)
+>          else
+>              netif="$vlanname"
+>              use_vlan='true'
+> @@ -212,6 +216,8 @@ if [ -e /tmp/bridge.info ]; then
+>          for ethname in $ethnames ; do
+>              if [ "$ethname" = "$bondname" ] ; then
+>                  DO_BOND_SETUP=yes ifup $bondname -m
+> +            elif [ "$ethname" = "$teammaster" ] ; then
+> +                DO_TEAM_SETUP=yes ifup $teammaster -m
+>              else
+>                  linkup $ethname
 >              fi
->          done
->  
-> +        for iface in $MASTER_IFACES; do
-> +            if [ "$bootdev" = "$iface" ]; then
-> +                echo "[ -f /tmp/setup_net_${iface}.ok ]" >$hookdir/initqueue/finished/wait-$iface.sh
-> +            fi
-> +        done
->      # Default: We don't know the interface to use, handle all
->      # Fixme: waiting for the interface as well.
+> @@ -235,6 +241,8 @@ if [ "$netif" = "$vlanname" ] && [ ! -e /tmp/net.$vlanname.up ]; then
+>      modprobe 8021q
+>      if [ "$phydevice" = "$bondname" ] ; then
+>          DO_BOND_SETUP=yes ifup $phydevice -m
+> +    elif [ "$phydevice" = "$teammaster" ] ; then
+> +        DO_TEAM_SETUP=yes ifup $phydevice -m
 >      else
+>          linkup "$phydevice"
+>      fi
 > 
 
-
--- 
-Thanks
-Dave
-
+applied
