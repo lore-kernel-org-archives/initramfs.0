@@ -1,161 +1,89 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v2 1/2] network: support multiple bonding interfaces
-Date: Mon,  8 Apr 2013 17:47:49 +0800
-Message-ID: <99a1ec144499cee623d5096ce9873bf385616c16.1365413867.git.bhe@redhat.com>
-References: <cover.1365413867.git.bhe@redhat.com>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2 2/2] Wait for logical interface to be up
+Date: Tue, 09 Apr 2013 11:04:04 +0800
+Message-ID: <51638524.4000508@redhat.com>
+References: <cover.1365413867.git.bhe@redhat.com> <9100182be23fd2ec4e42f0ba667bc09cab6ca056.1365413867.git.bhe@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <cover.1365413867.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <cover.1365413867.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-References: <cover.1365413867.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <9100182be23fd2ec4e42f0ba667bc09cab6ca056.1365413867.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> 
+On 04/08/2013 05:47 PM, Baoquan He wrote:
+> If bootdev is logical interface like bond, bridge or vlan, we need
+> wait them up.
+> 
+> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/40network/net-genrules.sh |   11 ++++++++++-
+>  1 files changed, 10 insertions(+), 1 deletions(-)
+> 
+> diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
+> index 05fa5f3..be2f811 100755
+> --- a/modules.d/40network/net-genrules.sh
+> +++ b/modules.d/40network/net-genrules.sh
+> @@ -25,6 +25,7 @@ fi
+>      if [ -e /tmp/bridge.info ]; then
+>          . /tmp/bridge.info
+>          IFACES="$IFACES ${ethnames%% *}"
+> +        MASTER_IFACES="$MASTER_IFACES $bridgename"
+>      fi
+>  
+>      # bond: attempt only the defined interface (override bridge defines)
+> @@ -35,16 +36,19 @@ fi
+>          . "$i"
+>          # It is enough to fire up only one
+>          IFACES="$IFACES ${bondslaves%% *}"
+> +        MASTER_IFACES="$MASTER_IFACES ${bondname}"
+>      done
+>  
+>      if [ -e /tmp/team.info ]; then
+>          . /tmp/team.info
+>          IFACES="$IFACES ${teamslaves}"
+> +        MASTER_IFACES="$MASTER_IFACES ${teammaster}"
+>      fi
+>  
+>      if [ -e /tmp/vlan.info ]; then
+>          . /tmp/vlan.info
+>          IFACES="$IFACES $phydevice"
+> +        MASTER_IFACES="$MASTER_IFACES ${vlanname}"
+>      fi
+>  
+>      if [ -z "$IFACES" ]; then
+> @@ -56,7 +60,7 @@ fi
+>      fi
+>  
+>      ifup='/sbin/ifup $env{INTERFACE}'
+> -    [ -z "$netroot" ] && ifup="$ifup -m"
+> +    [ -z "$netroot" ] && ifup="$ifup -m"
 
-Currently dracut only support 1 bond, namyly bond0 by default. However multiple
-bonds configuration may be needed. For example in kdump, in 1st kernel, more
-than one bonds may be configured, and bondX other than bond0 is used as output
-interface to remote host which will store dump core. This patch can solve this
-problem, to write real bond information to initramfs, 2nd kdump kernel will
-use it to create the relevant bondX interface.
+Please remove change in above line.., otherwise these two patches looks
+good to me.
 
-Tested-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/40network/ifup.sh         |   15 ++++++++++-----
- modules.d/40network/net-genrules.sh |    9 ++++++---
- modules.d/40network/parse-bond.sh   |    6 +++---
- modules.d/40network/parse-bridge.sh |    6 ------
- modules.d/45ifcfg/write-ifcfg.sh    |    9 +++++----
- 5 files changed, 24 insertions(+), 21 deletions(-)
 
-diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
-index 582278f..dccd174 100755
---- a/modules.d/40network/ifup.sh
-+++ b/modules.d/40network/ifup.sh
-@@ -21,14 +21,18 @@ use_bridge='false'
- use_vlan='false'
- 
- # enslave this interface to bond?
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
-+for i in /tmp/bond.*.info; do
-+    [ -e "$i" ] || continue
-+    unset bondslaves
-+    unset bondname
-+    . "$i"
-     for slave in $bondslaves ; do
-         if [ "$netif" = "$slave" ] ; then
-             netif=$bondname
-+            break 2
-         fi
-     done
--fi
-+done
- 
- if [ -e /tmp/team.info ]; then
-     . /tmp/team.info
-@@ -134,11 +138,12 @@ if [ "$netif" = "lo" ] ; then
- fi
- 
- # start bond if needed
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
-+if [ -e /tmp/bond.${netif}.info ]; then
-+    . /tmp/bond.${netif}.info
- 
-     if [ "$netif" = "$bondname" ] && [ ! -e /tmp/net.$bondname.up ] ; then # We are master bond device
-         modprobe bonding
-+        echo "+$netif" >  /sys/class/net/bonding_masters
-         ip link set $netif down
- 
-         # Stolen from ifup-eth
-diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
-index f4652b9..05fa5f3 100755
---- a/modules.d/40network/net-genrules.sh
-+++ b/modules.d/40network/net-genrules.sh
-@@ -28,11 +28,14 @@ fi
-     fi
- 
-     # bond: attempt only the defined interface (override bridge defines)
--    if [ -e /tmp/bond.info ]; then
--        . /tmp/bond.info
-+    for i in /tmp/bond.*.info; do
-+        [ -e "$i" ] || continue
-+        unset bondslaves
-+        unset bondname
-+        . "$i"
-         # It is enough to fire up only one
-         IFACES="$IFACES ${bondslaves%% *}"
--    fi
-+    done
- 
-     if [ -e /tmp/team.info ]; then
-         . /tmp/team.info
-diff --git a/modules.d/40network/parse-bond.sh b/modules.d/40network/parse-bond.sh
-index 983eb3a..25c51b8 100755
---- a/modules.d/40network/parse-bond.sh
-+++ b/modules.d/40network/parse-bond.sh
-@@ -54,8 +54,8 @@ if getarg bond >/dev/null; then
-     fi
-     # Make it suitable for initscripts export
-     bondoptions=$(str_replace "$bondoptions" ";" ",")
--    echo "bondname=$bondname" > /tmp/bond.info
--    echo "bondslaves=\"$bondslaves\"" >> /tmp/bond.info
--    echo "bondoptions=\"$bondoptions\"" >> /tmp/bond.info
-+    echo "bondname=$bondname" > /tmp/bond.${bondname}.info
-+    echo "bondslaves=\"$bondslaves\"" >> /tmp/bond.${bondname}.info
-+    echo "bondoptions=\"$bondoptions\"" >> /tmp/bond.${bondname}.info
-     return
- fi
-diff --git a/modules.d/40network/parse-bridge.sh b/modules.d/40network/parse-bridge.sh
-index 1f027bb..8c305c0 100755
---- a/modules.d/40network/parse-bridge.sh
-+++ b/modules.d/40network/parse-bridge.sh
-@@ -37,12 +37,6 @@ parsebridge() {
- unset bridgename ethnames
- 
- iface=eth0
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
--    if [ -n "$bondname" ] ; then
--        iface=$bondname
--    fi
--fi
- 
- # Parse bridge for bridgename and ethnames
- if bridge="$(getarg bridge)"; then
-diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
-index f7a476c..16da5e4 100755
---- a/modules.d/45ifcfg/write-ifcfg.sh
-+++ b/modules.d/45ifcfg/write-ifcfg.sh
-@@ -9,10 +9,6 @@ udevadm settle --timeout=30
- 
- read IFACES < /tmp/net.ifaces
- 
--if [ -e /tmp/bond.info ]; then
--    . /tmp/bond.info
--fi
--
- if [ -e /tmp/bridge.info ]; then
-     . /tmp/bridge.info
- fi
-@@ -89,6 +85,11 @@ for netif in $IFACES ; do
-     # bridge?
-     unset bridge
-     unset bond
-+    unset bondslaves
-+    unset bondname
-+    unset bondoptions
-+    [ -e /tmp/bond.${netif}.info ] && . /tmp/bond.${netif}.info
-+
-     uuid=$(cat /proc/sys/kernel/random/uuid)
-     if [ "$netif" = "$bridgename" ]; then
-         bridge=yes
+>  
+>      # BOOTIF says everything, use only that one
+>      BOOTIF=$(getarg 'BOOTIF=')
+> @@ -74,6 +78,11 @@ fi
+>              fi
+>          done
+>  
+> +        for iface in $MASTER_IFACES; do
+> +            if [ "$bootdev" = "$iface" ]; then
+> +                echo "[ -f /tmp/setup_net_${iface}.ok ]" >$hookdir/initqueue/finished/wait-$iface.sh
+> +            fi
+> +        done
+>      # Default: We don't know the interface to use, handle all
+>      # Fixme: waiting for the interface as well.
+>      else
+> 
+
+
 -- 
-1.7.1
+Thanks
+Dave
+
