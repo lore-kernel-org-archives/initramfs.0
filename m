@@ -1,41 +1,30 @@
-From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Subject: Re: [PATCH] [40network] Fix ifup.sh to always execute initqueue/online hook after bringing up an interface
-Date: Thu, 11 Apr 2013 17:45:36 +0200
-Message-ID: <2242674.iHc4GMAWkg@ernie>
-References: <1365694894-7926-1-git-send-email-devurandom@gmx.net>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] [99fs-lib] Create generic mount framework
+Date: Thu, 11 Apr 2013 17:48:16 +0200
+Message-ID: <5166DB40.7040108@redhat.com>
+References: <1365694762-7806-1-git-send-email-devurandom@gmx.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart4456012.FMUuNiK2kX"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1365694894-7926-1-git-send-email-devurandom-hi6Y0CQ0nG0@public.gmane.org>
+In-Reply-To: <1365694762-7806-1-git-send-email-devurandom-hi6Y0CQ0nG0@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-
---nextPart4456012.FMUuNiK2kX
-Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
+To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello!
+Am 11.04.2013 17:39, schrieb Dennis Schridde:
+> * Utilises fstab.{early,late} files in /etc
+> * Provides fs_add_mount function to mount in pre-mount (early) and pre-pivot (late) phases
+> * Code to mount a fstab file is moved over from 95fstab-sys
+> ---
 
-This fix is required for net_add_parse_vars in my "[PATCH 1/2] [40network] Add 
-variable parsing framework for network related variables" to work properly. 
+Why not make use of fstab and fstab of the real root?
 
-The online hook was previously not executed for dhcp enabled interfaces, which 
-resulted in my code not being executed.
+/etc/fstab in the initramfs == fstab.early
+$NEWROOT/etc/fstab == fstab.late
 
---Dennis
---nextPart4456012.FMUuNiK2kX
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+??
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
-
-iEYEABECAAYFAlFm2qAACgkQjqfyF1DtJW7QxwCfYIwok6qTKs/EIGO9xRLLprgj
-sXMAn2p0Fh637UEfr1xko93HWMzfIUc+
-=9e6d
------END PGP SIGNATURE-----
-
---nextPart4456012.FMUuNiK2kX--
+In systemd we introduced "x-initrd.mount" as a mount option, to mark those mount
+entries from $NEWROOT/etc/fstab to be mounted in pre-pivot.
