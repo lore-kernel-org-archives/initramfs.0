@@ -1,30 +1,41 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] [99fs-lib] Create generic mount framework
-Date: Thu, 11 Apr 2013 17:48:16 +0200
-Message-ID: <5166DB40.7040108@redhat.com>
-References: <1365694762-7806-1-git-send-email-devurandom@gmx.net>
+From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Subject: Re: [PATCH 2/2] [99fs-lib] Provide fs_mount_to_var utility function to parse /path:type:/dev,options style mountspecs
+Date: Thu, 11 Apr 2013 17:48:40 +0200
+Message-ID: <8385992.AUWtMUbQA6@ernie>
+References: <1365694762-7806-1-git-send-email-devurandom@gmx.net> <1365694762-7806-2-git-send-email-devurandom@gmx.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; boundary="nextPart3790583.M5bEcddnbJ"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1365694762-7806-1-git-send-email-devurandom-hi6Y0CQ0nG0@public.gmane.org>
+In-Reply-To: <1365694762-7806-2-git-send-email-devurandom-hi6Y0CQ0nG0@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+
+--nextPart3790583.M5bEcddnbJ
+Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
-To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 11.04.2013 17:39, schrieb Dennis Schridde:
-> * Utilises fstab.{early,late} files in /etc
-> * Provides fs_add_mount function to mount in pre-mount (early) and pre-pivot (late) phases
-> * Code to mount a fstab file is moved over from 95fstab-sys
-> ---
+Hello!
 
-Why not make use of fstab and fstab of the real root?
+I will submit further patches that require these, once these are in a state 
+where they will be accepted.
 
-/etc/fstab in the initramfs == fstab.early
-$NEWROOT/etc/fstab == fstab.late
+Please note that you can also have a look at these patches on github: 
+https://github.com/devurandom/dracut
 
-??
+--Dennis
+--nextPart3790583.M5bEcddnbJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-In systemd we introduced "x-initrd.mount" as a mount option, to mark those mount
-entries from $NEWROOT/etc/fstab to be mounted in pre-pivot.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+iEYEABECAAYFAlFm21gACgkQjqfyF1DtJW5CDQCdG/HYbd3wVLN4v807r9zR6bIk
+69EAnidZ3ALHhOkCYvqtVnXo6HL6VXYy
+=lby0
+-----END PGP SIGNATURE-----
+
+--nextPart3790583.M5bEcddnbJ--
