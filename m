@@ -1,31 +1,56 @@
 From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Subject: Re: [PATCH 2/2] [40network] Provide a hostname fallback function, in case there is no executable of this name
-Date: Thu, 11 Apr 2013 17:48:48 +0200
-Message-ID: <12771001.RoNU4zdukd@ernie>
-References: <1365694853-7881-1-git-send-email-devurandom@gmx.net> <1365694853-7881-2-git-send-email-devurandom@gmx.net>
+Subject: Re: [PATCH 1/2] [99fs-lib] Create generic mount framework
+Date: Thu, 11 Apr 2013 18:10:54 +0200
+Message-ID: <1645019.IW4GTDGkzb@ernie>
+References: <1365694762-7806-1-git-send-email-devurandom@gmx.net> <5166DB40.7040108@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2228136.ANpGsrKM9x"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; boundary="nextPart4884982.yzk5CM8dtB"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1365694853-7881-2-git-send-email-devurandom-hi6Y0CQ0nG0@public.gmane.org>
+In-Reply-To: <5166DB40.7040108-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
---nextPart2228136.ANpGsrKM9x
+--nextPart4884982.yzk5CM8dtB
 Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
 
-Hello!
+Am Donnerstag, 11. April 2013, 17:48:16 schrieb Harald Hoyer:
+> Am 11.04.2013 17:39, schrieb Dennis Schridde:
+> > * Utilises fstab.{early,late} files in /etc
+> > * Provides fs_add_mount function to mount in pre-mount (early) and
+> > pre-pivot (late) phases * Code to mount a fstab file is moved over from
+> > 95fstab-sys
+> > ---
+> 
+> Why not make use of fstab and fstab of the real root?
+> 
+> /etc/fstab in the initramfs == fstab.early
+> $NEWROOT/etc/fstab == fstab.late
+I want to mount depending on the cmdline arguments of the kernel.
 
-I will submit further patches that require these, once these are in a state 
-where they will be accepted.
+Basically, what I need is a way to guarantee certain devices/directories to be 
+mounted before dracut tries to mount the rootfs.
 
-Please note that you can also have a look at these patches on github: 
-https://github.com/devurandom/dracut
+Also, the mountpoints are inside the initramfs, not inside the rootfs. So 
+having them in the rootfs' fstab (when the mountpoints do not exist there), 
+seems wrong.
+
+For testing it was extremely helpful that I could provide these devices on the 
+cmdline, because the initramfs takes quite a while to build on my machines, so 
+replacing a file inside them each time I tried to get the path right would 
+have been cumbersome.
+
+> In systemd we introduced "x-initrd.mount" as a mount option, to mark those
+> mount entries from $NEWROOT/etc/fstab to be mounted in pre-pivot.
+
+I assume there is nothing (yet) that mounts entries before the rootfs gets 
+mounted?
 
 --Dennis
---nextPart2228136.ANpGsrKM9x
+--nextPart4884982.yzk5CM8dtB
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part.
 Content-Transfer-Encoding: 7Bit
@@ -33,9 +58,9 @@ Content-Transfer-Encoding: 7Bit
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.19 (GNU/Linux)
 
-iEYEABECAAYFAlFm22AACgkQjqfyF1DtJW6rGwCeK27Gi+QJD/U1eobw6vSNkoiq
-iUQAn2Lah3eK8ayf5Jfnn1sopBszCWH/
-=3/Bs
+iEYEABECAAYFAlFm4JIACgkQjqfyF1DtJW5ATgCghXemtPoGJjxp0IdE1FXYl1St
+3SQAnRsZnAWz4C2s2Z5CifmFcmLo1A+z
+=a7g2
 -----END PGP SIGNATURE-----
 
---nextPart2228136.ANpGsrKM9x--
+--nextPart4884982.yzk5CM8dtB--
