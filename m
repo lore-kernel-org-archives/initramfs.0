@@ -1,34 +1,45 @@
-From: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [40network] Fix ifup.sh to always execute
- initqueue/online hook after bringing up an interface
-Date: Tue, 30 Apr 2013 15:25:15 -0400
-Message-ID: <1367349915.2614.5.camel@metroid.usersys.redhat.com>
-References: <1365694894-7926-1-git-send-email-devurandom@gmx.net>
-	 <5166DA48.20803@redhat.com> <1888619.XKMYbluzRY@ernie>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [Dracut PATCH] usrmount: Fix miss-detection of btrfs subvolumes.
+Date: Fri,  3 May 2013 17:16:05 +0100
+Message-ID: <1367597765-26656-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1888619.XKMYbluzRY@ernie>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-On Thu, 2013-04-11 at 18:13 +0200, Dennis Schridde wrote:
-> Am Donnerstag, 11. April 2013, 17:44:08 schrieb Harald Hoyer:
-> > IIRC, that is done, as soon as the dhcp client gets an IP
+This causes the root FS options to be incorrectly applied to to /usr
+In some cases this can cause boot failure e.g. due to and XFS /usr
+not supporting the 'acl' option from the ext4 root FS.
 
-Technically it doesn't happen *immediately* - it adds a job to the
-initqueue, and that job will run the initqueue/online hook.
+https://bugs.mageia.org/show_bug.cgi?id=9884
+---
+ modules.d/98usrmount/mount-usr.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> These patches are already a few months old, so dracut's behaviour may very 
-> well have changed in the meantime. Where does what you describe happen?
-
-See 40network/dhclient-script.sh - when $reason is BOUND (i.e. initial
-binding to a new address, as per dhclient-script(8)), it adds a job
-named "setup_net_$netif.sh" to the initqueue.
-
-Hope that helps,
-
--w
+diff --git a/modules.d/98usrmount/mount-usr.sh b/modules.d/98usrmount/mount-usr.sh
+index a4a66ae..de7dcc2 100755
+--- a/modules.d/98usrmount/mount-usr.sh
++++ b/modules.d/98usrmount/mount-usr.sh
+@@ -61,14 +61,14 @@ mount_usr()
+                 LABEL=*)
+                     _dev="$(echo $_dev | sed 's,/,\\x2f,g')"
+                     _dev="/dev/disk/by-label/${_dev#LABEL=}"
+-		    ;;
++                    ;;
+                 UUID=*)
+                     _dev="${_dev#block:}"
+                     _dev="/dev/disk/by-uuid/${_dev#UUID=}"
+                     ;;
+             esac
+             if strstr "$_opts" "subvol=" && \
+-                [ "${root#block:}" -ef $_dev ]
++                [ "${root#block:}" -ef $_dev ] && \
+                 [ -n "$rflags" ]; then
+                 # for btrfs subvolumes we have to mount /usr with the same rflags
+                 rflags=$(filtersubvol "$rflags")
+-- 
+1.8.1.5
