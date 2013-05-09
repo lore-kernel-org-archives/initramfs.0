@@ -1,37 +1,50 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [Patch] 01fips/module-setup.sh: add libssl.so.10 to make kdump work with fips mode
-Date: Thu,  9 May 2013 16:38:53 +0800
-Message-ID: <bccc4bdfbdbdb14122cf83819a7ba16334348acc.1368088634.git.bhe@redhat.com>
+From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Subject: PROBLEM: Errors in instmods_1 are ignored
+Date: Thu, 09 May 2013 13:18:02 +0200
+Message-ID: <6426657.ZbTK3INMtd@ernie>
+Mime-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2451064.2sNN1STat3"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-FIPS can work well in 1st kernel, but failed in kdump kernel. the
-libssl.so.10 and related hmac file are needed. Now add it and it
-works.
 
-Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/01fips/module-setup.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+--nextPart2451064.2sNN1STat3
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-diff --git a/modules.d/01fips/module-setup.sh b/modules.d/01fips/module-setup.sh
-index a7f5be8..6013318 100755
---- a/modules.d/01fips/module-setup.sh
-+++ b/modules.d/01fips/module-setup.sh
-@@ -38,7 +38,7 @@ install() {
- 
-     inst_libdir_file libsoftokn3.so libsoftokn3.so \
-         libsoftokn3.chk libfreebl3.so libfreebl3.chk \
--        libssl.so 'hmaccalc/sha512hmac.hmac'
-+        libssl.so 'hmaccalc/sha512hmac.hmac' libssl.so.10
- 
-     dracut_install -o prelink
- }
--- 
-1.7.1
+Hello!
+
+I found a problem with add_drivers / module installation.
+
+Current behaviour:
+When instmods_1 cannot find a module (for example), it returns an error (1). 
+It's caller, instmods, aborts the installation of any further modules and also 
+returns an error (1). dracut then ignores that error and does not even output 
+a warning.
+
+Expected behaviour:
+Variant 1: instmods outputs a warning when instmods_1 returns an error, but 
+continues to install the other modules.
+Variant 2: dracut outputs an error message, including the module that failed, 
+and aborts the whole operation.
+
+See also: https://github.com/haraldh/dracut/issues/8
+
+Best regards,
+Dennis
+--nextPart2451064.2sNN1STat3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+iEYEABECAAYFAlGLhf4ACgkQjqfyF1DtJW5wHACgktJ0TPGw454ITlLwSCr9/G/I
+yGwAoLILb8IboA7OChH9dnX1ZBcUogaX
+=q+w2
+-----END PGP SIGNATURE-----
+
+--nextPart2451064.2sNN1STat3--
