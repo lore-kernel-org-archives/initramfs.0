@@ -1,43 +1,57 @@
-From: Michael Chapman <mike-t5o/rqeHJupYO+ANumB+pti2O/JbrIOy@public.gmane.org>
-Subject: Re: Unable to boot with encrypted swap
-Date: Fri, 17 May 2013 11:38:19 +1000 (EST)
-Message-ID: <alpine.LFD.2.03.1305171058310.30473@beren.home>
-References: <alpine.LFD.2.03.1305141241010.30473@beren.home> <5191AA29.3010107@josephdwagner.info> <kn24ml$2s6$1@ger.gmane.org>
+From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
+Subject: Re: [PATCH] [40network] Fix ifup.sh to always execute initqueue/online hook after bringing up an interface
+Date: Fri, 17 May 2013 18:13:57 +0200
+Message-ID: <1992756.u6R4HOtcTb@ernie>
+References: <1365694894-7926-1-git-send-email-devurandom@gmx.net> <1888619.XKMYbluzRY@ernie> <1367349915.2614.5.camel@metroid.usersys.redhat.com>
 Mime-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart5078634.4HubVGaa3T"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <kn24ml$2s6$1@ger.gmane.org>
+In-Reply-To: <1367349915.2614.5.camel-s6BhOCdKmxS3M6m420IelR/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; charset="us-ascii"; format="flowed"
-Content-Transfer-Encoding: 7bit
-To: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, 16 May 2013, Colin Guthrie wrote:
-> Yeah it's almost certainly only for resume from suspend. Sadly this is
-> controlled by the resume= kernel command line and when the initrd is
-> generated it doesn't really know if it'll be needed or not.
 
-I think Dracut could use the the "swap" flag in crypttab to determine that 
-a volume is definitely not needed on boot, since this tells 
-systemd-cryptsetup that the swap needs to be recreated on boot. And since 
-this is a "plain" dm-crypt encrypted device, the (randomly generated) 
-encryption key isn't dropped from the kernel on hibernation -- so, I don't 
-think the initrd needs to touch it upon resuming from hibernation either.
+--nextPart5078634.4HubVGaa3T
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-(Ensuring the hibernation image itself isn't on the encrypted swap is a 
-different problem altogether, of course. I haven't looked into how this 
-might be done yet.)
+Hello!
 
-> It would be interesting to get the /etc/fstab and /etc/cmdline.d/* files
-> from the initrd itself. Possibly the hooks folder too. That way we can
-> see exactly what it's waiting for. Assuming there is nothing sensitive
-> on it, perhaps you can just upload the initrd somewhere?
+Am Dienstag, 30. April 2013, 15:25:15 schrieb Will Woods:
+> On Thu, 2013-04-11 at 18:13 +0200, Dennis Schridde wrote:
+> > Am Donnerstag, 11. April 2013, 17:44:08 schrieb Harald Hoyer:
+> > > IIRC, that is done, as soon as the dhcp client gets an IP
+> 
+> Technically it doesn't happen *immediately* - it adds a job to the
+> initqueue, and that job will run the initqueue/online hook.
+> 
+> > These patches are already a few months old, so dracut's behaviour may very
+> > well have changed in the meantime. Where does what you describe happen?
+> 
+> See 40network/dhclient-script.sh - when $reason is BOUND (i.e. initial
+> binding to a new address, as per dhclient-script(8)), it adds a job
+> named "setup_net_$netif.sh" to the initqueue.
 
-No problem. Here are the "bad" and "good" initramfs's respectively:
+Thanks for that information!
 
-http://michael.beta.anchortrove.com/bad-initramfs-3.9.1-301.fc19.x86_64.img
-http://michael.beta.anchortrove.com/good-initramfs-3.9.1-301.fc19.x86_64.img
+I removed the patch and discovered some bugs and misconceptions about the 
+inner workings of dracut in my own code. It works now without the patch.
 
-Regards,
-Michael
+Best regards,
+Dennis
+--nextPart5078634.4HubVGaa3T
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
+
+iEYEABECAAYFAlGWV0kACgkQjqfyF1DtJW591ACeKpHO17j3PmeEkxZt3pKuSuK8
+eywAoKhvIZHsd1Gr/Eszkb7Vsz4xTTEN
+=XreF
+-----END PGP SIGNATURE-----
+
+--nextPart5078634.4HubVGaa3T--
