@@ -1,57 +1,87 @@
 From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Subject: Re: [PATCH] [40network] Fix ifup.sh to always execute initqueue/online hook after bringing up an interface
-Date: Fri, 17 May 2013 18:13:57 +0200
-Message-ID: <1992756.u6R4HOtcTb@ernie>
-References: <1365694894-7926-1-git-send-email-devurandom@gmx.net> <1888619.XKMYbluzRY@ernie> <1367349915.2614.5.camel@metroid.usersys.redhat.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart5078634.4HubVGaa3T"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Subject: [PATCH 1/2] [40network] Add variable parsing framework for network related variables
+Date: Fri, 17 May 2013 18:17:19 +0200
+Message-ID: <1368807440-9207-1-git-send-email-devurandom@gmx.net>
+References: <1365694762-7806-1-git-send-email-devurandom@gmx.net>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1367349915.2614.5.camel-s6BhOCdKmxS3M6m420IelR/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <1365694762-7806-1-git-send-email-devurandom-hi6Y0CQ0nG0@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Will Woods <wwoods-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-
---nextPart5078634.4HubVGaa3T
-Content-Transfer-Encoding: 7Bit
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
 
-Hello!
+* Provides net_add_parse_vars function to install net_parse_vars hook when an interface comes online
+* Provides net_parse_vars function to search and replace network related variables in a string
+---
+ modules.d/40network/net-lib.sh | 56 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
 
-Am Dienstag, 30. April 2013, 15:25:15 schrieb Will Woods:
-> On Thu, 2013-04-11 at 18:13 +0200, Dennis Schridde wrote:
-> > Am Donnerstag, 11. April 2013, 17:44:08 schrieb Harald Hoyer:
-> > > IIRC, that is done, as soon as the dhcp client gets an IP
-> 
-> Technically it doesn't happen *immediately* - it adds a job to the
-> initqueue, and that job will run the initqueue/online hook.
-> 
-> > These patches are already a few months old, so dracut's behaviour may very
-> > well have changed in the meantime. Where does what you describe happen?
-> 
-> See 40network/dhclient-script.sh - when $reason is BOUND (i.e. initial
-> binding to a new address, as per dhclient-script(8)), it adds a job
-> named "setup_net_$netif.sh" to the initqueue.
-
-Thanks for that information!
-
-I removed the patch and discovered some bugs and misconceptions about the 
-inner workings of dracut in my own code. It works now without the patch.
-
-Best regards,
-Dennis
---nextPart5078634.4HubVGaa3T
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
-
-iEYEABECAAYFAlGWV0kACgkQjqfyF1DtJW591ACeKpHO17j3PmeEkxZt3pKuSuK8
-eywAoKhvIZHsd1Gr/Eszkb7Vsz4xTTEN
-=XreF
------END PGP SIGNATURE-----
-
---nextPart5078634.4HubVGaa3T--
+diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
+index f9b461b..f006874 100644
+--- a/modules.d/40network/net-lib.sh
++++ b/modules.d/40network/net-lib.sh
+@@ -366,3 +366,59 @@ linkup() {
+      && wait_for_if_up $1 2>/dev/null
+ }
+ 
++# net_parse_vars STRING IFUP
++# parse vars in STRING
++# IFUP may contain the interface that came online, triggering this hook
++net_parse_vars() {
++	local cur="$1" ifup="$2" var val iface
++
++	var="${cur#*%\{}"
++	var="${var%%\}*}"
++
++	while [ "${var}" != "${cur}" ] ; do
++		case "${var}" in
++			mac.*)
++				iface="${var##mac.}"
++				[ "${ifup}" = "${iface}" ] || exit
++				val="$(ip link show dev "${iface}" | sed -nre '/ether/s/^.*ether ([0-9a-f:]*) .*$/\1/' -e 's/://')"
++				;;
++			hostname)
++				val="$(hostname)"
++				[ "${val}" = '(none)' ] && die 'No hostname (yet)'
++				;;
++			*)
++				die "Unsupported cmdline variable '${var}'"
++				;;
++		esac
++
++		cur="$(echo "${cur}" | sed "s/%{${var}}/${val}/")"
++		unset val
++
++		var="${cur#*%\{}"
++		var="${var%%\}*}"
++	done
++
++	echo "${cur}"
++}
++
++# net_add_parse_vars STRING LIB FUNCTION
++# add initqueue/online hook to parse vars in STRING
++# execute FUNCTION from LIB afterwards
++net_add_parse_vars() {
++	local string="$1" lib="$2" func="$3" jobid="$(cat /proc/sys/kernel/random/uuid)"
++
++	cat <<- EOF > "${hookdir}"/initqueue/online/40network.parse."${jobid}".sh
++		. /lib/"${lib}".sh
++
++		string="\$(net_parse_vars "${string}" "\$@")"
++		${func} "\${string}"
++		unset string
++
++		> /tmp/40network.parse.finished."${jobid}"
++	EOF
++
++	cat <<- EOF > "${hookdir}"/initqueue/finished/40network.parse.wait."${jobid}".sh
++		echo "Waiting for nfs_parse_vars (${jobid}) to complete ..."
++		[ -f /tmp/40network.parse.finished."${jobid}" ]
++	EOF
++}
+-- 
+1.8.2.1
