@@ -1,41 +1,35 @@
-From: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Subject: Re: PROBLEM: Errors in instmods_1 are ignored
-Date: Fri, 17 May 2013 18:23:35 +0200
-Message-ID: <1812413.v3nBxuqrlD@ernie>
-References: <6426657.ZbTK3INMtd@ernie>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: why not install selinux with systemd being used
+Date: Wed, 22 May 2013 18:13:02 +0800
+Message-ID: <519C9A2E.2080100@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1381904.Pm5buh654z"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <6426657.ZbTK3INMtd@ernie>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-
---nextPart1381904.Pm5buh654z
-Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello!
+Hi, Harald
 
-Am Donnerstag, 9. Mai 2013, 13:18:02 schrieb Dennis Schridde:
-> I found a problem with add_drivers / module installation.
+I have a question about selinux module.
 
-Did anyone have a look at this? How shall it be fixed?
+In dracut.spec there's below code:
 
-Best regards,
-Dennis
---nextPart1381904.Pm5buh654z
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+%if %{defined _unitdir}
+# with systemd IMA and selinux modules do not make sense
+rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/96securityfs
+rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/97masterkey
+rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/98integrity
+rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/98selinux
+%endif
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.20 (GNU/Linux)
+I'm confused why they are excluded for systemd?
 
-iEYEABECAAYFAlGWWYcACgkQjqfyF1DtJW76hgCeMtmMA/zewy7nymx+UivmG97w
-d5EAoJXFFsvciaxLw67zjSrZuOSju7hW
-=443Y
------END PGP SIGNATURE-----
+And how can we load selinux policy in initramfs without 98selinux now?
 
---nextPart1381904.Pm5buh654z--
+
+-- 
+Thanks
+Dave
