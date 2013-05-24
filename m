@@ -1,64 +1,43 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: why not install selinux with systemd being used
-Date: Fri, 24 May 2013 12:21:19 +0800
-Message-ID: <519EEABF.7070401@redhat.com>
-References: <519C9A2E.2080100@redhat.com> <519C9A7C.7080904@redhat.com> <knldi6$b78$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] 50drm: Install dracut 50drm module in hostonly mode when drm driver is currently in use.
+Date: Fri, 24 May 2013 16:22:43 +0800
+Message-ID: <1369383763-24956-1-git-send-email-chaowang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <knldi6$b78$1@ger.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/23/2013 11:45 PM, Colin Guthrie wrote:
-> 'Twas brillig, and Dave Young at 22/05/13 11:14 did gyre and gimble:
->> On 05/22/2013 06:13 PM, Dave Young wrote:
->>> Hi, Harald
->>>
->>> I have a question about selinux module.
->>>
->>> In dracut.spec there's below code:
->>>
->>> %if %{defined _unitdir}
->>> # with systemd IMA and selinux modules do not make sense
->>> rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/96securityfs
->>> rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/97masterkey
->>> rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/98integrity
->>> rm -fr $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/98selinux
->>> %endif
->>>
->>> I'm confused why they are excluded for systemd?
->>>
->>> And how can we load selinux policy in initramfs without 98selinux now?
->>>
->>>
->> CC Vivek and Baoquan
-> 
-> Harald is on vacation just now I believe.
-> 
-> However, assuming the systemd module is being used in dracut than I
-> suspect that the selinux support in systemd itself is what will be used
-> in the initrd to ensure selinux stuff is supported.
+Now only 50plymouth module can pull in 50drm and that's very limited.
+Because KMS capable drm drivers are much needed in initrd to have a
+frame buffer console on the screen.
 
-I did not see initramfs related selinux policy loading in systemd code.
+Particularly, when building kdump initrd, plymouth module is omitted,
+but drm is necessary to setup a working screen for one sitting in front
+of a monitor.
 
-Under rd.break=pre-pivot:
-pre-pivot:/# /sysroot/usr/sbin/sestatus
-SELinux status: disabled
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/50drm/module-setup.sh | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-> 
-> (I would reply-all but replying via gmane which mangles email addresses
-> so I can't easily do so).
-> 
-> Col
-> 
-> 
-
-
+diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
+index bf33c5b..648e8f4 100644
+--- a/modules.d/50drm/module-setup.sh
++++ b/modules.d/50drm/module-setup.sh
+@@ -3,6 +3,10 @@
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ 
+ check() {
++    if [[ $hostonly ]] && [ -d /sys/module/drm/drivers ]; then
++        return 0
++    fi
++
+     return 255
+ }
+ 
 -- 
-Thanks
-Dave
-
+1.8.2.1
