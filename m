@@ -1,30 +1,87 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Patches against the dracut git version
-Date: Tue, 28 May 2013 14:38:46 +0200
-Message-ID: <51A4A556.4060404@redhat.com>
-References: <518E430D.4020600@gmx.com>
+From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
+Subject: Re: [PATCH] Introduce stricter type-correctness
+Date: Tue, 28 May 2013 14:38:52 +0200
+Message-ID: <51A4A55C.10007@harald-hoyer.de>
+References: <518E6058.8070300@gmx.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms040601040409010000020503"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <518E430D.4020600-KK0ffGbhmjU@public.gmane.org>
+In-Reply-To: <518E6058.8070300-KK0ffGbhmjU@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
 To: Kamil Rytarowski <n54-KK0ffGbhmjU@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/11/2013 03:09 PM, Kamil Rytarowski wrote:
+This is a cryptographically signed message in MIME format.
+
+--------------ms040601040409010000020503
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+On 05/11/2013 05:14 PM, Kamil Rytarowski wrote:
 > Hello,
-> 
-> I'm attaching the following patches against the current development version of
-> dracut:
-> 0001-Fix-parsing-command-line-arguments.patch
-> 0002-Use-consistiently-termination-code-macros.patch
-> 0003-Always-check-the-return-number-of-asprintf.patch
-> 0004-Fix-memory-leak.patch
-> 
-> Please double check and apply them.
-> 
+>=20
+> I'm attaching a patch introducing stricter type-correctness.
+> Most of the changes are fixing issues with operating over signed with u=
+nsigned
+> types. One of the changes aims to fix an insecure passing of a characte=
+r* buffer
+> through a parameter.
+>=20
 > Regards,
 
 Thanks! Applied!
+
+
+--------------ms040601040409010000020503
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFgDCC
+BXwwggNkoAMCAQICAwzQczANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xMzAy
+MDUxMTUyMDlaFw0xNTAyMDUxMTUyMDlaMD4xFTATBgNVBAMTDEhhcmFsZCBIb3llcjElMCMG
+CSqGSIb3DQEJARYWaGFyYWxkQGhhcmFsZC1ob3llci5kZTCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBAMWJ6ewlyqPdfi2JF6XsM9hxa/l6edcmLEALUs5fblqJxA9ixAoWI+WY
+0agbuZgs/iudr69sU9lJIfpXUdLdZoVUn6iWxwRuJmvgihnFpLfojx+l4wDZu5JeJUXbcml4
+2wHvykdBfkfTEmUGn09CbPWeG5fAfOq37s9TIyAq4AnVWPaR4ZtIgg/s9ns9DoCAKP1pzgLn
+qTu94pfLtl5dB/dpCV9seqe+YtUZqedXhFOtWkq/w2hbFA+mXSbSDts6rZMlQO8+Rzkx1fSc
+aMZYBZ3OqRRxk6+oC4Tlv24Yj2lPMV+inTyXllxxqUa9NuXYK9hI+juy4fa3BIbKBCKidCEC
+AwEAAaOCAUYwggFCMAwGA1UdEwEB/wQCMAAwVgYJYIZIAYb4QgENBEkWR1RvIGdldCB5b3Vy
+IG93biBjZXJ0aWZpY2F0ZSBmb3IgRlJFRSBoZWFkIG92ZXIgdG8gaHR0cDovL3d3dy5DQWNl
+cnQub3JnMA4GA1UdDwEB/wQEAwIDqDBABgNVHSUEOTA3BggrBgEFBQcDBAYIKwYBBQUHAwIG
+CisGAQQBgjcKAwQGCisGAQQBgjcKAwMGCWCGSAGG+EIEATAyBggrBgEFBQcBAQQmMCQwIgYI
+KwYBBQUHMAGGFmh0dHA6Ly9vY3NwLmNhY2VydC5vcmcwMQYDVR0fBCowKDAmoCSgIoYgaHR0
+cDovL2NybC5jYWNlcnQub3JnL3Jldm9rZS5jcmwwIQYDVR0RBBowGIEWaGFyYWxkQGhhcmFs
+ZC1ob3llci5kZTANBgkqhkiG9w0BAQUFAAOCAgEAcoAhP2eXXOYJe21kF7GNzD8xVCsbjXRZ
+1VjjXWCTb/LTJphp62h1K6wMz4xnBDJ2iCvPLP3jdqeVyQeBW1c5sbW69yd9Tzhz2qESFGlV
+vf1YcZVw//dr86jptUizhoxIQeLyWYV9/a/Ms+UNi/PARYHiINahctx9z2mqcOXZvWnzkD+v
+ZV9kNTZqY4jb60YCnfc5SjB5t5l/6cnxPL3WUBpxx7tMnYKo5XlDTbxK7EcssFnxpPSgbJvR
+S0X7JqvtKscnMA8buR+IWwO1xbq7sloOhfwKbCw9XjAqND/xf8c6hNr5+AeXy/okyuz1VTIT
+ytYDorJ9kf2XOcpIKt6gILvA6Vy/8Awuaup6Cv2+B5FfEH2+cgIdEw/GyEmuVXvdPUil4DJM
+4ftprMZLMpUHv6YgavLaXKCIK5dzXmRDG0NjGgRzsl52ROLqutTwZG+U6DQZDJpNdCHEQN6Q
+PMA1Cf2JNVhbpwwQ5QMXDW3msR9CS3n3KoiC8C6ctPSZY81zGipiBgFeJnQ1+LwtICLeFo0y
+IRi1gT/ECY/59Uj+L8pehxFe1TCF/PIdxSRTKnJti5i6Bnq9asX6o1G9IQW2LA6nJexEZgYa
+cGw0JH1FMyZvo9pQ0iPTVQGmnqeIeoPouQXpAB1tzlP0oQg1QMymA6BtntZ3LOXRhYVYCYs8
+jdQxggOhMIIDnQIBATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8v
+d3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAf
+BgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDNBzMAkGBSsOAwIaBQCgggH1MBgG
+CSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTEzMDUyODEyMzg1Mlow
+IwYJKoZIhvcNAQkEMRYEFF5tWWRarm2RQrOW1kIA8P3RCnCYMGwGCSqGSIb3DQEJDzFfMF0w
+CwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAw
+DQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGB
+gzCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
+cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
+EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDNBzMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYD
+VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
+GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
+ZXJ0Lm9yZwIDDNBzMA0GCSqGSIb3DQEBAQUABIIBAKQNFIhB7jMBkFsilXatsTQ5/Ir+vpoi
+9d6VYdjkMUDOK834cHnRBLTySwNJBpu01u7c+gbEudsdudf70ZZ/H6MAZrSl78Y8tNWP4y2Q
+xs2ERcABY4+v1KM3OdJmazmCRM3MPsT2xYhYoCgvNo/w5dQk5bFbXm2mc7Ok8mQqgadwlOeF
+FLYFXxT3jYfIWdHqT96CXNuXYiX3cDDckNB0GthLgnAFDtzlf6P8t7AnJrMuw7LUssLrlmSZ
+od/K6p/w4bAWZv4bIP6I7FNz+SqJ22UZJHZSwNzM/IJsdyoHSY0amNNsU6YTIR0ooT6t1cR8
+q1r+sQboukVibLqJjP77kMcAAAAAAAA=
+--------------ms040601040409010000020503--
