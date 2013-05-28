@@ -1,72 +1,55 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: PROBLEM: Errors in instmods_1 are ignored
-Date: Tue, 28 May 2013 14:01:18 +0200
-Message-ID: <51A49C8E.2040201@redhat.com>
-References: <6426657.ZbTK3INMtd@ernie>
+Subject: Re: [PATCH] 50drm: Install dracut 50drm module in hostonly mode when
+ drm driver is currently in use.
+Date: Tue, 28 May 2013 14:09:09 +0200
+Message-ID: <51A49E65.9000206@redhat.com>
+References: <1369383763-24956-1-git-send-email-chaowang@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <6426657.ZbTK3INMtd@ernie>
+In-Reply-To: <1369383763-24956-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 05/09/2013 01:18 PM, Dennis Schridde wrote:
-> Hello!
+On 05/24/2013 10:22 AM, WANG Chao wrote:
+> Now only 50plymouth module can pull in 50drm and that's very limited.
+> Because KMS capable drm drivers are much needed in initrd to have a
+> frame buffer console on the screen.
 > 
-> I found a problem with add_drivers / module installation.
+> Particularly, when building kdump initrd, plymouth module is omitted,
+> but drm is necessary to setup a working screen for one sitting in front
+> of a monitor.
 > 
-> Current behaviour: When instmods_1 cannot find a module (for example), it
-> returns an error (1). It's caller, instmods, aborts the installation of any
-> further modules and also returns an error (1). dracut then ignores that
-> error and does not even output a warning.
+> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/50drm/module-setup.sh | 4 ++++
+>  1 file changed, 4 insertions(+)
 > 
-> Expected behaviour: Variant 1: instmods outputs a warning when instmods_1
-> returns an error, but continues to install the other modules. Variant 2:
-> dracut outputs an error message, including the module that failed, and
-> aborts the whole operation.
+> diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
+> index bf33c5b..648e8f4 100644
+> --- a/modules.d/50drm/module-setup.sh
+> +++ b/modules.d/50drm/module-setup.sh
+> @@ -3,6 +3,10 @@
+>  # ex: ts=8 sw=4 sts=4 et filetype=sh
+>  
+>  check() {
+> +    if [[ $hostonly ]] && [ -d /sys/module/drm/drivers ]; then
+> +        return 0
+> +    fi
+> +
+>      return 255
+>  }
+>  
 > 
-> See also: https://github.com/haraldh/dracut/issues/8
-> 
-> Best regards, Dennis
-> 
 
-instmods can take two options:
+Hmm, why not let the kdump module depend on drm?
 
-- -c : abort on error
-- -s : silently abort on error
+depends() {
+    echo drm
+}
 
-
-instmods -c a b c || exit 1
-
-will give you:
-
-F: Failed to install a
-
-and dracut will exit.
-
-
-instmods ignores the errors.
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.13 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJRpJyOAAoJEANOs3ABTfJwGtYP+wQIuA2ovQdDoR6wmm5xxoTY
-Zy9DLRWQ3mouw7pVp//U0rF98q+9ZGABmMSrhbxwdKgIF0BuCTbRzjW26rrLisuZ
-gprv0XxkBEb7EKlwjKFcb706/MSQAI+rg+uDU1clgviBjjVcCcOJUXLCohu1Zh2F
-bRKQq89nUo0YUndK/l2hXN21qxrlPOJc8WWFuUDxn6mBH1yekBo6keewyXzXR6Sr
-wvHDNni6hbWX3PJMj6JBpFaheF9Vl2NMd3eMXCj1X1dbYRD0MFngg7K/fIgUOkJY
-33UKWQ1Ijfw7uFMKYKP1ne/kxcNu6e5AbTpd1XXn6SRsC/f/fkVwxJW9DIDCrm+Z
-ihA3rBCNvlvc/6m9/OU2ZwGpUXkwwwPMbHxBusG/o9Gu8qiT1UVpDVsAoPrsp4y+
-ZVmbD/3gN7AK9XbBqjajJL3R6ObKMofwJkEK7Ia3GWPXii8qKQ8/xKbehex2K48e
-sWhxMAbkSL7D2PGXd4dj4RUxlBcs+DxmxXLItG4ncJ90XpZ62wLZIBT1HsUfasT/
-S9th5iXoC1ZfdIIlfpu8ISQygD4z7D1SB4zYPnHS/R43FL2DC0LljqyVp01Qpjpg
-+Q/DXIQAWA4usRU6UcULeZFhFWA/SSa8d4ted/POGXynKiOkFIubM38mnCPe6yJz
-3b+z9nLqHdhF4FtY1G6B
-=jgLC
------END PGP SIGNATURE-----
+Anyway, do we really need drm for a simple console? Those drivers are really
+really big and take a long time to load and initialize?
