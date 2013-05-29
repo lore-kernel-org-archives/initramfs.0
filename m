@@ -1,79 +1,71 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut systemd cmdline service fix
-Date: Wed, 29 May 2013 10:00:44 +0800
-Message-ID: <51A5614C.8090606@redhat.com>
-References: <51946b65.1SfwJA0QAkY6Gb83%dyoung@redhat.com> <51A48CC2.40500@redhat.com>
+Subject: Re: [PATCH] 50drm: Install dracut 50drm module in hostonly mode when
+ drm driver is currently in use.
+Date: Wed, 29 May 2013 10:45:28 +0800
+Message-ID: <51A56BC8.2010205@redhat.com>
+References: <1369383763-24956-1-git-send-email-chaowang@redhat.com> <51A49E65.9000206@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51A48CC2.40500-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <51A49E65.9000206-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/28/2013 06:53 PM, Harald Hoyer wrote:
-> On 05/16/2013 07:15 AM, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
+On 05/28/2013 08:09 PM, Harald Hoyer wrote:
+> On 05/24/2013 10:22 AM, WANG Chao wrote:
+>> Now only 50plymouth module can pull in 50drm and that's very limited.
+>> Because KMS capable drm drivers are much needed in initrd to have a
+>> frame buffer console on the screen.
 >>
->> Kdump test failed since below commits 
->> dbfaae0e34507d2d1f3c186ffe26af3e8028b9f8
+>> Particularly, when building kdump initrd, plymouth module is omitted,
+>> but drm is necessary to setup a working screen for one sitting in front
+>> of a monitor.
 >>
->> Fedora bug is here:
->> https://bugzilla.redhat.com/show_bug.cgi?id=963159
->>
->> The reason is the hooks afterwards need NEWROOT env which
->> is set in dracut-cmdline.sh.
->>
->> In this case there's no files under /etc/cmdline.d/ and
->> /lib/dracut/hooks/cmdline/. Conditions checking failed, so
->> the cmdline service failed to startup.
->>
->> Fix this issue by remove the Conditions thus cmdline service
->> always run if /etc/initrd-release exists.
->>
->> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 >> ---
->>  modules.d/98systemd/dracut-cmdline.service |    5 -----
->>  1 file changed, 5 deletions(-)
+>>  modules.d/50drm/module-setup.sh | 4 ++++
+>>  1 file changed, 4 insertions(+)
 >>
->> --- dracut.orig/modules.d/98systemd/dracut-cmdline.service
->> +++ dracut/modules.d/98systemd/dracut-cmdline.service
->> @@ -16,11 +16,6 @@ Before=systemd-vconsole-setup.service
->>  After=systemd-journald.socket
->>  Wants=systemd-journald.socket
->>  ConditionPathExists=/etc/initrd-release
->> -ConditionPathExistsGlob=|/etc/cmdline.d/*.conf
->> -ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cmdline
->> -ConditionKernelCommandLine=|rd.break=cmdline
->> -ConditionKernelCommandLine=|resume
->> -ConditionKernelCommandLine=|noresume
+>> diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
+>> index bf33c5b..648e8f4 100644
+>> --- a/modules.d/50drm/module-setup.sh
+>> +++ b/modules.d/50drm/module-setup.sh
+>> @@ -3,6 +3,10 @@
+>>  # ex: ts=8 sw=4 sts=4 et filetype=sh
 >>  
->>  [Service]
->>  Type=oneshot
+>>  check() {
+>> +    if [[ $hostonly ]] && [ -d /sys/module/drm/drivers ]; then
+>> +        return 0
+>> +    fi
+>> +
+>>      return 255
+>>  }
+>>  
+>>
 > 
-> Will be fixed by setting
+> Hmm, why not let the kdump module depend on drm?
+
+If you do not like it we can consider add it to kdump module..
+
 > 
-> Environment=DRACUT_SYSTEMD=1
-> Environment=NEWROOT=/sysroot
+> depends() {
+>     echo drm
+> }
 > 
-> in the service files.
+> Anyway, do we really need drm for a simple console? Those drivers are really
+> really big and take a long time to load and initialize?
+
+It's a little awkward, after kernel crashing suppose 1st kernel is in
+kms mode, it can not reset to nomodeset, so screen will keep black.
+
+There's no such issue in normal initramfs because bios always reset
+devices for us.
+
 > 
-Hi, Harald
 
-Thanks for your fix, but I'm still worrying about below code:
--ConditionPathExistsGlob=|/etc/cmdline.d/*.conf
--ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cmdlin
-
-Is the above Conditions 'or' or 'and' relations?
-will it just skip cmdline service in case any of the conditions do es not match?
-
-If above is true then I'm still worrying about we will cause more problems. grep "inst_hook cmdline" shows a lot of stuff which is not limited to parsing /etc/cmdline.d/*.conf, such as:
-04watchdog/module-setup.sh:    inst_hook cmdline   50 "$moddir/watchdog.sh"
-40network/module-setup.sh:    inst_hook cmdline 91 "$moddir/dhcp-root.sh"
-96securityfs/module-setup.sh:    inst_hook cmdline 60 "$moddir/securityfs.sh"
-
-Even for hooks parsing cmdline, the cmdline params are not limited to /etc/cmdline.d/*.conf, they can also be specified in grub cmdline, isn't it?
 
 -- 
 Thanks
