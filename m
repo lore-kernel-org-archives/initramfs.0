@@ -1,64 +1,81 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: PROBLEM: Errors in instmods_1 are ignored
-Date: Tue, 28 May 2013 16:12:52 +0200
-Message-ID: <51A4BB64.6090801@redhat.com>
-References: <6426657.ZbTK3INMtd@ernie> <51A49C8E.2040201@redhat.com> <7214709.kLtJDThxKr@ernie>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] dracut systemd cmdline service fix
+Date: Wed, 29 May 2013 10:00:44 +0800
+Message-ID: <51A5614C.8090606@redhat.com>
+References: <51946b65.1SfwJA0QAkY6Gb83%dyoung@redhat.com> <51A48CC2.40500@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <7214709.kLtJDThxKr@ernie>
+In-Reply-To: <51A48CC2.40500-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dennis Schridde <devurandom-hi6Y0CQ0nG0@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 05/28/2013 04:09 PM, Dennis Schridde wrote:
-> Hello Harald!
+On 05/28/2013 06:53 PM, Harald Hoyer wrote:
+> On 05/16/2013 07:15 AM, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
+>>
+>> Kdump test failed since below commits 
+>> dbfaae0e34507d2d1f3c186ffe26af3e8028b9f8
+>>
+>> Fedora bug is here:
+>> https://bugzilla.redhat.com/show_bug.cgi?id=963159
+>>
+>> The reason is the hooks afterwards need NEWROOT env which
+>> is set in dracut-cmdline.sh.
+>>
+>> In this case there's no files under /etc/cmdline.d/ and
+>> /lib/dracut/hooks/cmdline/. Conditions checking failed, so
+>> the cmdline service failed to startup.
+>>
+>> Fix this issue by remove the Conditions thus cmdline service
+>> always run if /etc/initrd-release exists.
+>>
+>> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> ---
+>>  modules.d/98systemd/dracut-cmdline.service |    5 -----
+>>  1 file changed, 5 deletions(-)
+>>
+>> --- dracut.orig/modules.d/98systemd/dracut-cmdline.service
+>> +++ dracut/modules.d/98systemd/dracut-cmdline.service
+>> @@ -16,11 +16,6 @@ Before=systemd-vconsole-setup.service
+>>  After=systemd-journald.socket
+>>  Wants=systemd-journald.socket
+>>  ConditionPathExists=/etc/initrd-release
+>> -ConditionPathExistsGlob=|/etc/cmdline.d/*.conf
+>> -ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cmdline
+>> -ConditionKernelCommandLine=|rd.break=cmdline
+>> -ConditionKernelCommandLine=|resume
+>> -ConditionKernelCommandLine=|noresume
+>>  
+>>  [Service]
+>>  Type=oneshot
 > 
-> Am Dienstag, 28. Mai 2013, 14:01:18 schrieb Harald Hoyer:
->> On 05/09/2013 01:18 PM, Dennis Schridde wrote: instmods -c a b c || exit
->> 1
->> 
->> will give you:
->> 
->> F: Failed to install a
->> 
->> and dracut will exit.
-> So this could be used to implement variant 2 of my "expected behaviour. It
->  would be nice if you could change dracut in this way. :)
-
-Why change? It already works that way.
-
+> Will be fixed by setting
 > 
->> instmods ignores the errors.
-> It seems to me it currently does not. At least no module that comes after
-> the failed one in the list is being installed. When looking at the code,
-> errors indeed seemed to be ignored.
+> Environment=DRACUT_SYSTEMD=1
+> Environment=NEWROOT=/sysroot
 > 
-> Best regards, Dennis
+> in the service files.
 > 
+Hi, Harald
 
-Hmm, when I checked that before writing this email, dracut git HEAD was
-working as I described in the mail.
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.13 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+Thanks for your fix, but I'm still worrying about below code:
+-ConditionPathExistsGlob=|/etc/cmdline.d/*.conf
+-ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cmdlin
 
-iQIcBAEBAgAGBQJRpLtkAAoJEANOs3ABTfJw3pYQAK/vWk+AHyk4Vg+gi0i0T9OJ
-f4vrgS+jRDObwhi3bi+GL/Q1v8HcLgqcfD+ds5RbU3HmC3WwqqsdIfu9o9jTFlzZ
-MrrUrHtG+47rSpfWlGfa38rlvYSK8qcd1tvR7WIUTaMDjTO1tVyXf+vGoAfmjYKF
-kiy2NlqBKk85cySMj18KICYmy7yT/XOBUs46xO1gXd+MNl4r9XseKYe2J1PEQjvy
-2N3UsMb6BRvEPF7rGrce/y5zuKPU/zdvulJ91kHit/rte81N9KtkP94bqPeBqMSj
-hVfLn9Fi5uvZ60j+eyObgvv/pR3J/NCuQwlMSR2tSq8fGfuDjpqW145iWWk7ki5t
-9KuxEsgcsoYuN/8zaQfR4VzWFfIEK1BbgrG9vahoxMRrfKGQVyd5uxrI5cFFATqv
-pGMEFu9tS5eEB84QZ92I/nHxd//FMM4aOXzkvXfyEg0Dkx+x/1WDo8/qmOknGCe7
-D082erOcWhr1USM2QTve1X593F7aup5C1OuKcx7s++J5RgeN4qgbZNdeavmZ0yw9
-9Ib98MElrY0zX0F6AQvdb7ge0ihoZzVFWWXRmKzNDoeR0+6nxnRYw6txM7Gd5psG
-GBYjU/QP/CMMLq/8B8P5EZDocm5CseA3FjjoHI+H6428M0YGqJbhzAZK9L5BMGIr
-dP7P7aFBWEqFJlnVT7lA
-=T3vs
------END PGP SIGNATURE-----
+Is the above Conditions 'or' or 'and' relations?
+will it just skip cmdline service in case any of the conditions do es not match?
+
+If above is true then I'm still worrying about we will cause more problems. grep "inst_hook cmdline" shows a lot of stuff which is not limited to parsing /etc/cmdline.d/*.conf, such as:
+04watchdog/module-setup.sh:    inst_hook cmdline   50 "$moddir/watchdog.sh"
+40network/module-setup.sh:    inst_hook cmdline 91 "$moddir/dhcp-root.sh"
+96securityfs/module-setup.sh:    inst_hook cmdline 60 "$moddir/securityfs.sh"
+
+Even for hooks parsing cmdline, the cmdline params are not limited to /etc/cmdline.d/*.conf, they can also be specified in grub cmdline, isn't it?
+
+-- 
+Thanks
+Dave
+
