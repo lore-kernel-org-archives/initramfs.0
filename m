@@ -1,73 +1,44 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 50drm: Install dracut 50drm module in hostonly mode when
- drm driver is currently in use.
-Date: Wed, 29 May 2013 10:45:28 +0800
-Message-ID: <51A56BC8.2010205@redhat.com>
-References: <1369383763-24956-1-git-send-email-chaowang@redhat.com> <51A49E65.9000206@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/2] 99fs-lib/fs-lib.sh: Let user specify the action after fail for fsck
+Date: Wed, 29 May 2013 14:33:06 +0800
+Message-ID: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369809156.git.bhe@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51A49E65.9000206-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 05/28/2013 08:09 PM, Harald Hoyer wrote:
-> On 05/24/2013 10:22 AM, WANG Chao wrote:
->> Now only 50plymouth module can pull in 50drm and that's very limited.
->> Because KMS capable drm drivers are much needed in initrd to have a
->> frame buffer console on the screen.
->>
->> Particularly, when building kdump initrd, plymouth module is omitted,
->> but drm is necessary to setup a working screen for one sitting in front
->> of a monitor.
->>
->> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> ---
->>  modules.d/50drm/module-setup.sh | 4 ++++
->>  1 file changed, 4 insertions(+)
->>
->> diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
->> index bf33c5b..648e8f4 100644
->> --- a/modules.d/50drm/module-setup.sh
->> +++ b/modules.d/50drm/module-setup.sh
->> @@ -3,6 +3,10 @@
->>  # ex: ts=8 sw=4 sts=4 et filetype=sh
->>  
->>  check() {
->> +    if [[ $hostonly ]] && [ -d /sys/module/drm/drivers ]; then
->> +        return 0
->> +    fi
->> +
->>      return 255
->>  }
->>  
->>
-> 
-> Hmm, why not let the kdump module depend on drm?
+The fsck is ignored when replace emergency_shell with action_on_fail,
+now add it.
 
-If you do not like it we can consider add it to kdump module..
+Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/99fs-lib/fs-lib.sh |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-> 
-> depends() {
->     echo drm
-> }
-> 
-> Anyway, do we really need drm for a simple console? Those drivers are really
-> really big and take a long time to load and initialize?
-
-It's a little awkward, after kernel crashing suppose 1st kernel is in
-kms mode, it can not reset to nomodeset, so screen will keep black.
-
-There's no such issue in normal initramfs because bios always reset
-devices for us.
-
-> 
-
-
+diff --git a/modules.d/99fs-lib/fs-lib.sh b/modules.d/99fs-lib/fs-lib.sh
+index e1f3074..88e7348 100755
+--- a/modules.d/99fs-lib/fs-lib.sh
++++ b/modules.d/99fs-lib/fs-lib.sh
+@@ -7,14 +7,14 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ fsck_ask_reboot() {
+     info "note - fsck suggests reboot, if you"
+     info "leave shell, booting will continue normally"
+-    emergency_shell -n "(reboot ?)"
++    action_on_fail -n "(reboot ?)"
+ }
+ 
+ fsck_ask_err() {
+     warn "*** An error occurred during the file system check."
+     warn "*** Dropping you to a shell; the system will try"
+     warn "*** to mount the filesystem(s), when you leave the shell."
+-    emergency_shell -n "(Repair filesystem)"
++    action_on_fail -n "(Repair filesystem)"
+ }
+ 
+ # inherits: _ret _drv _out
 -- 
-Thanks
-Dave
-
+1.7.1
