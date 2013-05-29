@@ -1,64 +1,84 @@
-From: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] let user specify action after systemd start dracut-emergency
-Date: Wed, 29 May 2013 14:43:46 +0800
-Message-ID: <51A5A3A2.8070403@redhat.com>
-References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369809156.git.bhe@redhat.com> <d493350a355dc81998fd9a0b2d543ca79c2eb0c7.1369809156.git.bhe@redhat.com>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] 50drm: Install dracut 50drm module in hostonly mode when
+ drm driver is currently in use.
+Date: Wed, 29 May 2013 14:57:26 +0800
+Message-ID: <20130529065726.GA28070@dhcp12-158.nay.redhat.com>
+References: <1369383763-24956-1-git-send-email-chaowang@redhat.com>
+ <51A49E65.9000206@redhat.com>
+ <51A56BC8.2010205@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <d493350a355dc81998fd9a0b2d543ca79c2eb0c7.1369809156.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <51A56BC8.2010205-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/29/2013 02:33 PM, Baoquan He wrote:
-
-> If failed to mount /sysroot, triggering OnFailure= dependencies
-> of initrd-xxx.service, then dracut-emergency will be started by
-> systemd and enter into emergency shell.
+On 05/29/13 at 10:45am, Dave Young wrote:
+> On 05/28/2013 08:09 PM, Harald Hoyer wrote:
+> > On 05/24/2013 10:22 AM, WANG Chao wrote:
+> >> Now only 50plymouth module can pull in 50drm and that's very limited.
+> >> Because KMS capable drm drivers are much needed in initrd to have a
+> >> frame buffer console on the screen.
+> >>
+> >> Particularly, when building kdump initrd, plymouth module is omitted,
+> >> but drm is necessary to setup a working screen for one sitting in front
+> >> of a monitor.
+> >>
+> >> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> >> ---
+> >>  modules.d/50drm/module-setup.sh | 4 ++++
+> >>  1 file changed, 4 insertions(+)
+> >>
+> >> diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
+> >> index bf33c5b..648e8f4 100644
+> >> --- a/modules.d/50drm/module-setup.sh
+> >> +++ b/modules.d/50drm/module-setup.sh
+> >> @@ -3,6 +3,10 @@
+> >>  # ex: ts=8 sw=4 sts=4 et filetype=sh
+> >>  
+> >>  check() {
+> >> +    if [[ $hostonly ]] && [ -d /sys/module/drm/drivers ]; then
+> >> +        return 0
+> >> +    fi
+> >> +
+> >>      return 255
+> >>  }
+> >>  
+> >>
+> > 
+> > Hmm, why not let the kdump module depend on drm?
 > 
-> Here use action_on_fail to replace "exec sh -i -l" in
-> dracut-emergency.sh so that it may continue if user specify
-> "action_on_fail=continue" though mount root failed.
+> If you do not like it we can consider add it to kdump module..
+
+So now if I build initrd w/o plymouth, I will not have frame buffer
+console in initrd. That looks more like a general issue to me.
+
+WANG Chao
+
 > 
-> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/98systemd/dracut-emergency.sh |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
+> > 
+> > depends() {
+> >     echo drm
+> > }
+> > 
+> > Anyway, do we really need drm for a simple console? Those drivers are really
+> > really big and take a long time to load and initialize?
 > 
-> diff --git a/modules.d/98systemd/dracut-emergency.sh b/modules.d/98systemd/dracut-emergency.sh
-> index 8ab045e..a4a10e6 100755
-> --- a/modules.d/98systemd/dracut-emergency.sh
-> +++ b/modules.d/98systemd/dracut-emergency.sh
-> @@ -30,7 +30,7 @@ if getargbool 1 rd.shell -d -y rdshell || getarg rd.break -d rdbreak; then
->      echo
->      [ -f /etc/profile ] && . /etc/profile
->      [ -z "$PS1" ] && export PS1="$_name:\${PWD}# "
-> -    exec sh -i -l
-> +    ! action_on_fail "Systemd is starting emergency shell" && exec sh -i -l
-
-
-
-! action_on_fail "Systemd is starting emergency shell" && exec sh -i -l
-------->
-action_on_fail "Systemd is starting emergency shell"
-
-
-I think 1st line should be changed to 2nd line. I am wondering why
-emergency_shell is not used directly here, instead "exec sh -i -l".
-
-Hi Harald,
-
-May I repost the 2/2 by removing "exec sh -i -l"?
-
-Baoquan
-Thanks a lot
-
-
-
->  else
->      warn "$action has failed. To debug this issue add \"rd.shell rd.debug\" to the kernel command line."
->      exit 1
-
+> It's a little awkward, after kernel crashing suppose 1st kernel is in
+> kms mode, it can not reset to nomodeset, so screen will keep black.
+> 
+> There's no such issue in normal initramfs because bios always reset
+> devices for us.
+> 
+> > 
+> 
+> 
+> -- 
+> Thanks
+> Dave
+> 
+> 
