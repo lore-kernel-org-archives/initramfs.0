@@ -1,44 +1,51 @@
-From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH]selinux: load_policy script fix
-Date: Thu, 30 May 2013 14:19:00 +0800
-Message-ID: <51a6ef54.GAPY7ltVyx5aFKm7%dyoung@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] 99fs-lib/fs-lib.sh: Let user specify the action after
+ fail for fsck
+Date: Thu, 30 May 2013 08:28:51 +0200
+Message-ID: <51A6F1A3.3070503@redhat.com>
+References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369809156.git.bhe@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369809156.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-chroot load_policy will use selinuxfs which should be mounted
-in $NEWROOT/sys/fs/selinux for Fedora 19, but because there's
-no $NEWROOT/sys/fs, so later process will fail.
+On 05/29/2013 08:33 AM, Baoquan He wrote:
+> The fsck is ignored when replace emergency_shell with action_on_fail,
+> now add it.
+> 
+> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/99fs-lib/fs-lib.sh |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/modules.d/99fs-lib/fs-lib.sh b/modules.d/99fs-lib/fs-lib.sh
+> index e1f3074..88e7348 100755
+> --- a/modules.d/99fs-lib/fs-lib.sh
+> +++ b/modules.d/99fs-lib/fs-lib.sh
+> @@ -7,14 +7,14 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+>  fsck_ask_reboot() {
+>      info "note - fsck suggests reboot, if you"
+>      info "leave shell, booting will continue normally"
+> -    emergency_shell -n "(reboot ?)"
+> +    action_on_fail -n "(reboot ?)"
+>  }
+>  
+>  fsck_ask_err() {
+>      warn "*** An error occurred during the file system check."
+>      warn "*** Dropping you to a shell; the system will try"
+>      warn "*** to mount the filesystem(s), when you leave the shell."
+> -    emergency_shell -n "(Repair filesystem)"
+> +    action_on_fail -n "(Repair filesystem)"
+>  }
+>  
+>  # inherits: _ret _drv _out
+> 
 
-Fixing this by bind mount /sys to $NEWROOT/sys.
+Applied, thanks!
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/98selinux/selinux-loadpolicy.sh |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
---- dracut.orig/modules.d/98selinux/selinux-loadpolicy.sh
-+++ dracut/modules.d/98selinux/selinux-loadpolicy.sh
-@@ -24,7 +24,8 @@ rd_load_policy()
-         local ret=0
-         local out
-         info "Loading SELinux policy"
--        # load_policy does mount /proc and /selinux in
-+        mount -o bind /sys $NEWROOT/sys
-+        # load_policy does mount /proc and /sys/fs/selinux in
-         # libselinux,selinux_init_load_policy()
-         if [ -x "$NEWROOT/sbin/load_policy" ]; then
-             out=$(LANG=C chroot "$NEWROOT" /sbin/load_policy -i 2>&1)
-@@ -35,6 +36,8 @@ rd_load_policy()
-             ret=$?
-             info $out
-         fi
-+        umount $NEWROOT/sys/fs/selinux
-+        umount $NEWROOT/sys
- 
-         if [ "$SELINUX" = "disabled" ]; then
-             return 0;
+commit 679fa7ed3c0f4c827bfc6885d34f56713fe85c1e
