@@ -1,76 +1,51 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Patch v2 2/2] let user specify action after systemd start dracut-emergency
-Date: Thu, 30 May 2013 12:33:24 +0200
-Message-ID: <51A72AF4.6070700@redhat.com>
-References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe@redhat.com> <dc98d3640cb7f265d9a84a11b87e494635485e8d.1369816679.git.bhe@redhat.com> <51A712D0.80002@redhat.com> <51A718C8.9070406@redhat.com> <51A726D0.9070509@redhat.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Firmware assisted dump support in dracut
+Date: Thu, 30 May 2013 10:23:18 -0400
+Message-ID: <20130530142318.GC2864@redhat.com>
+References: <20121128161234.GA8991@in.ibm.com>
+ <50B73598.804@redhat.com>
+ <50C03971.4050104@linux.vnet.ibm.com>
+ <51A6E0E4.1000502@linux.vnet.ibm.com>
+ <51A6F663.5030804@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51A726D0.9070509-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <51A6F663.5030804-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Mahesh Jagannath Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-On 05/30/2013 12:15 PM, Baoquan wrote:
-> On 05/30/2013 05:15 PM, Harald Hoyer wrote:
+On Thu, May 30, 2013 at 08:49:07AM +0200, Harald Hoyer wrote:
+
+[..]
+> > Sorry for restarting this discussion very late. I would like to know how
+> > safe is to rebuild kernel's default (boot) initramfs for an already
+> > installed kernel ?
+> > 
+> > Also, Does dracut provides any of following mechanism?
+> > a) Mechanism where dracut can detect what options were used during first
+> > build for a given (exsisting) initramfs. (This mechanism may help one to
+> > regenerate similar initramfs with additional dracut modules.)
 > 
->>>> Hi Harald,
->>>>
->>>> Since adding ConditionKernelCommandLine=!action_on_fail=continue doesn't
->>>> work, do you mind applying this patch? Or do you have other suggestions?
->>>>
->>>> Baoquan
->>>> Thanks a lot
->> Hmm, "ConditionKernelCommandLine=!action_on_fail=continue" _has_ to work.
->> Otherwise I would consider that a serious bug in systemd.
->>
->> Care to elaborate how you tested it?
->>
->> If you are dropped to the shell, can you run:
->>
->> # systemctl status dracut-emergency.service
->> # systemctl status emergency.service
->>
->> to confirm you are not dropped to the emergency.service, which I think this is
->> the case in your test setup.
->>
->> So, we have to add "ConditionKernelCommandLine=!action_on_fail=continue" to
->> emergency.service, too.
->>
+> currently dracut only stores which modules were used to generate the image in
+> usr/lib/dracut/modules.txt
 > 
-> 
-> Hi Harald,
-> 
-> I added this to dracut-emergency.service, and add
-> action_on_fail=continue to kdump command line, then change
-> dracut_initqueue.sh to make the RDENTRY=0, then mount won't succeed.
-> 
-> From my side, the ConditionKernelCommandLine=!action_on_fail=continue
-> doesn't work.
-> 
-> And I also tried ConditionKernelCommandLine=action_on_fail=continue, but
-> remove the kdump command line action_on_fail=continue, it didn't work
-> either.
-> 
-> 
-> Baoquan
-> Thanks a lot
-> 
+> But yes, you are right. Would be nice to save all the options and have a
+> mechanism to regenerate it with those.
 > 
 
-worksforme... with
-http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=b78e6ac2c328c76057b17059a761ab44707f9aa0
-and
-"rd.shell rd.break action_on_fail=continue"
+I am not sure how well it will work in the context of kdump.  kdump
+options and original options might conflict. kdump might drop some of
+its own cmdline options in initramfs which might not make any sense
+in regular boot.
 
-dracut-pre-pivot[227]: /lib/dracut-lib.sh@933(_emergency_shell): systemctl start
-dracut-emergency.service
-Trying to enqueue job dracut-emergency.service/start/replace
-Installed new job dracut-emergency.service/start as 39
-Enqueued job dracut-emergency.service/start as 39
-Starting of dracut-emergency.service requested but condition failed. Ignoring.
-Job dracut-emergency.service/start finished, result=done
+Kdump will specify additional mount points. IIUC, then we will try
+to bring up those targets in regular boot too and mount at user
+specified mount point. And later init services might get confused
+when respective daemon tries to bring up same targets again.
 
-.. no rd.shell on rd.break...
+Thanks
+Vivek
