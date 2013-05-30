@@ -1,51 +1,60 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Firmware assisted dump support in dracut
-Date: Thu, 30 May 2013 10:23:18 -0400
-Message-ID: <20130530142318.GC2864@redhat.com>
-References: <20121128161234.GA8991@in.ibm.com>
- <50B73598.804@redhat.com>
- <50C03971.4050104@linux.vnet.ibm.com>
- <51A6E0E4.1000502@linux.vnet.ibm.com>
- <51A6F663.5030804@redhat.com>
+Subject: Re: [Patch v2 1/2] 99fs-lib/fs-lib.sh: Let user specify the action
+ after fail for fsck
+Date: Thu, 30 May 2013 13:02:40 -0400
+Message-ID: <20130530170240.GH2864@redhat.com>
+References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <51A6F663.5030804-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Mahesh Jagannath Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, May 30, 2013 at 08:49:07AM +0200, Harald Hoyer wrote:
+On Wed, May 29, 2013 at 04:38:31PM +0800, Baoquan He wrote:
+> The fsck is ignored when replace emergency_shell with action_on_fail,
+> now add it.
 
-[..]
-> > Sorry for restarting this discussion very late. I would like to know how
-> > safe is to rebuild kernel's default (boot) initramfs for an already
-> > installed kernel ?
-> > 
-> > Also, Does dracut provides any of following mechanism?
-> > a) Mechanism where dracut can detect what options were used during first
-> > build for a given (exsisting) initramfs. (This mechanism may help one to
-> > regenerate similar initramfs with additional dracut modules.)
-> 
-> currently dracut only stores which modules were used to generate the image in
-> usr/lib/dracut/modules.txt
-> 
-> But yes, you are right. Would be nice to save all the options and have a
-> mechanism to regenerate it with those.
-> 
+should action_on_fail be named rd.action_on_fail to make it explicit that
+this is an initramfs option and not a kernel command line option as such.
 
-I am not sure how well it will work in the context of kdump.  kdump
-options and original options might conflict. kdump might drop some of
-its own cmdline options in initramfs which might not make any sense
-in regular boot.
-
-Kdump will specify additional mount points. IIUC, then we will try
-to bring up those targets in regular boot too and mount at user
-specified mount point. And later init services might get confused
-when respective daemon tries to bring up same targets again.
-
-Thanks
 Vivek
+
+> 
+> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/99fs-lib/fs-lib.sh |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/modules.d/99fs-lib/fs-lib.sh b/modules.d/99fs-lib/fs-lib.sh
+> index e1f3074..88e7348 100755
+> --- a/modules.d/99fs-lib/fs-lib.sh
+> +++ b/modules.d/99fs-lib/fs-lib.sh
+> @@ -7,14 +7,14 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+>  fsck_ask_reboot() {
+>      info "note - fsck suggests reboot, if you"
+>      info "leave shell, booting will continue normally"
+> -    emergency_shell -n "(reboot ?)"
+> +    action_on_fail -n "(reboot ?)"
+>  }
+>  
+>  fsck_ask_err() {
+>      warn "*** An error occurred during the file system check."
+>      warn "*** Dropping you to a shell; the system will try"
+>      warn "*** to mount the filesystem(s), when you leave the shell."
+> -    emergency_shell -n "(Repair filesystem)"
+> +    action_on_fail -n "(Repair filesystem)"
+>  }
+>  
+>  # inherits: _ret _drv _out
+> -- 
+> 1.7.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
