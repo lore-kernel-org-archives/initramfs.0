@@ -1,27 +1,69 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Patch v2 1/2] 99fs-lib/fs-lib.sh: Let user specify the action
- after fail for fsck
-Date: Fri, 31 May 2013 09:30:02 +0200
-Message-ID: <51A8517A.8080400@redhat.com>
-References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe@redhat.com> <20130530170240.GH2864@redhat.com>
+From: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Patch v2 2/2] let user specify action after systemd start dracut-emergency
+Date: Fri, 31 May 2013 17:39:40 +0800
+Message-ID: <51A86FDC.1050606@redhat.com>
+References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe@redhat.com> <dc98d3640cb7f265d9a84a11b87e494635485e8d.1369816679.git.bhe@redhat.com> <51A712D0.80002@redhat.com> <51A718C8.9070406@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20130530170240.GH2864-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <51A718C8.9070406-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/30/2013 07:02 PM, Vivek Goyal wrote:
-> On Wed, May 29, 2013 at 04:38:31PM +0800, Baoquan He wrote:
->> The fsck is ignored when replace emergency_shell with action_on_fail,
->> now add it.
-> 
-> should action_on_fail be named rd.action_on_fail to make it explicit that
-> this is an initramfs option and not a kernel command line option as such.
-> 
-> Vivek
+On 05/30/2013 05:15 PM, Harald Hoyer wrote:
 
-Yes, please
+> Hmm, "ConditionKernelCommandLine=!action_on_fail=continue" _has_ to work.
+> Otherwise I would consider that a serious bug in systemd.
+> 
+> Care to elaborate how you tested it?
+> 
+> If you are dropped to the shell, can you run:
+> 
+> # systemctl status dracut-emergency.service
+> # systemctl status emergency.service
+> 
+> to confirm you are not dropped to the emergency.service, which I think this is
+> the case in your test setup.
+> 
+> So, we have to add "ConditionKernelCommandLine=!action_on_fail=continue" to
+> emergency.service, too.
+
+
+Hi Harald,
+
+It is emergency.service takes care of emergency. Now I add
+"ConditionKernelCommandLine=!action_on_fail=continue" to
+emergency.service, the process just hang there. below is the console output:
+
+[    1.366071] bio: create slab <bio-1> at 1
+dracut-initqueue[124]: Warning: Could not boot.
+dracut-initqueue[124]: Warning: Not dropping to emergency shell, because
+'action_on_fail=continue' was set on the kernel command line.
+[  OK  ] Started dracut initqueue hook.
+         Mounting /sysroot...
+[FAILED] Failed to mount /sysroot.
+See 'systemctl status sysroot.mount' for details.
+[DEPEND] Dependency failed for Initrd Root File System.
+[DEPEND] Dependency failed for Reload Configuration from the Real Root.
+[  185.641729] systemd[1]: Unit sysroot.mount entered failed state.
+[  185.642906] systemd[1]: Starting Journal Service...
+[  185.644860] systemd[1]: Stopped udev Kernel Device Manager.
+[  185.645337] systemd[1]: Stopping dracut pre-udev hook...
+[  185.645743] systemd[1]: Stopped dracut pre-udev hook.
+[  185.647077] systemd[1]: Stopping dracut cmdline hook...
+[  185.647498] systemd[1]: Stopped dracut cmdline hook.
+[  185.647884] systemd[1]: Starting Setup Virtual Console...
+[  185.649641] systemd-journald[49]: Received SIGTERM
+[  185.650284] systemd[1]: Stopping udev Kernel Socket.
+[  185.650690] systemd[1]: Closed udev Kernel Socket.
+[  185.652039] systemd[1]: Stopping udev Control Socket.
+[  185.652469] systemd[1]: Closed udev Control Socket.
+[  185.656516] systemd[1]: Starting Journal Service...
+[  185.657075] systemd[1]: Started Journal Service.
+
+
+Baoquan
+Thanks
