@@ -1,35 +1,54 @@
-From: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Patch v2 2/2] let user specify action after systemd start dracut-emergency
-Date: Mon, 03 Jun 2013 11:04:18 +0800
-Message-ID: <51AC07B2.1010407@redhat.com>
-References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe@redhat.com> <dc98d3640cb7f265d9a84a11b87e494635485e8d.1369816679.git.bhe@redhat.com> <51A712D0.80002@redhat.com> <51A718C8.9070406@redhat.com> <51A86FDC.1050606@redhat.com> <51A87129.4070307@redhat.com>
+From: Mahesh Jagannath Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Firmware assisted dump support in dracut
+Date: Tue, 04 Jun 2013 13:50:19 +0530
+Message-ID: <51ADA343.2070100@linux.vnet.ibm.com>
+References: <20121128161234.GA8991@in.ibm.com> <50B73598.804@redhat.com> <50C03971.4050104@linux.vnet.ibm.com> <51A6E0E4.1000502@linux.vnet.ibm.com> <51A6F663.5030804@redhat.com> <20130530142318.GC2864@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51A87129.4070307-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20130530142318.GC2864-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-On 05/31/2013 05:45 PM, Harald Hoyer wrote:
-
-> emergency.service is the last resort emergency.
+On 05/30/2013 07:53 PM, Vivek Goyal wrote:
+> On Thu, May 30, 2013 at 08:49:07AM +0200, Harald Hoyer wrote:
 > 
-> [harald@lenovo rules (master)]$ fgrep OnFail /lib/systemd/system/*.target
-> /lib/systemd/system/initrd-fs.target:OnFailure=emergency.target
-> /lib/systemd/system/initrd-fs.target:OnFailureIsolate=yes
-> /lib/systemd/system/initrd-root-fs.target:OnFailure=emergency.target
-> /lib/systemd/system/initrd-root-fs.target:OnFailureIsolate=yes
-> /lib/systemd/system/initrd.target:OnFailure=emergency.target
-> /lib/systemd/system/initrd.target:OnFailureIsolate=yes
+> [..]
+>>> Sorry for restarting this discussion very late. I would like to know how
+>>> safe is to rebuild kernel's default (boot) initramfs for an already
+>>> installed kernel ?
+>>>
+>>> Also, Does dracut provides any of following mechanism?
+>>> a) Mechanism where dracut can detect what options were used during first
+>>> build for a given (exsisting) initramfs. (This mechanism may help one to
+>>> regenerate similar initramfs with additional dracut modules.)
+>>
+>> currently dracut only stores which modules were used to generate the image in
+>> usr/lib/dracut/modules.txt
+>>
+>> But yes, you are right. Would be nice to save all the options and have a
+>> mechanism to regenerate it with those.
+>>
 > 
-> Maybe we should refrain from isolating to the emergency.target, which starts
-> emergency.service.
+> I am not sure how well it will work in the context of kdump.  kdump
+> options and original options might conflict. kdump might drop some of
+> its own cmdline options in initramfs which might not make any sense
+> in regular boot.
 > 
-> I'll ask on the systemd-devel list.
+> Kdump will specify additional mount points. IIUC, then we will try
+> to bring up those targets in regular boot too and mount at user
+> specified mount point. And later init services might get confused
+> when respective daemon tries to bring up same targets again.
 
+I think we should be able differentiate between regular boot and boot
+after crash by checking existence of '/proc/vmcore' file, and do the
+kdump specific configs/mount if this file exists. In regular boot we can
+mute the kdump code path.
 
-I tried set these OnFailureIsolate=no, seems services not started any
-more and systemd hang there.
+> 
+> Thanks
+> Vivek
+> 
