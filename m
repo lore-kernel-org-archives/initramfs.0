@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Firmware assisted dump support in dracut
-Date: Tue, 4 Jun 2013 09:57:22 -0400
-Message-ID: <20130604135722.GE4799@redhat.com>
+Date: Tue, 4 Jun 2013 10:14:03 -0400
+Message-ID: <20130604141403.GG4799@redhat.com>
 References: <20121128161234.GA8991@in.ibm.com>
  <50B73598.804@redhat.com>
  <50C03971.4050104@linux.vnet.ibm.com>
@@ -18,7 +18,7 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Mahesh Jagannath Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 
 On Tue, Jun 04, 2013 at 01:50:19PM +0530, Mahesh Jagannath Salgaonkar wrote:
 > On 05/30/2013 07:53 PM, Vivek Goyal wrote:
@@ -56,12 +56,19 @@ On Tue, Jun 04, 2013 at 01:50:19PM +0530, Mahesh Jagannath Salgaonkar wrote:
 > kdump specific configs/mount if this file exists. In regular boot we can
 > mute the kdump code path.
 
-dracut takes --mount option and that option doesn not differentiate
-between environment.
+Also what about kernel command line? Kernel command line can be very
+specific to kdump environment. It is atleast in x86. I am hoping that's
+not the case with firmware assisted dump.
 
-One can always create new options to mount certain things only in
-kdump environment. I am not sure how much sense does it make to try
-to special case everything related to kdump in dracut.
+Also can you point me to some writeup of fadump again. I want to refresh
+what fadump is doing and how firmware is assisting and how does it make
+better than regular kdump. 
 
-Thanks
+I suspect it is very similar to s390 firmware dump (zfcpdump). Does
+s390 kdump or s390 zfcpdump reboot after saving dump or they have
+mechanism to continue to boot and hotplug memory after saving dump. I
+am wondering how do they do it.
+
+CCing michael.
+
 Vivek
