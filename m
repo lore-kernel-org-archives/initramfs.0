@@ -1,86 +1,68 @@
-From: Mahesh Jagannath Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Firmware assisted dump support in dracut
-Date: Thu, 06 Jun 2013 14:04:05 +0530
-Message-ID: <51B0497D.5060708@linux.vnet.ibm.com>
-References: <50B73598.804@redhat.com> <50C03971.4050104@linux.vnet.ibm.com> <51A6E0E4.1000502@linux.vnet.ibm.com> <51A6F663.5030804@redhat.com> <20130530142318.GC2864@redhat.com> <51ADA343.2070100@linux.vnet.ibm.com> <20130604141403.GG4799@redhat.com> <20130604142123.GH4799@redhat.com> <51AF40BB.5010703@linux.vnet.ibm.com> <20130605145504.GE16339@redhat.com> <20130605155316.GI16339@redhat.com>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] base: setup correct system time and time zone in initrd
+Date: Thu, 6 Jun 2013 17:08:35 +0800
+Message-ID: <20130606090835.GA19935@dhcp12-158.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20130605155316.GI16339-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Initramfs Dracut <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ananth Narayan <ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Steven F Best <sbest-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Haren Myneni <hbabu-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/05/2013 09:23 PM, Vivek Goyal wrote:
-> On Wed, Jun 05, 2013 at 10:55:04AM -0400, Vivek Goyal wrote:
-> 
-> [..]
->>>> If first kernel and kdump kernel command line are same in fadump and
->>>> boot environment is same, I think it is worth exploring the option
->>>> of saving kdump from kdump service when system boots back. That will
->>>> do away with any need to tweak initramfs.
->>>
->>> This needs larger memory to be reserved. We may need to make sure that
->>> kdump service is invoked at very early stage before other services kicks
->>> in which may start requesting for memory and run into OOM issue. If we
->>> can make sure that no other services are invoked when kdump service is
->>> saving dump then it will help to fix the size of reserved memory. The
->>> systemd infrastructure provides aggressive parallelization capabilities.
->>> I am not expert on systemd but will need to explore whether with systemd
->>> is this possible.
->>
->> I think we can create a new service for saving dump and make some of
->> the systemd services dependent on start of this service. 
->>
->> Can't integrate with existing kdump service as that one can start
->> later and can take time in regenerating initramfs and holding back other
->> services for that duration will not make sense.
->>
->> By creating a seprate service, delay will be introduced only when there
->> s dump to be saved. Before this we will have bring up all networking
->> and storage in the system so that we can save dump to intended target.
->>
->> I think same service can be used to save dump from inside initramfs
->> too. (As systemd is now started inside initramfs too). 
->>
->> Other appraoch is dumping through initramfs and if you do things
->> conditionally (if dump is available), then any dracut parameter
->> used by kdump will have to have a conditional version too. Something
->> like
->>
->> mount=
->> mount.kdump_only=
+Currently in initrd, hardware clock is always considered to use UTC time
+format and system time zone is also UTC. Thus system time isn't correct
+if hw clock is localtime or we're using other time zone in real root.
 
-Agree. The kdump_only options can be used to store the kdump related
-required configs (e.g. lvm configs, network configs etc.) in a separate
-directory and add a pre-udev hook that can check if dump is available
-and move these configs to their original paths so that the normal
-initramfs flow will do its job as per configs.
+To fix this, install /etc/adjtime and /etc/localtime to initrd. If not
+using systemd, install /usr/sbin/hwclock for dracut init to setup system
+time.
 
->>
->> mount.kdump_only will kick in only dump is available. Also we need to
->> make sure that effects of all kdump_only options are undone before
->> root is mounted or we create nice handover mechanism to systemd. I think
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/99base/init.sh         | 7 +++++++
+ modules.d/99base/module-setup.sh | 9 +++++++++
+ 2 files changed, 16 insertions(+)
 
-Agree.
-
->> there handover mechanism already between initramfs and systemd for complex
->> storage targets like multipathd.
->>
->> I will let harald comment on what does he think of kdump_only variant
->> options.
-> 
-> Thinking more about it, I think from kdump point of view, it is better
-> to be able to dump from initrafs. We don't want different mechanism
-> for different architecture which will result in more confusion and
-> possibly code duplication.
-> 
-
-Agree. And if we rely on dracut to rebuild the initramfs (with original
-dracut arguments) we can be sure that we wont run into issues like
-unbootable system.
-
-Thanks,
--Mahesh.
+diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
+index 880a2c0..174bbab 100755
+--- a/modules.d/99base/init.sh
++++ b/modules.d/99base/init.sh
+@@ -55,6 +55,13 @@ if ! ismounted /dev; then
+     exit 1
+ fi
+ 
++# setup system time
++if grep -q LOCAL /etc/adjtime 2> /dev/null; then
++    hwclock --hctosys --localtime
++else
++    hwclock --hctosys --utc
++fi
++
+ # prepare the /dev directory
+ [ ! -h /dev/fd ] && ln -s /proc/self/fd /dev/fd >/dev/null 2>&1
+ [ ! -h /dev/stdin ] && ln -s /proc/self/fd/0 /dev/stdin >/dev/null 2>&1
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index 4955b7b..7ab0ae1 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -28,6 +28,15 @@ install() {
+     egrep '^root:' "$initdir/etc/passwd" 2>/dev/null || echo  'root:x:0:0::/root:/bin/sh' >> "$initdir/etc/passwd"
+     egrep '^nobody:' /etc/passwd >> "$initdir/etc/passwd"
+ 
++    # install /etc/adjtime and time zone data
++    dracut_install -o /etc/adjtime \
++                      /etc/localtime
++
++    # Our init.sh script needs hwclock to set system time
++    if ! dracut_module_included "systemd"; then
++        dracut_install -o hwclock
++    fi
++
+     # install our scripts and hooks
+     inst_script "$moddir/init.sh" "/init"
+     inst_script "$moddir/initqueue.sh" "/sbin/initqueue"
+-- 
+1.8.2.1
