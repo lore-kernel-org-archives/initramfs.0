@@ -1,29 +1,42 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2] base: setup correct system time and time zone in initrd
-Date: Thu, 06 Jun 2013 13:40:14 +0200
-Message-ID: <51B0751E.30503@redhat.com>
-References: <20130606095611.GA29287@dhcp12-158.nay.redhat.com>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut-initqueue.service: Fix systemd start condition
+Date: Fri, 7 Jun 2013 17:50:56 +0800
+Message-ID: <20130607095056.GA20100@dhcp12-158.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20130606095611.GA29287-UAAZkH0G2Ts1naxU1pY8ZxcY2uh10dtjAL8bYrjMMd8@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/06/2013 11:56 AM, WANG Chao wrote:
-> Currently in initrd, hardware clock is always considered to use UTC time
-> format and system time zone is also UTC. Thus system time isn't correct
-> if hw clock is localtime or we're using other time zone in real root.
-> 
-> To fix this, install /etc/adjtime and /etc/localtime to initrd. If not
-> using systemd, install /usr/sbin/hwclock for dracut init to setup system
-> time.
-> 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> 
+Scripts in dracut initqueue hooks are placed under
+/usr/lib/dracut/hooks/initqueue/*/ directory.
 
-Thanks! Pushed
+And also start initqueue service when kernel cmdline has
+rd.break=initqueue
+
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/98systemd/dracut-initqueue.service | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/modules.d/98systemd/dracut-initqueue.service b/modules.d/98systemd/dracut-initqueue.service
+index f4c1dd4..61d3a7c 100644
+--- a/modules.d/98systemd/dracut-initqueue.service
++++ b/modules.d/98systemd/dracut-initqueue.service
+@@ -15,8 +15,8 @@ After=systemd-udev-trigger.service
+ Wants=systemd-udev-trigger.service
+ ConditionPathExists=/etc/initrd-release
+ ConditionPathExists=|/lib/dracut/need-initqueue
+-ConditionPathExistsGlob=|/lib/dracut/hooks/initqueue/*.sh
+-ConditionKernelCommandLine=|rd.break=pre-mount
++ConditionPathExistsGlob=|/lib/dracut/hooks/initqueue/*/*.sh
++ConditionKernelCommandLine=|rd.break=initqueue
+ 
+ [Service]
+ Environment=DRACUT_SYSTEMD=1
+-- 
+1.8.2.1
