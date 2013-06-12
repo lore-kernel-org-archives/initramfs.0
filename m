@@ -1,45 +1,75 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut-initqueue.service: Fix systemd start condition
-Date: Fri, 07 Jun 2013 13:56:56 +0200
-Message-ID: <51B1CA88.4060703@redhat.com>
-References: <20130607095056.GA20100@dhcp12-158.nay.redhat.com>
+Subject: [ANNOUNCE] dracut 028
+Date: Wed, 12 Jun 2013 15:28:05 +0200
+Message-ID: <51B87765.4040207@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20130607095056.GA20100-UAAZkH0G2Ts1naxU1pY8ZxcY2uh10dtjAL8bYrjMMd8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/07/2013 11:50 AM, WANG Chao wrote:
-> Scripts in dracut initqueue hooks are placed under
-> /usr/lib/dracut/hooks/initqueue/*/ directory.
-> 
-> And also start initqueue service when kernel cmdline has
-> rd.break=initqueue
-> 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/98systemd/dracut-initqueue.service | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/modules.d/98systemd/dracut-initqueue.service b/modules.d/98systemd/dracut-initqueue.service
-> index f4c1dd4..61d3a7c 100644
-> --- a/modules.d/98systemd/dracut-initqueue.service
-> +++ b/modules.d/98systemd/dracut-initqueue.service
-> @@ -15,8 +15,8 @@ After=systemd-udev-trigger.service
->  Wants=systemd-udev-trigger.service
->  ConditionPathExists=/etc/initrd-release
->  ConditionPathExists=|/lib/dracut/need-initqueue
-> -ConditionPathExistsGlob=|/lib/dracut/hooks/initqueue/*.sh
-> -ConditionKernelCommandLine=|rd.break=pre-mount
-> +ConditionPathExistsGlob=|/lib/dracut/hooks/initqueue/*/*.sh
-> +ConditionKernelCommandLine=|rd.break=initqueue
->  
->  [Service]
->  Environment=DRACUT_SYSTEMD=1
-> 
+Here comes a new dracut version. Thanks to all who have contributed to
+this release.
 
-Many thanks! Pushed!
+The tarball can be found here:
+        http://www.kernel.org/pub/linux/utils/boot/dracut/
+        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+
+Git:
+        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+
+Git Web:
+        http://git.kernel.org/?p=3Dboot/dracut/dracut.git
+
+Git Web RSS Feed:
+        http://git.kernel.org/?p=3Dboot/dracut/dracut.git;a=3Drss
+
+Project Page:
+        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+        http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=3Dboot/dracut/dracut.git;a=3Dblob_plai=
+n;f=3DNEWS
+
+
+dracut-028
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+- full integration of crypto devs in systemd logic
+- support for bridge over team and vlan tagged team
+- support multiple bonding interfaces
+- new kernel command line param "rd.action_on_fail"
+  to control the emergency action
+- support for bridge over a vlan tagged interface
+- support for "iso-scan/filename" kernel parameter
+- lsinitrd got some love and does not use "file" anymore
+- fixed issue with noexec mounted tmp dirs
+- FIPS mode fixed
+- dracut_install got some love
+- fixed some /usr mounting problems
+- ifcfg dracut module got some love and fixes
+- default installed font is now latarcyrheb-sun16
+- new parameters rd.live.dir and rd.live.squashimg
+- lvm: add tools for thin provisioning
+- also install non-hwcap libs
+- setup correct system time and time zone in initrd
+- s390: fixed cms setup
+- add systemd-udevd persistent network interface naming
+
+Contributions from:
+Harald Hoyer
+Kamil Rytarowski
+WANG Chao
+Baoquan He
+Adam Williamson
+Colin Guthrie
+Dan Hor=E1k
+Dave Young
+Dennis Gilmore
+Dennis Schridde
