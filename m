@@ -1,61 +1,36 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 029
-Date: Fri, 14 Jun 2013 15:35:46 +0200
-Message-ID: <51BB1C32.7050105@redhat.com>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] selinux: umount $NEWROOT/dev and its submounts
+Date: Tue, 18 Jun 2013 13:58:04 +0800
+Message-ID: <20130618055804.GA3612@dhcp12-158.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Release early, release often... Before you run into those problems found after
-releasing 028, here comes a new dracut version. Thanks to all who have
-contributed to this release.
+$NEWROOT/dev and its submounts should be umounted after we use it.
+Otherwise it fails other scripts that umount /sysroot only.
 
-The tarball can be found here:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/
-        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/98selinux/selinux-loadpolicy.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-Git:
-        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
-
-Git Web:
-        http://git.kernel.org/?p=boot/dracut/dracut.git
-
-Git Web RSS Feed:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-        http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
-
-
-dracut-029
-==========
-- wait for IPv6 autoconfiguration
-- i18n: make the default font configurable
-  To set the default font for your distribution, add
-  i18n_default_font="latarcyrheb-sun16"
-  to your /lib/dracut/dracut.conf.d/01-dist.conf distribution config.
-- proper handle "rd.break" in systemd mode before switch-root
-- systemd: make unit files symlinks
-- build without dash requirement
-- add dracut-shutdown.service.8 manpage
-- handle MACs for "ip="
-  "ip=77-77-6f-6f-64-73:dhcp"
-- don't explode when mixing BOOTIF and ip=
-- 90lvm/module-setup.sh: redirect error message of lvs to /dev/null
-
-Contributions from:
-Harald Hoyer
-Will Woods
-Baoquan He
+diff --git a/modules.d/98selinux/selinux-loadpolicy.sh b/modules.d/98selinux/selinux-loadpolicy.sh
+index 5dddfc2..436ee6b 100755
+--- a/modules.d/98selinux/selinux-loadpolicy.sh
++++ b/modules.d/98selinux/selinux-loadpolicy.sh
+@@ -48,6 +48,7 @@ rd_load_policy()
+             [ -e "$NEWROOT"/.autorelabel ] && LANG=C /usr/sbin/setenforce 0
+             mount --rbind /dev "$NEWROOT/dev"
+             LANG=C chroot "$NEWROOT" /sbin/restorecon -R /dev
++            umount -R "$NEWROOT/dev"
+             return 0
+         fi
+ 
+-- 
+1.8.2.1
