@@ -1,50 +1,30 @@
-From: Michael Prokop <mika-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
-Subject: initramfs-tools 0.113 release
-Date: Tue, 18 Jun 2013 11:22:28 +0200
-Message-ID: <2013-06-18T11-18-45@devnull.michael-prokop.at>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="6zipuvUKAEymKn2g"
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH 3/3] LatArCyrHeb-16 as a default i18n font for Gentoo
+Date: Thu, 20 Jun 2013 20:33:59 +0200
+Message-ID: <1371753239-19780-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
+---
+ dracut.conf.d/gentoo.conf.example | 1 +
+ 1 file changed, 1 insertion(+)
 
---6zipuvUKAEymKn2g
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-Hi,
-
-we just released a new initramfs-tools version (0.113), featuring
-early initramfs support thanks to Henrique de Moraes Holschuh. More
-details available in Debian's #712521 issue.
-
-Git shortlog attached as usual.
-
-regards,
--mika-
-
-Henrique de Moraes Holschuh (2):
-      implement early initramfs support
-      lsinitramfs(8): document failure to deal with early initramfs
-
-Michael Prokop (1):
-      Releasing version 0.113
-
---6zipuvUKAEymKn2g
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAlHAJtQACgkQ2N9T+zficugo1gCfQTyxLvHYTSL3FqFQ2u1Zw8OB
-NVcAn3/OdawoVhLS15kK6FaREGMJwlC6
-=k4Cc
------END PGP SIGNATURE-----
-
---6zipuvUKAEymKn2g--
+diff --git a/dracut.conf.d/gentoo.conf.example b/dracut.conf.d/gentoo.conf.example
+index b78e5c6..f9617f0 100644
+--- a/dracut.conf.d/gentoo.conf.example
++++ b/dracut.conf.d/gentoo.conf.example
+@@ -11,5 +11,6 @@ ro_mnt=yes
+ 
+ # i18n
+ i18n_vars="/etc/conf.d/keymaps:keymap-KEYMAP,extended_keymaps-EXT_KEYMAPS /etc/conf.d/consolefont:consolefont-FONT,consoletranslation-FONT_MAP /etc/rc.conf:unicode-UNICODE"
++i18n_default_font="LatArCyrHeb-16"
+ 
+ omit_drivers+=" i2o_scsi"
+-- 
+1.8.2.1
