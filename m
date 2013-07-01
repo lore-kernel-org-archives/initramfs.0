@@ -1,127 +1,45 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] 99base/dracut-lib.sh: split _emergency_shell
-Date: Mon, 24 Jun 2013 18:14:48 +0800
-Message-ID: <f8dd0b6259e7709eadb1c2ef5957ce0d32ca74fe.1372068867.git.bhe@redhat.com>
+From: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Patch v2 2/2] let user specify action after systemd start dracut-emergency
+Date: Mon, 01 Jul 2013 21:51:58 +0800
+Message-ID: <51D1897E.6020802@redhat.com>
+References: <078c160e62c2c750efe71fc8a05dd7c5de71bde3.1369816679.git.bhe@redhat.com> <dc98d3640cb7f265d9a84a11b87e494635485e8d.1369816679.git.bhe@redhat.com> <51A712D0.80002@redhat.com> <51A718C8.9070406@redhat.com> <51A86FDC.1050606@redhat.com> <51A87129.4070307@redhat.com> <51AC07B2.1010407@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <51AC07B2.1010407-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-With rd.action_on_fail specified and 'DRACUT_SYSTEMD' set, the
-_emergency_shell calling will fail even though user really want to drop into
-shell by explicitly calling it.
+On 06/03/2013 11:04 AM, Baoquan wrote:
 
-Now split _emergency_shell into 2 functions, the 1st is called if
-"DRACUT_SYSTEMD" is set, otherwise the 2nd is called. Then user
-who want to drop into shell anyway can use the 2nd function.
+> On 05/31/2013 05:45 PM, Harald Hoyer wrote:
+> 
+>> emergency.service is the last resort emergency.
+>>
+>> [harald@lenovo rules (master)]$ fgrep OnFail /lib/systemd/system/*.target
+>> /lib/systemd/system/initrd-fs.target:OnFailure=emergency.target
+>> /lib/systemd/system/initrd-fs.target:OnFailureIsolate=yes
+>> /lib/systemd/system/initrd-root-fs.target:OnFailure=emergency.target
+>> /lib/systemd/system/initrd-root-fs.target:OnFailureIsolate=yes
+>> /lib/systemd/system/initrd.target:OnFailure=emergency.target
+>> /lib/systemd/system/initrd.target:OnFailureIsolate=yes
+>>
+>> Maybe we should refrain from isolating to the emergency.target, which starts
+>> emergency.service.
+>>
+>> I'll ask on the systemd-devel list.
+> 
+> 
+> I tried set these OnFailureIsolate=no, seems services not started any
+> more and systemd hang there.
 
-Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/99base/dracut-lib.sh |   76 +++++++++++++++++++++------------------
- 1 files changed, 41 insertions(+), 35 deletions(-)
+Hi Harald,
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index 581b63a..0f4f858 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -924,45 +924,47 @@ wait_for_loginit()
-     rm -f /run/initramfs/loginit.pipe /run/initramfs/loginit.pid
- }
- 
-+_emergency_shell_systemd()
-+{
-+    local _name="$1"
-+    > /.console_lock
-+    echo "PS1=\"$_name:\\\${PWD}# \"" >/etc/profile
-+    systemctl start dracut-emergency.service
-+    rm -f /etc/profile
-+    rm -f /.console_lock
-+}
-+
- _emergency_shell()
- {
-     local _name="$1"
--    if [ -n "$DRACUT_SYSTEMD" ]; then
--        > /.console_lock
--        echo "PS1=\"$_name:\\\${PWD}# \"" >/etc/profile
--        systemctl start dracut-emergency.service
--        rm -f /etc/profile
--        rm -f /.console_lock
--    else
--        debug_off
--        echo
--        /sbin/sosreport
--        echo 'You might want to save "/run/initramfs/sosreport.txt" to a USB stick or /boot'
--        echo 'after mounting them and attach it to a bug report.'
--        if ! RD_DEBUG= getargbool 0 rd.debug -d -y rdinitdebug -d -y rdnetdebug; then
--            echo
--            echo 'To get more debug information in the report,'
--            echo 'reboot with "rd.debug" added to the kernel command line.'
--        fi
--        echo
--        echo 'Dropping to debug shell.'
-+    debug_off
-+    echo
-+    /sbin/sosreport
-+    echo 'You might want to save "/run/initramfs/sosreport.txt" to a USB stick or /boot'
-+    echo 'after mounting them and attach it to a bug report.'
-+    if ! RD_DEBUG= getargbool 0 rd.debug -d -y rdinitdebug -d -y rdnetdebug; then
-         echo
--        export PS1="$_name:\${PWD}# "
--        [ -e /.profile ] || >/.profile
--
--        _ctty="$(RD_DEBUG= getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
--        if [ -z "$_ctty" ]; then
--            _ctty=console
--            while [ -f /sys/class/tty/$_ctty/active ]; do
--                _ctty=$(cat /sys/class/tty/$_ctty/active)
--                _ctty=${_ctty##* } # last one in the list
--            done
--            _ctty=/dev/$_ctty
--        fi
--        [ -c "$_ctty" ] || _ctty=/dev/tty1
--        case "$(/usr/bin/setsid --help 2>&1)" in *--ctty*) CTTY="--ctty";; esac
--        setsid $CTTY /bin/sh -i -l 0<>$_ctty 1<>$_ctty 2<>$_ctty
-+        echo 'To get more debug information in the report,'
-+        echo 'reboot with "rd.debug" added to the kernel command line.'
-     fi
-+    echo
-+    echo 'Dropping to debug shell.'
-+    echo
-+    export PS1="$_name:\${PWD}# "
-+    [ -e /.profile ] || >/.profile
-+
-+    _ctty="$(RD_DEBUG= getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
-+    if [ -z "$_ctty" ]; then
-+        _ctty=console
-+        while [ -f /sys/class/tty/$_ctty/active ]; do
-+            _ctty=$(cat /sys/class/tty/$_ctty/active)
-+            _ctty=${_ctty##* } # last one in the list
-+        done
-+        _ctty=/dev/$_ctty
-+    fi
-+    [ -c "$_ctty" ] || _ctty=/dev/tty1
-+    case "$(/usr/bin/setsid --help 2>&1)" in *--ctty*) CTTY="--ctty";; esac
-+    setsid $CTTY /bin/sh -i -l 0<>$_ctty 1<>$_ctty 2<>$_ctty
- }
- 
- emergency_shell()
-@@ -989,7 +991,11 @@ emergency_shell()
-     echo
- 
-     if getargbool 1 rd.shell -d -y rdshell || getarg rd.break -d rdbreak; then
--        _emergency_shell $_rdshell_name
-+        if [ -n "$DRACUT_SYSTEMD" ]; then
-+            _emergency_shell_systemd $_rdshell_name
-+        else
-+            _emergency_shell $_rdshell_name
-+        fi
-     else
-         warn "$action has failed. To debug this issue add \"rd.shell rd.debug\" to the kernel command line."
-         # cause a kernel panic
--- 
-1.7.1
+About this issue, do you have any further suggestion?
+
+Baoquan
+Thanks a lot
+
