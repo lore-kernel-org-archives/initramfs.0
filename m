@@ -1,14 +1,18 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 029
-Date: Wed, 17 Jul 2013 15:54:04 +0200
-Message-ID: <51E6A1FC.1090403@redhat.com>
+Subject: [ANNOUNCE] dracut 030
+Date: Wed, 17 Jul 2013 15:54:53 +0200
+Message-ID: <51E6A22D.4040301@redhat.com>
+References: <51E6A1FC.1090403@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <51E6A1FC.1090403-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+Of course, the subject should say dracut 030 :-)
 
 Here comes a new dracut version. Thanks to all who have contributed to this release.
 
@@ -57,3 +61,4 @@ Contributions from:
 Harald Hoyer
 Konrad Rzeszutek Wilk
 WANG Chao
+
