@@ -1,52 +1,112 @@
-From: Konrad Rzeszutek Wilk <konrad.wilk-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v1] dracut.sh: Support early microcode loading.
-Date: Wed, 17 Jul 2013 13:20:09 -0400
-Message-ID: <20130717172009.GC30248@phenom.dumpdata.com>
-References: <1373397849-11397-1-git-send-email-konrad.wilk@oracle.com>
- <3E5A0FA7E9CA944F9D5414FEC6C712205A528195@ORSMSX106.amr.corp.intel.com>
- <51DD0F27.70202@redhat.com>
- <20130710145815.GD11007@phenom.dumpdata.com>
- <20130712210254.GA26664@phenom.dumpdata.com>
- <51E690C1.5010004@redhat.com>
-Mime-Version: 1.0
+From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Change the implementation of action_on_fail
+Date: Mon, 22 Jul 2013 19:32:21 +0800
+Message-ID: <8a7ac3492f63fd2a5fa7ee57d9b9e7c8c2dd305c.1374492675.git.bhe@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <51E690C1.5010004-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "Yu, Fenghua" <fenghua.yu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-> > Signed-off-by: Konrad Rzeszutek Wilk <konrad.wilk-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-> > [v1: Support --host-only parameter]
-> > ---
-> >  dracut-functions.sh |   33 +++++++++++++++++++++++++++++++++
-> >  dracut.sh           |   46 ++++++++++++++++++++++++++++++++++++++++++----
-> >  2 files changed, 75 insertions(+), 4 deletions(-)
-> > 
-> 
-> Pushed to dracut git HEAD, but disabled by default, also added the
+Currently when action_on_fail is enabled, the emergency_shell won't be called
+either. In kdump even though user specify the default action as emergency_shell,
+dracut still skip it. Now change the implementation of action_on_fail to depend
+on a file which is created by kdump when making kdump initrd, then remove it
+at the beginning of kdump. This can solve the explicit emergency_shell problem.
 
-Yeeey! Thank you.
-> --early-microcode option and bash cimpletion.
+And action_on_fail won't need paramenters, remove the relevant description in
+dracut man page.
 
-I did check the initramfs with a kernel that does not have this support
-(no CONFIG_EARLY_CPIO..), and found out that the kernel is smart enough to
-combine the two payloads in one (so the initrd has the kernel/...).
+Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut.cmdline.7.asc                         |    4 ---
+ modules.d/98systemd/dracut-emergency.service |    2 +-
+ modules.d/98systemd/emergency.service        |    2 +-
+ modules.d/99base/dracut-lib.sh               |   28 +++++++++----------------
+ 4 files changed, 12 insertions(+), 24 deletions(-)
 
-In case that is your fear of enabling this by default  :-)
-> 
-> Man pages still need documentation.
-
-Of course. Will do it.
-> 
-> lsinitrd only displays the microcode files at the moment of course.
-> This is tricky to solve. Any ideas?
-
-Oh boy. Tricky. I will look at it and cobble something up. Not this week
-thought - but next one.
-> 
-> 
-> 
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index cf11d50..09c47e8 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -121,10 +121,6 @@ Misc
+    specify the controlling terminal for the console.
+    This is useful, if you have multiple "console=" arguments.
+ 
+-**rd.action_on_fail=**_{shell|continue}_::
+-   Specify the action after failure. By default it's emergency_shell.
+-   'continue' means: ignore the current failure and go ahead.
+-
+ [[dracutkerneldebug]]
+ Debug
+ ~~~~~
+diff --git a/modules.d/98systemd/dracut-emergency.service b/modules.d/98systemd/dracut-emergency.service
+index a4b81bc..25db825 100644
+--- a/modules.d/98systemd/dracut-emergency.service
++++ b/modules.d/98systemd/dracut-emergency.service
+@@ -13,7 +13,7 @@ DefaultDependencies=no
+ After=systemd-vconsole-setup.service
+ Wants=systemd-vconsole-setup.service
+ Conflicts=emergency.service emergency.target
+-ConditionKernelCommandLine=!action_on_fail=continue
++ConditionPathExists=!/kdumpscripts/kdump-action.conf
+ 
+ [Service]
+ Environment=HOME=/
+diff --git a/modules.d/98systemd/emergency.service b/modules.d/98systemd/emergency.service
+index c19fe37..6eddbde 100644
+--- a/modules.d/98systemd/emergency.service
++++ b/modules.d/98systemd/emergency.service
+@@ -12,7 +12,7 @@ Description=Emergency Shell
+ DefaultDependencies=no
+ After=systemd-vconsole-setup.service
+ Wants=systemd-vconsole-setup.service
+-ConditionKernelCommandLine=!action_on_fail=continue
++ConditionPathExists=!/kdumpscripts/kdump-action.conf
+ 
+ [Service]
+ Environment=HOME=/
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 8eeebf3..18e3f32 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -1003,24 +1003,16 @@ emergency_shell()
+ 
+ action_on_fail()
+ {
+-    local _action=$(getarg rd.action_on_fail= -d action_on_fail=)
+-    case "$_action" in
+-        continue)
+-            [ "$1" = "-n" ] && shift 2
+-            [ "$1" = "--shutdown" ] && shift 2
+-            warn "$*"
+-            warn "Not dropping to emergency shell, because 'action_on_fail=continue' was set on the kernel command line."
+-            return 0
+-            ;;
+-        shell)
+-            emergency_shell $@
+-            return 1
+-            ;;
+-        *)
+-            emergency_shell $@
+-            return 1
+-            ;;
+-    esac
++    if [ -f "/kdumpscripts/kdump-action.conf" ]; then
++        [ "$1" = "-n" ] && shift 2
++        [ "$1" = "--shutdown" ] && shift 2
++        warn "$*"
++        warn "Not dropping to emergency shell, because 'action_on_fail=continue' was set on the kernel command line."
++        return 0
++    fi
++
++    emergency_shell $@
++    return 1
+ }
+ 
+ # Retain the values of these variables but ensure that they are unexported
+-- 
+1.7.1
