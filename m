@@ -1,7 +1,7 @@
 From: Baoquan <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Change the implementation of action_on_fail
-Date: Tue, 23 Jul 2013 17:53:43 +0800
-Message-ID: <51EE52A7.5040509@redhat.com>
+Date: Tue, 23 Jul 2013 18:14:09 +0800
+Message-ID: <51EE5771.7010909@redhat.com>
 References: <8a7ac3492f63fd2a5fa7ee57d9b9e7c8c2dd305c.1374492675.git.bhe@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -12,8 +12,7 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-NACK it self.
-
+Nack it self, will repost.
 
 On 07/22/2013 07:32 PM, Baoquan He wrote:
 > Currently when action_on_fail is enabled, the emergency_shell won't be called
