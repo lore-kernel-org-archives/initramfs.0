@@ -1,7 +1,7 @@
 From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 3/3] LatArCyrHeb-16 as a default i18n font for Gentoo
-Date: Thu, 25 Jul 2013 20:24:56 +0200
-Message-ID: <1374776696-28016-1-git-send-email-aidecoe@aidecoe.name>
+Subject: [PATCH] crypt: Skip /etc/crypttab if not present
+Date: Thu, 25 Jul 2013 23:28:44 +0200
+Message-ID: <1374787724-27608-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -11,20 +11,26 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
----
- dracut.conf.d/gentoo.conf.example | 1 +
- 1 file changed, 1 insertion(+)
+Prevents following error message:
 
-diff --git a/dracut.conf.d/gentoo.conf.example b/dracut.conf.d/gentoo.conf.example
-index b78e5c6..f9617f0 100644
---- a/dracut.conf.d/gentoo.conf.example
-+++ b/dracut.conf.d/gentoo.conf.example
-@@ -11,5 +11,6 @@ ro_mnt=yes
+I: *** Including module: crypt ***
+/usr/lib/dracut/modules.d/90crypt/module-setup.sh: line 31: /etc/crypttab: No such file or directory
+---
+ modules.d/90crypt/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
+index 639a77f..6b32b6a 100755
+--- a/modules.d/90crypt/module-setup.sh
++++ b/modules.d/90crypt/module-setup.sh
+@@ -57,7 +57,7 @@ install() {
+         inst_hook cleanup 30 "$moddir/crypt-cleanup.sh"
+     fi
  
- # i18n
- i18n_vars="/etc/conf.d/keymaps:keymap-KEYMAP,extended_keymaps-EXT_KEYMAPS /etc/conf.d/consolefont:consolefont-FONT,consoletranslation-FONT_MAP /etc/rc.conf:unicode-UNICODE"
-+i18n_default_font="LatArCyrHeb-16"
- 
- omit_drivers+=" i2o_scsi"
+-    if [[ $hostonly ]]; then
++    if [[ $hostonly ]] && [[ -f /etc/cryptab ]]; then
+         # filter /etc/crypttab for the devices we need
+         while read _mapper _dev _rest; do
+             [[ $_mapper = \#* ]] && continue
 -- 
 1.8.3.2
