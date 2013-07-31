@@ -1,37 +1,36 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] LatArCyrHeb-16 as a default i18n font for Gentoo
-Date: Wed, 31 Jul 2013 16:02:41 +0200
-Message-ID: <51F91901.6060802@redhat.com>
-References: <1374776696-28016-1-git-send-email-aidecoe@aidecoe.name>
+Subject: Re: [PATCH] dracut: 90kernel-modules/module-setup.sh: add ehci-tegra.ko
+ on arm
+Date: Wed, 31 Jul 2013 16:02:54 +0200
+Message-ID: <51F9190E.6090402@redhat.com>
+References: <20130724020704.GK2034@redacted.bos.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1374776696-28016-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <20130724020704.GK2034-nxOev/eQj6CGu0OVIAPS5KfLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="windows-1254"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Kyle McMartin <kyle-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07/25/2013 08:24 PM, Amadeusz =C5=BBo=C5=82nowski wrote:
-> ---
->  dracut.conf.d/gentoo.conf.example | 1 +
->  1 file changed, 1 insertion(+)
->=20
-> diff --git a/dracut.conf.d/gentoo.conf.example b/dracut.conf.d/gentoo=
-=2Econf.example
-> index b78e5c6..f9617f0 100644
-> --- a/dracut.conf.d/gentoo.conf.example
-> +++ b/dracut.conf.d/gentoo.conf.example
-> @@ -11,5 +11,6 @@ ro_mnt=3Dyes
-> =20
->  # i18n
->  i18n_vars=3D"/etc/conf.d/keymaps:keymap-KEYMAP,extended_keymaps-EXT_=
-KEYMAPS /etc/conf.d/consolefont:consolefont-FONT,consoletranslation-FON=
-T_MAP /etc/rc.conf:unicode-UNICODE"
-> +i18n_default_font=3D"LatArCyrHeb-16"
-> =20
->  omit_drivers+=3D" i2o_scsi"
->=20
+On 07/24/2013 04:07 AM, Kyle McMartin wrote:
+> kernel-tegra is now part of the base kernel package, so bits and pieces
+> ended up modular, and as a result, if you boot off the internal USB, you
+> drop to a dracut shell with no way of getting to root.
+> 
+> --- a/modules.d/90kernel-modules/module-setup.sh
+> +++ b/modules.d/90kernel-modules/module-setup.sh
+> @@ -47,7 +47,8 @@ installkernel() {
+>          if [[ "$(uname -p)" == arm* ]]; then
+>              # arm specific modules
+>              hostonly='' instmods sdhci_esdhc_imx mmci sdhci_tegra mvsdio omap omapdrm \
+> -                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform pata_imx sata_mv
+> +                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform pata_imx sata_mv \
+> +                ehci-tegra
+>          fi
+>  
+>          # install virtual machine support
+
 
 pushed, thanks!
