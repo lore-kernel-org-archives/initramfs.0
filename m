@@ -1,36 +1,120 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut: 90kernel-modules/module-setup.sh: add ehci-tegra.ko
- on arm
-Date: Wed, 31 Jul 2013 16:02:54 +0200
-Message-ID: <51F9190E.6090402@redhat.com>
-References: <20130724020704.GK2034@redacted.bos.redhat.com>
+Subject: Re: [PATCH] Change the implementation of action_on_fail
+Date: Wed, 31 Jul 2013 16:07:16 +0200
+Message-ID: <51F91A14.4020601@redhat.com>
+References: <73cc07330929ba4b226f2a0623a5459cd42932b9.1374574542.git.bhe@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20130724020704.GK2034-nxOev/eQj6CGu0OVIAPS5KfLeoKvNuZc@public.gmane.org>
+In-Reply-To: <73cc07330929ba4b226f2a0623a5459cd42932b9.1374574542.git.bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Kyle McMartin <kyle-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 07/24/2013 04:07 AM, Kyle McMartin wrote:
-> kernel-tegra is now part of the base kernel package, so bits and pieces
-> ended up modular, and as a result, if you boot off the internal USB, you
-> drop to a dracut shell with no way of getting to root.
+On 07/23/2013 12:16 PM, Baoquan He wrote:
+> Currently when action_on_fail is enabled, the emergency_shell won't be called.
+> In kdump even though user specify the default action as emergency_shell,
+> dracut skip it. Now change the implementation of action_on_fail to depend
+> on a file which is created by kdump when making kdump initrd, then remove it
+> at the beginning of kdump. This can solve the explicit emergency_shell problem.
 > 
-> --- a/modules.d/90kernel-modules/module-setup.sh
-> +++ b/modules.d/90kernel-modules/module-setup.sh
-> @@ -47,7 +47,8 @@ installkernel() {
->          if [[ "$(uname -p)" == arm* ]]; then
->              # arm specific modules
->              hostonly='' instmods sdhci_esdhc_imx mmci sdhci_tegra mvsdio omap omapdrm \
-> -                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform pata_imx sata_mv
-> +                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform pata_imx sata_mv \
-> +                ehci-tegra
->          fi
+> And action_on_fail won't need paramenters, remove the relevant description in
+> dracut man page.
+
+I like it.
+
+Vivek: would that solve one of your systemd problems?
+
+
+> 
+> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  dracut.cmdline.7.asc                         |    4 ---
+>  modules.d/98systemd/dracut-emergency.service |    2 +-
+>  modules.d/98systemd/emergency.service        |    2 +-
+>  modules.d/99base/dracut-lib.sh               |   28 +++++++++----------------
+>  4 files changed, 12 insertions(+), 24 deletions(-)
+> 
+> diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+> index cf11d50..09c47e8 100644
+> --- a/dracut.cmdline.7.asc
+> +++ b/dracut.cmdline.7.asc
+> @@ -121,10 +121,6 @@ Misc
+>     specify the controlling terminal for the console.
+>     This is useful, if you have multiple "console=" arguments.
 >  
->          # install virtual machine support
-
-
-pushed, thanks!
+> -**rd.action_on_fail=**_{shell|continue}_::
+> -   Specify the action after failure. By default it's emergency_shell.
+> -   'continue' means: ignore the current failure and go ahead.
+> -
+>  [[dracutkerneldebug]]
+>  Debug
+>  ~~~~~
+> diff --git a/modules.d/98systemd/dracut-emergency.service b/modules.d/98systemd/dracut-emergency.service
+> index a4b81bc..5a6d525 100644
+> --- a/modules.d/98systemd/dracut-emergency.service
+> +++ b/modules.d/98systemd/dracut-emergency.service
+> @@ -13,7 +13,7 @@ DefaultDependencies=no
+>  After=systemd-vconsole-setup.service
+>  Wants=systemd-vconsole-setup.service
+>  Conflicts=emergency.service emergency.target
+> -ConditionKernelCommandLine=!action_on_fail=continue
+> +ConditionPathExists=!/lib/dracut/no-emergency-shell
+>  
+>  [Service]
+>  Environment=HOME=/
+> diff --git a/modules.d/98systemd/emergency.service b/modules.d/98systemd/emergency.service
+> index c19fe37..5f1eaa2 100644
+> --- a/modules.d/98systemd/emergency.service
+> +++ b/modules.d/98systemd/emergency.service
+> @@ -12,7 +12,7 @@ Description=Emergency Shell
+>  DefaultDependencies=no
+>  After=systemd-vconsole-setup.service
+>  Wants=systemd-vconsole-setup.service
+> -ConditionKernelCommandLine=!action_on_fail=continue
+> +ConditionPathExists=!/lib/dracut/no-emergency-shell
+>  
+>  [Service]
+>  Environment=HOME=/
+> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+> index 8eeebf3..2a3d831 100755
+> --- a/modules.d/99base/dracut-lib.sh
+> +++ b/modules.d/99base/dracut-lib.sh
+> @@ -1003,24 +1003,16 @@ emergency_shell()
+>  
+>  action_on_fail()
+>  {
+> -    local _action=$(getarg rd.action_on_fail= -d action_on_fail=)
+> -    case "$_action" in
+> -        continue)
+> -            [ "$1" = "-n" ] && shift 2
+> -            [ "$1" = "--shutdown" ] && shift 2
+> -            warn "$*"
+> -            warn "Not dropping to emergency shell, because 'action_on_fail=continue' was set on the kernel command line."
+> -            return 0
+> -            ;;
+> -        shell)
+> -            emergency_shell $@
+> -            return 1
+> -            ;;
+> -        *)
+> -            emergency_shell $@
+> -            return 1
+> -            ;;
+> -    esac
+> +    if [ -f "$initdir/lib/dracut/no-emergency-shell" ]; then
+> +        [ "$1" = "-n" ] && shift 2
+> +        [ "$1" = "--shutdown" ] && shift 2
+> +        warn "$*"
+> +        warn "Not dropping to emergency shell, because 'action_on_fail=continue' was set on the kernel command line."
+> +        return 0
+> +    fi
+> +
+> +    emergency_shell $@
+> +    return 1
+>  }
+>  
+>  # Retain the values of these variables but ensure that they are unexported
+> 
