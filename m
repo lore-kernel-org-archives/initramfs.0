@@ -1,7 +1,7 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Change the implementation of action_on_fail
-Date: Thu, 1 Aug 2013 10:54:25 -0400
-Message-ID: <20130801145425.GE15979@redhat.com>
+Date: Thu, 1 Aug 2013 22:54:52 +0800
+Message-ID: <20130801145452.GA2186@dhcp12-158.nay.redhat.com>
 References: <73cc07330929ba4b226f2a0623a5459cd42932b9.1374574542.git.bhe@redhat.com>
  <51F91A14.4020601@redhat.com>
  <20130731142050.GG31151@redhat.com>
@@ -18,9 +18,9 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, Aug 01, 2013 at 10:24:45PM +0800, Baoquan He wrote:
+On 08/01/13 at 10:24pm, Baoquan He wrote:
 > On 07/31/13 at 04:31pm, Harald Hoyer wrote:
 > > On 07/31/2013 04:29 PM, Vivek Goyal wrote:
 > > > On Wed, Jul 31, 2013 at 04:25:57PM +0200, Harald Hoyer wrote:
@@ -54,12 +54,13 @@ On Thu, Aug 01, 2013 at 10:24:45PM +0800, Baoquan He wrote:
 > As for modules before Kdump, they don't feel it. I think this can extend
 > the 'default action' flexibly. This keep our reliability on dracut at the
 > least.
-> 
-> How do you think about it?
 
-Bao,
+Is this necessary to define more actions?
 
-Ok, status quo is fine for the time being.
+We can bypass failures (switch off emergency shell) in drauct or systemd
+and eventually get down to kdump.sh. If the dump fails, "default action"
+is triggered. Other unrelated failures happening before kdump.sh should
+be ignored.
 
 Thanks
-Vivek
+WANG Chao
