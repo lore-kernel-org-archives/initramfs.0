@@ -1,87 +1,65 @@
-From: Erik Logtenberg <erik-nLcryBYLV+bMkAkIaI5Geg@public.gmane.org>
-Subject: Re: [RFE]: extend dracut to support Mandos
-Date: Thu, 01 Aug 2013 16:25:51 +0200
-Message-ID: <51FA6FEF.4020000@logtenberg.eu>
-References: <51F67CC5.3000508@logtenberg.eu>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Change the implementation of action_on_fail
+Date: Thu, 1 Aug 2013 10:54:25 -0400
+Message-ID: <20130801145425.GE15979@redhat.com>
+References: <73cc07330929ba4b226f2a0623a5459cd42932b9.1374574542.git.bhe@redhat.com>
+ <51F91A14.4020601@redhat.com>
+ <20130731142050.GG31151@redhat.com>
+ <51F91E75.3070102@redhat.com>
+ <20130731142905.GH31151@redhat.com>
+ <51F91FAC.50706@redhat.com>
+ <20130801142445.GB8230@localhost.localdomain>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51F67CC5.3000508-nLcryBYLV+bMkAkIaI5Geg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20130801142445.GB8230-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Hi,
+On Thu, Aug 01, 2013 at 10:24:45PM +0800, Baoquan He wrote:
+> On 07/31/13 at 04:31pm, Harald Hoyer wrote:
+> > On 07/31/2013 04:29 PM, Vivek Goyal wrote:
+> > > On Wed, Jul 31, 2013 at 04:25:57PM +0200, Harald Hoyer wrote:
+> > > 
+> > > Hi Harald,
+> > > 
+> > > Do you still like the parameter name "rd.action_on_fail". I think a new
+> > > parameter say, "rd.no_emergecny_shell" might make more sense to reflect
+> > > what we are doing.
+> > > 
+> > > If you like it, I can request bao to post a new patch and make appropriate
+> > > changes.
+> > > 
+> > > Thanks
+> > > Vivek
+> > > 
+> > 
+> > You can add the rd.no_emergency_shell parser in your kdump module and touch the
+> > marker file. I think that gives you more flexibility for runtime decisions.
+> > You can just add and remove that file on will.
+> Hi Vivek,
+> 
+> I agree with Harald, there's no need to add a parameter into dracut any
+> more. Because currently only 2 actions are taken, 1 is emergency-shell,
+> the other is continue. We can just put a file as switch, if the file exists,
+> all failed action doesn't trigger emergency shell before Kdump, just
+> continue. 
+> 
+> If you want several more actions, E.g reboot or others, we can put them
+> into this file. Then in Kdump module, we can read the content and parse.
+> As for modules before Kdump, they don't feel it. I think this can extend
+> the 'default action' flexibly. This keep our reliability on dracut at the
+> least.
+> 
+> How do you think about it?
 
-In the mean time I have added systemd support for Mandos server. The
-stock initscripts were not compatible with Fedora, so they needed work
-anyway.
-For anyone who would want to help add Mandos support to initramfs on
-Fedora, it is now possible to start the server with systemctl without
-any tinkering required.
+Bao,
 
-http://logtenberg.eu/rpms/mandos-1.6.0-2.fc18.src.rpm
-http://logtenberg.eu/rpms/mandos-server-1.6.0-2.fc18.x86_64.rpm
-http://logtenberg.eu/rpms/mandos-client-1.6.0-2.fc18.x86_64.rpm
+Ok, status quo is fine for the time being.
 
-Please note that these packages are for Fedora 18 and not for Fedora 19,
-as I accidently said in my previous email. I am still working on an
-issue with the 3.1.11 version of GnuTLS which is shipped with Fedora 19,
-that Mandos isn't happy with.
-
-Kind regards,
-
-Erik Logtenberg.
-
-
-
-On 07/29/2013 04:31 PM, Erik Logtenberg wrote:
-> Hi,
-> 
-> I would kindly request Dracut to be extended to support Mandos.
-> 
-> From the Mandos [1] website:
->> Mandos allows computers to have encrypted root file systems and
->> at the same time be capable of remote and/or unattended reboots.
->>
->> The computers run a small client program in the initial RAM disk
->> environment which will communicate with a server over a network.
->> All network communication is encrypted using TLS. The clients are
->> identified by the server using an OpenPGP key; each client has one
->> unique to it. The server sends the clients an encrypted password.
->> The encrypted password is decrypted by the clients using the same
->> OpenPGP key, and the password is then used to unlock the root file
->> system, whereupon the computers can continue booting normally.
-> 
-> [1] http://www.recompile.se/mandos
-> 
-> I would like to use Mandos for Fedora. At this moment there is no Mandos
-> package for Fedora, nor Dracut support for Mandos. The former I'd like
-> to contribute, the latter I would kindly ask one of you to help out with.
-> 
-> I contacted Harald Hoyer, because he wrote most of the modules.d/90crypt
-> stuff, which is where the Mandos support would likely have to be
-> implemented. He suggested to ask this list.
-> 
-> To get things started I wrote a preliminary Mandos package, which should
-> make it more easy to install it on a Fedora system. This works on Fedora 19.
-> 
-> http://logtenberg.eu/rpms/mandos-1.6.0-1.src.rpm
-> http://logtenberg.eu/rpms/mandos-server-1.6.0-1.x86_64.rpm
-> http://logtenberg.eu/rpms/mandos-client-1.6.0-1.x86_64.rpm
-> 
-> This still needs some work: the mandos-server was mainly written with
-> Debian in mind, so it doesn't come with systemd support. I will try and
-> contribute that as well. The mandos-client supports the initramfs for
-> Debian / Ubuntu but not yet Dracut. That is my feature request for this
-> list.
-> 
-> Kind regards,
-> 
-> Erik Logtenberg.
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Thanks
+Vivek
