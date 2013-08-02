@@ -1,66 +1,100 @@
-From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Change the implementation of action_on_fail
-Date: Thu, 1 Aug 2013 22:54:52 +0800
-Message-ID: <20130801145452.GA2186@dhcp12-158.nay.redhat.com>
-References: <73cc07330929ba4b226f2a0623a5459cd42932b9.1374574542.git.bhe@redhat.com>
- <51F91A14.4020601@redhat.com>
- <20130731142050.GG31151@redhat.com>
- <51F91E75.3070102@redhat.com>
- <20130731142905.GH31151@redhat.com>
- <51F91FAC.50706@redhat.com>
- <20130801142445.GB8230@localhost.localdomain>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: EFI kdump without acpi_rsdp
+Date: Fri, 02 Aug 2013 09:14:11 +0800
+Message-ID: <51FB07E3.6000105@redhat.com>
+References: <51F75AF2.9070805@redhat.com> <20130730200222.GD16769@redhat.com> <20130730204046.GE24730@redhat.com> <51F87E6B.6080301@redhat.com> <20130731204227.GG1577@redhat.com> <20130731204800.GH1577@redhat.com> <20130731205522.GI1577@redhat.com> <51F9C409.4020000@redhat.com> <20130801132712.GB15235@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130801142445.GB8230-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <20130801132712.GB15235-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: kexec-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 08/01/13 at 10:24pm, Baoquan He wrote:
-> On 07/31/13 at 04:31pm, Harald Hoyer wrote:
-> > On 07/31/2013 04:29 PM, Vivek Goyal wrote:
-> > > On Wed, Jul 31, 2013 at 04:25:57PM +0200, Harald Hoyer wrote:
-> > > 
-> > > Hi Harald,
-> > > 
-> > > Do you still like the parameter name "rd.action_on_fail". I think a new
-> > > parameter say, "rd.no_emergecny_shell" might make more sense to reflect
-> > > what we are doing.
-> > > 
-> > > If you like it, I can request bao to post a new patch and make appropriate
-> > > changes.
-> > > 
-> > > Thanks
-> > > Vivek
-> > > 
-> > 
-> > You can add the rd.no_emergency_shell parser in your kdump module and touch the
-> > marker file. I think that gives you more flexibility for runtime decisions.
-> > You can just add and remove that file on will.
-> Hi Vivek,
+On 08/01/2013 09:27 PM, Vivek Goyal wrote:
+> On Thu, Aug 01, 2013 at 10:12:25AM +0800, Dave Young wrote:
+>> On 08/01/2013 04:55 AM, Vivek Goyal wrote:
+>>> On Wed, Jul 31, 2013 at 04:48:00PM -0400, Vivek Goyal wrote:
+>>>> On Wed, Jul 31, 2013 at 04:42:27PM -0400, Vivek Goyal wrote:
+>>>>
+>>>> [..]
+>>>>> This system is behaving strangely. Yesterday I tried everything and it 
+>>>>> did not work and today both 3.9 and 3.10 kernel seem to work (with
+>>>>> acpi_rsdp=). I am upgrading kexec-tools now and will try again. If
+>>>>> that works, then will try without acpi_rsdp.
+>>>>>
+>>>>> Well, with 3.10 kernel boots up device showsup but dump saving fails.
+>>>>> Looks like makedumpfile bailed out.
+>>>>>
+>>>>> Hopefully upgrading kexec-tools will fix it.
+>>>>
+>>>> Well now OOM killer trigger while loading selinux policy. Red flags,
+>>>> memory utilization of various components has gone up and even 128MB
+>>>> does not seem to be sufficient.
+>>>
+>>> I upgraded from kexec-tools-2.0.3-71.fc19.x86_64 to
+>>> kexec-tools-2.0.4-5.fc19.x86_64 and memory problem started happening. Have
+>>> we done any significant change in kexec-tools which contributes to this.
+>>
 > 
-> I agree with Harald, there's no need to add a parameter into dracut any
-> more. Because currently only 2 actions are taken, 1 is emergency-shell,
-> the other is continue. We can just put a file as switch, if the file exists,
-> all failed action doesn't trigger emergency shell before Kdump, just
-> continue. 
+> [ CC harald and initramfs list]
+>> The main contribute is Harald enabled 98selinux. Chaowang said selinux
+>> will use ~50M memory as the peak for load_policy. That is too much..
 > 
-> If you want several more actions, E.g reboot or others, we can put them
-> into this file. Then in Kdump module, we can read the content and parse.
-> As for modules before Kdump, they don't feel it. I think this can extend
-> the 'default action' flexibly. This keep our reliability on dracut at the
-> least.
+> Hi Dave,
+> 
+> Have few questions. 
+> 
+> - I upgraded kexec-tools package and not dracut. So how did memory usage
+>   go up.
 
-Is this necessary to define more actions?
+It's strange, I don't think we have anything which use much memory.
 
-We can bypass failures (switch off emergency shell) in drauct or systemd
-and eventually get down to kdump.sh. If the dump fails, "default action"
-is triggered. Other unrelated failures happening before kdump.sh should
-be ignored.
+> 
+> - Were we not always loading selinux polity in initramfs. Otherwise I will
+>   see relabeling happen when I boot back to first kernel. And In my
+>   testing I did not see any relabeling happen. (I will make sure I was
+>   not testing with selinux disabled).
 
+Should always load selinux in initramfs unless rootfs mounting fails.
+
+> 
+> - 50MB for selinux policy sounds too much. In RHEL6 this usage was around
+>   30MB and I remember in early fedora days it had dropped down to 18MB.
+>   Daniel, Eric, does selinux policy load memory consumption has to be
+>   this much. We reserve 128MB and 50MB is a huge chunk of that.
+> 
+>>
+>> Ccing selinux peole Daniel and Eric. I wonder if there's a way we can
+>> use in kdump initrd for minimum memory footprint. Because we will not
+>> switch_root, so it will not influence the normal 1st kernel selinux.
+> 
+> I did not understand above statement Dave. Are you saying that we
+> can save vmcore on root filesystem without loading selinux policy and
+> still avoid relabeling in first kernel when it boots back. How?
+
+Dracut will always mount rootfs so mostly we need not relabel in 1st
+kernel because chroot load_policy in 2nd kernel will work unless rootfs
+mounting fails.
+
+I ever tested loading minimum policy in RHEL6, it use much less memory
+than targeted policy.  Our target is simply label like file
+/sysroot/var/crash/*/vmcore. I'm wondering if there's similar method we
+can reduce memory usage in capture kernel.
+
+> 
+> Thanks
+> Vivek
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+-- 
 Thanks
-WANG Chao
+Dave
+
