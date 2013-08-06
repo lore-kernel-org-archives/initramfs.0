@@ -1,32 +1,36 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Does dracut need start watchdog?
-Date: Mon, 5 Aug 2013 18:19:29 +0800
-Message-ID: <20130805101929.GA26184@dhcp-16-252.nay.redhat.com>
-Mime-Version: 1.0
+From: James Lee <jlee-RWYTM8lfiZY4k1Tz1RznXQC/G2K4zDHf@public.gmane.org>
+Subject: [PATCH] crypt: Fix typo--/etc/crypttab not /etc/cryptab
+Date: Tue,  6 Aug 2013 11:25:58 -0400
+Message-ID: <1375802758-27692-1-git-send-email-jlee@thestaticvoid.com>
+References: <51F918F8.7080201@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <51F918F8.7080201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: James Lee <jlee-RWYTM8lfiZY4k1Tz1RznXQC/G2K4zDHf@public.gmane.org>
 
-Hi Harald,
+1ae8b8a breaks the crypt module for those who use keyfiles due to a
+typo leading to the exclusion of /etc/crypttab from the initrd.
+---
+ modules.d/90crypt/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Since some drivers do the soft kicking. That is if BIOS has enabled
-watchdog, then kernel driver kicks the hardware till user space watchdog
-daemon comes along. This can help sove the problem in kdump which kdump
-kernel reboot before vmcore saving is finished. That problem is
-triggered because watchdog started in 1st kernel and timeout because of
-stopping being kicked.
-
-I noticed in 04watchdog the watchdog.sh will start watchdog if
-/dev/watchdog exists. I am just wondering if it's needed to start
-watchdog by accessing /dev/watchdog. If starting watchdog is not needed,
-I want to make some code change of watchdog.sh.
-
-What's your suggestion?
-
-Baoquan
-Thanks a lot
+diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
+index 6b32b6a..31e0e5f 100755
+--- a/modules.d/90crypt/module-setup.sh
++++ b/modules.d/90crypt/module-setup.sh
+@@ -57,7 +57,7 @@ install() {
+         inst_hook cleanup 30 "$moddir/crypt-cleanup.sh"
+     fi
+ 
+-    if [[ $hostonly ]] && [[ -f /etc/cryptab ]]; then
++    if [[ $hostonly ]] && [[ -f /etc/crypttab ]]; then
+         # filter /etc/crypttab for the devices we need
+         while read _mapper _dev _rest; do
+             [[ $_mapper = \#* ]] && continue
+-- 
+1.8.1.2
