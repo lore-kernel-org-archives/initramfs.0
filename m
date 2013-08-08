@@ -1,36 +1,36 @@
-From: James Lee <jlee-RWYTM8lfiZY4k1Tz1RznXQC/G2K4zDHf@public.gmane.org>
-Subject: [PATCH] crypt: Fix typo--/etc/crypttab not /etc/cryptab
-Date: Tue,  6 Aug 2013 11:25:58 -0400
-Message-ID: <1375802758-27692-1-git-send-email-jlee@thestaticvoid.com>
-References: <51F918F8.7080201@redhat.com>
+From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH] omit drivers fix
+Date: Thu, 08 Aug 2013 14:05:02 +0800
+Message-ID: <5203350e.L97Tg2G2L47GaDix%dyoung@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <51F918F8.7080201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: James Lee <jlee-RWYTM8lfiZY4k1Tz1RznXQC/G2K4zDHf@public.gmane.org>
 
-1ae8b8a breaks the crypt module for those who use keyfiles due to a
-typo leading to the exclusion of /etc/crypttab from the initrd.
+
+Because omit_drivers list use underline always, so when maching with it
+the _mod need to be converted as well or sometimes omit-drivers will fail
+silently.
+
+Fix this by replace '-' with '_' in instmods function.
+
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/90crypt/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ dracut-functions.sh |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
-index 6b32b6a..31e0e5f 100755
---- a/modules.d/90crypt/module-setup.sh
-+++ b/modules.d/90crypt/module-setup.sh
-@@ -57,7 +57,7 @@ install() {
-         inst_hook cleanup 30 "$moddir/crypt-cleanup.sh"
-     fi
+--- dracut.orig/dracut-functions.sh
++++ dracut/dracut-functions.sh
+@@ -1617,7 +1617,8 @@ instmods() {
+                     return $_ret
+                 fi
  
--    if [[ $hostonly ]] && [[ -f /etc/cryptab ]]; then
-+    if [[ $hostonly ]] && [[ -f /etc/crypttab ]]; then
-         # filter /etc/crypttab for the devices we need
-         while read _mapper _dev _rest; do
-             [[ $_mapper = \#* ]] && continue
--- 
-1.8.1.2
+-                if [[ $omit_drivers ]] && [[ "$1" =~ $omit_drivers ]]; then
++                _mod=${_mod/-/_}
++                if [[ $omit_drivers ]] && [[ "$_mod" =~ $omit_drivers ]]; then
+                     dinfo "Omitting driver ${_mod##$srcmods}"
+                     return 0
+                 fi
