@@ -1,115 +1,72 @@
 From: fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: Re: [PATCH] Boot a Live USB device as read-only after persisting some changes.
-Date: Wed, 14 Aug 2013 16:38:05 -0400
-Message-ID: <1376512685-4713-1-git-send-email-fgrose@gmail.com>
+Subject: Re: [Fedora-livecd-list] [PATCH] Boot a Live USB device as
+	read-only after persisting some changes.
+Date: Wed, 14 Aug 2013 16:42:39 -0400
+Message-ID: <1376512959-4806-1-git-send-email-fgrose@gmail.com>
 References: <520B4BE5.6030003@redhat.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=wWN+5BXPtq/NlR0xm5r+T5OpDKPFuLLPlUFTJhNSFrY=;
-        b=KsnQbZyzbK2xQihbz+U8dUAs1nFQbHIR7gycEJwaxy+5MZ2yCi8ajpn7caE8rHk35k
-         wLcbYePREGiXowSeRgOrtQDacyMTDKPbjbz67b6WrxWBQOA13OagQ2rNZN/IdLsWUkbd
-         tQcXxwS72BVAUQmSMUz9Qu4CSlAYYLVEeCgW+0wXwCq8JfZRT1lSV260mB/I+hjBfTGk
-         2ypDvwBQPDalgfDjhBAJk/Q9ZRWtMupTs52jLwknl2ov90mI9T62801C8p3PqSOpFiEw
-         mE/+rmZ/lS+ui3G5rmNifEajvc1eCWORcWwWId9xpUJ/uJCxSayL6+tJO/gV8PYZ9vk9
-         JczQ==
+Reply-To: livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
+Mime-Version: 1.0
+Content-Transfer-Encoding: base64
+Return-path: <livecd-bounces-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=from:to:cc:subject:date:message-id:in-reply-to:references;
+	bh=pVB7pjN+C/l7bv6diLPcSthHrgTL4X5aaWl0SW5gVUY=;
+	b=UEFHNDPqQy7lc4uasdQiXJQOXcs+wEDiuHPys3S0GOczFZ9vbUcCVEclk5Eo1pDyBC
+	o3fp0Y8wBt2TESYZCYEypM/BN2x7dMOGhq17qPi9/1cNGQGGW+DmE5pirj+2d5avXUev
+	+iPzKvbayUYbVL9gXqv+my/prnwYqqE7IchXmjBtwDrVSXEyt00ofvmQQ7oajB62LaGD
+	M2XVqMJrhyckTE2rcG2dAgMFn8uxqelOxaz5rzTlOMRzWsYtM8oSdCqAderkEbNNBsBc
+	gVHl6klM3pVbdLEy2g9/mY+YSFfmsDMEqyRmgwG3EQrd5AVbYHqURY1SgFSSs7XMUT3X
+	VFvg==
 In-Reply-To: <520B4BE5.6030003-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <https://admin.fedoraproject.org/mailman/options/livecd>,
+	<mailto:livecd-request-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.fedoraproject.org/pipermail/livecd/>
+List-Post: <mailto:livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>
+List-Help: <mailto:livecd-request-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org?subject=help>
+List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/livecd>,
+	<mailto:livecd-request-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org?subject=subscribe>
+Sender: livecd-bounces-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
+Errors-To: livecd-bounces-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org, spins-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
 Cc: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
 
-From: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
-
-commit 96ff19a87c0be1eca27860aeef5434513b0e8c61
-Author: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
-
-    Allow read-only mounting of the base device filesystem, livedev.
-    Use read-only loop devices and non-persistent overlay targets.
-
----
- modules.d/90dmsquash-live/dmsquash-live-root.sh | 25 ++++++++++++++++---------
- 1 file changed, 16 insertions(+), 9 deletions(-)
-
-diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-index 14e84e1..af0022f 100755
---- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-+++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-@@ -24,7 +24,7 @@ squash_image=$(getarg rd.live.squashimg)
- 
- getargbool 0 rd.live.ram -d -y live_ram && live_ram="yes"
- getargbool 0 rd.live.overlay.reset -d -y reset_overlay && reset_overlay="yes"
--getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay && readonly_overlay="--readonly" || readonly_overlay=""
-+getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay && readonly_overlay="-r" || readonly_overlay=""
- overlay=$(getarg rd.live.overlay -d overlay)
- 
- # CD/DVD media check
-@@ -105,17 +105,23 @@ do_live_overlay() {
-     setup=""
-     if [ -n "$devspec" -a -n "$pathspec" -a -n "$overlay" ]; then
-         mkdir -m 0755 /run/initramfs/overlayfs
--        mount -n -t auto $devspec /run/initramfs/overlayfs || :
--        if [ -f /run/initramfs/overlayfs$pathspec -a -w /run/initramfs/overlayfs$pathspec ]; then
--            losetup $OVERLAY_LOOPDEV /run/initramfs/overlayfs$pathspec
--            if [ -n "$reset_overlay" ]; then
--                dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1 conv=fsync 2>/dev/null
-+        mount -n -t auto -o $liverw $devspec /run/initramfs/overlayfs || :
-+        if [ -f /run/initramfs/overlayfs$pathspec ]; then
-+            if [ "$liverw" = ro ]; then
-+                readonly_overlay='-r'
-+            fi
-+            losetup $readonly_overlay $OVERLAY_LOOPDEV /run/initramfs/overlayfs$pathspec
-+            if [ -w /run/initramfs/overlayfs$pathspec ]; then
-+                if [ -n "$reset_overlay" ]; then
-+                    dd if=/dev/zero of=$OVERLAY_LOOPDEV bs=64k count=1 conv=fsync 2>/dev/null
-+                fi
-             fi
-             setup="yes"
-         fi
-         umount -l /run/initramfs/overlayfs || :
-     fi
- 
-+    persistent='P'
-     if [ -z "$setup" -o -n "$readonly_overlay" ]; then
-         if [ -n "$setup" ]; then
-             warn "Using temporary overlay."
-@@ -123,6 +129,7 @@ do_live_overlay() {
-             warn "Unable to find persistent overlay; using temporary"
-             sleep 5
-         fi
-+        persistent='N'
- 
-         dd if=/dev/null of=/overlay bs=1024 count=1 seek=$((512*1024)) 2> /dev/null
-         if [ -n "$setup" -a -n "$readonly_overlay" ]; then
-@@ -136,14 +143,14 @@ do_live_overlay() {
-     # set up the snapshot
-     sz=$(blockdev --getsz $BASE_LOOPDEV)
-     if [ -n "$readonly_overlay" ]; then
--        echo 0 $sz snapshot $BASE_LOOPDEV $OVERLAY_LOOPDEV p 8 | dmsetup create $readonly_overlay live-ro
-+        echo 0 $sz snapshot $BASE_LOOPDEV $OVERLAY_LOOPDEV N 8 | dmsetup create $readonly_overlay live-ro
-         base="/dev/mapper/live-ro"
-         over=$RO_OVERLAY_LOOPDEV
-     else
-         base=$BASE_LOOPDEV
-         over=$OVERLAY_LOOPDEV
-     fi
--    echo 0 $sz snapshot $base $over p 8 | dmsetup create live-rw
-+    echo 0 $sz snapshot $base $over $persistent 8 | dmsetup create live-rw
- }
- 
- # live cd helper function
-@@ -217,7 +224,7 @@ fi
- if [ -b "$OSMIN_LOOPDEV" ]; then
-     # set up the devicemapper snapshot device, which will merge
-     # the normal live fs image, and the delta, into a minimzied fs image
--    echo "0 $( blockdev --getsz $BASE_LOOPDEV ) snapshot $BASE_LOOPDEV $OSMIN_LOOPDEV p 8" | dmsetup create --readonly live-osimg-min
-+    echo "0 $( blockdev --getsz $BASE_LOOPDEV ) snapshot $BASE_LOOPDEV $OSMIN_LOOPDEV N 8" | dmsetup create --readonly live-osimg-min
- fi
- 
- ROOTFLAGS="$(getarg rootflags)"
--- 
-1.8.3.1
+RnJvbTogRnJlZGVyaWNrIEdyb3NlIDxmZ3Jvc2VAc3VnYXJsYWJzLm9yZz4KCmNvbW1pdCBhNmNk
+NzBmYzlkZjJkMjk5ZWQ0ZjM0NzQ2MWMzM2U0ODI0ZGY2MmYwCkF1dGhvcjogRnJlZGVyaWNrIEdy
+b3NlIDxmZ3Jvc2VAc3VnYXJsYWJzLm9yZz4KCiAgICBFbmFibGUgcmVhZC1vbmx5IG1vdW50aW5n
+IG9mIGEgcGVyc2lzdGVudCBob21lLmltZyBmaWxlc3lzdGVtLgogICAgRW5hYmxlIG9uZSB0byBj
+YWxsIGZvciBmaWxlc3lzdGVtIGNoZWNraW5nIG9mIGhvbWUuaW1nIGJlZm9yZQogICAgbW91bnRp
+bmcgb24gdGhlIG5leHQgYm9vdC4KCi0tLQogZmVkb3JhLWxpdmUtYmFzZS5rcyB8IDI0ICsrKysr
+KysrKysrKysrKysrKysrKystLQogMSBmaWxlIGNoYW5nZWQsIDIyIGluc2VydGlvbnMoKyksIDIg
+ZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvZmVkb3JhLWxpdmUtYmFzZS5rcyBiL2ZlZG9yYS1s
+aXZlLWJhc2Uua3MKaW5kZXggNmM3NmU5Ni4uMDUxMmY2NyAxMDA2NDQKLS0tIGEvZmVkb3JhLWxp
+dmUtYmFzZS5rcworKysgYi9mZWRvcmEtbGl2ZS1iYXNlLmtzCkBAIC0xMTYsOSArMTE2LDEzIEBA
+IG1vdW50UGVyc2lzdGVudEhvbWUoKSB7CiAgIGVsaWYgWyAhIC1iICJcJGhvbWVkZXYiIF07IHRo
+ZW4KICAgICBsb29wZGV2PVxgbG9zZXR1cCAtZlxgCiAgICAgaWYgWyAiXCR7aG9tZWRldiMjL3J1
+bi9pbml0cmFtZnMvbGl2ZX0iICE9ICJcJHtob21lZGV2fSIgXTsgdGhlbgotICAgICAgYWN0aW9u
+ICJSZW1vdW50aW5nIGxpdmUgc3RvcmUgci93IiBtb3VudCAtbyByZW1vdW50LHJ3IC9ydW4vaW5p
+dHJhbWZzL2xpdmUKKyAgICAgICAgaWYgWyAiXCRsaXZlcnciID0gcncgXTsgdGhlbgorICAgICAg
+ICAgICAgYWN0aW9uICJSZW1vdW50aW5nIGxpdmUgc3RvcmUgci93IiBtb3VudCAtbyByZW1vdW50
+LHJ3IC9ydW4vaW5pdHJhbWZzL2xpdmUKKyAgICAgICAgZWxzZQorICAgICAgICAgICAgb3B0cz0i
+LXIiCisgICAgICAgIGZpCiAgICAgZmkKLSAgICBsb3NldHVwIFwkbG9vcGRldiBcJGhvbWVkZXYK
+KyAgICBsb3NldHVwIFwkb3B0cyBcJGxvb3BkZXYgXCRob21lZGV2CiAgICAgaG9tZWRldj1cJGxv
+b3BkZXYKICAgZmkKIApAQCAtMTMwLDYgKzEzNCwyMiBAQCBtb3VudFBlcnNpc3RlbnRIb21lKCkg
+ewogICAgIGhvbWVkZXY9L2Rldi9tYXBwZXIvRW5jSG9tZQogICBmaQogCisgICMgSWYgcmVhZC1v
+bmx5IGlzIHJlcXVlc3RlZCwgcHJlcGFyZSBhIG5vbi1wZXJzaXN0ZW50IG92ZXJsYXkgYW5kIHNu
+YXBzaG90IHRhcmdldC4KKyAgaWYgWyAiXCRvcHRzIiA9ICItciIgXTsgdGhlbgorICAgIGRkIGlm
+PS9kZXYvbnVsbCBvZj0vcnVuL2luaXRyYW1mcy9vdmVybGF5ZnMvaG9tZV9vdmVybGF5IGJzPTEw
+MjQgY291bnQ9MSBzZWVrPVwkKCg1MTIqMTAyNCkpIDI+IC9kZXYvbnVsbAorICAgIEhPTUVfT1ZF
+UkxBWV9MT09QREVWPVwkKGxvc2V0dXAgLWYpCisgICAgbG9zZXR1cCBcJEhPTUVfT1ZFUkxBWV9M
+T09QREVWIC9ydW4vaW5pdHJhbWZzL292ZXJsYXlmcy9ob21lX292ZXJsYXkKKyAgICBzej1cJChi
+bG9ja2RldiAtLWdldHN6IFwkaG9tZWRldikKKyAgICBlY2hvIDAgXCRzeiBzbmFwc2hvdCBcJGhv
+bWVkZXYgXCRIT01FX09WRVJMQVlfTE9PUERFViBOIDggfCBkbXNldHVwIGNyZWF0ZSBob21lLXJ3
+CisgICAgaG9tZWRldj0vZGV2L21hcHBlci9ob21lLXJ3CisgIGZpCisKKyAgIyBDaGVjayB0aGUg
+ZmlsZXN5c3RlbSwgaWYgcmVxdWVzdGVkLgorICBpZiBbIC1lIC9mb3JjZWhvbWVmc2NrIF07IHRo
+ZW4KKyAgICBlMmZzY2sgLWYgLXkgLXYgXCRob21lZGV2IHx8IGUyZnNjayAtZiAteSBcJGhvbWVk
+ZXYKKyAgICBybSAvZm9yY2Vob21lZnNjaworICBmaQorCiAgICMgYW5kIGZpbmFsbHkgZG8gdGhl
+IG1vdW50CiAgIG1vdW50IFwkbW91bnRvcHRzIFwkaG9tZWRldiAvaG9tZQogICAjIGlmIHdlIGhh
+dmUgL2hvbWUgdW5kZXIgd2hhdCdzIHBhc3NlZCBmb3IgcGVyc2lzdGVudCBob21lLCB0aGVuCi0t
+IAoxLjguMy4xCgotLQpsaXZlY2QgbWFpbGluZyBsaXN0CmxpdmVjZEBsaXN0cy5mZWRvcmFwcm9q
+ZWN0Lm9yZwpodHRwczovL2FkbWluLmZlZG9yYXByb2plY3Qub3JnL21haWxtYW4vbGlzdGluZm8v
+bGl2ZWNk
