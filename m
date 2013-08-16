@@ -1,72 +1,36 @@
-From: fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: Re: [Fedora-livecd-list] [PATCH] Boot a Live USB device as
-	read-only after persisting some changes.
-Date: Wed, 14 Aug 2013 16:42:39 -0400
-Message-ID: <1376512959-4806-1-git-send-email-fgrose@gmail.com>
-References: <520B4BE5.6030003@redhat.com>
-Reply-To: livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] systemd: pre-pivot hooks runs after /sysroot is mounted
+Date: Fri, 16 Aug 2013 13:13:28 +0800
+Message-ID: <20130816051328.GA30982@dhcp16-109.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: base64
-Return-path: <livecd-bounces-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
-	h=from:to:cc:subject:date:message-id:in-reply-to:references;
-	bh=pVB7pjN+C/l7bv6diLPcSthHrgTL4X5aaWl0SW5gVUY=;
-	b=UEFHNDPqQy7lc4uasdQiXJQOXcs+wEDiuHPys3S0GOczFZ9vbUcCVEclk5Eo1pDyBC
-	o3fp0Y8wBt2TESYZCYEypM/BN2x7dMOGhq17qPi9/1cNGQGGW+DmE5pirj+2d5avXUev
-	+iPzKvbayUYbVL9gXqv+my/prnwYqqE7IchXmjBtwDrVSXEyt00ofvmQQ7oajB62LaGD
-	M2XVqMJrhyckTE2rcG2dAgMFn8uxqelOxaz5rzTlOMRzWsYtM8oSdCqAderkEbNNBsBc
-	gVHl6klM3pVbdLEy2g9/mY+YSFfmsDMEqyRmgwG3EQrd5AVbYHqURY1SgFSSs7XMUT3X
-	VFvg==
-In-Reply-To: <520B4BE5.6030003-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://admin.fedoraproject.org/mailman/options/livecd>,
-	<mailto:livecd-request-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.fedoraproject.org/pipermail/livecd/>
-List-Post: <mailto:livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>
-List-Help: <mailto:livecd-request-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org?subject=help>
-List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/livecd>,
-	<mailto:livecd-request-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org?subject=subscribe>
-Sender: livecd-bounces-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
-Errors-To: livecd-bounces-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, livecd-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org, spins-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org
-Cc: Frederick Grose <fgrose-agl9EP5VjmEgsBAKwltoeQ@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-RnJvbTogRnJlZGVyaWNrIEdyb3NlIDxmZ3Jvc2VAc3VnYXJsYWJzLm9yZz4KCmNvbW1pdCBhNmNk
-NzBmYzlkZjJkMjk5ZWQ0ZjM0NzQ2MWMzM2U0ODI0ZGY2MmYwCkF1dGhvcjogRnJlZGVyaWNrIEdy
-b3NlIDxmZ3Jvc2VAc3VnYXJsYWJzLm9yZz4KCiAgICBFbmFibGUgcmVhZC1vbmx5IG1vdW50aW5n
-IG9mIGEgcGVyc2lzdGVudCBob21lLmltZyBmaWxlc3lzdGVtLgogICAgRW5hYmxlIG9uZSB0byBj
-YWxsIGZvciBmaWxlc3lzdGVtIGNoZWNraW5nIG9mIGhvbWUuaW1nIGJlZm9yZQogICAgbW91bnRp
-bmcgb24gdGhlIG5leHQgYm9vdC4KCi0tLQogZmVkb3JhLWxpdmUtYmFzZS5rcyB8IDI0ICsrKysr
-KysrKysrKysrKysrKysrKystLQogMSBmaWxlIGNoYW5nZWQsIDIyIGluc2VydGlvbnMoKyksIDIg
-ZGVsZXRpb25zKC0pCgpkaWZmIC0tZ2l0IGEvZmVkb3JhLWxpdmUtYmFzZS5rcyBiL2ZlZG9yYS1s
-aXZlLWJhc2Uua3MKaW5kZXggNmM3NmU5Ni4uMDUxMmY2NyAxMDA2NDQKLS0tIGEvZmVkb3JhLWxp
-dmUtYmFzZS5rcworKysgYi9mZWRvcmEtbGl2ZS1iYXNlLmtzCkBAIC0xMTYsOSArMTE2LDEzIEBA
-IG1vdW50UGVyc2lzdGVudEhvbWUoKSB7CiAgIGVsaWYgWyAhIC1iICJcJGhvbWVkZXYiIF07IHRo
-ZW4KICAgICBsb29wZGV2PVxgbG9zZXR1cCAtZlxgCiAgICAgaWYgWyAiXCR7aG9tZWRldiMjL3J1
-bi9pbml0cmFtZnMvbGl2ZX0iICE9ICJcJHtob21lZGV2fSIgXTsgdGhlbgotICAgICAgYWN0aW9u
-ICJSZW1vdW50aW5nIGxpdmUgc3RvcmUgci93IiBtb3VudCAtbyByZW1vdW50LHJ3IC9ydW4vaW5p
-dHJhbWZzL2xpdmUKKyAgICAgICAgaWYgWyAiXCRsaXZlcnciID0gcncgXTsgdGhlbgorICAgICAg
-ICAgICAgYWN0aW9uICJSZW1vdW50aW5nIGxpdmUgc3RvcmUgci93IiBtb3VudCAtbyByZW1vdW50
-LHJ3IC9ydW4vaW5pdHJhbWZzL2xpdmUKKyAgICAgICAgZWxzZQorICAgICAgICAgICAgb3B0cz0i
-LXIiCisgICAgICAgIGZpCiAgICAgZmkKLSAgICBsb3NldHVwIFwkbG9vcGRldiBcJGhvbWVkZXYK
-KyAgICBsb3NldHVwIFwkb3B0cyBcJGxvb3BkZXYgXCRob21lZGV2CiAgICAgaG9tZWRldj1cJGxv
-b3BkZXYKICAgZmkKIApAQCAtMTMwLDYgKzEzNCwyMiBAQCBtb3VudFBlcnNpc3RlbnRIb21lKCkg
-ewogICAgIGhvbWVkZXY9L2Rldi9tYXBwZXIvRW5jSG9tZQogICBmaQogCisgICMgSWYgcmVhZC1v
-bmx5IGlzIHJlcXVlc3RlZCwgcHJlcGFyZSBhIG5vbi1wZXJzaXN0ZW50IG92ZXJsYXkgYW5kIHNu
-YXBzaG90IHRhcmdldC4KKyAgaWYgWyAiXCRvcHRzIiA9ICItciIgXTsgdGhlbgorICAgIGRkIGlm
-PS9kZXYvbnVsbCBvZj0vcnVuL2luaXRyYW1mcy9vdmVybGF5ZnMvaG9tZV9vdmVybGF5IGJzPTEw
-MjQgY291bnQ9MSBzZWVrPVwkKCg1MTIqMTAyNCkpIDI+IC9kZXYvbnVsbAorICAgIEhPTUVfT1ZF
-UkxBWV9MT09QREVWPVwkKGxvc2V0dXAgLWYpCisgICAgbG9zZXR1cCBcJEhPTUVfT1ZFUkxBWV9M
-T09QREVWIC9ydW4vaW5pdHJhbWZzL292ZXJsYXlmcy9ob21lX292ZXJsYXkKKyAgICBzej1cJChi
-bG9ja2RldiAtLWdldHN6IFwkaG9tZWRldikKKyAgICBlY2hvIDAgXCRzeiBzbmFwc2hvdCBcJGhv
-bWVkZXYgXCRIT01FX09WRVJMQVlfTE9PUERFViBOIDggfCBkbXNldHVwIGNyZWF0ZSBob21lLXJ3
-CisgICAgaG9tZWRldj0vZGV2L21hcHBlci9ob21lLXJ3CisgIGZpCisKKyAgIyBDaGVjayB0aGUg
-ZmlsZXN5c3RlbSwgaWYgcmVxdWVzdGVkLgorICBpZiBbIC1lIC9mb3JjZWhvbWVmc2NrIF07IHRo
-ZW4KKyAgICBlMmZzY2sgLWYgLXkgLXYgXCRob21lZGV2IHx8IGUyZnNjayAtZiAteSBcJGhvbWVk
-ZXYKKyAgICBybSAvZm9yY2Vob21lZnNjaworICBmaQorCiAgICMgYW5kIGZpbmFsbHkgZG8gdGhl
-IG1vdW50CiAgIG1vdW50IFwkbW91bnRvcHRzIFwkaG9tZWRldiAvaG9tZQogICAjIGlmIHdlIGhh
-dmUgL2hvbWUgdW5kZXIgd2hhdCdzIHBhc3NlZCBmb3IgcGVyc2lzdGVudCBob21lLCB0aGVuCi0t
-IAoxLjguMy4xCgotLQpsaXZlY2QgbWFpbGluZyBsaXN0CmxpdmVjZEBsaXN0cy5mZWRvcmFwcm9q
-ZWN0Lm9yZwpodHRwczovL2FkbWluLmZlZG9yYXByb2plY3Qub3JnL21haWxtYW4vbGlzdGluZm8v
-bGl2ZWNk
+If rootflags=nofail, sysroot.mount won't strictly run "Before"
+initrd-root-fs.target. So we need to order dracut-pre-pivot after
+sysroot.mount.
+---
+ modules.d/98systemd/dracut-pre-pivot.service | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules.d/98systemd/dracut-pre-pivot.service b/modules.d/98systemd/dracut-pre-pivot.service
+index 56818b9..dd4e49b 100644
+--- a/modules.d/98systemd/dracut-pre-pivot.service
++++ b/modules.d/98systemd/dracut-pre-pivot.service
+@@ -10,7 +10,7 @@
+ [Unit]
+ Description=dracut pre-pivot and cleanup hook
+ Documentation=man:dracut-pre-pivot.service(8)
+-After=initrd.target initrd-parse-etc.service
++After=initrd.target initrd-parse-etc.service sysroot.mount
+ After=dracut-initqueue.service dracut-pre-mount.service dracut-mount.service
+ Before=initrd-cleanup.service
+ ConditionPathExists=/etc/initrd-release
+-- 
+1.8.3.1
