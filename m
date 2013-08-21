@@ -1,7 +1,7 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] omit drivers fix
-Date: Wed, 21 Aug 2013 10:21:36 +0200
-Message-ID: <52147890.9080807@redhat.com>
+Date: Wed, 21 Aug 2013 16:25:59 +0800
+Message-ID: <52147997.2020303@redhat.com>
 References: <5203350e.L97Tg2G2L47GaDix%dyoung@redhat.com> <52146FF7.8050904@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -10,10 +10,10 @@ In-Reply-To: <52146FF7.8050904-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On 08/21/2013 09:44 AM, Dave Young wrote:
+On 08/21/2013 03:44 PM, Dave Young wrote:
 > On 08/08/2013 02:05 PM, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
 >>
 >> Because omit_drivers list use underline always, so when maching with it
@@ -50,5 +50,9 @@ On 08/21/2013 09:44 AM, Dave Young wrote:
 > Could you help to review this patch?
 > 
 
-Already pushed! Thanks!
-http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=beb26a084
+Just find it has been merged, cancel the question..
+
+
+-- 
+Thanks
+Dave
