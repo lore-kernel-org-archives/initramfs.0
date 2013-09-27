@@ -1,43 +1,49 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: dracut: Make mkinintrd-dracut.sh SUSE mkinitrd compatible
-Date: Fri, 27 Sep 2013 20:18:54 +0200
-Message-ID: <1380305940-64410-1-git-send-email-trenn@suse.de>
+Subject: [PATCH 5/6] mkinitrd-dracut.sh: Also allow -d to specify the root_fs and -s dummy
+Date: Fri, 27 Sep 2013 20:18:59 +0200
+Message-ID: <1380305940-64410-6-git-send-email-trenn@suse.de>
+References: <1380305940-64410-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1380305940-64410-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 
-Hi,
+-d is the SUSE mkinitrd version option to pass the rootfs.
+-s is to enable splash which may not be needed, but some callers rely on it,
+not to return an error.
 
-these patches implement most important SuSE specific /sbin/mkinitrd
-paramters:
-  <none> : Before gives a "usage" error -> now scans /boot for kernels
-           and builds corresponding inirtrds for them
-  -i -k  : Pass a list of kernels and initrd targets
-           (not sure it was worth the hassle to be able to pass)
-  -b     : Boot directory to search for kernel images
-  -d     : Change root file system. Not tested whether dracut's behavior
-           matches exactly what our mkinitrd does.
+Make this wrapper compatible to it.
 
-If any of these parameters (including <none>) would have been called before,
-mkinitrd-dracut.sh would have bailed out with a "usage error" and an error
-code.
-Or the other way around: Any valid mkinitrd-dracut.sh not resulting in an
-error, should work exactly the same way it did before.
+Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+---
+ mkinitrd-dracut.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-Therefore I hope these can get in if the code is ok.
-
-Thanks,
-
-    Thomas
-
-[PATCH 1/6] mkinitrd-dracut.sh: Introduce -i -k parameters
-[PATCH 2/6] mkinitrd-dracut.sh: Enhance param parsing: Allow
-[PATCH 3/6] mkinitrd-dracut.sh: Implement --quiet|-q option
-[PATCH 4/6] mkinitrd-dracut.sh: Allow mkinitrd call without passing
-[PATCH 5/6] mkinitrd-dracut.sh: Also allow -d to specify the root_fs
-[PATCH 6/6] mkinitrd-dracut.sh: Build host images for
+diff --git a/mkinitrd-dracut.sh b/mkinitrd-dracut.sh
+index eeb6dda..f7b53f1 100755
+--- a/mkinitrd-dracut.sh
++++ b/mkinitrd-dracut.sh
+@@ -124,7 +124,7 @@ while (($# > 0)); do
+         --preload) read_arg modname "$@" || shift $?
+             basicmodules="$basicmodules $modname";;
+         --image-version) img_vers=yes;;
+-        --rootfs) read_arg rootfs "$@" || shift $?
++        --rootfs|-d) read_arg rootfs "$@" || shift $?
+             dracut_args="${dracut_args} --filesystems $rootfs";;
+         --nocompress) dracut_args="$dracut_args --no-compress";;
+         --help) usage -n;;
+@@ -151,6 +151,7 @@ while (($# > 0)); do
+         --looppath*) ;;
+         --dsdt*) ;;
+         --bootchart) ;;
++	-s) ;;
+ 	--quiet|-q) quiet=1;;
+ 	-b) read_arg boot_dir "$@" || shift $?
+ 	    if [ ! -d $boot_dir ];then
+-- 
+1.7.6.1
