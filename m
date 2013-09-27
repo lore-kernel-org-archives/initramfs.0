@@ -1,82 +1,43 @@
-From: Thomas Renninger <trenn@suse.de>
-Subject: [PATCH 1/4] dracut: Generlize microcode early cpio usage
-Date: Fri, 27 Sep 2013 20:10:37 +0200
-Message-ID: <1380305440-63843-2-git-send-email-trenn@suse.de>
-References: <1380305440-63843-1-git-send-email-trenn@suse.de>
-Return-path: <linux-acpi-owner@vger.kernel.org>
-In-Reply-To: <1380305440-63843-1-git-send-email-trenn@suse.de>
-Sender: linux-acpi-owner@vger.kernel.org
+From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Subject: dracut: Make mkinintrd-dracut.sh SUSE mkinitrd compatible
+Date: Fri, 27 Sep 2013 20:18:54 +0200
+Message-ID: <1380305940-64410-1-git-send-email-trenn@suse.de>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald@redhat.com
-Cc: initramfs@vger.kernel.org, linux-acpi@vger.kernel.org, konrad.wilk@oracle.com, Thomas Renninger <trenn@suse.de>
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-ACPI early table override also may need to place files into an early cpio.
-Reflect this in variable and file names.
-This change is renaming only and does not introduce any real change.
+Hi,
 
-Reviewed-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-Signed-off-by: Thomas Renninger <trenn@suse.de>
----
- dracut.sh |   17 +++++++++--------
- 1 files changed, 9 insertions(+), 8 deletions(-)
+these patches implement most important SuSE specific /sbin/mkinitrd
+paramters:
+  <none> : Before gives a "usage" error -> now scans /boot for kernels
+           and builds corresponding inirtrds for them
+  -i -k  : Pass a list of kernels and initrd targets
+           (not sure it was worth the hassle to be able to pass)
+  -b     : Boot directory to search for kernel images
+  -d     : Change root file system. Not tested whether dracut's behavior
+           matches exactly what our mkinitrd does.
 
-diff --git a/dracut.sh b/dracut.sh
-index 0c42958..0383c7e 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -696,9 +696,9 @@ readonly initdir="$(mktemp --tmpdir="$TMPDIR/" -d -t initramfs.XXXXXX)"
- }
- 
- if [[ $early_microcode = yes ]]; then
--    readonly microcode_dir="$(mktemp --tmpdir="$TMPDIR/" -d -t early_microcode.XXXXXX)"
--    [ -d "$microcode_dir" ] || {
--        printf "%s\n" "dracut: mktemp --tmpdir=\"$TMPDIR/\" -d -t early_microcode.XXXXXX failed." >&2
-+    readonly early_cpio_dir="$(mktemp --tmpdir="$TMPDIR/" -d -t early_cpio.XXXXXX)"
-+    [ -d "$early_cpio_dir" ] || {
-+        printf "%s\n" "dracut: mktemp --tmpdir=\"$TMPDIR/\" -d -t early_cpio.XXXXXX failed." >&2
-         exit 1
-     }
- fi
-@@ -707,7 +707,7 @@ trap '
-     ret=$?;
-     [[ $outfile ]] && [[ -f $outfile.$$ ]] && rm -f -- "$outfile.$$";
-     [[ $keep ]] && echo "Not removing $initdir." >&2 || { [[ $initdir ]] && rm -rf -- "$initdir"; };
--    [[ $keep ]] && echo "Not removing $microcode_dir." >&2 || { [[ $microcode_dir ]] && rm -Rf -- "$microcode_dir"; };
-+    [[ $keep ]] && echo "Not removing $early_cpio_dir." >&2 || { [[ $early_cpio_dir ]] && rm -Rf -- "$early_cpio_dir"; };
-     [[ $_dlogdir ]] && rm -Rf -- "$_dlogdir";
-     exit $ret;
-     ' EXIT
-@@ -1279,7 +1279,7 @@ if [[ $early_microcode = yes ]]; then
-     dinfo "*** Generating early-microcode cpio image ***"
-     ucode_dir=(amd-ucode intel-ucode)
-     ucode_dest=(AuthenticAMD.bin GenuineIntel.bin)
--    _dest_dir="$microcode_dir/d/kernel/x86/microcode"
-+    _dest_dir="$early_cpio_dir/d/kernel/x86/microcode"
-     _dest_idx="0 1"
-     mkdir -p $_dest_dir
-     if [[ $hostonly ]]; then
-@@ -1299,14 +1299,15 @@ if [[ $early_microcode = yes ]]; then
-             fi
-         done
-     done
--    (cd "$microcode_dir/d"; find . -print0 | cpio --null -o -H newc --quiet >../ucode.cpio)
-+    create_early_cpio="yes"
- fi
- 
- rm -f -- "$outfile"
- dinfo "*** Creating image file ***"
--if [[ $early_microcode = yes ]]; then
-+if [[ $create_early_cpio = yes ]]; then
-     # The microcode blob is _before_ the initramfs blob, not after
--    mv $microcode_dir/ucode.cpio $outfile.$$
-+    (cd "$early_cpio_dir/d"; find . -print0 | cpio --null -o -H newc --quiet >../early.cpio)
-+    mv $early_cpio_dir/early.cpio $outfile.$$
- fi
- if ! ( umask 077; cd "$initdir"; find . -print0 | cpio --null -R 0:0 -H newc -o --quiet| \
-     $compress >> "$outfile.$$"; ); then
--- 
-1.7.6.1
+If any of these parameters (including <none>) would have been called before,
+mkinitrd-dracut.sh would have bailed out with a "usage error" and an error
+code.
+Or the other way around: Any valid mkinitrd-dracut.sh not resulting in an
+error, should work exactly the same way it did before.
 
+Therefore I hope these can get in if the code is ok.
+
+Thanks,
+
+    Thomas
+
+[PATCH 1/6] mkinitrd-dracut.sh: Introduce -i -k parameters
+[PATCH 2/6] mkinitrd-dracut.sh: Enhance param parsing: Allow
+[PATCH 3/6] mkinitrd-dracut.sh: Implement --quiet|-q option
+[PATCH 4/6] mkinitrd-dracut.sh: Allow mkinitrd call without passing
+[PATCH 5/6] mkinitrd-dracut.sh: Also allow -d to specify the root_fs
+[PATCH 6/6] mkinitrd-dracut.sh: Build host images for
