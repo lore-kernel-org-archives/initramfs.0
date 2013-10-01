@@ -1,64 +1,71 @@
-From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
-Subject: [PATCH v2] mdraid/module-setup.sh: fixes for mdadm-3.2.6+
-Date: Sun, 29 Sep 2013 01:31:01 +0400
-Message-ID: <1380403861.17657.4.camel@home.puleglot>
+From: Lennart Poettering <lennart@poettering.net>
+Subject: Re: [RFC] iscsid / systemd / dracut integration
+ effort
+Date: Tue, 1 Oct 2013 04:24:26 +0200
+Message-ID: <20131001022426.GF14198@tango.0pointer.de>
+References: <1355177316-25803-1-git-send-email-cleech@redhat.com>
+	<50C67697.7020208@gmail.com>
+	<20121211232646.GC5307@straylight.hirudinean.org>
+	<b993ef26-ea4e-4dbe-8d9a-d86ad50c9fbc@googlegroups.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
-	h=Content-Transfer-Encoding:Mime-Version:Content-Type:Date:To:From:Subject:Message-ID; bh=OpUgcXBRXLdsqBpfH5avl2hVOXA9IdSQkJmEPjjN6vs=;
-	b=hTHXW92UdtkEhbygY75hibf3HKixwph+0DYTtIXWHPAxqFqekmDMCPbbEmzFztjr4ACila30Nn6vVsCqzAt1elQv5GZdYY8ll2ii6uB4Io42p5Nn7qSkjhxlngkDrXzQCOnMbNvlhUwh6+Y9Tz82YDCsPwaXO4V4O7nF+WlC2SE=;
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
+Content-Disposition: inline
+In-Reply-To: <b993ef26-ea4e-4dbe-8d9a-d86ad50c9fbc@googlegroups.com>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
+To: The Lee-Man <leeman.duncan@gmail.com>
+Cc: initramfs@vger.kernel.org, agrover@redhat.com, open-iscsi@googlegroups.com, systemd-devel@lists.freedesktop.org
 
-mdadm-3.2.6+:
-Incremental assembly rule contains "--offroot" arg. Update
-regexp to catch this variant.
+On Mon, 23.09.13 10:33, The Lee-Man (leeman.duncan@gmail.com) wrote:
 
-mdadm-3.3+:
-Rules was splitted into two files: 63-md-raid-arrays.rules
-and 64-md-raid-assembly.rules. Install them both and edit
-the latter.
----
- modules.d/90mdraid/module-setup.sh | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+> After=network.target NetworkManager-wait-online.service tgtd.service 
+> targetcli.service
 
-diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index 5df2274..1d72f21 100755
---- a/modules.d/90mdraid/module-setup.sh
-+++ b/modules.d/90mdraid/module-setup.sh
-@@ -59,6 +59,7 @@ cmdline() {
- }
- 
- install() {
-+    local rule rule_path
-     inst_multiple cat
-     inst_multiple -o mdmon
-     inst $(command -v partx) /sbin/partx
-@@ -67,12 +68,20 @@ install() {
-     cmdline  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
-     echo  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
- 
-+    # <mdadm-3.3 udev rule
-     inst_rules 64-md-raid.rules
-+    # >=mdadm-3.3 udev rules
-+    inst_rules 63-md-raid-arrays.rules 64-md-raid-assembly.rules
-     # remove incremental assembly from stock rules, so they don't shadow
-     # 65-md-inc*.rules and its fine-grained controls, or cause other problems
-     # when we explicitly don't want certain components to be incrementally
-     # assembled
--    sed -i -r -e '/RUN\+?="[[:alpha:]/]*mdadm[[:blank:]]+(--incremental|-I)[[:blank:]]+(\$env\{DEVNAME\}|\$tempnode)"/d' "${initdir}${udevdir}/rules.d/64-md-raid.rules"
-+    for rule in 64-md-raid.rules 64-md-raid-assembly.rules; do
-+        rule_path="${initdir}${udevdir}/rules.d/${rule}"
-+        [ -f "${rule_path}" ] && sed -i -r \
-+            -e '/RUN\+?="[[:alpha:]/]*mdadm[[:blank:]]+(--incremental|-I)[[:blank:]]+(\$env\{DEVNAME\}|\$tempnode|\$devnode)/d' \
-+            "${rule_path}"
-+    done
- 
-     inst_rules "$moddir/65-md-incremental-imsm.rules"
- 
+Please use network-online.target here instead of
+NetworkManager-wait-online.service.
+
+Please see the discussion of this unit on:
+
+http://www.freedesktop.org/software/systemd/man/systemd.special.html
+
+That said, this service makes local block devices available over the
+network, right, and it doesn't want to connect to anything on the
+network, or does it? If so, I really don't see the need for pulling in
+network-online.target/NetworkManager-wait-online.service here at all. 
+
+
+
+> iscsi.service:
+> ==========
+
+> After=network.target NetworkManager-wait-online.service iscsid.service
+
+This one on the other hand actually wants network connectivity around,
+right, since it tries to connect to other hosts? For this one using
+network-online.target sounds appropriate.
+
+> ConditionPathExists=/etc/iscsi/initiatorname.iscsi
+> 
+> [Service]
+> Type=oneshot
+> ExecStart=/sbin/iscsiadm -m node --loginall=automatic
+> ExecStop=/bin/sync
+
+Wut?? Is this really necessary? If this is really necessary (which I
+doubt, appears to be snake oil to me...), then why doesn't iscsiadm do
+this internally?
+
+Lennart
+
 -- 
-1.8.1.5
-
+Lennart Poettering - Red Hat, Inc.
