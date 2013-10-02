@@ -1,71 +1,61 @@
-From: Lennart Poettering <lennart@poettering.net>
-Subject: Re: [RFC] iscsid / systemd / dracut integration
- effort
-Date: Tue, 1 Oct 2013 04:24:26 +0200
-Message-ID: <20131001022426.GF14198@tango.0pointer.de>
-References: <1355177316-25803-1-git-send-email-cleech@redhat.com>
-	<50C67697.7020208@gmail.com>
-	<20121211232646.GC5307@straylight.hirudinean.org>
-	<b993ef26-ea4e-4dbe-8d9a-d86ad50c9fbc@googlegroups.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 6/6] mkinitrd-dracut.sh: Build host images for default_kernel_images
+ and -i/-k paths
+Date: Wed, 02 Oct 2013 12:25:17 +0200
+Message-ID: <524BF48D.2030803@redhat.com>
+References: <1380305940-64410-1-git-send-email-trenn@suse.de> <1380305940-64410-7-git-send-email-trenn@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org>
-Content-Disposition: inline
-In-Reply-To: <b993ef26-ea4e-4dbe-8d9a-d86ad50c9fbc@googlegroups.com>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
-	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Sender: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-Errors-To: systemd-devel-bounces+gcssd-systemd-devel=m.gmane.org@lists.freedesktop.org
-To: The Lee-Man <leeman.duncan@gmail.com>
-Cc: initramfs@vger.kernel.org, agrover@redhat.com, open-iscsi@googlegroups.com, systemd-devel@lists.freedesktop.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1380305940-64410-7-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, 23.09.13 10:33, The Lee-Man (leeman.duncan@gmail.com) wrote:
-
-> After=network.target NetworkManager-wait-online.service tgtd.service 
-> targetcli.service
-
-Please use network-online.target here instead of
-NetworkManager-wait-online.service.
-
-Please see the discussion of this unit on:
-
-http://www.freedesktop.org/software/systemd/man/systemd.special.html
-
-That said, this service makes local block devices available over the
-network, right, and it doesn't want to connect to anything on the
-network, or does it? If so, I really don't see the need for pulling in
-network-online.target/NetworkManager-wait-online.service here at all. 
-
-
-
-> iscsi.service:
-> ==========
-
-> After=network.target NetworkManager-wait-online.service iscsid.service
-
-This one on the other hand actually wants network connectivity around,
-right, since it tries to connect to other hosts? For this one using
-network-online.target sounds appropriate.
-
-> ConditionPathExists=/etc/iscsi/initiatorname.iscsi
+On 09/27/2013 08:19 PM, Thomas Renninger wrote:
+> default_kernel_images and -i/-k paths are new (SuSE) code paths and
+> would have resulted in usage errors before.
 > 
-> [Service]
-> Type=oneshot
-> ExecStart=/sbin/iscsiadm -m node --loginall=automatic
-> ExecStop=/bin/sync
+> There we want to build host only images for faster building and
+> smaller images.
+> Also force creation (overriding) of initrd images in these code paths.
+> 
+> Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+> ---
+>  mkinitrd-dracut.sh |   14 +++++++++++---
+>  1 files changed, 11 insertions(+), 3 deletions(-)
+> 
+> diff --git a/mkinitrd-dracut.sh b/mkinitrd-dracut.sh
+> index f7b53f1..a1519ea 100755
+> --- a/mkinitrd-dracut.sh
+> +++ b/mkinitrd-dracut.sh
+> @@ -3,6 +3,8 @@ kver=$(uname -r)
+>  
+>  boot_dir="/boot"
+>  quiet=0
+> +host_only=0
+> +force=0
+>  
+>  error() { echo "$@" >&2; }
+>  
+> @@ -104,7 +106,8 @@ default_kernel_images() {
+>      for initrd_image in $initrd_images;do
+>  	targets="$targets $initrd_image"
+>      done
+> -
+> +    host_only=1
+> +    force=1
+>  }
+>  
+>  while (($# > 0)); do
+> @@ -119,8 +122,8 @@ while (($# > 0)); do
+>          --version)
+>              echo "mkinitrd: dracut compatibility wrapper"
+>              exit 0;;
+> -        -v|--verbose) dracut_args="${dracut_args} -v";;
+> -        -f|--force) dracut_args="${dracut_args} -f";;
+> +        -v|--verbose) dracut_args="${dracut_args} -v --keep";;
 
-Wut?? Is this really necessary? If this is really necessary (which I
-doubt, appears to be snake oil to me...), then why doesn't iscsiadm do
-this internally?
-
-Lennart
-
--- 
-Lennart Poettering - Red Hat, Inc.
+do you really want to keep the entire files in /var/tmp/<tmpdir>  for --verbose?
