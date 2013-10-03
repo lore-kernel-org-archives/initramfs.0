@@ -1,89 +1,42 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] Install dracut-install into libexec dir instead of lib dir
-Date: Wed,  2 Oct 2013 23:00:30 +0200
-Message-ID: <1380747630-555-2-git-send-email-aidecoe@aidecoe.name>
-References: <1380747630-555-1-git-send-email-aidecoe@aidecoe.name>
+From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
+Subject: [PATCH] mdraid/module-setup.sh: install configs from
+ /etc/mdadm.conf.d
+Date: Thu, 3 Oct 2013 14:54:42 +0400
+Message-ID: <E1VRhgp-0000kE-7E@secretive.ru>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1380747630-555-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
+	h=Message-Id:To:Subject:Date:From; bh=K75nipgVf9Ng4V4aEhK6ih6TuyTzcikamr7w2NAVMX0=;
+	b=WSyaBXhkdpaIZiiro1HyEFtlsyB5rpR6dXb2fciww9He3U8KDdL5XaAaJxFGpAYYCkJxHpR++KDOJ2xaLAMdZo4CDzMQ7Xb5oTzfMxYUCQHLzuqeSP/XaAJDNS9liXZ8wf+NkTUnIbQMOkP0mAE79qoXj7RPGl7gSe+qAmBk/cY=;
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-dracut-install script is the only thing ABI specific atm.
-
-See https://bugs.gentoo.org/show_bug.cgi?id=485218 for details on the
-problem.
+/etc/mdadm.conf.d directory is supported since mdadm-3.3
 ---
- Makefile            | 4 +++-
- configure           | 1 +
- dracut-functions.sh | 4 ++++
- dracut.sh           | 1 +
- 4 files changed, 9 insertions(+), 1 deletion(-)
+ modules.d/90mdraid/module-setup.sh | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/Makefile b/Makefile
-index ea504f5..e004a79 100644
---- a/Makefile
-+++ b/Makefile
-@@ -92,6 +92,7 @@ install: dracut-version.sh
- 	mkdir -p $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8
- 	install -m 0755 dracut.sh $(DESTDIR)$(bindir)/dracut
- 	sed -r \
-+		-e "s|^(libexecdir)=.*|\1=$(libexecdir)|" \
- 		-e "s|^(pkglibdir)=.*|\1=$(pkglibdir)|" \
- 		-i $(DESTDIR)$(bindir)/dracut
- 	install -m 0755 dracut-catimages.sh $(DESTDIR)$(bindir)/dracut-catimages
-@@ -135,7 +136,8 @@ endif
- 		done \
- 	fi
- 	if [ -f install/dracut-install ]; then \
--		install -m 0755 install/dracut-install $(DESTDIR)$(pkglibdir)/dracut-install; \
-+		mkdir -p $(DESTDIR)$(libexecdir); \
-+		install -m 0755 install/dracut-install $(DESTDIR)$(libexecdir)/dracut-install; \
- 	fi
- 	mkdir -p $(DESTDIR)${prefix}/lib/kernel/install.d
- 	install -m 0755 50-dracut.install $(DESTDIR)${prefix}/lib/kernel/install.d/50-dracut.install
-diff --git a/configure b/configure
-index 19b5e1f..d2ffc2c 100755
---- a/configure
-+++ b/configure
-@@ -61,6 +61,7 @@ sbindir ?= ${sbindir:-${prefix}/sbin}
- mandir ?= ${mandir:-${prefix}/share/man}
- enable_documentation ?= ${enable_documentation:-yes}
- bindir ?= ${bindir:-${prefix}/bin}
-+libexecdir ?= ${libexecdir:-${prefix}/libexec}
- EOF
+diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
+index 1d72f21..34aae1e 100755
+--- a/modules.d/90mdraid/module-setup.sh
++++ b/modules.d/90mdraid/module-setup.sh
+@@ -102,6 +102,14 @@ install() {
+         else
+             [ -f /etc/mdadm/mdadm.conf ] && inst /etc/mdadm/mdadm.conf /etc/mdadm.conf
+         fi
++        if [ -d /etc/mdadm.conf.d ]; then
++            local f
++            inst_dir /etc/mdadm.conf.d
++            for f in /etc/mdadm.conf.d/*.conf; do
++                [ -f "$f" ] || continue
++                inst "$f"
++            done
++        fi
+     fi
  
- {
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index cf33af5..76d4451 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -694,6 +694,10 @@ if ! [[ $DRACUT_INSTALL ]]; then
-     DRACUT_INSTALL=$(find_binary dracut-install)
- fi
- 
-+if ! [[ $DRACUT_INSTALL ]] && [[ -x $libexecdir/dracut-install ]]; then
-+    DRACUT_INSTALL=$libexecdir/dracut-install
-+fi
-+
- if ! [[ $DRACUT_INSTALL ]] && [[ -x $dracutbasedir/dracut-install ]]; then
-     DRACUT_INSTALL=$dracutbasedir/dracut-install
- fi
-diff --git a/dracut.sh b/dracut.sh
-index c68e74e..574358d 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -27,6 +27,7 @@
- dracut_args=( "$@" )
- 
- # base dirs
-+libexecdir=/usr/libexec
- pkglibdir=/usr/lib/dracut
- dracutbasedir="$pkglibdir"
- 
+     inst_hook pre-udev 30 "$moddir/mdmon-pre-udev.sh"
 -- 
-1.8.3.2
+1.8.1.5
