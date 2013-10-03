@@ -1,41 +1,41 @@
-From: Jon Stanley <jonstanley-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: dracut and multiple ISO's as loopback mounts
-Date: Thu, 3 Oct 2013 09:51:58 -0400
-Message-ID: <CALY6xnh8VJiR4KqUCpwm4D8xBCicJC6xM=13SvNOn72FBykDQw@mail.gmail.com>
+From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
+Subject: inst_rules() searches for rules in current dir
+Date: Thu, 3 Oct 2013 18:51:09 +0400
+Message-ID: <20131003185109.4f88e313@work.puleglot>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:from:date:message-id:subject:to:content-type;
-        bh=NkKJcJY/UL+J+DX4hGhl0ACApHklTk7dpwJOnOrRwcg=;
-        b=euiHDYD2qqT7CUWVZMRQCm5shvTyYE5y/A4KpZK1HWr7U/YYOi6MhwSDbn1mEHz9w3
-         vGN6E9VkKyPBJAyTwyray78lNaRMdRPl7PiT3/wSoKgXCJq+KwtYhgmKJTRA1JqznI61
-         jU8ojP1r/DL0Q0yQYDqQW+oNfezYgFGE+e/yUteyPz0pxNulW3nQKk1o1Bm+pKfzfAv5
-         FNfpACPvbyfyyYXyCHZbSpIyxKZTZyvBykLtayYGfVqjMIFHNLDOeq9Cp5ZekvmO+9eK
-         9xAOJHGWTeht/yUVqYQsepOJEd+FuRlDkViAsmNvgKFHAvaP1rZirMSfnV2ftGswHoLO
-         830A==
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
+	h=Content-Transfer-Encoding:Content-Type:Mime-Version:Message-ID:Subject:To:From:Date; bh=76quY7hQwGmq68lByvGPpUlHsoQByhs2kh1eOPq5wv4=;
+	b=iNOLY7dr6lplv8bqCY6mkTY1a0L95MFOtc/aVGuTI3Dcw/NFEZDFdpGT9Nyp8rOraZzwgFSca8JqHBo0vH1eRbvDqfQJy2oNzfvJs4mJsCKvqjIsC/CNPhM+1XnyXMo/l7B2OrmETH3hUbcSA+xIqKoYvib3o8a5FXInJtwzjy8=;
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-I'm wanting to loopback mount MULTIPLE iso's that are embedded in the
-same initramfs - does dracut currently support this? The use case is
-that there is a base OS livecd that I'm embedding in an initramfs, and
-that works fine today.
+Hello.
 
-However, on top of that, I want independently versioned additional
-content. For example, imagine shipping some ISV content on top of a
-generic LiveCD that you intend to PXE boot. The base OS need not
-change (and I don't want it to change or to rebuild it).
+Is this intentional, or a bug?
 
-The commentary in the livecd-iso-to-pxeboot script (part of
-livecd-tools - https://git.fedorahosted.org/cgit/livecd/tree/tools/livecd-iso-to-pxeboot.sh)
-seems to indicate the kernel will DTRT with it - but will it still
-DTRT with multiple (3+) cpio archives?
+# touch 11-dm-lvm.rules 
+# ls -ln 11-dm-lvm.rules 
+-rw-r--r-- 1 1000 1000 0 Oct  3 18:32 11-dm-lvm.rules
+# dracut -f
+ ...
+*** Including module: lvm ***
+dracut-install: ERROR: installing '11-dm-lvm.rules' to '/etc/udev/rules.d/11-dm-lvm.rules'
+/usr/libexec/dracut-install -D /var/tmp/initramfs.EZ7ISH 11-dm-lvm.rules /etc/udev/rules.d/11-dm-lvm.rules
+ ...
+# lsinitrd /boot/initramfs-3.11.3-hardened.img | grep 11-dm-lvm.rules
+-rw-r--r--   1 root     root            0 Oct  3 18:32 etc/udev/rules.d/11-dm-lvm.rules
+-r--r--r--   1 root     root         1303 Sep 30 20:11 lib64/udev/rules.d/11-dm-lvm.rules
 
-As a side question, how do you dissect a cpio archive like this? The
-standard cpio invocation seems to stop at the end of the first
-archive, which makes sense. How do you specify you want the nth
-archive out of a single file?
+
+Related line from dracut-functions.sh:
+
+ 899         for r in '' ./ $dracutbasedir/rules.d/; do
+
+Are '' and ./ really needed here?
+
+-- 
+Alexander Tsoy
