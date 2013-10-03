@@ -1,42 +1,41 @@
-From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
-Subject: [PATCH] mdraid/module-setup.sh: install configs from
- /etc/mdadm.conf.d
-Date: Thu, 3 Oct 2013 14:54:42 +0400
-Message-ID: <E1VRhgp-0000kE-7E@secretive.ru>
+From: Jon Stanley <jonstanley-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: dracut and multiple ISO's as loopback mounts
+Date: Thu, 3 Oct 2013 09:51:58 -0400
+Message-ID: <CALY6xnh8VJiR4KqUCpwm4D8xBCicJC6xM=13SvNOn72FBykDQw@mail.gmail.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
-	h=Message-Id:To:Subject:Date:From; bh=K75nipgVf9Ng4V4aEhK6ih6TuyTzcikamr7w2NAVMX0=;
-	b=WSyaBXhkdpaIZiiro1HyEFtlsyB5rpR6dXb2fciww9He3U8KDdL5XaAaJxFGpAYYCkJxHpR++KDOJ2xaLAMdZo4CDzMQ7Xb5oTzfMxYUCQHLzuqeSP/XaAJDNS9liXZ8wf+NkTUnIbQMOkP0mAE79qoXj7RPGl7gSe+qAmBk/cY=;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:from:date:message-id:subject:to:content-type;
+        bh=NkKJcJY/UL+J+DX4hGhl0ACApHklTk7dpwJOnOrRwcg=;
+        b=euiHDYD2qqT7CUWVZMRQCm5shvTyYE5y/A4KpZK1HWr7U/YYOi6MhwSDbn1mEHz9w3
+         vGN6E9VkKyPBJAyTwyray78lNaRMdRPl7PiT3/wSoKgXCJq+KwtYhgmKJTRA1JqznI61
+         jU8ojP1r/DL0Q0yQYDqQW+oNfezYgFGE+e/yUteyPz0pxNulW3nQKk1o1Bm+pKfzfAv5
+         FNfpACPvbyfyyYXyCHZbSpIyxKZTZyvBykLtayYGfVqjMIFHNLDOeq9Cp5ZekvmO+9eK
+         9xAOJHGWTeht/yUVqYQsepOJEd+FuRlDkViAsmNvgKFHAvaP1rZirMSfnV2ftGswHoLO
+         830A==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-/etc/mdadm.conf.d directory is supported since mdadm-3.3
----
- modules.d/90mdraid/module-setup.sh | 8 ++++++++
- 1 file changed, 8 insertions(+)
+I'm wanting to loopback mount MULTIPLE iso's that are embedded in the
+same initramfs - does dracut currently support this? The use case is
+that there is a base OS livecd that I'm embedding in an initramfs, and
+that works fine today.
 
-diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index 1d72f21..34aae1e 100755
---- a/modules.d/90mdraid/module-setup.sh
-+++ b/modules.d/90mdraid/module-setup.sh
-@@ -102,6 +102,14 @@ install() {
-         else
-             [ -f /etc/mdadm/mdadm.conf ] && inst /etc/mdadm/mdadm.conf /etc/mdadm.conf
-         fi
-+        if [ -d /etc/mdadm.conf.d ]; then
-+            local f
-+            inst_dir /etc/mdadm.conf.d
-+            for f in /etc/mdadm.conf.d/*.conf; do
-+                [ -f "$f" ] || continue
-+                inst "$f"
-+            done
-+        fi
-     fi
- 
-     inst_hook pre-udev 30 "$moddir/mdmon-pre-udev.sh"
--- 
-1.8.1.5
+However, on top of that, I want independently versioned additional
+content. For example, imagine shipping some ISV content on top of a
+generic LiveCD that you intend to PXE boot. The base OS need not
+change (and I don't want it to change or to rebuild it).
+
+The commentary in the livecd-iso-to-pxeboot script (part of
+livecd-tools - https://git.fedorahosted.org/cgit/livecd/tree/tools/livecd-iso-to-pxeboot.sh)
+seems to indicate the kernel will DTRT with it - but will it still
+DTRT with multiple (3+) cpio archives?
+
+As a side question, how do you dissect a cpio archive like this? The
+standard cpio invocation seems to stop at the end of the first
+archive, which makes sense. How do you specify you want the nth
+archive out of a single file?
