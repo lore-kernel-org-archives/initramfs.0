@@ -1,42 +1,37 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: inst_rules() searches for rules in current dir
-Date: Fri, 04 Oct 2013 13:10:43 +0200
-Message-ID: <524EA233.2070000@redhat.com>
-References: <20131003185109.4f88e313@work.puleglot>
+From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH 6/6] mkinitrd-dracut.sh: Build host images for default_kernel_images and -i/-k paths
+Date: Fri, 04 Oct 2013 13:42:37 +0200
+Message-ID: <4360710.7nGyE1EdAP@skinner>
+References: <1380305940-64410-1-git-send-email-trenn@suse.de> <1380305940-64410-7-git-send-email-trenn@suse.de> <524BF48D.2030803@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20131003185109.4f88e313-d/9N6kaejYfpx9ONITL1FA@public.gmane.org>
+In-Reply-To: <524BF48D.2030803-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10/03/2013 04:51 PM, Alexander Tsoy wrote:
-> Hello.
+On Wednesday, October 02, 2013 12:25:17 PM Harald Hoyer wrote:
+> On 09/27/2013 08:19 PM, Thomas Renninger wrote:
+...
+> > @@ -119,8 +122,8 @@ while (($# > 0)); do
+> > 
+> >          --version)
+> >          
+> >              echo "mkinitrd: dracut compatibility wrapper"
+> >              exit 0;;
+> > 
+> > -        -v|--verbose) dracut_args="${dracut_args} -v";;
+> > -        -f|--force) dracut_args="${dracut_args} -f";;
+> > +        -v|--verbose) dracut_args="${dracut_args} -v --keep";;
 > 
-> Is this intentional, or a bug?
-> 
-> # touch 11-dm-lvm.rules 
-> # ls -ln 11-dm-lvm.rules 
-> -rw-r--r-- 1 1000 1000 0 Oct  3 18:32 11-dm-lvm.rules
-> # dracut -f
->  ...
-> *** Including module: lvm ***
-> dracut-install: ERROR: installing '11-dm-lvm.rules' to '/etc/udev/rules.d/11-dm-lvm.rules'
-> /usr/libexec/dracut-install -D /var/tmp/initramfs.EZ7ISH 11-dm-lvm.rules /etc/udev/rules.d/11-dm-lvm.rules
->  ...
-> # lsinitrd /boot/initramfs-3.11.3-hardened.img | grep 11-dm-lvm.rules
-> -rw-r--r--   1 root     root            0 Oct  3 18:32 etc/udev/rules.d/11-dm-lvm.rules
-> -r--r--r--   1 root     root         1303 Sep 30 20:11 lib64/udev/rules.d/11-dm-lvm.rules
-> 
-> 
-> Related line from dracut-functions.sh:
-> 
->  899         for r in '' ./ $dracutbasedir/rules.d/; do
-> 
-> Are '' and ./ really needed here?
-> 
+> do you really want to keep the entire files in /var/tmp/<tmpdir>  for
+> --verbose?
+No, that was not intended.
+What about the rest? If it is ok, I would re-post this series.
 
-No, will remove them! Thanks!
+Thanks,
+
+   Thomas
