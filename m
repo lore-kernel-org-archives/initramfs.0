@@ -1,41 +1,45 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 6/6] mkinitrd-dracut.sh: Build host images for default_kernel_images
- and -i/-k paths
-Date: Fri, 04 Oct 2013 13:58:28 +0200
-Message-ID: <524EAD64.9040001@redhat.com>
-References: <1380305940-64410-1-git-send-email-trenn@suse.de> <1380305940-64410-7-git-send-email-trenn@suse.de> <524BF48D.2030803@redhat.com> <4360710.7nGyE1EdAP@skinner>
+Subject: Re: dracut and multiple ISO's as loopback mounts
+Date: Mon, 07 Oct 2013 10:35:45 +0200
+Message-ID: <52527261.2030702@redhat.com>
+References: <CALY6xnh8VJiR4KqUCpwm4D8xBCicJC6xM=13SvNOn72FBykDQw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4360710.7nGyE1EdAP@skinner>
+In-Reply-To: <CALY6xnh8VJiR4KqUCpwm4D8xBCicJC6xM=13SvNOn72FBykDQw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+To: Jon Stanley <jonstanley-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 10/04/2013 01:42 PM, Thomas Renninger wrote:
-> On Wednesday, October 02, 2013 12:25:17 PM Harald Hoyer wrote:
->> On 09/27/2013 08:19 PM, Thomas Renninger wrote:
-> ...
->>> @@ -119,8 +122,8 @@ while (($# > 0)); do
->>>
->>>          --version)
->>>          
->>>              echo "mkinitrd: dracut compatibility wrapper"
->>>              exit 0;;
->>>
->>> -        -v|--verbose) dracut_args="${dracut_args} -v";;
->>> -        -f|--force) dracut_args="${dracut_args} -f";;
->>> +        -v|--verbose) dracut_args="${dracut_args} -v --keep";;
->>
->> do you really want to keep the entire files in /var/tmp/<tmpdir>  for
->> --verbose?
-> No, that was not intended.
-> What about the rest? If it is ok, I would re-post this series.
+On 10/03/2013 03:51 PM, Jon Stanley wrote:
+> I'm wanting to loopback mount MULTIPLE iso's that are embedded in the
+> same initramfs - does dracut currently support this? The use case is
+> that there is a base OS livecd that I'm embedding in an initramfs, and
+> that works fine today.
 > 
-> Thanks,
-> 
->    Thomas
+> However, on top of that, I want independently versioned additional
+> content. For example, imagine shipping some ISV content on top of a
+> generic LiveCD that you intend to PXE boot. The base OS need not
+> change (and I don't want it to change or to rebuild it).
 
-Pushed all + removed the "--keep"
+
+You would have to write such a dracut module on your own.
+
+> 
+> The commentary in the livecd-iso-to-pxeboot script (part of
+> livecd-tools - https://git.fedorahosted.org/cgit/livecd/tree/tools/livecd-iso-to-pxeboot.sh)
+> seems to indicate the kernel will DTRT with it - but will it still
+> DTRT with multiple (3+) cpio archives?
+> 
+
+I think the kernel unpacks cpio archives as long as it finds one appended to the
+last one.
+
+> As a side question, how do you dissect a cpio archive like this? The
+> standard cpio invocation seems to stop at the end of the first
+> archive, which makes sense. How do you specify you want the nth
+> archive out of a single file?
+
+Yeah, someone has to write such a user tool. lsinitrd would benefit from it.
