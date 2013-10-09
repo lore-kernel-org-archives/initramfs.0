@@ -1,102 +1,52 @@
-From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
-Subject: [PATCH 2/2] resume: remove resume-genrules.sh
-Date: Wed, 9 Oct 2013 07:02:56 +0400
-Message-ID: <75dabc4ca42f408d2477b14d6570be2122d9bfe0.1381324538.git.alexander@tsoy.me>
+From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/2] resume: fix swap detection in hostonly
+Date: Wed, 09 Oct 2013 16:22:29 +0200
+Message-ID: <525566A5.20805@gmail.com>
 References: <6734e993a6184b487097463179c3dd75357047b2.1381324538.git.alexander@tsoy.me>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
-	h=To:Subject:Date:From:References:In-Reply-To:Message-Id; bh=4EoBaoeWrdJ1wibaAz9k66p2lX+inw9jwOIZfeiOuYU=;
-	b=bLSgj/mCMMuHfc5PI3OYSbjs8GbCNSu4X9reaoyIh581E1jC508nI7CDHDtZtbze1BkhCyGz5NvcqT68j5KNPS9gWr6I/J7J2cN0NtVgsQHoZdIUdtWvQFweLZEMIIBeWsOm3ZMBzFCnXymGv69AeOtJvdOaTKqlMeHaXeZ0U5k=;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=message-id:date:from:user-agent:mime-version:to:subject:references
+         :in-reply-to:content-type:content-transfer-encoding;
+        bh=kEyaXdCcXy8ttsr+UnIwsyI9tKR4W25tkDYeAIx0oqQ=;
+        b=RMDoIlnXtQ4rMQPjJfFT8B3jN7J66+qI0OOkPOfC6ZSlrnjM2KLe2oYQtR03QuLLOK
+         luFfmiAAag1J+P1yFTTIc7pcU6Xup7g9P+pX0MyV7wE9BBdYUliBoiwQCfKrhY39nXp+
+         aywraCGAPsD9g8bWj+Y8F2FxTBpatooTCOS1DzrzcBdeqHR+P2NVEGAnb16D4B8hlwzw
+         Nh0e90YTsFjKarTWyMC40HtgmDmUflK51LoLL2bZbt75npTXvoQwcU/o8Uoo/zGvhw7d
+         erLIa69YZUPx1stHoyrWr7Y4d5vuBmgRCgMX2DWz55KkT5r0N8Rp8k+wL0kh8AHkcymo
+         EcxQ==
 In-Reply-To: <6734e993a6184b487097463179c3dd75357047b2.1381324538.git.alexander-EP/B3+myoZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-parse-resume.sh already contains all the code from resume-genrules.sh.
-Also parse-resume.sh is executed before resume-genrules.sh, so there is
-no point to keep the latter.
+On 10/09/2013 04:39 AM, Alexander Tsoy wrote:
+> Check for other possible fs types. This fixes swap detection when using
+> TuxOnIce kernel.
+> 
+> Note that parse-resume.sh generate udev rules with support for
+> ID_FS_TYPE=suspend, but we do not include it here, because it is
+> libvolume_id thing and host_fs_types is populated using blkid.
+> ---
+>  modules.d/95resume/module-setup.sh | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
+> index b6d2c48..8b37616 100755
+> --- a/modules.d/95resume/module-setup.sh
+> +++ b/modules.d/95resume/module-setup.sh
+> @@ -7,7 +7,7 @@ check() {
+>      # No point trying to support resume, if no swap partition exist
+>      [[ $hostonly ]] || [[ $mount_needs ]] && {
+>          for fs in "${host_fs_types[@]}"; do
+> -            [[ $fs = swap ]] && return 0
+> +            [[ $fs =~ ^(swap|swsuspend|swsupend)$ ]] && return 0
+>          done
+>          return 255
+>      }
+> 
 
-This fixes the following error messages:
-dracut-initqueue: ln: failed to create symbolic link '/dev/resume': File exists
-dracut-initqueue: rm: cannot remove '/lib/dracut/hooks/initqueue/settled/resume.sh': No such file or directory
-dracut-initqueue: rm: cannot remove '/lib/dracut/hooks/initqueue/timeout/resume.sh': No such file or directory
----
- modules.d/95resume/module-setup.sh    |  1 -
- modules.d/95resume/resume-genrules.sh | 51 -----------------------------------
- 2 files changed, 52 deletions(-)
- delete mode 100755 modules.d/95resume/resume-genrules.sh
-
-diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
-index 8b37616..a172c27 100755
---- a/modules.d/95resume/module-setup.sh
-+++ b/modules.d/95resume/module-setup.sh
-@@ -32,7 +32,6 @@ install() {
-         inst_hook cmdline 10 "$moddir/parse-resume.sh"
-     else
-         inst_script "$moddir/parse-resume.sh" /lib/dracut/parse-resume.sh
--        inst_hook pre-udev 30 "$moddir/resume-genrules.sh"
-     fi
- 
-     inst_script  "$moddir/resume.sh" /lib/dracut/resume.sh
-diff --git a/modules.d/95resume/resume-genrules.sh b/modules.d/95resume/resume-genrules.sh
-deleted file mode 100755
-index c542c71..0000000
---- a/modules.d/95resume/resume-genrules.sh
-+++ /dev/null
-@@ -1,51 +0,0 @@
--#!/bin/sh
--# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
--# ex: ts=8 sw=4 sts=4 et filetype=sh
--
--case "$splash" in
--    quiet )
--        a_splash="-P splash=y"
--    ;;
--    * )
--        a_splash="-P splash=n"
--    ;;
--esac
--
--if [ -n "$resume" ]; then
--    {
--        printf "KERNEL==\"%s\", ACTION==\"add|change\", SYMLINK+=\"/dev/resume\"\n" \
--            ${resume#/dev/};
--        printf "SYMLINK==\"%s\", ACTION==\"add|change\", SYMLINK+=\"/dev/resume\"\n" \
--            ${resume#/dev/};
--    } >> /etc/udev/rules.d/99-resume-link.rules
--
--    {
--        if [ -x /usr/sbin/resume ]; then
--            printf "KERNEL==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/sbin/initqueue --finished --unique --name 00resume /usr/sbin/resume %s \'%s\'\"\n" \
--                ${resume#/dev/} "$a_splash" "$resume";
--            printf "SYMLINK==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/sbin/initqueue --finished --unique --name 00resume /usr/sbin/resume %s \'%s\'\"\n" \
--                ${resume#/dev/} "$a_splash" "$resume";
--        fi
--        printf "KERNEL==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %%M:%%m > /sys/power/resume\"\n" \
--            ${resume#/dev/};
--        printf "SYMLINK==\"%s\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %%M:%%m  > /sys/power/resume\"\n" \
--            ${resume#/dev/};
--    } >> /etc/udev/rules.d/99-resume.rules
--
--    printf '[ -e "%s" ] && { ln -s "%s" /dev/resume; rm "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
--        "$resume" "$resume" "$hookdir" >> $hookdir/initqueue/settled/resume.sh
--
--    printf 'warn "Cancelling resume operation. Device not found."; cancel_wait_for_dev /dev/resume; rm "$job" "%s/initqueue/settled/resume.sh";' \
--        "$hookdir" >> $hookdir/initqueue/timeout/resume.sh
--
--    wait_for_dev "/dev/resume"
--
--elif ! getarg noresume; then
--    {
--        if [ -x /usr/sbin/resume ]; then
--            printf "SUBSYSTEM==\"block\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\", RUN+=\"/sbin/initqueue --finished --unique --name 00resume /usr/sbin/resume %s \$tempnode\"\n" "$a_splash"
--        fi
--        echo "SUBSYSTEM==\"block\", ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\"," \
--            " RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %M:%m > /sys/power/resume\"";
--    } >> /etc/udev/rules.d/99-resume.rules
--fi
--- 
-1.8.1.5
+Thanks! Pushed both
