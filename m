@@ -1,122 +1,36 @@
-From: P J P <ppandit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [Patch] to add support for lzop(1), lz4(1) & INITRD_COMPRESS
-Date: Fri, 11 Oct 2013 22:15:41 +0530 (IST)
-Message-ID: <alpine.LFD.2.03.1310112043070.4392@erqung.pbz>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Patch] to add support for lzop(1), lz4(1) & INITRD_COMPRESS
+Date: Mon, 14 Oct 2013 09:39:16 +0200
+Message-ID: <525B9FA4.3020707@redhat.com>
+References: <alpine.LFD.2.03.1310112043070.4392@erqung.pbz>
 Mime-Version: 1.0
-Content-Type: MULTIPART/MIXED; BOUNDARY="0-1121786043-1381505271=:4392"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-ID: <alpine.LFD.2.03.1310112208450.4392-L4k/hFI9D5Ym7TDOsKvhyg@public.gmane.org>
+In-Reply-To: <alpine.LFD.2.03.1310112043070.4392-L4k/hFI9D5Ym7TDOsKvhyg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: P J P <ppandit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+On 10/11/2013 06:45 PM, P J P wrote:
+>   Hello,
+> 
+> Attached herein is a patch for the dracut(8) tool. It adds support for the
+> lzop(1) & lz4(1) compression algorithms for creating initramfs images. Both
+> algorithms are supported by the Linux kernel.
+> 
+> Linux kernel also exports user's choice of initramfs compression algorithm to a
+> shell environment variable: INITRD_COMPRESS.
+> 
+>  -> http://www.spinics.net/lists/mm-commits/msg100054.html
+> 
+> The attached patch recognises this variable, but sets it at lower precedence
+> than the command line options. Ie. dracut(8) command line options --gzip,
+> --bzip2 etc. would override the compression algorithm defined by the
+> $INITRD_COMPRESS environment variable.
+> 
+> Could someone please review this patch?
+> 
+> Thank you.
 
---0-1121786043-1381505271=:4392
-Content-Type: TEXT/PLAIN; CHARSET=US-ASCII; format=flowed
-Content-ID: <alpine.LFD.2.03.1310112208451.4392-L4k/hFI9D5Ym7TDOsKvhyg@public.gmane.org>
-
-   Hello,
-
-Attached herein is a patch for the dracut(8) tool. It adds support for the 
-lzop(1) & lz4(1) compression algorithms for creating initramfs images. Both 
-algorithms are supported by the Linux kernel.
-
-Linux kernel also exports user's choice of initramfs compression algorithm to 
-a shell environment variable: INITRD_COMPRESS.
-
-  -> http://www.spinics.net/lists/mm-commits/msg100054.html
-
-The attached patch recognises this variable, but sets it at lower precedence 
-than the command line options. Ie. dracut(8) command line options --gzip, 
---bzip2 etc. would override the compression algorithm defined by the 
-$INITRD_COMPRESS environment variable.
-
-Could someone please review this patch?
-
-Thank you.
---
-Prasad J Pandit / Red Hat Security Response Team
---0-1121786043-1381505271=:4392
-Content-Type: TEXT/PLAIN; CHARSET=US-ASCII; NAME=0001-Add-lzo-lz4-compression-and-read-INITRD_COMPRESS.patch
-Content-Transfer-Encoding: BASE64
-Content-ID: <alpine.LFD.2.03.1310112057510.4392-L4k/hFI9D5Ym7TDOsKvhyg@public.gmane.org>
-Content-Description: 
-Content-Disposition: ATTACHMENT; FILENAME=0001-Add-lzo-lz4-compression-and-read-INITRD_COMPRESS.patch
-
-RnJvbSA3ZTRjYjljNTQ0MGMzN2IzZDY2YzgxNDRlODg0ZDAwNWQ5NmY0OWE1
-IE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQ0KRnJvbTogUCBKIFAgPHBwYW5k
-aXRAcmVkaGF0LmNvbT4NCkRhdGU6IEZyaSwgMTEgT2N0IDIwMTMgMTk6MjY6
-NTEgKzA1MzANClN1YmplY3Q6IEFkZCBsem8sIGx6NCBjb21wcmVzc2lvbiBh
-bmQgcmVhZCBJTklUUkRfQ09NUFJFU1MNCg0KVGhpcyBwYXRjaCBhZGRzIHN1
-cHBvcnQgZm9yIGx6b3AoMSkgJiBsejQoMSkgY29tcHJlc3Npb24NCmFsZ29y
-aXRobXMgdG8gY29tcHJlc3MgaW5pcmFtZnMgaW1hZ2UgZmlsZS4gQm90aCBh
-cmUgc3VwcG9ydGVkDQpieSB0aGUgTGludXgga2VybmVsLg0KDQpMaW51eCBr
-ZXJuZWwgZXhwb3J0cyB1c2VyJ3MgY2hvaWNlIG9mIGluaXRyYW1mcyBjb21w
-cmVzc2lvbg0KYWxnb3JpdGhtIGFzIGEgc2hlbGwgZW52aXJvbm1lbnQgdmFy
-aWFibGU6IElOSVRSRF9DT01QUkVTUy4NClRoaXMgcGF0Y2ggYWRkcyBzdXBw
-b3J0IHRvIHJlYWQgdGhpcyB2YXJpYWJsZSBhbmQgZHVseSBjb21wcmVzcw0K
-dGhlIGluaXRyYW1mcyBpbWFnZSBmaWxlLg0KDQpFbnZpcm9ubWVudCB2YXJp
-YWJsZSBJTklUUkRfQ09NUFJFU1MgaGFzIGxlc3MgcHJlY2VkZW5jZSB0aGFu
-IHRoZQ0KY29tbWFuZCBsaW5lIG9wdGlvbnMgLS1nemlwLCBldGMuIEllLiBj
-b21tYW5kIGxpbmUgb3B0aW9ucyBjb3VsZA0Kb3ZlcnJpZGUgdGhlIGNvbXBy
-ZXNzaW9uIGFsZ29yaXRobSBkZWZpbmVkIGJ5ICRJTklUUkRfQ09NUFJFU1Mu
-DQoNClNpZ25lZC1vZmYtYnk6IFAgSiBQIDxwcGFuZGl0QHJlZGhhdC5jb20+
-DQoNCmRpZmYgLS1naXQgYS9kcmFjdXQuc2ggYi9kcmFjdXQuc2gNCmluZGV4
-IGQ5NTMzZGQuLjE3M2EyNTkgMTAwNzU1DQotLS0gYS9kcmFjdXQuc2gNCisr
-KyBiL2RyYWN1dC5zaA0KQEAgLTE2NSw2ICsxNjUsMTIgQEAgQ3JlYXRlcyBp
-bml0aWFsIHJhbWRpc2sgaW1hZ2VzIGZvciBwcmVsb2FkaW5nIG1vZHVsZXMN
-CiAgIC0teHogICAgICAgICAgICAgICAgICBDb21wcmVzcyB0aGUgZ2VuZXJh
-dGVkIGluaXRyYW1mcyB1c2luZyB4ei4NCiAgICAgICAgICAgICAgICAgICAg
-ICAgICAgTWFrZSBzdXJlIHRoYXQgeW91ciBrZXJuZWwgaGFzIHh6IHN1cHBv
-cnQgY29tcGlsZWQNCiAgICAgICAgICAgICAgICAgICAgICAgICAgaW4sIG90
-aGVyd2lzZSB5b3Ugd2lsbCBub3QgYmUgYWJsZSB0byBib290Lg0KKyAgLS1s
-em8gICAgICAgICAgICAgICAgICBDb21wcmVzcyB0aGUgZ2VuZXJhdGVkIGlu
-aXRyYW1mcyB1c2luZyBsem9wLg0KKyAgICAgICAgICAgICAgICAgICAgICAg
-ICBNYWtlIHN1cmUgdGhhdCB5b3VyIGtlcm5lbCBoYXMgbHpvIHN1cHBvcnQg
-Y29tcGlsZWQNCisgICAgICAgICAgICAgICAgICAgICAgICAgaW4sIG90aGVy
-d2lzZSB5b3Ugd2lsbCBub3QgYmUgYWJsZSB0byBib290Lg0KKyAgLS1sejQg
-ICAgICAgICAgICAgICAgICBDb21wcmVzcyB0aGUgZ2VuZXJhdGVkIGluaXRy
-YW1mcyB1c2luZyBsejQuDQorICAgICAgICAgICAgICAgICAgICAgICAgIE1h
-a2Ugc3VyZSB0aGF0IHlvdXIga2VybmVsIGhhcyBsejQgc3VwcG9ydCBjb21w
-aWxlZA0KKyAgICAgICAgICAgICAgICAgICAgICAgICBpbiwgb3RoZXJ3aXNl
-IHlvdSB3aWxsIG5vdCBiZSBhYmxlIHRvIGJvb3QuDQogICAtLWNvbXByZXNz
-IFtDT01QUkVTU0lPTl0gQ29tcHJlc3MgdGhlIGdlbmVyYXRlZCBpbml0cmFt
-ZnMgd2l0aCB0aGUNCiAgICAgICAgICAgICAgICAgICAgICAgICAgcGFzc2Vk
-IGNvbXByZXNzaW9uIHByb2dyYW0uICBNYWtlIHN1cmUgeW91ciBrZXJuZWwN
-CiAgICAgICAgICAgICAgICAgICAgICAgICAga25vd3MgaG93IHRvIGRlY29t
-cHJlc3MgdGhlIGdlbmVyYXRlZCBpbml0cmFtZnMsDQpAQCAtMzQyLDYgKzM0
-OCw4IEBAIFRFTVA9JCh1bnNldCBQT1NJWExZX0NPUlJFQ1Q7IGdldG9wdCBc
-DQogICAgIC0tbG9uZyBiemlwMiBcDQogICAgIC0tbG9uZyBsem1hIFwNCiAg
-ICAgLS1sb25nIHh6IFwNCisgICAgLS1sb25nIGx6byBcDQorICAgIC0tbG9u
-ZyBsejQgXA0KICAgICAtLWxvbmcgbm8tY29tcHJlc3MgXA0KICAgICAtLWxv
-bmcgZ3ppcCBcDQogICAgIC0tbG9uZyBsaXN0LW1vZHVsZXMgXA0KQEAgLTQz
-MCw2ICs0MzgsOCBAQCB3aGlsZSA6OyBkbw0KICAgICAgICAgLS1iemlwMikg
-ICAgICAgY29tcHJlc3NfbD0iYnppcDIiOzsNCiAgICAgICAgIC0tbHptYSkg
-ICAgICAgIGNvbXByZXNzX2w9Imx6bWEiOzsNCiAgICAgICAgIC0teHopICAg
-ICAgICAgIGNvbXByZXNzX2w9Inh6Ijs7DQorICAgICAgICAtLWx6bykgICAg
-ICAgICBjb21wcmVzc19sPSJsem8iOzsNCisgICAgICAgIC0tbHo0KSAgICAg
-ICAgIGNvbXByZXNzX2w9Imx6NCI7Ow0KICAgICAgICAgLS1uby1jb21wcmVz
-cykgX25vX2NvbXByZXNzX2w9ImNhdCI7Ow0KICAgICAgICAgLS1nemlwKSAg
-ICAgICAgY29tcHJlc3NfbD0iZ3ppcCI7Ow0KICAgICAgICAgLS1saXN0LW1v
-ZHVsZXMpIGRvX2xpc3Q9InllcyI7Ow0KQEAgLTY3Myw2ICs2ODMsNyBAQCBz
-dGRsb2dsdmw9JCgoc3RkbG9nbHZsICsgdmVyYm9zaXR5X21vZF9sKSkNCiBb
-WyAkZndfZGlyIF1dIHx8IGZ3X2Rpcj0iL2xpYi9maXJtd2FyZS91cGRhdGVz
-IC9saWIvZmlybXdhcmUiDQogW1sgJHRtcGRpcl9sIF1dICYmIHRtcGRpcj0i
-JHRtcGRpcl9sIg0KIFtbICR0bXBkaXIgXV0gfHwgdG1wZGlyPS92YXIvdG1w
-DQorW1sgJElOSVRSRF9DT01QUkVTUyBdXSAmJiBjb21wcmVzcz0kSU5JVFJE
-X0NPTVBSRVNTDQogW1sgJGNvbXByZXNzX2wgXV0gJiYgY29tcHJlc3M9JGNv
-bXByZXNzX2wNCiBbWyAkc2hvd19tb2R1bGVzX2wgXV0gJiYgc2hvd19tb2R1
-bGVzPSRzaG93X21vZHVsZXNfbA0KIFtbICRub2ZzY2tzX2wgXV0gJiYgbm9m
-c2Nrcz0ieWVzIg0KQEAgLTY4OSw2ICs3MDAsOCBAQCBjYXNlICRjb21wcmVz
-cyBpbg0KICAgICBsem1hKSAgY29tcHJlc3M9Imx6bWEgLTkiOzsNCiAgICAg
-eHopICAgIGNvbXByZXNzPSJ4eiAtLWNoZWNrPWNyYzMyIC0tbHptYTI9ZGlj
-dD0xTWlCIjs7DQogICAgIGd6aXApICBjb21wcmVzcz0iZ3ppcCAtOSI7IGNv
-bW1hbmQgLXYgcGlneiA+IC9kZXYvbnVsbCAyPiYxICYmIGNvbXByZXNzPSJw
-aWd6IC05Ijs7DQorICAgIGx6bykgICBjb21wcmVzcz0ibHpvcCAtOSI7Ow0K
-KyAgICBsejQpICAgY29tcHJlc3M9Imx6NCAtOSI7Ow0KIGVzYWMNCiBpZiBb
-WyAkX25vX2NvbXByZXNzX2wgPSAiY2F0IiBdXTsgdGhlbg0KICAgICBjb21w
-cmVzcz0iY2F0Ig0KLS0gDQoxLjguMy4xDQoNCg==
-
---0-1121786043-1381505271=:4392--
+Thanks! Applied, added documentation to dracut.8.asc and pushed
