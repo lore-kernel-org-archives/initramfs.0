@@ -1,44 +1,73 @@
-From: "Nathanael D. Noblet" <nathanael-sGhsi8tFlmY@public.gmane.org>
-Subject: Mandos support in Dracut
-Date: Tue, 29 Oct 2013 17:03:07 -0600
-Message-ID: <52703EAB.4080102@gnat.ca>
+From: Harald Hoyer <harald@redhat.com>
+Subject: Re: [PATCH] build: lookup for the "mount" binary
+Date: Thu, 31 Oct 2013 11:43:54 +0100
+Message-ID: <5272346A.9040300@redhat.com>
+References: <1383156754-30935-1-git-send-email-crrodriguez@opensuse.org>	<CAG-2HqUcQy8DK_W5w974+cWAKFc8p0fe7rimy0FEqDMZwW0sXg@mail.gmail.com>
+	<52714F7A.7070600@opensuse.org> <52715138.7030001@gmail.com>
+	<52716B30.6080204@opensuse.org>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <systemd-devel-bounces@lists.freedesktop.org>
+In-Reply-To: <52716B30.6080204@opensuse.org>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Sender: systemd-devel-bounces@lists.freedesktop.org
+Errors-To: systemd-devel-bounces@lists.freedesktop.org
+To: =?UTF-8?B?Q3Jpc3RpYW4gUm9kcsOtZ3Vleg==?= <crrodriguez@opensuse.org>
+Cc: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, systemd-devel@lists.freedesktop.org
 
-Hello,
-
-   So I've spent about two days on this and I think it may be over my 
-head. I'm trying to add mandos to both EPEL and Fedora systems.
-
-   The project provides a client that sets up a TLS connection to a 
-server and receives its encryption keys over that connection and in a 
-pgp encrypted message. This allows for unattended servers to reboot and 
-have an encrypted root fs.
-
-   Unfortunately I'm totally lost, the upstream project is looking into 
-adding support but I don't know how long that will take. I don't mind 
-doing some of the work however I'm so lost that its hard to know where 
-to go, what to do.
-
-   I'm wondering if there is someone who wants to mentor me on what 
-needs to happen. I somewhat get the ask-password system. I've taken the 
-ask-password agent code from systemd and modified it to call the mandos 
-client. I've got little idea on how to compile it to test it though. I'm 
-also very much confused as to how I can say that the network will have 
-to be up before it tries to get the key for decryption.
-
-   The project itself is part of debian but their initsystem *and* 
-crypttab are sufficiently different that there wasn't much to learn by 
-how they go about doing it.
-
-   I would really appreciate any pointers/help possible. I have many 
-questions and few answers...
-
--- 
-Nathanael d. Noblet
-t 403.875.4613
+T24gMTAvMzAvMjAxMyAwOToyNSBQTSwgQ3Jpc3RpYW4gUm9kcsOtZ3VleiB3cm90ZToKPiBFbCAz
+MC8xMC8xMyAxNTozNCwgSGFyYWxkIEhveWVyIGVzY3JpYmnDszoKPj4gT24gMTAvMzAvMjAxMyAw
+NzoyNyBQTSwgQ3Jpc3RpYW4gUm9kcsOtZ3VleiB3cm90ZToKPj4+IEVsIG1pw6kgMzAgb2N0IDIw
+MTMgMTU6MTg6NDggQ0xTVCwgVG9tIEd1bmRlcnNlbiBlc2NyaWJpw7M6Cj4+Pj4gT24gV2VkLCBP
+Y3QgMzAsIDIwMTMgYXQgNzoxMiBQTSwgQ3Jpc3RpYW4gUm9kcsOtZ3Vlego+Pj4+IDxjcnJvZHJp
+Z3VlekBvcGVuc3VzZS5vcmc+IHdyb3RlOgo+Pj4+PiBSZWFsIGV4ZWN1dGFibGUgbWlnaHQgYmUg
+aW4gL3VzciBhbmQgbm90IGluIC9iaW4KPj4+Pgo+Pj4+IEknbSBub3QgYWdhaW5zdCB0aGUgcGF0
+Y2gsIGJ1dCB0aGUganVzdGlmaWNhdGlvbiBzZWVtcyBsYWNraW5nLi4uIERvZXMKPj4+PiBhbnlv
+bmUgYWN0dWFsbHkgZG8gdGhpcz8gSS5lLiwgaGF2ZSBhIG1vdW50IHRoYXQgaXMgbm90IHN5bWxp
+bmtlZCB0bwo+Pj4+IGJ5IC9iaW4vbW91bnQ/Cj4+Pgo+Pj4gSSBhbSBub3QgYXdhcmUgb2YgYW55
+b25lIG5vdCBoYXZpbmcgYSBzeW1saW5rIHRvIC9iaW4vbW91bnQuLiBob3dldmVyLAo+Pj4gd2hl
+biBjcmVhdGluZyBhbiBpbml0cmQgd2l0aCBkcmFjdXQgdGhlIHN5bWxpbmsgaXMgbm90IGluY2x1
+ZGVkIChvbmx5Cj4+PiB0aGUgcmVhbCBiaW5hcnkgaXMgYXQgL3Vzci9iaW4vbW91bnQpIGFuZCBt
+b3VudGluZyBzdHVmZiBicmVha3MuCj4+Pgo+Pj4gSXQgaXMgZWl0aGVyIHRoaXMgcGF0Y2ggb3Ig
+SSBzaG91bGQgc2VuZCBhIHBhdGNoIHRvIGRyYWN1dCBpbnN0ZWFkIDotKQo+Pj4KPj4+IEluIGFu
+eSBjYXNlLCBmcm9tIG15IHBlcnNwZWN0aXZlIHRoaXMgaXMgdGhlIHJpZ2h0IHRoaW5nIHRvIGRv
+IGFueXdheS4KPj4+Cj4+Cj4+IENhbiB5b3UgcHJvdmlkZSBtZSB0aGUgb3V0cHV0IG9mICJkcmFj
+dXQgLS1kZWJ1ZyAtZiB0ZXN0LmltZyIsIHNvIEkgY2FuIHNlZSB3aGF0Cj4+IGdvZXMgd3Jvbmc/
+Cj4+Cj4+IE5vcm1hbGx5IGRyYWN1dCBhbHNvIGluc3RhbGxzIHRoZSBzeW1saW5rLgo+Pgo+IAo+
+IEhlcmUgaXMgdGhlIGRlYnVnIGxvZyBhdHRhY2hlZCwgdGhpcyBpcyBkcmFjdXQgZ2l0IEhFQUQu
+Cj4gCj4gVGhlIHJlc3VsdGluZyBpbml0cmQgZHJvcHMgeW91IGludG8gdGhlIGVtZXJnZW5jeSBz
+aGVsbCBiZWNhdXNlIHN5c3RlbWQgaXMKPiB1bmFibGUgdG8gZmluZCAvYmluL21vdW50IHRvIG1v
+dW50IC9zeXNyb290Lgo+IAo+IFdvcmthcm91bmQgdG8gY29udGludWUgYm9vdCBpcyB0byBjcmVh
+dGUgdGhlIHN5bWxpbmsgYW5kIGV4aXQgb3IgYSBhZGRpbmcKPiBiYW5kLWFpZCBoYWNrIHRvCj4g
+aHR0cDovL2dpdC5rZXJuZWwub3JnL2NnaXQvYm9vdC9kcmFjdXQvZHJhY3V0LmdpdC90cmVlL21v
+ZHVsZXMuZC85OWZzLWxpYi9tb2R1bGUtc2V0dXAuc2gKPiBqdXN0IGJlZm9yZSBpbnN0X211bHRp
+cGxlIC1vICRfaGVscGVycyBmc2NrIHRvIGZvcmNlIGluc3RhbGxhdGlvbiBvZiBtb3VudCBhcwo+
+IC9iaW4vbW91bnQgLCBjbGVhcmx5IG5vdCB0aGUgcmlnaHQgdGhpbmcgdG8gZG8gOy0pCj4gCgpk
+cmFjdXQtaW5zdGFsbDogSGFuZGxlICdtb3VudCcKZHJhY3V0LWluc3RhbGw6IFBBVEg9L3Vzci9z
+YmluOi9zYmluOi91c3IvYmluOi9iaW4KZHJhY3V0LWluc3RhbGw6IHN0YXQoL3Vzci9zYmluL21v
+dW50KSAhPSAwCmRyYWN1dC1pbnN0YWxsOiBzdGF0KC9zYmluL21vdW50KSAhPSAwCmRyYWN1dC1p
+bnN0YWxsOiBmaW5kX2JpbmFyeShtb3VudCkgPT0gL3Vzci9iaW4vbW91bnQKZHJhY3V0LWluc3Rh
+bGw6IGRyYWN1dF9pbnN0YWxsICcvdXNyL2Jpbi9tb3VudCcKZHJhY3V0LWluc3RhbGw6IGRyYWN1
+dF9pbnN0YWxsKCcvdXNyL2Jpbi9tb3VudCcsICcvdXNyL2Jpbi9tb3VudCcpCmRyYWN1dC1pbnN0
+YWxsOiBkcmFjdXRfaW5zdGFsbCByZXQgPSAwCmRyYWN1dC1pbnN0YWxsOiBjcCAnL3Vzci9iaW4v
+bW91bnQnICcvdmFyL3RtcC9pbml0cmFtZnMucFJKMlpML3Vzci9iaW4vbW91bnQnCmRyYWN1dC1p
+bnN0YWxsOiBkcmFjdXRfaW5zdGFsbCByZXQgPSAwCmRyYWN1dC1pbnN0YWxsOiBkcmFjdXRfaW5z
+dGFsbCAnL3Vzci9iaW4vbW91bnQnIE9LCgoKU28sIHRoZSBQQVRIIGRyYWN1dCB1c2VzIGlzIFBB
+VEg9L3Vzci9zYmluOi9zYmluOi91c3IvYmluOi9iaW4uCmRyYWN1dC1pbnN0YWxsIGZpbmRzIGEg
+cmVhbCBtb3VudCBhdCAvdXNyL2Jpbi9tb3VudC4KClNvLCB5b3UgYXJlIHNheWluZywgdGhhdCB5
+b3UgaGF2ZSBhIHN5bWJvbGljIGxpbmsgcG9pbnRpbmc6CgovYmluL21vdW50IC0+IC91c3IvYmlu
+L21vdW50Cgo/PwoKT3RoZXJ3aXNlIGRyYWN1dCB3b3VsZCBoYXZlIGluc3RhbGxlZCB0aGUgc3lt
+Ym9saWMgbGluayBhbmQgdGhlIGZpbGUgaXQgcG9pbnRzIHRvLgoKV2hhdCB3ZSBtaWdodCBjYW4g
+ZG8sIGlzIHNlYXJjaCBfYWxsXyBjb21wb25lbnRzIG9mIFBBVEggZm9yIHRoZSBiaW5hcmllcyBh
+bmQKaW5zdGFsbCBldmVyeW9uZSBvZiB0aGVtLgpfX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fXwpzeXN0ZW1kLWRldmVsIG1haWxpbmcgbGlzdApzeXN0ZW1kLWRl
+dmVsQGxpc3RzLmZyZWVkZXNrdG9wLm9yZwpodHRwOi8vbGlzdHMuZnJlZWRlc2t0b3Aub3JnL21h
+aWxtYW4vbGlzdGluZm8vc3lzdGVtZC1kZXZlbAo=
