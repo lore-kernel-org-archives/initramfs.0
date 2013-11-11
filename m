@@ -1,89 +1,74 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH] dracut-functions.sh: Avoid loading unnecessary 32-bit
- libraries for 64-bit initrds
-Date: Tue, 05 Nov 2013 11:19:40 +0000
-Message-ID: <5278D44C.1060709@colin.guthr.ie>
-References: <1383391590-437-1-git-send-email-colin@mageia.org> <20131105015309.1a6aa99b@home.puleglot>
+From: Dominic Gross <domgross-Mmb7MZpHnFY@public.gmane.org>
+Subject: random iscsi_initiatorname
+Date: Mon, 11 Nov 2013 19:18:14 +0100
+Message-ID: <52811F66.7040009@gmx.de>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20131105015309.1a6aa99b-gl4+DzqHFJLpx9ONITL1FA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-'Twas brillig, and Alexander Tsoy at 04/11/13 21:53 did gyre and gimble=
-:
-> =D0=92 Sat,  2 Nov 2013 11:26:30 +0000
-> Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org> =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
->=20
->> Due to the 'inst_libdir_file "libnss_files*"' in the udev-rules modu=
-le
->> this caues the /usr/lib/libnss_files-2.18.so* to be included. This i=
-s
->> a 32-bit library and pulls in a 32-bit version of glibc also even on=
- a
->> 64-bit system.
->>
->> This is due to the fact that ldconfig -pN will print [/usr]/lib path=
-s
->> from the cache as well as [/usr]/lib64. As we handle these paths
->> specifically we should ignore these results from the cache.
->>
->> Also there was a missing space when appending the ldconfig paths
->> onto our list meaning the last builtin and first ldconfig path
->> were unusable.
->> ---
->>  dracut-functions.sh | 3 ++-
->>  1 file changed, 2 insertions(+), 1 deletion(-)
->>
->> diff --git a/dracut-functions.sh b/dracut-functions.sh
->> index 2e6e845..1355aca 100755
->> --- a/dracut-functions.sh
->> +++ b/dracut-functions.sh
->> @@ -65,6 +65,7 @@ ldconfig_paths()
->>              printf "%s\n" ${d%/*};
->>          done
->>      ); do
->> +        [[ "$i" =3D "/lib" || "$i" =3D "/usr/lib" || "$i" =3D "/lib=
-64" ||
->> "$i" =3D "/usr/lib64" ]] && continue a["$i"]=3D1;
->=20
-> "/lib32" and "/usr/lib32" should be also excluded. In Gentoo by defau=
-lt
-> we have 32-bit binaries in lib32 and lib is a symlink to lib64.
+Hello,
 
-Looking through the dracut code it doesn't seem to specially handled
-[/usr]/lib32 at all (unlike the special handling for [/usr]/lib64).
+I am currently building a test setup with pxe diskless clients which use
+an iscsi root device and came across a problem with the
+iscsi-iinitiatorname used by dracut. Specifially, if iscsi-initiator is
+not set manually the iscsiroot script calls iscsi-iname to get a valid
+iscsi name (cf. rfc3720,rfc3721):
 
-So my logic here was that the folders are already "handled" via specifi=
-c
-code and thus should be ignored from the cached results.
-
-As lib32 is not already "handled", it shouldn't be ignored. However,
-that basically doesn't work in practice!
-
-I guess it would make make sense to add a second line after the above
-one to do the [/usr]/lib32 ignoring - I think keeping them separate
-makes sense (and with a separate commit message) as they are dealing
-with slightly different cases.
-
-Harald, are you OK to do something like that after pulling this one?
-
-Col
+    if [ -z $iscsi_initiator ]; then
+    # XXX is this correct?
+        iscsi_initiator=$(iscsi-iname)
 
 
+While iscsi-iname provides a valid iscsi name the result is random and
+consequently the iscsi name changes with each reboot, e.g. calling
+iscsi-iname results in:
 
---=20
+iqn.1994-05.com.redhat:e25068854d3a (fedora)
+iqn.2005-03.org.open-iscsi:ff1a0774235 (debian)
 
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
+where the last part is random. However, some iscsi targets such as LIO
+Linux SCSI Target require that the name of the iscsi initiator is in the
+ACL of the target, otherwise the initiator will be unable to connect:
 
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+https://groups.google.com/forum/#!topic/linux-iscsi-target-users/5G5WJ8TwUB8
+
+So imho a more predictable approach to generate the initiatorname is
+required, otherwise I am not sure how to use dracut with LIO iscsi.
+
+Furthermore, even without the issue of ACLs it seems sub optimal to use
+iscsi names which change with every reboot. One workaround would be to
+set the iscsi name manually but in some use cases (e.g. diskless clients
+with shared read only rootfs) setting the initiator name manually would
+either result all clients having the same initiator name or in a lot of
+maintenance overhead. So imho the preferred solution would be something
+along the lines suggested in the iscsi module:
+
+# XXX rfc3720 says 'SCSI Initiator Name: The iSCSI Initiator Name
+specifies
+# the worldwide unique name of the initiator.' Could we use hostname/ip
+# if missing?
+
+There are a couple of ways this may be implemented. Dracut could
+continue call iscsi-iname and replace the random part by something more
+predictable (e.g. fully qualified hostname, mac address). Or simply
+define the initiatorname completely independent of iscsi-iname, maybe
+via fqdn and mac address?
+
+I am currently using the following approach in iscsiroot.sh:
+
+iscsi_initiator=$(iscsi-iname)
+IFS=":"
+set -- $iscsi_initiator
+iscsi_initiator="$1:$(hostname -f)"
+unset IFS
+
+This works well, but of course only results in a globally unique iscsi
+name if a globally unique hostname is set via dhcp.
+
+Using the MAC Adress is a viable option but ties the ACL to a specific
+NIC and may have some pitfalls if there is more than one NIC.
+
