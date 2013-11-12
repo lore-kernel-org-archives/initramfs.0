@@ -1,74 +1,54 @@
-From: Dominic Gross <domgross-Mmb7MZpHnFY@public.gmane.org>
-Subject: random iscsi_initiatorname
-Date: Mon, 11 Nov 2013 19:18:14 +0100
-Message-ID: <52811F66.7040009@gmx.de>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 0/2] (dracut) hwdb needed in early boot for some keyboards
+Date: Tue, 12 Nov 2013 10:38:58 +0100
+Message-ID: <1384249140-20683-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-Hello,
+Hi,
 
-I am currently building a test setup with pxe diskless clients which use
-an iscsi root device and came across a problem with the
-iscsi-iinitiatorname used by dracut. Specifially, if iscsi-initiator is
-not set manually the iscsiroot script calls iscsi-iname to get a valid
-iscsi name (cf. rfc3720,rfc3721):
+In this bug report https://bugs.mageia.org/show_bug.cgi?id=11645 a user is
+unable to enter their encrypted root password via a wireless keyboard
+connected with a Logitech, Inc. Unifying Receiver.
 
-    if [ -z $iscsi_initiator ]; then
-    # XXX is this correct?
-        iscsi_initiator=$(iscsi-iname)
+This information has moved from a 95-keymap.rules in the olden days to the
+hwdb infrastructure (I think the 95-keymap.rules was upstream and not
+something we did downstream)
 
+In order to get this working I have to include the hwdb.bin generated from
+the 20-usb-vendor-model.hwdb file.
 
-While iscsi-iname provides a valid iscsi name the result is random and
-consequently the iscsi name changes with each reboot, e.g. calling
-iscsi-iname results in:
+The attached patch series adds this infrastructure to dracut, but it has the
+side effect of adding 1.5Mb to the initrd. The pre-processed hwdb file itself
+is around 1Mb. I suspect there is a lot of unneeded info in this file, so
+perhaps it can be split out into separate files and only include keyboard
+related bits in one of them?
 
-iqn.1994-05.com.redhat:e25068854d3a (fedora)
-iqn.2005-03.org.open-iscsi:ff1a0774235 (debian)
+There may also be other hwdb files needed for keyboards so please advise if
+others should be added by default to dracut (60-keyboard.hwdb seems a likely
+candidate)
 
-where the last part is random. However, some iscsi targets such as LIO
-Linux SCSI Target require that the name of the iscsi initiator is in the
-ACL of the target, otherwise the initiator will be unable to connect:
+If anyone has any other suggestions and also any idea how to make the hwdb.bin
+file any smaller for the initrd that would be great too.
 
-https://groups.google.com/forum/#!topic/linux-iscsi-target-users/5G5WJ8TwUB8
+Cheers
 
-So imho a more predictable approach to generate the initiatorname is
-required, otherwise I am not sure how to use dracut with LIO iscsi.
+Col
 
-Furthermore, even without the issue of ACLs it seems sub optimal to use
-iscsi names which change with every reboot. One workaround would be to
-set the iscsi name manually but in some use cases (e.g. diskless clients
-with shared read only rootfs) setting the initiator name manually would
-either result all clients having the same initiator name or in a lot of
-maintenance overhead. So imho the preferred solution would be something
-along the lines suggested in the iscsi module:
+Colin Guthrie (2):
+  Provide infrastructure to include udev hwdb files.
+  Include support for Logitec, Inc. Unifying Reveiver keyboard
 
-# XXX rfc3720 says 'SCSI Initiator Name: The iSCSI Initiator Name
-specifies
-# the worldwide unique name of the initiator.' Could we use hostname/ip
-# if missing?
+ dracut-functions.sh                    | 29 +++++++++++++++++++++++++++++
+ dracut.sh                              |  3 +++
+ modules.d/95udev-rules/module-setup.sh |  3 +++
+ 3 files changed, 35 insertions(+)
 
-There are a couple of ways this may be implemented. Dracut could
-continue call iscsi-iname and replace the random part by something more
-predictable (e.g. fully qualified hostname, mac address). Or simply
-define the initiatorname completely independent of iscsi-iname, maybe
-via fqdn and mac address?
-
-I am currently using the following approach in iscsiroot.sh:
-
-iscsi_initiator=$(iscsi-iname)
-IFS=":"
-set -- $iscsi_initiator
-iscsi_initiator="$1:$(hostname -f)"
-unset IFS
-
-This works well, but of course only results in a globally unique iscsi
-name if a globally unique hostname is set via dhcp.
-
-Using the MAC Adress is a viable option but ties the ACL to a specific
-NIC and may have some pitfalls if there is more than one NIC.
-
+-- 
+1.8.4.2
