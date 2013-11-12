@@ -1,78 +1,44 @@
-From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/2] Provide infrastructure to include udev hwdb files.
-Date: Tue, 12 Nov 2013 10:38:59 +0100
-Message-ID: <1384249140-20683-2-git-send-email-colin@mageia.org>
+From: Kay Sievers <kay@vrfy.org>
+Subject: Re: [PATCH 0/2] (dracut) hwdb needed in early boot
+	for some keyboards
+Date: Tue, 12 Nov 2013 11:28:47 +0100
+Message-ID: <CAPXgP13EujKcEgsc_1N-_VbsYOdOw2jLZHHaxiRWQv1tL1ECcA@mail.gmail.com>
 References: <1384249140-20683-1-git-send-email-colin@mageia.org>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1384249140-20683-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Return-path: <systemd-devel-bounces@lists.freedesktop.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=vrfy.org; s=google;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=V/L5x3AyLBDfqXZ5Ux4wdAY8eXMoszDV6LArPMUXvXA=;
+	b=ZaFi0hf6WQbmOw3ZQe63EjlqUSe1htxo3LZsfmJk40aMYMHEXU8i1Mg9IvFy+MYTnd
+	8VirCA3dXLTBZy0D18qDV5hOk/ui+BRtcDo+w/Vv1vmZkc/LKFNQOQ2qRrE3al8pHf+F
+	eA5AtBUaM8MjNLam3QXNXPI2ih+hv/2ye96rI=
+In-Reply-To: <1384249140-20683-1-git-send-email-colin@mageia.org>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+	<mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Sender: systemd-devel-bounces@lists.freedesktop.org
+Errors-To: systemd-devel-bounces@lists.freedesktop.org
+To: Colin Guthrie <colin@mageia.org>
+Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org
 
-This is needed to provide keyboard support for some models of
-keyboard which have now been converted over to the new format.
----
- dracut-functions.sh | 29 +++++++++++++++++++++++++++++
- dracut.sh           |  3 +++
- 2 files changed, 32 insertions(+)
+On Tue, Nov 12, 2013 at 10:38 AM, Colin Guthrie <colin@mageia.org> wrote:
+> In this bug report https://bugs.mageia.org/show_bug.cgi?id=11645 a user is
+> unable to enter their encrypted root password via a wireless keyboard
+> connected with a Logitech, Inc. Unifying Receiver.
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 2872516..6ca6444 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -926,6 +926,35 @@ prepare_udev_rules() {
-     done
- }
- 
-+# udev hwdb files always get installed in the same place, so
-+# create a function to install them to make life simpler.
-+inst_hwdb() {
-+    local _target=/etc/udev/hwdb.d _hwdb _found
-+
-+    #inst_dir "${udevdir}/hwdb.d"
-+    #inst_dir "$_target"
-+    for _hwdb in "$@"; do
-+        if [ "${_hwdb#/}" = "$_hwdb" ]; then
-+            for r in ${udevdir}/hwdb.d ${hostonly:+/etc/udev/hwdb.d}; do
-+                if [[ -e $r/$_hwdb ]]; then
-+                    _found="$r/$_hwdb"
-+                    inst_simple "$_found"
-+                fi
-+            done
-+        fi
-+        [[ $_found ]] || dinfo "Skipping udev hwdb: $_hwdb"
-+    done
-+}
-+
-+consolidate_hwdb() {
-+    if [[ -d "${initdir}/etc/udev/hwdb.d" || -d "${initdir}/${udevdir}/hwdb.d" ]]; then
-+        dinfo "*** Consolidating udev hwdb ***"
-+        udevadm hwdb --root="${initdir}" --update
-+        rm -rf "${initdir}/etc/udev/hwdb.d" "${initdir}/${udevdir}/hwdb.d"
-+    fi
-+}
-+
-+
- # install function specialized for hooks
- # $1 = type of hook, $2 = hook priority (lower runs first), $3 = hook
- # All hooks should be POSIX/SuS compliant, they will be sourced by init.
-diff --git a/dracut.sh b/dracut.sh
-index 03472ba..9711907 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -1370,6 +1370,9 @@ if [[ $acpi_override = yes ]] && [[ -d $acpi_table_dir ]]; then
- fi
- 
- rm -f -- "$outfile"
-+
-+consolidate_hwdb
-+
- dinfo "*** Creating image file ***"
- if [[ $create_early_cpio = yes ]]; then
-     # The microcode blob is _before_ the initramfs blob, not after
--- 
-1.8.4.2
+This sounds weird. Why exactly is this needed. The hwdb should be
+non-essential information only, and not be needed for basic operations
+or in the initrd.
+
+If the basics of the keyboard aren't working properly, it might need a
+kernel fix.
+
+Kay
