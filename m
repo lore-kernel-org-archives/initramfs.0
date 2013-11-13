@@ -1,54 +1,41 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH 0/2] (dracut) hwdb needed in early boot for some keyboards
-Date: Tue, 12 Nov 2013 11:42:29 +0100
-Message-ID: <52820615.6060503@colin.guthr.ie>
-References: <1384249140-20683-1-git-send-email-colin@mageia.org> <CAPXgP13EujKcEgsc_1N-_VbsYOdOw2jLZHHaxiRWQv1tL1ECcA@mail.gmail.com>
+From: "Alexander E. Patrakov" <patrakov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [systemd-devel] [PATCH 0/2] (dracut) hwdb needed in early boot
+ for some keyboards
+Date: Wed, 13 Nov 2013 11:29:21 +0600
+Message-ID: <52830E31.30107@gmail.com>
+References: <1384249140-20683-1-git-send-email-colin@mageia.org>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAPXgP13EujKcEgsc_1N-_VbsYOdOw2jLZHHaxiRWQv1tL1ECcA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=message-id:date:from:user-agent:mime-version:to:cc:subject
+         :references:in-reply-to:content-type:content-transfer-encoding;
+        bh=iyyijlbwiKFAkq01XtHhIQzraZy6R7MwNRSTcrYIVaA=;
+        b=hx31ey1ZKamMeIZkEXhQYttsHqvnZObcdy5zMjt7zeIjbIRc0ZWz4lAsYbEevEJ1YJ
+         jtjdUn8fht45ZhaJoNaEe9lNOKO/Um1cW35h7jw5AQ7jCxmJfM8cEEfwnUTG3KuNkXHe
+         M724juUxMPehzNbUMcfTJDx4zo7LOewbrPu3jA98/6T2AZEpLgdzaD8zNr62VCE+DNr7
+         8gHZCN1YbPpwtFcdkSNG+b521G3b25pnTv6iIJliTBchiNYcBevQc/NbOdkuAXbU7/wS
+         PcPjUyW2OnkFApuRT830tBYx33lxSk+0w4JDdGU3ijpDfK8diSoEB1aetrr5tvVSJXAO
+         +QpA==
+In-Reply-To: <1384249140-20683-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org
 
-'Twas brillig, and Kay Sievers at 12/11/13 11:28 did gyre and gimble:
-> On Tue, Nov 12, 2013 at 10:38 AM, Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org> wrote:
->> In this bug report https://bugs.mageia.org/show_bug.cgi?id=11645 a user is
->> unable to enter their encrypted root password via a wireless keyboard
->> connected with a Logitech, Inc. Unifying Receiver.
-> 
-> This sounds weird. Why exactly is this needed. The hwdb should be
-> non-essential information only, and not be needed for basic operations
-> or in the initrd.
-> 
-> If the basics of the keyboard aren't working properly, it might need a
-> kernel fix.
+Colin Guthrie wrote:
+> Hi,
+>
+> In this bug report https://bugs.mageia.org/show_bug.cgi?id=11645 a user is
+> unable to enter their encrypted root password via a wireless keyboard
+> connected with a Logitech, Inc. Unifying Receiver.
 
+Just in case, I do have the same model of wireless keyboard and will 
+validate the bug (for the LUKS-password case) later today on my laptop.
 
-Hmmm, OK I perhaps jumped the gun a bit on this one - lemme check with
-the user first then to see if there is something else I'm missing.
-
-Ultimately it seems that the usb hid module is not loaded in the initrd
-but works fine later on. I initially presumed that host driver was not
-included but it seems from feedback this is OK, but I'll probe deeper
-before bugging you guys again :)
-
-Cheers
-
-Col
-
+The keyboard does work on my desktop, but there's no initramfs there.
 
 -- 
-
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
-
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+Alexander E. Patrakov
