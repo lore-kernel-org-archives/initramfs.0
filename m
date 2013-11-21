@@ -1,32 +1,37 @@
-From: Michal Marek <mmarek-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH] deb-pkg: Inhibit initramfs builders if
-	CONFIG_BLK_DEV_INITRD is not set
-Date: Mon, 18 Nov 2013 15:09:20 +0100
-Message-ID: <20131118140920.GA31395@pobox.suse.cz>
-References: <1384484605.2771.13.camel@deadeye.wl.decadent.org.uk>
-Mime-Version: 1.0
+From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
+Subject: [PATCH] usrmount: always install
+Date: Thu, 21 Nov 2013 20:33:38 +0400
+Message-ID: <E1VjXM1-00015c-6l@secretive.ru>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1384484605.2771.13.camel-nDn/Rdv9kqW9Jme8/bJn5UCKIB8iOfG2tUK59QYPAWc@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
+	h=Message-Id:To:Subject:Date:From; bh=NHaQgxfbucTrWNSyqyrEIQYkoFg1wJQHFhmTW/ikUgQ=;
+	b=XN1eJoZQuyMA6IcmnDD7UtsGpGoihaxWcH6SV7TFjgIghQViwUFYpqq3hd8Ih1mxuea2922zqrj23quJsD4HU36cWBOOrAc9+VFLNH+S4254etzF1RDcy9DmDudnZphWr7soYKDHLKh/RnOhHqLvhP/fAJgFAVX/4L94uGjjkNA=;
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Cc: Petr Baudis <pasky-+ZI9xUNit7I@public.gmane.org>, linux-kbuild-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Lange <lange-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, Nov 15, 2013 at 03:03:25AM +0000, Ben Hutchings wrote:
-> The kernel postinst hook for initramfs-tools will build an initramfs
-> on installation unless $INITRD is set to 'No'.  make-kpkg generates a
-> postinst script that sets this variable appropriately, but we don't.
-> Set it based on CONFIG_BLK_DEV_INITRD.
-> 
-> This should also work with dracut when <http://bugs.debian.org/729622>
-> is fixed.
-> 
-> Signed-off-by: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-> ---
+/usr should be mounted by initramfs even if /sbin/init lives in /
+---
+ modules.d/98usrmount/module-setup.sh | 3 ---
+ 1 file changed, 3 deletions(-)
 
-Applied to kbuild.git#misc, thanks.
-
-Michal
+diff --git a/modules.d/98usrmount/module-setup.sh b/modules.d/98usrmount/module-setup.sh
+index d8a0ec2..31a6229 100755
+--- a/modules.d/98usrmount/module-setup.sh
++++ b/modules.d/98usrmount/module-setup.sh
+@@ -4,10 +4,7 @@
+ 
+ # called by dracut
+ check() {
+-    local _init
+     [[ $mount_needs ]] && return 1
+-    _init=$(readlink -f /sbin/init)
+-    [[ "$_init" == "${_init##/usr}" ]] && return 255
+     return 0
+ }
+ 
+-- 
+1.8.3.2
