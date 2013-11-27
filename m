@@ -1,42 +1,56 @@
-From: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] Add ahci_imx to the ARM specific disk drivers
-Date: Sat, 23 Nov 2013 19:16:12 +0100
-Message-ID: <1385230572-17588-1-git-send-email-kwizart@gmail.com>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Subject: [PATCH 00/10] SUSE S/390 integration
+Date: Wed, 27 Nov 2013 16:44:11 +0100
+Message-ID: <1385567061-13247-1-git-send-email-hare@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=from:to:cc:subject:date:message-id;
-        bh=9Bpzqq/HqtEDLU6oYZ1l9T8ch6wzbmr9k73hKE9ISqQ=;
-        b=jAUabc5W3ZgMmst/EEM3lMBUrr4GttphLPRBiS4kIQLjrO2UZZ8eoh7BnGnvjJQ/6j
-         tiog/jCPlHi4I5BeJ6ms98ZXV0NsnCznxQuWdiDr73L2EPnBOMHLRmKI669uwxZHL56u
-         MbH6iLbmGivlbnr8u6pPrkBnbgOJfDwK8jD/xwu8Amqx6/VAfCe0YECzeO0JuA3JqwfA
-         EbFU9Epy8ixMVOmtMCBSiTavZsKlj3e/tInze704L4bqizIlVs7EFi4ZAbfMpTk4lEMv
-         t4zDBQ2BcuLprsQ8NRwl4j9PsR8g2VFw52JHHq8rkg2bMJmdRgfD/BwU+iiKlhG3Qnqm
-         g8EA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
----
- modules.d/90kernel-modules/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Hi all,
 
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index d65e92b..e4ebe83 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -51,7 +51,7 @@ installkernel() {
-         if [[ "$(uname -p)" == arm* ]]; then
-             # arm specific modules
-             hostonly='' instmods sdhci_esdhc_imx mmci sdhci_tegra mvsdio omap omapdrm \
--                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform pata_imx sata_mv \
-+                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform ahci_imx pata_imx sata_mv \
-                 ehci-tegra mmc_block usb_storage
-         fi
- 
+SUSE is keeping the S/390 device configuration in udev rules,
+on rule per device.
+And it doesn't have the RH-specific configuration scripts (obviously).
+This patchset abstracts away the RH-specific configuration and
+adds modules to make dracut boot on SLES installations.
+
+Please apply.
+
+Hannes Reinecke (10):
+  95dasd: Install kernel modules only once
+  95dasd: Only install module if normalize_dasd_arg is present
+  95dasd_mod: make dasd_cio_free optional
+  95zfcp: Make installation optional
+  95znet: Make installation optional
+  Install /bin/mount
+  Fixup keymap setting for openSUSE
+  Check for plymouth lib directories
+  Add DASD configuration for SuSE
+  Add zfcp scripts for SUSE
+
+ dracut-functions.sh                    | 37 ++++++++++++++++++++++
+ modules.d/10i18n/module-setup.sh       |  3 ++
+ modules.d/50plymouth/module-setup.sh   | 17 ++++++++---
+ modules.d/95dasd/module-setup.sh       |  7 ++---
+ modules.d/95dasd_mod/module-setup.sh   |  3 +-
+ modules.d/95dasd_mod/parse-dasd-mod.sh |  4 ++-
+ modules.d/95dasd_rules/module-setup.sh | 27 ++++++++++++++++
+ modules.d/95dasd_rules/parse-dasd.sh   | 56 ++++++++++++++++++++++++++++++++++
+ modules.d/95zfcp/module-setup.sh       |  4 +--
+ modules.d/95zfcp_rules/module-setup.sh | 25 +++++++++++++++
+ modules.d/95zfcp_rules/parse-zfcp.sh   | 54 ++++++++++++++++++++++++++++++++
+ modules.d/95znet/module-setup.sh       |  1 +
+ modules.d/99fs-lib/module-setup.sh     |  1 +
+ 13 files changed, 224 insertions(+), 15 deletions(-)
+ create mode 100755 modules.d/95dasd_rules/module-setup.sh
+ create mode 100755 modules.d/95dasd_rules/parse-dasd.sh
+ create mode 100755 modules.d/95zfcp_rules/module-setup.sh
+ create mode 100755 modules.d/95zfcp_rules/parse-zfcp.sh
+
 -- 
-1.8.3.1
+1.8.1.4
