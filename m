@@ -1,7 +1,7 @@
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 05/10] 95znet: Make installation optional
-Date: Wed, 27 Nov 2013 16:44:16 +0100
-Message-ID: <1385567061-13247-6-git-send-email-hare@suse.de>
+Subject: [PATCH 07/10] Fixup keymap setting for openSUSE
+Date: Wed, 27 Nov 2013 16:44:18 +0100
+Message-ID: <1385567061-13247-8-git-send-email-hare@suse.de>
 References: <1385567061-13247-1-git-send-email-hare@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1385567061-13247-1-git-send-email-hare-l3A5Bk7waGM@public.gmane.org>
@@ -13,25 +13,26 @@ Content-Transfer-Encoding: 7bit
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-znet_cio_free is a RedHat-specific tool, so do not install this
-module on systems where the program is missing.
+openSUSE is using compressed keymaps.
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95znet/module-setup.sh | 1 +
- 1 file changed, 1 insertion(+)
+ modules.d/10i18n/module-setup.sh | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/modules.d/95znet/module-setup.sh b/modules.d/95znet/module-setup.sh
-index 4c211a9..5012b77 100755
---- a/modules.d/95znet/module-setup.sh
-+++ b/modules.d/95znet/module-setup.sh
-@@ -5,6 +5,7 @@
- # called by dracut
- check() {
-     arch=$(uname -m)
-+    [ -z /sbin/znet_cio_free ] || return 1
-     [ "$arch" = "s390" -o "$arch" = "s390x" ] || return 1
+diff --git a/modules.d/10i18n/module-setup.sh b/modules.d/10i18n/module-setup.sh
+index 0741c64..f07b148 100755
+--- a/modules.d/10i18n/module-setup.sh
++++ b/modules.d/10i18n/module-setup.sh
+@@ -161,6 +161,9 @@ install() {
+         # Gentoo user may have KEYMAP set to something like "-u pl2",
+         KEYMAP=${KEYMAP#-* }
  
-     return 0
++        # openSUSE user may have KEYMAP set to something like ".gz"
++        KEYMAP=${KEYMAP/.gz/}
++
+         # KEYTABLE is a bit special - it defines base keymap name and UNICODE
+         # determines whether non-UNICODE or UNICODE version is used
+ 
 -- 
 1.8.1.4
