@@ -1,119 +1,77 @@
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 10/10] Add zfcp scripts for SUSE
-Date: Wed, 27 Nov 2013 16:44:21 +0100
-Message-ID: <1385567061-13247-11-git-send-email-hare@suse.de>
-References: <1385567061-13247-1-git-send-email-hare@suse.de>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 03/10] 95dasd_mod: make dasd_cio_free optional
+Date: Thu, 28 Nov 2013 13:51:52 +0100
+Message-ID: <52973C68.8040504@redhat.com>
+References: <1385567061-13247-1-git-send-email-hare@suse.de> <1385567061-13247-4-git-send-email-hare@suse.de>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1385567061-13247-1-git-send-email-hare-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <1385567061-13247-4-git-send-email-hare-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+To: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-SuSE is storing the zfcp configuration in udev files, so we should
-be including these.
+On 11/27/2013 04:44 PM, Hannes Reinecke wrote:
+> dasd_cio_free is a RedHat-specific tool, so make it optional.
+> 
+> Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+> ---
+>  dracut-functions.sh                    | 9 +++++++++
+>  modules.d/95dasd_mod/module-setup.sh   | 3 ++-
+>  modules.d/95dasd_mod/parse-dasd-mod.sh | 4 +++-
+>  3 files changed, 14 insertions(+), 2 deletions(-)
+> 
+> diff --git a/dracut-functions.sh b/dracut-functions.sh
+> index 2872516..c2cf67a 100755
+> --- a/dracut-functions.sh
+> +++ b/dracut-functions.sh
+> @@ -741,6 +741,15 @@ inst_multiple() {
+>      return $ret
+>  }
+>  
+> +inst_multiple_optional() {
+> +    local ret
+> +        #dinfo "initdir=$initdir $DRACUT_INSTALL -l $@"
+> +    $DRACUT_INSTALL ${initdir:+-D "$initdir"} -o -a ${DRACUT_RESOLVE_DEPS:+-l}  ${DRACUT_FIPS_MODE:+-H} "$@"
+> +    ret=$?
+> +    (($ret != 0)) && derror $DRACUT_INSTALL ${initdir:+-D "$initdir"} -o -a ${DRACUT_RESOLVE_DEPS:+-l}  ${DRACUT_FIPS_MODE:+-H} "$@" || :
+> +    return $ret
+> +}
+> +
 
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
----
- modules.d/95zfcp_rules/module-setup.sh | 25 ++++++++++++++++
- modules.d/95zfcp_rules/parse-zfcp.sh   | 54 ++++++++++++++++++++++++++++++++++
- 2 files changed, 79 insertions(+)
- create mode 100755 modules.d/95zfcp_rules/module-setup.sh
- create mode 100755 modules.d/95zfcp_rules/parse-zfcp.sh
 
-diff --git a/modules.d/95zfcp_rules/module-setup.sh b/modules.d/95zfcp_rules/module-setup.sh
-new file mode 100755
-index 0000000..9a1ab20
---- /dev/null
-+++ b/modules.d/95zfcp_rules/module-setup.sh
-@@ -0,0 +1,25 @@
-+#!/bin/bash
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+# called by dracut
-+check() {
-+    local _arch=$(uname -m)
-+    [ -x /sbin/zfcp_disk_configure ] || return 1
-+    [ "$_arch" = "s390" -o "$_arch" = "s390x" ] || return 1
-+    return 0
-+}
-+
-+# called by dracut
-+depends() {
-+    return 0
-+}
-+
-+# called by dracut
-+install() {
-+    inst_multiple /usr/lib/udev/collect
-+    inst_hook cmdline 30 "$moddir/parse-zfcp.sh"
-+    if [[ $hostonly ]] ; then
-+        inst_rules_wildcard 51-zfcp-*.rules
-+    fi
-+}
-diff --git a/modules.d/95zfcp_rules/parse-zfcp.sh b/modules.d/95zfcp_rules/parse-zfcp.sh
-new file mode 100755
-index 0000000..94f2b49
---- /dev/null
-+++ b/modules.d/95zfcp_rules/parse-zfcp.sh
-@@ -0,0 +1,54 @@
-+#!/bin/sh
-+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
-+# ex: ts=8 sw=4 sts=4 et filetype=sh
-+
-+create_udev_rule() {
-+    local ccw=$1
-+    local _rule=/etc/udev/rules.d/51-zfcp-${ccw}.rules
-+
-+    local _cu_type _dev_type
-+    local _rule=/etc/udev/rules.d/51-zfcp-${ccw}.rules
-+
-+    if [ -e /sys/bus/ccw/devices/${ccw} ] ; then
-+        read _cu_type < /sys/bus/ccw/devices/${ccw}/cutype
-+        read _dev_type < /sys/bus/ccw/devices/${ccw}/devtype
-+    fi
-+    if [ "$_cu_type" != "1731/03" ] ; then
-+        return 0;
-+    fi
-+    if [ "$_dev_type" != "1732/03" ] && [ "$_dev_type" != "1732/04" ] ; then
-+        return 0;
-+    fi
-+
-+    [ -e ${_rule} ] && return 0
-+
-+    if [ ! -f "$_rule" ] ; then
-+        cat > $_rule <<EOF
-+ACTION=="add", SUBSYSTEM=="ccw", KERNEL=="$ccw", IMPORT{program}="collect $ccw %k ${ccw} zfcp"
-+ACTION=="add", SUBSYSTEM=="drivers", KERNEL=="zfcp", IMPORT{program}="collect $ccw %k ${ccw} zfcp"
-+ACTION=="add", ENV{COLLECT_$ccw}=="0", ATTR{[ccw/$ccw]online}="1"
-+EOF
-+    fi
-+    wwpn=${2%:*}
-+    lun=${2#*:}
-+    m=$(sed -n "/.*${wwpn}.*${lun}.*/p" $_rule)
-+    if [ -z "$m" ] ; then
-+        cat >> $_rule <<EOF
-+ACTION=="add", KERNEL=="rport-*", ATTR{port_name}=="$wwpn", SUBSYSTEMS=="ccw", KERNELS=="$ccw", ATTR{[ccw/$ccw]$wwpn/unit_add}="$lun"
-+EOF
-+    fi
-+}
-+
-+for zfcp_arg in $(getargs root=) $(getargs resume=); do
-+    (
-+        case $zfcp_arg in
-+            /dev/disk/by-path/ccw-*)
-+                ccw_arg=${zfcp_arg##*/}
-+                break;
-+        esac
-+        if [ -n "$ccw_arg" ] ; then
-+            IFS="-"
-+            set -- $ccw_arg
-+            create_udev_rule $2 $4
-+    )
-+done
--- 
-1.8.1.4
+Why so complicated and not use "inst_multiple -o" ??
+Or, if you prefer inst_multiple_optional, replace all other occurences of
+"inst_multiple -o" with inst_multiple_optional also.
+
+>  dracut_install() {
+>      inst_multiple "$@"
+>  }
+> diff --git a/modules.d/95dasd_mod/module-setup.sh b/modules.d/95dasd_mod/module-setup.sh
+> index 011010d..4546059 100755
+> --- a/modules.d/95dasd_mod/module-setup.sh
+> +++ b/modules.d/95dasd_mod/module-setup.sh
+> @@ -23,6 +23,7 @@ installkernel() {
+>  # called by dracut
+>  install() {
+>      inst_hook cmdline 31 "$moddir/parse-dasd-mod.sh"
+> -    inst_multiple dasd_cio_free grep sed seq
+> +    inst_multiple grep sed seq
+> +    inst_multiple_optional dasd_cio_free
+>  }
+>  
+> diff --git a/modules.d/95dasd_mod/parse-dasd-mod.sh b/modules.d/95dasd_mod/parse-dasd-mod.sh
+> index 87c88ed..0236d12 100755
+> --- a/modules.d/95dasd_mod/parse-dasd-mod.sh
+> +++ b/modules.d/95dasd_mod/parse-dasd-mod.sh
+> @@ -15,4 +15,6 @@ if [ -n "$mod_args" ]; then
+>  fi
+>  
+>  unset dasd_arg
+> -dasd_cio_free
+> +if [ -x /sbin/dasd_cio_free ] ; then
+> +    dasd_cio_free
+> +fi
+> 
