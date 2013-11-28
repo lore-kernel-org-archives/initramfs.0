@@ -1,38 +1,65 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: SUSE mkinitrd wrapper
-Date: Thu, 28 Nov 2013 15:05:28 +0100
-Message-ID: <52974DA8.4090008@redhat.com>
-References: <529746E9.4040708@suse.de>
+Subject: Re: [PATCH 06/10] Install /bin/mount
+Date: Thu, 28 Nov 2013 15:08:42 +0100
+Message-ID: <52974E6A.70500@redhat.com>
+References: <1385567061-13247-1-git-send-email-hare@suse.de> <1385567061-13247-7-git-send-email-hare@suse.de> <529743C7.80906@suse.de>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <529746E9.4040708-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <529743C7.80906-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 11/28/2013 02:36 PM, Hannes Reinecke wrote:
-> Hi Harald,
+On 11/28/2013 02:23 PM, Hannes Reinecke wrote:
+> On 11/27/2013 04:44 PM, Hannes Reinecke wrote:
+>> systemd relies on /bin/mount to be present, so install it.
+>>
+>> Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+>> ---
+>>  modules.d/99fs-lib/module-setup.sh | 1 +
+>>  1 file changed, 1 insertion(+)
+>>
+>> diff --git a/modules.d/99fs-lib/module-setup.sh b/modules.d/99fs-lib/module-setup.sh
+>> index 7979bab..b24207d 100755
+>> --- a/modules.d/99fs-lib/module-setup.sh
+>> +++ b/modules.d/99fs-lib/module-setup.sh
+>> @@ -85,4 +85,5 @@ install() {
+>>      fi
+>>  
+>>      inst_multiple -o $_helpers fsck
+>> +    inst /usr/bin/mount /bin/mount
+>>  }
+>>
+> After much debate and soul-searching it was found that
 > 
-> I've updated the current 'mkinitrd-dracut.sh' script to function as
-> a wrapper to the old SUSE mkinitrd script.
-> However, as some arguments clash between SUSE mkinitrd and
-> mkinitrd-dracut.sh I've put them into a separate script,
-> mkinitrd-suse.sh.
+> a) /bin/mount is _REQUIRED_ to be present
+> b) dracut will only copy /usr/bin/mount
 > 
-> What do you prefer? Having two separate scripts?
-> As I'm not sure if anybody is actually using the
-> 'mkinitrd-dracut.sh' script I could as well merge the changes into
-> that one.
+> So if /bin is _not_ a symlink to /usr/bin, but the individual
+> programs are, /bin/mount doesn't find it's way into the initrd.
+> Nor do several other programs.
 > 
-> Just tell me what you prefer.
+> How to approach this fundamentally?
+> I would prefer to have 'inst' checking for symlinks, and copy them
+> over if required.
+> Adding them manually seems ineffectual to me.
+> But I'll do whatever is desired here ...
 > 
 > Cheers,
 > 
 > Hannes
 > 
 
-Hmm, I think "mkinitrd" is still used by some scripts. Not sure.
-Can it be merged and switch behavior depending on the $ID in /etc/os-release ?
+Like already discussed, we should alter dracut-install to search all PATH
+elements, instead of just taking the first one.
+
+http://git.kernel.org/cgit/boot/dracut/dracut.git/tree/install/dracut-install.c#n787
+
+http://git.kernel.org/cgit/boot/dracut/dracut.git/tree/install/dracut-install.c#n851
+
+http://git.kernel.org/cgit/boot/dracut/dracut.git/tree/install/dracut-install.c#n883
+
+Will do, and also cleanup dracut-install.c in the process.
