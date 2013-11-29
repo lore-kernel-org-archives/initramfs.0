@@ -1,7 +1,7 @@
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 06/13] Add DASD configuration for SuSE
-Date: Fri, 29 Nov 2013 13:13:47 +0100
-Message-ID: <1385727234-5001-7-git-send-email-hare@suse.de>
+Subject: [PATCH 07/13] Add zfcp scripts for SUSE
+Date: Fri, 29 Nov 2013 13:13:48 +0100
+Message-ID: <1385727234-5001-8-git-send-email-hare@suse.de>
 References: <1385727234-5001-1-git-send-email-hare@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1385727234-5001-1-git-send-email-hare-l3A5Bk7waGM@public.gmane.org>
@@ -13,64 +13,23 @@ Content-Transfer-Encoding: 7bit
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-On SuSE the DASD configuration is kept in udev rules, one rule
-file per device. So add a new module for copying and creating
-these rules during boot.
+SuSE is storing the zfcp configuration in udev files, so we should
+be including these.
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut-functions.sh                    | 28 +++++++++++++++++
- modules.d/95dasd_rules/module-setup.sh | 27 ++++++++++++++++
- modules.d/95dasd_rules/parse-dasd.sh   | 56 ++++++++++++++++++++++++++++++++++
- 3 files changed, 111 insertions(+)
- create mode 100755 modules.d/95dasd_rules/module-setup.sh
- create mode 100755 modules.d/95dasd_rules/parse-dasd.sh
+ modules.d/95zfcp_rules/module-setup.sh | 25 +++++++++++++
+ modules.d/95zfcp_rules/parse-zfcp.sh   | 65 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 90 insertions(+)
+ create mode 100755 modules.d/95zfcp_rules/module-setup.sh
+ create mode 100755 modules.d/95zfcp_rules/parse-zfcp.sh
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 2872516..0337c13 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -899,6 +899,34 @@ inst_rules() {
-     done
- }
- 
-+inst_rules_wildcard() {
-+    local _target=/etc/udev/rules.d _rule _found
-+
-+    inst_dir "${udevdir}/rules.d"
-+    inst_dir "$_target"
-+    for _rule in ${udevdir}/rules.d/$1 ${dracutbasedir}/rules.d/$1 ; do
-+        if [[ -e $_rule ]]; then
-+            inst_rule_programs "$_rule"
-+            inst_rule_group_owner "$_rule"
-+            inst_rule_initqueue "$_rule"
-+            inst_simple "$_rule"
-+            _found=$_rule
-+        fi
-+    done
-+    if [ -n ${hostonly} ] ; then
-+        for _rule in ${_target}/$1 ; do
-+            if [[ -f $_rule ]]; then
-+                inst_rule_programs "$_rule"
-+                inst_rule_group_owner "$_rule"
-+                inst_rule_initqueue "$_rule"
-+                inst_simple "$_rule"
-+                _found=$_rule
-+            fi
-+        done
-+    fi
-+    [[ $_found ]] || dinfo "Skipping udev rule: $_rule"
-+}
-+
- prepare_udev_rules() {
-     [ -z "$UDEVVERSION" ] && export UDEVVERSION=$(udevadm --version)
- 
-diff --git a/modules.d/95dasd_rules/module-setup.sh b/modules.d/95dasd_rules/module-setup.sh
+diff --git a/modules.d/95zfcp_rules/module-setup.sh b/modules.d/95zfcp_rules/module-setup.sh
 new file mode 100755
-index 0000000..d313171
+index 0000000..9a1ab20
 --- /dev/null
-+++ b/modules.d/95dasd_rules/module-setup.sh
-@@ -0,0 +1,27 @@
++++ b/modules.d/95zfcp_rules/module-setup.sh
+@@ -0,0 +1,25 @@
 +#!/bin/bash
 +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
 +# ex: ts=8 sw=4 sts=4 et filetype=sh
@@ -78,85 +37,92 @@ index 0000000..d313171
 +# called by dracut
 +check() {
 +    local _arch=$(uname -m)
-+    [ -x /sbin/dasd_configure ] || return 1
++    [ -x /sbin/zfcp_disk_configure ] || return 1
 +    [ "$_arch" = "s390" -o "$_arch" = "s390x" ] || return 1
 +    return 0
 +}
 +
 +# called by dracut
 +depends() {
-+    echo 'dasd_mod'
 +    return 0
 +}
 +
 +# called by dracut
 +install() {
 +    inst_multiple /usr/lib/udev/collect
-+    inst_hook cmdline 30 "$moddir/parse-dasd.sh"
++    inst_hook cmdline 30 "$moddir/parse-zfcp.sh"
 +    if [[ $hostonly ]] ; then
-+        inst_rules_wildcard 51-dasd-*.rules
++        inst_rules_wildcard 51-zfcp-*.rules
 +    fi
-+    inst_rules 59-dasd.rules
 +}
-diff --git a/modules.d/95dasd_rules/parse-dasd.sh b/modules.d/95dasd_rules/parse-dasd.sh
+diff --git a/modules.d/95zfcp_rules/parse-zfcp.sh b/modules.d/95zfcp_rules/parse-zfcp.sh
 new file mode 100755
-index 0000000..9389c44
+index 0000000..24dbdd3
 --- /dev/null
-+++ b/modules.d/95dasd_rules/parse-dasd.sh
-@@ -0,0 +1,56 @@
++++ b/modules.d/95zfcp_rules/parse-zfcp.sh
+@@ -0,0 +1,65 @@
 +#!/bin/sh
 +# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
 +# ex: ts=8 sw=4 sts=4 et filetype=sh
 +
 +create_udev_rule() {
 +    local ccw=$1
-+    local _drv _cu_type _dev_type
-+    local _rule=/etc/udev/rules.d/51-dasd-${ccw}.rules
++    local wwpn=$2
++    local lun=$3
++    local _rule=/etc/udev/rules.d/51-zfcp-${ccw}.rules
++
++    local _cu_type _dev_type
++    local _rule=/etc/udev/rules.d/51-zfcp-${ccw}.rules
 +
 +    if [ -e /sys/bus/ccw/devices/${ccw} ] ; then
 +        read _cu_type < /sys/bus/ccw/devices/${ccw}/cutype
 +        read _dev_type < /sys/bus/ccw/devices/${ccw}/devtype
 +    fi
-+    case "$_cu_type" in
-+    3990/*|2105/*|2107/*|1750/*|9343/*)
-+            _drv=dasd-eckd
-+            ;;
-+    6310/*)
-+            _drv=dasd-fba
-+            ;;
-+    3880/*)
-+        case "$_dev_type" in
-+            3380/*)
-+                _drv=dasd_eckd
-+                ;;
-+            3370/*)
-+                _drv=dasd-fba
-+                ;;
-+        esac
-+        ;;
-+    esac
-+    [ -z "${_drv}" ] && return 0
++    if [ "$_cu_type" != "1731/03" ] ; then
++        return 0;
++    fi
++    if [ "$_dev_type" != "1732/03" ] && [ "$_dev_type" != "1732/04" ] ; then
++        return 0;
++    fi
 +
 +    [ -e ${_rule} ] && return 0
 +
-+    cat > $_rule <<EOF
-+ACTION=="add", SUBSYSTEM=="ccw", KERNEL=="$ccw", IMPORT{program}="collect $ccw %k ${ccw} $_drv"
-+ACTION=="add", SUBSYSTEM=="drivers", KERNEL=="$_drv", IMPORT{program}="collect $ccw %k ${ccw} $_drv"
++    if [ ! -f "$_rule" ] ; then
++        cat > $_rule <<EOF
++ACTION=="add", SUBSYSTEM=="ccw", KERNEL=="$ccw", IMPORT{program}="collect $ccw %k ${ccw} zfcp"
++ACTION=="add", SUBSYSTEM=="drivers", KERNEL=="zfcp", IMPORT{program}="collect $ccw %k ${ccw} zfcp"
 +ACTION=="add", ENV{COLLECT_$ccw}=="0", ATTR{[ccw/$ccw]online}="1"
 +EOF
++    fi
++    m=$(sed -n "/.*${wwpn}.*${lun}.*/p" $_rule)
++    if [ -z "$m" ] ; then
++        cat >> $_rule <<EOF
++ACTION=="add", KERNEL=="rport-*", ATTR{port_name}=="$wwpn", SUBSYSTEMS=="ccw", KERNELS=="$ccw", ATTR{[ccw/$ccw]$wwpn/unit_add}="$lun"
++EOF
++    fi
 +}
 +
-+for dasd_arg in $(getargs root=) $(getargs resume=); do
++for zfcp_arg in $(getargs rd.zfcp); do
 +    (
-+        case $dasd_arg in
++        IFS=","
++        set $zfcp_arg
++        create_udev_rule $1 $2 $3
++    )
++done
++
++for zfcp_arg in $(getargs root=) $(getargs resume=); do
++    (
++        case $zfcp_arg in
 +            /dev/disk/by-path/ccw-*)
-+                ccw_arg=${dasd_arg##*/}
++                ccw_arg=${zfcp_arg##*/}
 +                break;
 +        esac
 +        if [ -n "$ccw_arg" ] ; then
 +            IFS="-"
 +            set -- $ccw_arg
-+            create_udev_rule $2
++            wwpn=${4%:*}
++            lun=${4#*:}
++            create_udev_rule $2 $wwpn $lun
 +        fi
 +    )
 +done
