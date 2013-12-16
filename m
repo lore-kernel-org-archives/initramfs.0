@@ -1,34 +1,32 @@
-From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
-Subject: [PATCH] systemd: ensure autofs4 and ipv6 are included
-Date: Mon, 16 Dec 2013 03:40:58 +0000
-Message-ID: <1387165258-10335-1-git-send-email-crrodriguez@opensuse.org>
+From: Stig Telfer <stelfer-WVYJKLFxKCc@public.gmane.org>
+Subject: [PATCH] url-lib: extend to enable TFTP support
+Date: Mon, 16 Dec 2013 15:17:47 +0000
+Message-ID: <E86DFAF410366A40AD1683994061D9D605DE54@CFWEX01.americas.cray.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8BIT
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Language: en-US
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Systemd tries to load this modules very early.
-Even though they are not strictly required it it is a good
-thing to have them around.
----
- modules.d/98systemd/module-setup.sh | 1 +
- 1 file changed, 1 insertion(+)
+Libcurl has wider capabilities than those assigned to it by Dracut.  In this patch to url-lib I've added registration for TFTP URLs, which I've found to be useful.
 
-diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
-index 748e25b..eb58158 100755
---- a/modules.d/98systemd/module-setup.sh
-+++ b/modules.d/98systemd/module-setup.sh
-@@ -182,6 +182,7 @@ install() {
-     inst_script "$moddir/dracut-pre-pivot.sh" /bin/dracut-pre-pivot
- 
-     inst_rules 99-systemd.rules
-+    instmods autofs4 ipv6
- 
-     for i in \
-         emergency.target \
--- 
-1.8.4
+Enjoy,
+Stig Telfer
+
+
+diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
+index 12df9b4..c9d143a 100755
+--- a/modules.d/45url-lib/url-lib.sh
++++ b/modules.d/45url-lib/url-lib.sh
+@@ -76,7 +76,7 @@ curl_fetch_url() {
+     fi
+     if [ -z "$2" ]; then echo "$outloc" ; fi
+ }
+-add_url_handler curl_fetch_url http https ftp
++add_url_handler curl_fetch_url http https ftp tftp
+
+ set_http_header() {
+     echo "header = \"$1: $2\"" >> $CURL_HOME/.curlrc
