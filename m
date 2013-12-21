@@ -1,46 +1,51 @@
-From: Alain Williams <addw-5g5TjK4KYV/QXOPxS62xeg@public.gmane.org>
-Subject: Help needed on hardware change
-Date: Wed, 18 Dec 2013 17:00:31 +0000
-Message-ID: <20131218170030.GA16342@phcomp.co.uk>
+From: Tim Mohlmann <muhlemmer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: dmsquash-live fails for Gentoo squashed root
+Date: Sat, 21 Dec 2013 23:38:09 +0100
+Message-ID: <CAHOCc192zXwdsJ4Mk2cMYwwXWbV31U-cdMga6CFuJPzxNOm99Q@mail.gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=XWSyRebBMT1wi1T1/IYMDol11cX0+p3nKUWtbWdBpvQ=;
+        b=1CQbe1FWk3BLM1qzl/kC4AY98abljWrehox4LBaGx5zwHTGvwNy/mL63ZtlgDAxQBs
+         tuI1vaBM5bluQKHCYh4K74piS+zSCM+XrJHjJXklkQR2BVP/9Xtx7NBoAoW5PzVkETFC
+         Zh1+WGQK2cXuROE620jpT8IldyGyU3tCXmiXVXFSFA9sQZCF1anOcwgU1Xyj+QnYMUVG
+         QuEfDNKEDgftnZtHFEWNqTCbNTdR//o3k/iE4MJB+CQJNXU91kFDt+tQRu0VBYEbmnJM
+         ml/we/hQLlcwzMQXkISuHsSLHbGRjLM9Xqo30qZIXHJn15E95uKpPKjRyuWPM2Devpjs
+         uM2w==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-I moved hard disks into a new machine. Previously when I have done this I just
-booted off CD, ran mkinitrd in a chrooted file system to make a new initrd in /boot.
+Hi,
 
-I did that, rebooted and straight after the grub prompt expires (ie the kernel
-loaded) the monitor is put into some graphics mode (no characters/text is
-visible, just horisontal streaks) and the system stops with caps lock & scroll
-lock flashing.
+I am playing around with a Gentoo root filesystem on a squash image on
+a USB stick. I am trying to boot it with dracut dmsquash-live module.
 
-I (as a temporary measure) installed another SATA disk and installed a small
-system there (same distro version). It worked as expected.
+It fails with error mount: unknown filesystem type 'DM_snapshot_cow'
+repeated quite some times.
 
-I copied the /boot/initramfs... over into /boot on the original disks and if I
-use that - it all works. I rebuild using dracut and it fails as described above.
+I checked if it is a kernel config problem: DM_SNAPSHOT [=y].
+So I guess that is fine. Searching for COW does not five me anything
+usefull, except for BLK_DEV_COW_COMMON [=n]. But it is not mentioned
+where in the menuconfig it is mentioned to select.
 
-I notice that the /boot/initramfs* files are very different sizes:
+Setting this option directly in .config gets undone when compiling the kernel.
 
-15M the one that works - new install to temp disk
-23M the one that fails - rebuilt with dracut
+kernel-3.10.17-gentoo
+sys-kernel/dracut-034-r2  USE="device-mapper -debug -net (-selinux)"
+DRACUT_MODULES="dmsquash-live lvm plymouth -biosdevname -bootchart
+-btrfs -caps -cifs -crypt -crypt-gpg -crypt-loop -dash -dmraid
+-gensplash -iscsi -livenet -mdraid -multipath -nbd -nfs -ssh-client
+-syslog -systemd"
 
-What can I do to make this work ? This has been a few weeks on & off.
+Kernel command line:
+"root=live:UUID=81689ddf-98ab-4314-b420-ce78d505f919 rw
+init=/usr/lib/systemd/systemd"
 
-The old hardware was 32 bit intel something, the new is 64 bit AMD. There are
-prob lots of other changes, but I don't think that the details matter too much -
-I should be able to just rebuild the initrd.
+squashfs.img resides in LiveOS directory on root of USB stick with above UUID.
 
-The Operating system is CentOS 6.5. Kernel 2.6.32-358
-
--- 
-Alain Williams
-Linux/GNU Consultant - Mail systems, Web sites, Networking, Programmer, IT Lecturer.
-+44 (0) 787 668 0256  http://www.phcomp.co.uk/
-Parliament Hill Computers Ltd. Registration Information: http://www.phcomp.co.uk/contact.php
-#include <std_disclaimer.h>
+Regards, Tim
