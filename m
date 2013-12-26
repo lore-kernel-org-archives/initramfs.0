@@ -1,87 +1,50 @@
-From: Tim Mohlmann <muhlemmer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Dracut dmsquash-live: can't mount /dev/mapper/live-rw. (WAS
- dmsquash-live fails for Gentoo squashed root)
-Date: Sun, 22 Dec 2013 15:40:35 +0100
-Message-ID: <CAHOCc1-2804RWqp3BOozfHiUKmJMveHSy+Zjh2zresxSXSCSWg@mail.gmail.com>
-Mime-Version: 1.0
+From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 2/2] crypt: Only write udev rules to unlock when the device is added
+Date: Thu, 26 Dec 2013 21:26:23 +0000
+Message-ID: <1388093183-19045-2-git-send-email-colin@mageia.org>
+References: <1388093183-19045-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=uO5swZ3okKDrgYGPxhowBAC9BESA6AlBD4vk4QyZTX0=;
-        b=ebUZmJUlrq7C/aBhvy6W0kGoaMuDrcs3XgXvgmAdBzxDNxXvALDcDSbGkdlEMCABbc
-         C5nkjjTv59oNSJ1SSUUxB2R8eHRrEbwP9jTsM0xFuZ+f/IXoxDr3sAXCxgiQugqkiuEE
-         N/5QHiomfwCF7YoRrFqg61jBSkDZWWGSx+po0VzINK9nAgK1yTrTNFeboLF1FHAAhKyz
-         01MR12rrSPh8INsKdiFdI8QHB8ufWkYtjr1AzyWqueFZvvvuieD9C5Tx/zYsweRsEa2N
-         85Z02dXWUZyMT3X1gUXDwEYp1+pE69uulYuSnr26Y4Q/tBd1ZHXQrT4ujjnmnfy8WGZ7
-         MZRw==
+In-Reply-To: <1388093183-19045-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-Update:
+It seems that when the device is unlocked, it will trigger a change
+event which in turn re-writes the settled job which was diligently
+removed after it was run.
 
-It seems that the squash image is properly attached to a loop device,
-as well the RW part. From the rdsosreport.txt:
-/sbin/rdsosreport@14(): blkid
-/dev/sdb1: UUID="81689ddf-98ab-4314-b420-ce78d505f919" TYPE="ext2"
-/dev/loop0: TYPE="squashfs"
-/dev/loop1: TYPE="DM_snapshot_cow"
-...
-/dev/mapper/live-rw: TYPE="DM_snapshot_cow"
+Due to the previous fix, this isn't crazy important as the triggered
+job should exit, but avoiding this in the first place is still
+desirable.
+---
+
+Note, I'm not sure if this is wise or not. The previous patch alone
+fixes the issue, so this is just an efficiency saving. It might be
+that this is needed - e.g. if you have any encrypted volume on top
+of some other mapped device such as RAID, so please only apply this
+patch if you are sure it will not cause regressions!!
 
 
-Trying to mount /dev/mapper/live-rw from the emergency shell gives the
-same error.
 
-#> modprobe dm_snapshot
-#> mkdir /mnt
-#> mount /dev/mapper/live-rw /mnt
-mount: unknown filesystem type 'DM_snapshot_cow'
-#> mount -v -t dm_snapshot /dev/mapper/live-rw /mnt
-mount: unknown filesystem type 'dm_snapshot'
-#>mount /dev/loop0 /mnt
-#> ls /mnt
-bin etc ...
+ modules.d/90crypt/parse-crypt.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Seems to be a filesystem / kernel config option, still.
-
-Attached full rdsosreport.txt and liveroot output, generated after
-adding rd.debug and rd.live.debug to the command line. Devices and
-LVM's prefixed with an asterisk are on the internal drive of the PC
-and are not used in this context.
-
-Regards, Tim
-
-2013/12/21 Tim Mohlmann <muhlemmer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
-> Hi,
->
-> I am playing around with a Gentoo root filesystem on a squash image on
-> a USB stick. I am trying to boot it with dracut dmsquash-live module.
->
-> It fails with error mount: unknown filesystem type 'DM_snapshot_cow'
-> repeated quite some times.
->
-> I checked if it is a kernel config problem: DM_SNAPSHOT [=y].
-> So I guess that is fine. Searching for COW does not five me anything
-> usefull, except for BLK_DEV_COW_COMMON [=n]. But it is not mentioned
-> where in the menuconfig it is mentioned to select.
->
-> Setting this option directly in .config gets undone when compiling the kernel.
->
-> kernel-3.10.17-gentoo
-> sys-kernel/dracut-034-r2  USE="device-mapper -debug -net (-selinux)"
-> DRACUT_MODULES="dmsquash-live lvm plymouth -biosdevname -bootchart
-> -btrfs -caps -cifs -crypt -crypt-gpg -crypt-loop -dash -dmraid
-> -gensplash -iscsi -livenet -mdraid -multipath -nbd -nfs -ssh-client
-> -syslog -systemd"
->
-> Kernel command line:
-> "root=live:UUID=81689ddf-98ab-4314-b420-ce78d505f919 rw
-> init=/usr/lib/systemd/systemd"
->
-> squashfs.img resides in LiveOS directory on root of USB stick with above UUID.
->
-> Regards, Tim
+diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-crypt.sh
+index a6b5252..cfa6ac9 100755
+--- a/modules.d/90crypt/parse-crypt.sh
++++ b/modules.d/90crypt/parse-crypt.sh
+@@ -10,7 +10,7 @@ if ! getargbool 1 rd.luks -d -n rd_NO_LUKS; then
+ else
+     {
+         echo 'SUBSYSTEM!="block", GOTO="luks_end"'
+-        echo 'ACTION!="add|change", GOTO="luks_end"'
++        echo 'ACTION!="add", GOTO="luks_end"'
+     } > /etc/udev/rules.d/70-luks.rules.new
+ 
+     LUKS=$(getargs rd.luks.uuid -d rd_LUKS_UUID)
+-- 
+1.8.4.5
