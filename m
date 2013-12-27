@@ -1,8 +1,10 @@
 From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/2] crypt: Prevent asking for password multiple times if non-default crypt name is used.
-Date: Thu, 26 Dec 2013 21:26:22 +0000
-Message-ID: <1388093183-19045-1-git-send-email-colin@mageia.org>
+Subject: [PATCH v2] crypt: Prevent asking for password multiple times if non-default crypt name is used.
+Date: Fri, 27 Dec 2013 13:00:48 +0000
+Message-ID: <1388149248-23146-1-git-send-email-colin@mageia.org>
+References: <1388093183-19045-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1388093183-19045-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -45,14 +47,18 @@ act on add events rather than add|change events, but I'm not sure of the
 ramifications of such a change and there may be cases where the add
 event is missed and thus the change event needs to be included.
 ---
- modules.d/90crypt/cryptroot-ask.sh | 30 +++++++++++++++---------------
- 1 file changed, 15 insertions(+), 15 deletions(-)
+
+ v2: Fix issue where getargbool was not defined due to deferred loading
+     of dracut-crypt-lib.sh
+
+ modules.d/90crypt/cryptroot-ask.sh | 36 +++++++++++++++++++-----------------
+ 1 file changed, 19 insertions(+), 17 deletions(-)
 
 diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
-index 9665e48..cf13069 100755
+index 9665e48..18b2d38 100755
 --- a/modules.d/90crypt/cryptroot-ask.sh
 +++ b/modules.d/90crypt/cryptroot-ask.sh
-@@ -8,20 +8,6 @@ NEWROOT=${NEWROOT:-"/sysroot"}
+@@ -8,22 +8,7 @@ NEWROOT=${NEWROOT:-"/sysroot"}
  # do not ask, if we already have root
  [ -f $NEWROOT/proc ] && exit 0
  
@@ -70,10 +76,13 @@ index 9665e48..cf13069 100755
 -# default luksname - luks-UUID
 -luksname=$2
 -
- # fallback to passphrase
- ask_passphrase=1
+-# fallback to passphrase
+-ask_passphrase=1
++. /lib/dracut-lib.sh
  
-@@ -32,6 +18,9 @@ else
+ # if device name is /dev/dm-X, convert to /dev/mapper/name
+ if [ "${1##/dev/dm-}" != "$1" ]; then
+@@ -32,6 +17,9 @@ else
      device="$1"
  fi
  
@@ -83,7 +92,7 @@ index 9665e48..cf13069 100755
  # number of tries
  numtries=${3:-10}
  
-@@ -63,6 +52,17 @@ if [ -f /etc/crypttab ] && getargbool 1 rd.luks.crypttab -d -n rd_NO_CRYPTTAB; t
+@@ -63,6 +51,17 @@ if [ -f /etc/crypttab ] && getargbool 1 rd.luks.crypttab -d -n rd_NO_CRYPTTAB; t
      unset name dev
  fi
  
@@ -101,7 +110,17 @@ index 9665e48..cf13069 100755
  #
  # Open LUKS device
  #
-@@ -157,7 +157,7 @@ fi
+@@ -112,6 +111,9 @@ fi
+ 
+ unset allowdiscards
+ 
++# fallback to passphrase
++ask_passphrase=1
++
+ if [ -n "$luksfile" -a "$luksfile" != "none" -a -e "$luksfile" ]; then
+     if cryptsetup --key-file "$luksfile" $cryptsetupopts luksOpen "$device" "$luksname"; then
+         ask_passphrase=0
+@@ -157,7 +159,7 @@ fi
  unset device luksname luksfile
  
  # mark device as asked
