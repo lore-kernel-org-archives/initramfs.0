@@ -1,61 +1,38 @@
-From: James Lee <jlee-RWYTM8lfiZY4k1Tz1RznXQC/G2K4zDHf@public.gmane.org>
-Subject: Re: [PATCH v2] crypt: Prevent asking for password multiple times
- if non-default crypt name is used.
-Date: Fri, 10 Jan 2014 11:55:17 -0500
-Message-ID: <52D025F5.1050703@thestaticvoid.com>
-References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388149248-23146-1-git-send-email-colin@mageia.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek-wrcVdnn0TatmR6Xm/wNWPw@public.gmane.org>
+Subject: [PATCH] resume: fix double escaping in printf
+Date: Fri, 10 Jan 2014 11:51:24 -0500
+Message-ID: <1389372684-26465-1-git-send-email-zbyszek@in.waw.pl>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1388149248-23146-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek-wrcVdnn0TatmR6Xm/wNWPw@public.gmane.org>
 
-On 12/27/2013 08:00 AM, Colin Guthrie wrote:
-> If a non-default device mapper name is used for an encrypted partion is
-> used, (i.e. not luks-$UUID) due to parsing of /etc/crypttab, then the
-> short-circuits put in place to prevent asking the password twice do not
-> work.
-> 
-> This would not normally be an issue as the settled job itself should be
-> removed after it has run and thus cannot be run again. Sadly, due to
-> the corresponding udev rule using ACTION="add|changed", and the fact
-> that trying to unlock the device (whether successful or not) seems to
-> trigger a changed event, it means the settled job is recreated with
-> each itteration thus causing the whole loop to run again.
-> 
-> It is this situation that the short-circuit exits would normally come
-> into play but sadly do not work when non-standard names are used.
-> 
-> By the time the /tmp/cryptroot-asked-$2 file is written near the end of
-> the script, the value of $2 has already been lost due to the argument
-> parsing code's use of 'shift'. So while on systems where the default
-> name is used are protected by checking /dev/mapper/xxxx, the
-> /tmp/cryptroot-asked-$2 file didn't help on systems where this was not
-> used due to this bug.
-> 
-> So this commit shuffles things around somewhat such that:
-> 
->  1. The /dev/mapper/xxxx device is checked *after* resolving $2 (which
->     contains the default name) to whatever /etc/crypttab specifies.
->  2. The cryptroot-asked-xxxx file also uses the translated name both
->     for the initial check and to flag when it's written.
-> 
-> As a separate fix, it might make sense to change the udev rule to only
-> act on add events rather than add|change events, but I'm not sure of the
-> ramifications of such a change and there may be cases where the add
-> event is missed and thus the change event needs to be included.
-> ---
-> 
->  v2: Fix issue where getargbool was not defined due to deferred loading
->      of dracut-crypt-lib.sh
+https://bugzilla.redhat.com/show_bug.cgi?id=1045704
+---
+ modules.d/95resume/parse-resume.sh | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-I believe I've seen the situation this patch is trying to fix.  I will
-test these patches with my fairly complex crypt setup [1] this weekend.
-
-James
-
-[1]
-https://thestaticvoid.com/post/2013/10/26/how-i-do-encrypted-mirrored-zfs-root-on-linux/
+diff --git a/modules.d/95resume/parse-resume.sh b/modules.d/95resume/parse-resume.sh
+index 8682a03..44c62dd 100755
+--- a/modules.d/95resume/parse-resume.sh
++++ b/modules.d/95resume/parse-resume.sh
+@@ -59,10 +59,10 @@ if ! getarg noresume; then
+             fi
+             printf -- "KERNEL==\"%s\", " ${resume#/dev/};
+             printf -- "ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\","
+-            printf -- "%s" " RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %%M:%%m > /sys/power/resume\"\n"
++            printf -- " RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %%M:%%m > /sys/power/resume\"\n"
+             printf -- "SYMLINK==\"%s\", " ${resume#/dev/};
+-            printf -- "%s" "ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\","
+-            printf -- "%s" " RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %%M:%%m  > /sys/power/resume\"\n"
++            printf -- "ACTION==\"add|change\", ENV{ID_FS_TYPE}==\"suspend|swsuspend|swsupend\","
++            printf -- " RUN+=\"/sbin/initqueue --finished --unique --name 00resume echo %%M:%%m  > /sys/power/resume\"\n"
+         } >> /etc/udev/rules.d/99-resume.rules
+ 
+         printf '[ -e "%s" ] && { ln -s "%s" /dev/resume; rm -f -- "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
+-- 
+1.8.4.2
