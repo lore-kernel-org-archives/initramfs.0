@@ -1,43 +1,43 @@
-From: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
-Subject: [PATCH] Use builtin xz/lzma option to use all cores for multihreaded compression
-Date: Fri, 10 Jan 2014 21:41:43 +0100
-Message-ID: <1389386503-79006-1-git-send-email-koen@dominion.thruhere.net>
+From: olivier.lahaye1-GANU6spQydw@public.gmane.org
+Subject: Advanced dracut use help or tips needed.
+Date: Sat, 11 Jan 2014 13:27:37 +0100 (CET)
+Message-ID: <1726532839.368644133.1389443257576.JavaMail.root@spooler6-g27.priv.proxad.net>
+References: <1729487458.368641100.1389443150192.JavaMail.root@spooler6-g27.priv.proxad.net>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1729487458.368641100.1389443150192.JavaMail.root-NPLbsSYf/7dsFmKuirFwRhh1pbbyJDp15NbjCUgZEJk@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
 
-This removes the dependency on 'getconf' as well, which is not installed by default on my embedded systems.
 
-Signed-off-by: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
----
- dracut.sh | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+Hi, 
 
-diff --git a/dracut.sh b/dracut.sh
-index 11dcd0e..2e6ea67 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -697,14 +697,12 @@ stdloglvl=$((stdloglvl + verbosity_mod_l))
- # eliminate IFS hackery when messing with fw_dir
- fw_dir=${fw_dir//:/ }
- 
--cpu_count=$(getconf _NPROCESSORS_ONLN)
--
- # handle compression options.
- [[ $compress ]] || compress="gzip"
- case $compress in
-     bzip2) compress="bzip2 -9";;
--    lzma)  compress="lzma -9 ${cpu_count:+-T$cpu_count}";;
--    xz)    compress="xz --check=crc32 --lzma2=dict=1MiB ${cpu_count:+-T$cpu_count}";;
-+    lzma)  compress="lzma -9 -T0";;
-+    xz)    compress="xz --check=crc32 --lzma2=dict=1MiB -T0";;
-     gzip)  compress="gzip -9"; command -v pigz > /dev/null 2>&1 && compress="pigz -9";;
-     lzo)   compress="lzop -9";;
-     lz4)   compress="lz4 -9";;
+Please forgive me if this is the wrong list to post, but I didn't find any other places to ask what I'm looking for regarding advanced usage of dracut. 
+
+I'm part of systemimager developpers, a tool to build and deploy linux images on computers (often used in clusters to deploy nodes). 
+
+This perl software is building it's own initramfs from scratch (build kernel and all content), unfortunately, this is problematic as it needs a recent kernel to support latest hardware.(detect disk or net adapters) 
+Unfortunateley, trying to build everything on an rhel6 distro for example will result in bad binaries. Indeed, if we build kernel 3.10 on a 2.6 kernel (it works), but then building lvm tools (bad binaries) as the tools will be built with kernel 2.6 system includes and run on a 3.10 kernel resulting at best in crashes and at worse in data loss. 
+More over, it is based on udev only (no systemd or network manager). thus, now it's even more difficult to build it (difficult to build udev without systemd, ...) 
+
+My aim would be to drop this old way of doing stuff and use dracut to build a bootable image using system installed binaries. Indeed, this image is only used to boot the node, create disk partition table, format partitions, init network download some post install scripts, start a custom deployment monitoring daemon and copy the image from server using preconfigured method (either rsync, nfs, bittorrent, ...) (and reboot) 
+As linux vendors are backporting support for latest hardware, having the latest binaries is not needed anymore. using booted system materials will be sufficient. 
+
+For example, here is the actual content of the initrd_template we are using: http://olivier.lahaye1.free.fr/OSCAR/initrd_template.txt 
+It has no second stage and it is far from being optimized but it does more or less what we need. 
+
+Despite my googleing, I've been unable to find examples other than creating a basic initial ramdisk for booting an installed OS. I was even unable to find how the fedora or redhat pxe boot image were created (and how they are built). 
+
+what I'm looking for would be some sort of comand that would do: 
+
+dracut --include-all-network-drivers --include-all-disk-drivers --include-nfsandother_drivers --put_what_is_needed_for_an_advanced_initramfs(udev+systemd+networkmanager+...) --put_buzybox --add_binaries_from_running_system <list_of_binaries.txt> --add_binaries_required_libs_from_system --add_other_files --start_inital_system_tasks_like_systemd_then_jump_to_our_rcS_script 
+
+I'd greatly apreciate any help, tip on how to proceed or even pointer to pages describing how the distro installation initial pxe disks are build (for example how the code calling the second stage is put into the image and from when it is taken from). 
+
+Best regards. 
+
 -- 
-1.8.0
+  Olivier LAHAYE 
