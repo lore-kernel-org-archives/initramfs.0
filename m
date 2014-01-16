@@ -1,48 +1,51 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] add a new option "testonly"
-Date: Thu, 16 Jan 2014 10:12:02 +0800
-Message-ID: <20140116021202.GE3807@dhcp-16-126.nay.redhat.com>
-References: <1389790430-17808-1-git-send-email-bhe@redhat.com>
- <20140115201608.GA13541@redhat.com>
- <20140116020647.GD3807@dhcp-16-126.nay.redhat.com>
-Mime-Version: 1.0
+From: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
+Subject: [PATCH] dracut-initramfs-restore,lsinitrd: add LZ4 support
+Date: Thu, 16 Jan 2014 09:20:17 +0100
+Message-ID: <1389860417-5000-1-git-send-email-koen@dominion.thruhere.net>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20140116020647.GD3807-je1gSBvt1TcFLmT5oZ11vB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
 
-On 01/16/14 at 10:06am, Dave Young wrote:
-> On 01/15/14 at 03:16pm, Vivek Goyal wrote:
-> > Bao,
-> > 
-> > This is harald's call but personally to me this testonly options look
-> > little odd.
-> > 
-> > I am looking at old discussion here.
-> > 
-> > http://thread.gmane.org/gmane.linux.kernel.initramfs/3370
-> > 
-> > So harald's suggestion of using systemd looks fine. It is just a matter of
-> > figuring out who should load watchdog modules in initramfs.
-> > 
-> > I personally feel it should be watchdog module but if harald does not
-> > like it, we can atleast for the time being keep that logic in kdump
-> > module. But trying to create this testonly mode feels odd to me.
-> > 
-> > Harald, can you please let us know your preference on this. Modify
-> > 04watchdog module to include relevant drivers in hostonly mode or
-> > push this logic into kdump module for now.
-> > 
-> 
-> Adding wdt stuff in dracut would also help diskless system and NFS root system.
+Dracut claims to have LZ4 support, but trying to use it will result in an xzcat failure at the end due to missing CAT support.
 
-NFS root can use watchdog in real root. so correct myself, it only benifits the
-initramfs-only system.
+Something similar will need to be done for LZO.
 
-Thanks
-Dave
+Signed-off-by: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
+---
+ dracut-initramfs-restore.sh | 2 ++
+ lsinitrd.sh                 | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/dracut-initramfs-restore.sh b/dracut-initramfs-restore.sh
+index ec5fe18..f29c814 100644
+--- a/dracut-initramfs-restore.sh
++++ b/dracut-initramfs-restore.sh
+@@ -20,6 +20,8 @@ if zcat "$IMG"  | cpio -id --quiet >/dev/null; then
+     rm -f -- .need_shutdown
+ elif xzcat "$IMG"  | cpio -id --quiet >/dev/null; then
+     rm -f -- .need_shutdown
++elif lz4 -d -c "$IMG"  | cpio -id --quiet >/dev/null; then
++    rm -f -- .need_shutdown
+ else
+     # something failed, so we clean up
+     echo "Unpacking of $IMG to /run/initramfs failed" >&2
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index 584c29a..20d5a8b 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -111,6 +111,8 @@ case $bin in
+         CAT="bzcat";;
+     $'\x71\xc7'*|070701)
+         CAT="cat";;
++    $'\x04\x22'*)
++        CAT="lz4 -d -c";;
+     *)
+         CAT="xzcat";
+         if echo "test"|xz|xzcat --single-stream >/dev/null 2>&1; then
+-- 
+1.8.4.2
