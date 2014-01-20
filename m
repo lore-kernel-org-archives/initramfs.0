@@ -1,53 +1,61 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] add a new option "testonly"
-Date: Mon, 20 Jan 2014 10:28:48 +0800
-Message-ID: <20140120022848.GA18942@dhcp-16-105.nay.redhat.com>
-References: <1389790430-17808-1-git-send-email-bhe@redhat.com>
- <20140115201608.GA13541@redhat.com>
+From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Subject: sysroot not mounted in case several rootflags=subvol=@ boot params are passed
+Date: Mon, 20 Jan 2014 17:41:10 +0100
+Message-ID: <2256706.I9F4d4aePX@skinner>
 Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20140115201608.GA13541-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01/15/14 at 03:16pm, Vivek Goyal wrote:
-> Bao,
-> 
-> This is harald's call but personally to me this testonly options look
-> little odd.
+Hi,
 
-Yeah, it does look odd. But I don't want this to affect the existed test
-cases. 
+due to a bug in another tool it came out that
+systemd/dracut cannot mount /sysroot if the same rootflags=
+parameter is passed twice:
+rootflags=subvol=@ rootflags=subvol=@
 
-> 
-> I am looking at old discussion here.
-> 
-> http://thread.gmane.org/gmane.linux.kernel.initramfs/3370
-> 
-> So harald's suggestion of using systemd looks fine. It is just a matter of
-> figuring out who should load watchdog modules in initramfs.
-> 
-> I personally feel it should be watchdog module but if harald does not
-> like it, we can atleast for the time being keep that logic in kdump
-> module. But trying to create this testonly mode feels odd to me.
+Yep, this should be fixed somewhere else, but I still
+like to make the /sysroot mount more robust or at least find
+out what what is going on more detailed.
 
-Yeah, agree. For the time being, only iTCO_wdt need load module and
-satisfacory. However, there are many kinds of watchdog with different
-implementation. Finally, a independent dracut module may be needed, it
-can be put into dracut as a independent folder, e.g 06wdt which is
-different then 04watchdog. 
+journalctl -b -u  sysroot.mount
+Jan 20 15:02:30 localhost systemd[1]: Failed to mount /sysroot.
+Jan 20 15:02:30 localhost systemd[1]: Unit sysroot.mount entered failed state.
+Jan 20 15:16:46 localhost systemd[1]: Mounting /sysroot...
+Jan 20 15:16:46 localhost mount[970]: mount: wrong fs type, bad option, bad superblock on /dev/vda2,
+Jan 20 15:16:46 localhost systemd[1]: sysroot.mount mount process exited, code=exited status=32
 
-> 
-> Harald, can you please let us know your preference on this. Modify
-> 04watchdog module to include relevant drivers in hostonly mode or
-> push this logic into kdump module for now.
-> 
-> Thanks
-> Vivek
-> 
-> On Wed, Jan 15, 2014 at 08:53:48PM +0800, Baoquan He wrote:
+
+It looks like in
+modules.d/99base/parse-root-opts.sh
+rflags is made to "subvol=@,subvol=@"
+and
+modules.d/95rootfs-block/mount-root.sh
+fails due to passing this as -o to mount?
+
+But what I am mostly missing is any dracut warning.
+I should see:
+modules.d/95rootfs-block/mount-root.sh:
+    while ! mount -t ${rootfs} -o "$_rflags_ro" "${root#block:}" "$NEWROOT"; do
+        warn "Failed to mount -t ${rootfs} -o $_rflags_ro ${root#block:} $NEWROOT"
+        fsck_ask_err
+    done
+?
+
+This would give an obvios hint what is going wrong.
+
+But I cannot find where "warn" is even defined.
+
+Could be that I came on the wrong track somewhere.
+I guess there cannot be made much against passing bad (or doubled) rootflags=
+options, things will simply fail then, right?
+
+Still it would be nice if someone can give me a hint how I can
+debug similar stuff easier next time.
+
+Thanks!
+
+    Thomas
