@@ -1,49 +1,53 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH v2] crypt: Prevent asking for password multiple times
- if non-default crypt name is used.
-Date: Fri, 17 Jan 2014 10:32:16 +0000
-Message-ID: <lbb0r4$rh7$1@ger.gmane.org>
-References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388149248-23146-1-git-send-email-colin@mageia.org> <52D025F5.1050703@thestaticvoid.com> <52D40696.4080204@thestaticvoid.com>
+From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/3] add a new option "testonly"
+Date: Mon, 20 Jan 2014 10:28:48 +0800
+Message-ID: <20140120022848.GA18942@dhcp-16-105.nay.redhat.com>
+References: <1389790430-17808-1-git-send-email-bhe@redhat.com>
+ <20140115201608.GA13541@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <52D40696.4080204-RWYTM8lfiZY4k1Tz1RznXQC/G2K4zDHf@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20140115201608.GA13541-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-'Twas brillig, and James Lee at 13/01/14 15:30 did gyre and gimble:
-> On 01/10/2014 11:55 AM, James Lee wrote:
->> I believe I've seen the situation this patch is trying to fix.  I will
->> test these patches with my fairly complex crypt setup [1] this weekend.
->>
->> James
->>
->> [1]
->> https://thestaticvoid.com/post/2013/10/26/how-i-do-encrypted-mirrored-zfs-root-on-linux/
+On 01/15/14 at 03:16pm, Vivek Goyal wrote:
+> Bao,
 > 
-> Both patches (this one and the udev rule one) work great on all the
-> systems I tried them on.  Solves the problem I was seeing with being
-> asked for the passphrase multiple times.
+> This is harald's call but personally to me this testonly options look
+> little odd.
 
-Cool, thanks for testing!
+Yeah, it does look odd. But I don't want this to affect the existed test
+cases. 
 
-Harald, care to commit at least one of them? I'm pretty sure the first
-patch (v2) is safe on it's own. I'm not 100% sure about the udev bit as
-although it solves the problem, it might have some unintended side effects.
+> 
+> I am looking at old discussion here.
+> 
+> http://thread.gmane.org/gmane.linux.kernel.initramfs/3370
+> 
+> So harald's suggestion of using systemd looks fine. It is just a matter of
+> figuring out who should load watchdog modules in initramfs.
+> 
+> I personally feel it should be watchdog module but if harald does not
+> like it, we can atleast for the time being keep that logic in kdump
+> module. But trying to create this testonly mode feels odd to me.
 
-Col
+Yeah, agree. For the time being, only iTCO_wdt need load module and
+satisfacory. However, there are many kinds of watchdog with different
+implementation. Finally, a independent dracut module may be needed, it
+can be put into dracut as a independent folder, e.g 06wdt which is
+different then 04watchdog. 
 
--- 
-
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
-
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+> 
+> Harald, can you please let us know your preference on this. Modify
+> 04watchdog module to include relevant drivers in hostonly mode or
+> push this logic into kdump module for now.
+> 
+> Thanks
+> Vivek
+> 
+> On Wed, Jan 15, 2014 at 08:53:48PM +0800, Baoquan He wrote:
