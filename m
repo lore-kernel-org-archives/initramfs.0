@@ -1,99 +1,79 @@
-From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
-Subject: Re: [PATCH] url-lib: extend to enable TFTP support
-Date: Tue, 28 Jan 2014 15:44:23 +0100
-Message-ID: <52E7C247.2070600@harald-hoyer.de>
-References: <E86DFAF410366A40AD1683994061D9D605DE54@CFWEX01.americas.cray.com>
+From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
+Subject: Re: [PATCH v2] crypt: Prevent asking for password multiple times
+ if non-default crypt name is used.
+Date: Tue, 28 Jan 2014 15:40:54 +0000
+Message-ID: <52E7CF86.8020406@colin.guthr.ie>
+References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388149248-23146-1-git-send-email-colin@mageia.org> <52E7C0FD.1030209@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms060103080908040907060804"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E86DFAF410366A40AD1683994061D9D605DE54-aOe8g7e11MUSZAcGdq5asVgOPcOSbvolAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <52E7C0FD.1030209-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Stig Telfer <stelfer-WVYJKLFxKCc@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This is a cryptographically signed message in MIME format.
+'Twas brillig, and Harald Hoyer at 28/01/14 14:38 did gyre and gimble:
+> On 12/27/2013 02:00 PM, Colin Guthrie wrote:
+>> If a non-default device mapper name is used for an encrypted partion is
+>> used, (i.e. not luks-$UUID) due to parsing of /etc/crypttab, then the
+>> short-circuits put in place to prevent asking the password twice do not
+>> work.
+>>
+>> This would not normally be an issue as the settled job itself should be
+>> removed after it has run and thus cannot be run again. Sadly, due to
+>> the corresponding udev rule using ACTION="add|changed", and the fact
+>> that trying to unlock the device (whether successful or not) seems to
+>> trigger a changed event, it means the settled job is recreated with
+>> each itteration thus causing the whole loop to run again.
+>>
+>> It is this situation that the short-circuit exits would normally come
+>> into play but sadly do not work when non-standard names are used.
+>>
+>> By the time the /tmp/cryptroot-asked-$2 file is written near the end of
+>> the script, the value of $2 has already been lost due to the argument
+>> parsing code's use of 'shift'. So while on systems where the default
+>> name is used are protected by checking /dev/mapper/xxxx, the
+>> /tmp/cryptroot-asked-$2 file didn't help on systems where this was not
+>> used due to this bug.
+>>
+>> So this commit shuffles things around somewhat such that:
+>>
+>>  1. The /dev/mapper/xxxx device is checked *after* resolving $2 (which
+>>     contains the default name) to whatever /etc/crypttab specifies.
+>>  2. The cryptroot-asked-xxxx file also uses the translated name both
+>>     for the initial check and to flag when it's written.
+>>
+>> As a separate fix, it might make sense to change the udev rule to only
+>> act on add events rather than add|change events, but I'm not sure of the
+>> ramifications of such a change and there may be cases where the add
+>> event is missed and thus the change event needs to be included.
+>> ---
+>>
+>>  v2: Fix issue where getargbool was not defined due to deferred loading
+>>      of dracut-crypt-lib.sh
+>>
+>>  modules.d/90crypt/cryptroot-ask.sh | 36 +++++++++++++++++++-----------------
+>>  1 file changed, 19 insertions(+), 17 deletions(-)
+>>
+> 
+> Thanks! Pushed.
 
---------------ms060103080908040907060804
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Excellent, thanks. Your timing is good. I was going to pester you about
+this on Thursday. I can chalk this one of my list now :p
 
-On 12/16/2013 04:17 PM, Stig Telfer wrote:
-> Libcurl has wider capabilities than those assigned to it by Dracut.  In=
- this patch to url-lib I've added registration for TFTP URLs, which I've =
-found to be useful.
->=20
-> Enjoy,
-> Stig Telfer
->=20
->=20
-> diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-l=
-ib.sh
-> index 12df9b4..c9d143a 100755
-> --- a/modules.d/45url-lib/url-lib.sh
-> +++ b/modules.d/45url-lib/url-lib.sh
-> @@ -76,7 +76,7 @@ curl_fetch_url() {
->      fi
->      if [ -z "$2" ]; then echo "$outloc" ; fi
->  }
-> -add_url_handler curl_fetch_url http https ftp
-> +add_url_handler curl_fetch_url http https ftp tftp
->=20
->  set_http_header() {
->      echo "header =3D \"$1: $2\"" >> $CURL_HOME/.curlrc
-
-Thanks! Pushed.
+Col
 
 
+-- 
 
---------------ms060103080908040907060804
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+Colin Guthrie
+gmane(at)colin.guthr.ie
+http://colin.guthr.ie/
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFgDCC
-BXwwggNkoAMCAQICAwzQczANBgkqhkiG9w0BAQUFADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xMzAy
-MDUxMTUyMDlaFw0xNTAyMDUxMTUyMDlaMD4xFTATBgNVBAMTDEhhcmFsZCBIb3llcjElMCMG
-CSqGSIb3DQEJARYWaGFyYWxkQGhhcmFsZC1ob3llci5kZTCCASIwDQYJKoZIhvcNAQEBBQAD
-ggEPADCCAQoCggEBAMWJ6ewlyqPdfi2JF6XsM9hxa/l6edcmLEALUs5fblqJxA9ixAoWI+WY
-0agbuZgs/iudr69sU9lJIfpXUdLdZoVUn6iWxwRuJmvgihnFpLfojx+l4wDZu5JeJUXbcml4
-2wHvykdBfkfTEmUGn09CbPWeG5fAfOq37s9TIyAq4AnVWPaR4ZtIgg/s9ns9DoCAKP1pzgLn
-qTu94pfLtl5dB/dpCV9seqe+YtUZqedXhFOtWkq/w2hbFA+mXSbSDts6rZMlQO8+Rzkx1fSc
-aMZYBZ3OqRRxk6+oC4Tlv24Yj2lPMV+inTyXllxxqUa9NuXYK9hI+juy4fa3BIbKBCKidCEC
-AwEAAaOCAUYwggFCMAwGA1UdEwEB/wQCMAAwVgYJYIZIAYb4QgENBEkWR1RvIGdldCB5b3Vy
-IG93biBjZXJ0aWZpY2F0ZSBmb3IgRlJFRSBoZWFkIG92ZXIgdG8gaHR0cDovL3d3dy5DQWNl
-cnQub3JnMA4GA1UdDwEB/wQEAwIDqDBABgNVHSUEOTA3BggrBgEFBQcDBAYIKwYBBQUHAwIG
-CisGAQQBgjcKAwQGCisGAQQBgjcKAwMGCWCGSAGG+EIEATAyBggrBgEFBQcBAQQmMCQwIgYI
-KwYBBQUHMAGGFmh0dHA6Ly9vY3NwLmNhY2VydC5vcmcwMQYDVR0fBCowKDAmoCSgIoYgaHR0
-cDovL2NybC5jYWNlcnQub3JnL3Jldm9rZS5jcmwwIQYDVR0RBBowGIEWaGFyYWxkQGhhcmFs
-ZC1ob3llci5kZTANBgkqhkiG9w0BAQUFAAOCAgEAcoAhP2eXXOYJe21kF7GNzD8xVCsbjXRZ
-1VjjXWCTb/LTJphp62h1K6wMz4xnBDJ2iCvPLP3jdqeVyQeBW1c5sbW69yd9Tzhz2qESFGlV
-vf1YcZVw//dr86jptUizhoxIQeLyWYV9/a/Ms+UNi/PARYHiINahctx9z2mqcOXZvWnzkD+v
-ZV9kNTZqY4jb60YCnfc5SjB5t5l/6cnxPL3WUBpxx7tMnYKo5XlDTbxK7EcssFnxpPSgbJvR
-S0X7JqvtKscnMA8buR+IWwO1xbq7sloOhfwKbCw9XjAqND/xf8c6hNr5+AeXy/okyuz1VTIT
-ytYDorJ9kf2XOcpIKt6gILvA6Vy/8Awuaup6Cv2+B5FfEH2+cgIdEw/GyEmuVXvdPUil4DJM
-4ftprMZLMpUHv6YgavLaXKCIK5dzXmRDG0NjGgRzsl52ROLqutTwZG+U6DQZDJpNdCHEQN6Q
-PMA1Cf2JNVhbpwwQ5QMXDW3msR9CS3n3KoiC8C6ctPSZY81zGipiBgFeJnQ1+LwtICLeFo0y
-IRi1gT/ECY/59Uj+L8pehxFe1TCF/PIdxSRTKnJti5i6Bnq9asX6o1G9IQW2LA6nJexEZgYa
-cGw0JH1FMyZvo9pQ0iPTVQGmnqeIeoPouQXpAB1tzlP0oQg1QMymA6BtntZ3LOXRhYVYCYs8
-jdQxggOhMIIDnQIBATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8v
-d3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAf
-BgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDNBzMAkGBSsOAwIaBQCgggH1MBgG
-CSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE0MDEyODE0NDQyM1ow
-IwYJKoZIhvcNAQkEMRYEFCauOOSrSGwTlmV7CNtrVMtHxrNQMGwGCSqGSIb3DQEJDzFfMF0w
-CwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAw
-DQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGB
-gzCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
-cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
-EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDNBzMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYD
-VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
-GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
-ZXJ0Lm9yZwIDDNBzMA0GCSqGSIb3DQEBAQUABIIBADIb1K6ZVaNZRJcu6Dr5FXYhLL2WEFfc
-QVb5ssGIoLhL7razc+Irk6kdO6yrtk/b4I+JOATES8vVwx3dkzrLNAxPqLQMblW04hjhzDBv
-J1moNPYZbwkWFKva6TmQtFI22WmpIKXtfFoiC8xj55FnXdb+5qog7Q5Ue80PfUugifTkAoNp
-2k8qsfg1LXG3/JGLylXT9MQZEWSfiGlutWmy6digOsuET4PtBCsTpqFTKtbT1WzByxYa/u5R
-IlDOm9PMgCBH7VX0slTcMZTOi9AL6HBaFXVHKV1y1Gmw7TWdSYHuAeVCpbaSFCpCAQ6Yj8S6
-jkYl+2J+JNKrL0c/FP2R3JAAAAAAAAA=
---------------ms060103080908040907060804--
+Day Job:
+  Tribalogic Limited http://www.tribalogic.net/
+Open Source:
+  Mageia Contributor http://www.mageia.org/
+  PulseAudio Hacker http://www.pulseaudio.org/
+  Trac Hacker http://trac.edgewall.org/
