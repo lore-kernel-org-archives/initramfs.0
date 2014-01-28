@@ -1,77 +1,39 @@
-From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH 2/2] crypt: Only write udev rules to unlock when the device
- is added
-Date: Tue, 28 Jan 2014 15:41:52 +0000
-Message-ID: <52E7CFC0.4020205@colin.guthr.ie>
-References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388093183-19045-2-git-send-email-colin@mageia.org> <52E7C138.4060909@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+Subject: [PATCH] skipcpio: return something at end of program
+Date: Tue, 28 Jan 2014 16:41:08 -0300
+Message-ID: <1390938068-5109-1-git-send-email-crrodriguez@opensuse.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <52E7C138.4060909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=cristianrodriguez.net; s=google;
+        h=sender:from:to:cc:subject:date:message-id;
+        bh=+qPcVluQ/FnTsVfQUu0v33yogNxOUt4D3+x2hxIffEc=;
+        b=hQZW2TLXk/bnaXBzMmt9vXn3Wdyhbs9GcqtPklDNAyMcWuWms3nYuqKjMn+ilgXLQx
+         jPK6zae9XzU8JZ5rT8MoA7jof3Rt8ufKQLY29598GPTi9fzksFdALHQ3NspTN5kfZaxi
+         M+V3JlkUmj5BFkccDcaeeHMudH5H6I4FvV4wI=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 
-'Twas brillig, and Harald Hoyer at 28/01/14 14:39 did gyre and gimble:
-> On 12/26/2013 10:26 PM, Colin Guthrie wrote:
->> It seems that when the device is unlocked, it will trigger a change
->> event which in turn re-writes the settled job which was diligently
->> removed after it was run.
->>
->> Due to the previous fix, this isn't crazy important as the triggered
->> job should exit, but avoiding this in the first place is still
->> desirable.
->> ---
->>
->> Note, I'm not sure if this is wise or not. The previous patch alone
->> fixes the issue, so this is just an efficiency saving. It might be
->> that this is needed - e.g. if you have any encrypted volume on top
->> of some other mapped device such as RAID, so please only apply this
->> patch if you are sure it will not cause regressions!!
->>
->>
->>
->>  modules.d/90crypt/parse-crypt.sh | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-crypt.sh
->> index a6b5252..cfa6ac9 100755
->> --- a/modules.d/90crypt/parse-crypt.sh
->> +++ b/modules.d/90crypt/parse-crypt.sh
->> @@ -10,7 +10,7 @@ if ! getargbool 1 rd.luks -d -n rd_NO_LUKS; then
->>  else
->>      {
->>          echo 'SUBSYSTEM!="block", GOTO="luks_end"'
->> -        echo 'ACTION!="add|change", GOTO="luks_end"'
->> +        echo 'ACTION!="add", GOTO="luks_end"'
->>      } > /etc/udev/rules.d/70-luks.rules.new
->>  
->>      LUKS=$(getargs rd.luks.uuid -d rd_LUKS_UUID)
->>
-> 
-> Hmm, dm-devices get only active on "change" :-/ So, if a crypt device is on
-> another dm-device, the rule would not trigger anymore.
+Otherwise the compiler emits a warning and the return vale is
+in theory undefined.
+---
+ skipcpio/skipcpio.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-
-Cool, I was unsure about this one as mentioned in the message, so thanks
-for clarifying. It did solve things in a test case I had but I did
-wonder if it would cause regressions elsewhere!
-
-Thanks!
-
-Col
-
-
+diff --git a/skipcpio/skipcpio.c b/skipcpio/skipcpio.c
+index fbf391b..c912061 100644
+--- a/skipcpio/skipcpio.c
++++ b/skipcpio/skipcpio.c
+@@ -120,4 +120,6 @@ int main(int argc, char **argv)
+                         break;
+         }
+         fclose(f);
++
++        return EXIT_SUCCESS;
+ }
 -- 
-
-Colin Guthrie
-gmane(at)colin.guthr.ie
-http://colin.guthr.ie/
-
-Day Job:
-  Tribalogic Limited http://www.tribalogic.net/
-Open Source:
-  Mageia Contributor http://www.mageia.org/
-  PulseAudio Hacker http://www.pulseaudio.org/
-  Trac Hacker http://trac.edgewall.org/
+1.8.4.5
