@@ -1,39 +1,38 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] udev-rules: add eudev rules
-Date: Tue, 28 Jan 2014 15:41:23 +0100
-Message-ID: <52E7C193.4080200@redhat.com>
-References: <E1W5K2T-0000zh-LK@secretive.ru>
+Subject: Re: [PATCH] systemd: ensure autofs4 and ipv6 are included
+Date: Tue, 28 Jan 2014 15:42:11 +0100
+Message-ID: <52E7C1C3.40507@redhat.com>
+References: <1387165258-10335-1-git-send-email-crrodriguez@opensuse.org>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E1W5K2T-0000zh-LK-7GBPmfXo8GgjmsMGrRdz4w@public.gmane.org>
+In-Reply-To: <1387165258-10335-1-git-send-email-crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+To: =?ISO-8859-1?Q?Cristian_Rodr=EDguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 12/25/2013 11:00 AM, Alexander Tsoy wrote:
-> eudev configured with "--enable-modules --disable-libkmod" installs
-> 80-drivers-modprobe.rules instead of 80-drivers.rules
-> 
-> https://bugs.gentoo.org/show_bug.cgi?id=494188
+On 12/16/2013 04:40 AM, Cristian Rodr=EDguez wrote:
+> Systemd tries to load this modules very early.
+> Even though they are not strictly required it it is a good
+> thing to have them around.
 > ---
->  modules.d/95udev-rules/module-setup.sh | 2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-rules/module-setup.sh
-> index 88c3da2..ebc4447 100755
-> --- a/modules.d/95udev-rules/module-setup.sh
-> +++ b/modules.d/95udev-rules/module-setup.sh
-> @@ -39,6 +39,8 @@ install() {
->      prepare_udev_rules 59-persistent-storage.rules 61-persistent-storage.rules
->      # debian udev rules
->      inst_rules 91-permissions.rules
-> +    # eudev rules
-> +    inst_rules 80-drivers-modprobe.rules
->  
->      {
->          for i in cdrom tape dialout floppy; do
-> 
+>  modules.d/98systemd/module-setup.sh | 1 +
+>  1 file changed, 1 insertion(+)
+>=20
+> diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98system=
+d/module-setup.sh
+> index 748e25b..eb58158 100755
+> --- a/modules.d/98systemd/module-setup.sh
+> +++ b/modules.d/98systemd/module-setup.sh
+> @@ -182,6 +182,7 @@ install() {
+>      inst_script "$moddir/dracut-pre-pivot.sh" /bin/dracut-pre-pivot
+> =20
+>      inst_rules 99-systemd.rules
+> +    instmods autofs4 ipv6
+> =20
+>      for i in \
+>          emergency.target \
+>=20
 
 Thanks! Pushed.
