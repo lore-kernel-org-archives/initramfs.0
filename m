@@ -1,66 +1,64 @@
 From: Colin Guthrie <gmane-D409yXkIzt2rnn0nCzrM/w@public.gmane.org>
-Subject: Re: [PATCH v2] crypt: Prevent asking for password multiple times
- if non-default crypt name is used.
-Date: Tue, 28 Jan 2014 15:40:54 +0000
-Message-ID: <52E7CF86.8020406@colin.guthr.ie>
-References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388149248-23146-1-git-send-email-colin@mageia.org> <52E7C0FD.1030209@redhat.com>
+Subject: Re: [PATCH 2/2] crypt: Only write udev rules to unlock when the device
+ is added
+Date: Tue, 28 Jan 2014 15:41:52 +0000
+Message-ID: <52E7CFC0.4020205@colin.guthr.ie>
+References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388093183-19045-2-git-send-email-colin@mageia.org> <52E7C138.4060909@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <52E7C0FD.1030209-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <52E7C138.4060909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-'Twas brillig, and Harald Hoyer at 28/01/14 14:38 did gyre and gimble:
-> On 12/27/2013 02:00 PM, Colin Guthrie wrote:
->> If a non-default device mapper name is used for an encrypted partion is
->> used, (i.e. not luks-$UUID) due to parsing of /etc/crypttab, then the
->> short-circuits put in place to prevent asking the password twice do not
->> work.
+'Twas brillig, and Harald Hoyer at 28/01/14 14:39 did gyre and gimble:
+> On 12/26/2013 10:26 PM, Colin Guthrie wrote:
+>> It seems that when the device is unlocked, it will trigger a change
+>> event which in turn re-writes the settled job which was diligently
+>> removed after it was run.
 >>
->> This would not normally be an issue as the settled job itself should be
->> removed after it has run and thus cannot be run again. Sadly, due to
->> the corresponding udev rule using ACTION="add|changed", and the fact
->> that trying to unlock the device (whether successful or not) seems to
->> trigger a changed event, it means the settled job is recreated with
->> each itteration thus causing the whole loop to run again.
->>
->> It is this situation that the short-circuit exits would normally come
->> into play but sadly do not work when non-standard names are used.
->>
->> By the time the /tmp/cryptroot-asked-$2 file is written near the end of
->> the script, the value of $2 has already been lost due to the argument
->> parsing code's use of 'shift'. So while on systems where the default
->> name is used are protected by checking /dev/mapper/xxxx, the
->> /tmp/cryptroot-asked-$2 file didn't help on systems where this was not
->> used due to this bug.
->>
->> So this commit shuffles things around somewhat such that:
->>
->>  1. The /dev/mapper/xxxx device is checked *after* resolving $2 (which
->>     contains the default name) to whatever /etc/crypttab specifies.
->>  2. The cryptroot-asked-xxxx file also uses the translated name both
->>     for the initial check and to flag when it's written.
->>
->> As a separate fix, it might make sense to change the udev rule to only
->> act on add events rather than add|change events, but I'm not sure of the
->> ramifications of such a change and there may be cases where the add
->> event is missed and thus the change event needs to be included.
+>> Due to the previous fix, this isn't crazy important as the triggered
+>> job should exit, but avoiding this in the first place is still
+>> desirable.
 >> ---
 >>
->>  v2: Fix issue where getargbool was not defined due to deferred loading
->>      of dracut-crypt-lib.sh
+>> Note, I'm not sure if this is wise or not. The previous patch alone
+>> fixes the issue, so this is just an efficiency saving. It might be
+>> that this is needed - e.g. if you have any encrypted volume on top
+>> of some other mapped device such as RAID, so please only apply this
+>> patch if you are sure it will not cause regressions!!
 >>
->>  modules.d/90crypt/cryptroot-ask.sh | 36 +++++++++++++++++++-----------------
->>  1 file changed, 19 insertions(+), 17 deletions(-)
+>>
+>>
+>>  modules.d/90crypt/parse-crypt.sh | 2 +-
+>>  1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-crypt.sh
+>> index a6b5252..cfa6ac9 100755
+>> --- a/modules.d/90crypt/parse-crypt.sh
+>> +++ b/modules.d/90crypt/parse-crypt.sh
+>> @@ -10,7 +10,7 @@ if ! getargbool 1 rd.luks -d -n rd_NO_LUKS; then
+>>  else
+>>      {
+>>          echo 'SUBSYSTEM!="block", GOTO="luks_end"'
+>> -        echo 'ACTION!="add|change", GOTO="luks_end"'
+>> +        echo 'ACTION!="add", GOTO="luks_end"'
+>>      } > /etc/udev/rules.d/70-luks.rules.new
+>>  
+>>      LUKS=$(getargs rd.luks.uuid -d rd_LUKS_UUID)
 >>
 > 
-> Thanks! Pushed.
+> Hmm, dm-devices get only active on "change" :-/ So, if a crypt device is on
+> another dm-device, the rule would not trigger anymore.
 
-Excellent, thanks. Your timing is good. I was going to pester you about
-this on Thursday. I can chalk this one of my list now :p
+
+Cool, I was unsure about this one as mentioned in the message, so thanks
+for clarifying. It did solve things in a test case I had but I did
+wonder if it would cause regressions elsewhere!
+
+Thanks!
 
 Col
 
