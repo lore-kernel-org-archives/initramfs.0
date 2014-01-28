@@ -1,53 +1,28 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] crypt: Only write udev rules to unlock when the device
- is added
-Date: Tue, 28 Jan 2014 15:39:52 +0100
-Message-ID: <52E7C138.4060909@redhat.com>
-References: <1388093183-19045-1-git-send-email-colin@mageia.org> <1388093183-19045-2-git-send-email-colin@mageia.org>
+Subject: Re: [PATCHv2] dracut-initramfs-restore,lsinitrd: add LZ4 support
+Date: Tue, 28 Jan 2014 15:40:07 +0100
+Message-ID: <52E7C147.4090000@redhat.com>
+References: <1389866454-28426-1-git-send-email-koen@dominion.thruhere.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1388093183-19045-2-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1389866454-28426-1-git-send-email-koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 12/26/2013 10:26 PM, Colin Guthrie wrote:
-> It seems that when the device is unlocked, it will trigger a change
-> event which in turn re-writes the settled job which was diligently
-> removed after it was run.
+On 01/16/2014 11:00 AM, Koen Kooi wrote:
+> Dracut claims to have LZ4 support, but trying to use it will result in an xzcat failure at the end due to missing CAT support.
 > 
-> Due to the previous fix, this isn't crazy important as the triggered
-> job should exit, but avoiding this in the first place is still
-> desirable.
+> The lz4 command chokes on '--', so abstract that out into the CAT select.
+> 
+> Something similar will need to be done for LZO.
+> 
+> Signed-off-by: Koen Kooi <koen-QLwJDigV5abLmq1fohREcCpxlwaOVQ5f@public.gmane.org>
 > ---
-> 
-> Note, I'm not sure if this is wise or not. The previous patch alone
-> fixes the issue, so this is just an efficiency saving. It might be
-> that this is needed - e.g. if you have any encrypted volume on top
-> of some other mapped device such as RAID, so please only apply this
-> patch if you are sure it will not cause regressions!!
-> 
-> 
-> 
->  modules.d/90crypt/parse-crypt.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-crypt.sh
-> index a6b5252..cfa6ac9 100755
-> --- a/modules.d/90crypt/parse-crypt.sh
-> +++ b/modules.d/90crypt/parse-crypt.sh
-> @@ -10,7 +10,7 @@ if ! getargbool 1 rd.luks -d -n rd_NO_LUKS; then
->  else
->      {
->          echo 'SUBSYSTEM!="block", GOTO="luks_end"'
-> -        echo 'ACTION!="add|change", GOTO="luks_end"'
-> +        echo 'ACTION!="add", GOTO="luks_end"'
->      } > /etc/udev/rules.d/70-luks.rules.new
->  
->      LUKS=$(getargs rd.luks.uuid -d rd_LUKS_UUID)
-> 
+>  dracut-initramfs-restore.sh |  2 ++
+>  lsinitrd.sh                 | 22 ++++++++++++----------
+>  2 files changed, 14 insertions(+), 10 deletions(-)
 
-Hmm, dm-devices get only active on "change" :-/ So, if a crypt device is on
-another dm-device, the rule would not trigger anymore.
+Thanks! Pushed.
