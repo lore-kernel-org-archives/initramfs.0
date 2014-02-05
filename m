@@ -1,41 +1,40 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 036
-Date: Wed, 29 Jan 2014 08:38:50 +0100
-Message-ID: <52E8B00A.1040003@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] dracut.sh: Fix variable name typo.
+Date: Wed,  5 Feb 2014 10:06:51 +0000
+Message-ID: <1391594811-14489-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-Here comes a new dracut version. Thanks to all who have contributed to this release.
+This caused the root_dev variable not to be set which in turn meant that
+the root device was not whitelisted in 99base/module-setup.sh when injecting
+compile-time devexists hooks in hostonly initrds. This ties the generated
+initrd to the root fs device (typically the UUID) rather than relying solely
+only the root= kernel command line.
 
-The tarball can be found here:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/
-        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+While it is hostonly, not hardcoding e.g. UUIDs is still desirable. Any
+swap partition on the host device is still added however.
+---
+ dracut.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Git:
-        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
-
-Git Web:
-        http://git.kernel.org/?p=boot/dracut/dracut.git
-
-Git Web RSS Feed:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-        http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
-
-dracut-036
-==========
-- fixed skipcpio signature checking
+diff --git a/dracut.sh b/dracut.sh
+index ccff358..5267af5 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1005,7 +1005,7 @@ if [[ $hostonly ]]; then
+         _bdev=$(readlink -f "/dev/block/$_dev")
+         [[ -b $_bdev ]] && _dev=$_bdev
+         push host_devs $_dev
+-        [[ "$_mp" == "/" ]] && root_dev="$_dev"
++        [[ "$mp" == "/" ]] && root_dev="$_dev"
+         push host_devs "$_dev"
+     done
+ 
+-- 
+1.8.4.5
