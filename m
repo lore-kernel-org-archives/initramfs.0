@@ -1,7 +1,7 @@
 From: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: [PATCH] new_dhcp_next_server is really new_next_server
-Date: Tue,  4 Feb 2014 09:11:24 -0800
-Message-ID: <1391533884-6634-1-git-send-email-bcl@redhat.com>
+Date: Wed,  5 Feb 2014 12:10:39 -0800
+Message-ID: <1391631039-29864-1-git-send-email-bcl@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
