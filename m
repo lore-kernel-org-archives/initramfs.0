@@ -1,38 +1,69 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] new_dhcp_next_server is really new_next_server
-Date: Fri, 07 Feb 2014 18:45:31 +0100
-Message-ID: <52F51BBB.6020005@redhat.com>
-References: <1391631039-29864-1-git-send-email-bcl@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Till Maas <opensource-44rtNO6TQJOzQB+pC5nmwQ@public.gmane.org>
+Subject: [PATCH] Cryptroot-ask.sh: Use variables consistently
+Date: Sun,  9 Feb 2014 09:08:42 +0100
+Message-ID: <1391933322-17308-1-git-send-email-opensource@till.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1391631039-29864-1-git-send-email-bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Till Maas <opensource-44rtNO6TQJOzQB+pC5nmwQ@public.gmane.org>
 
-On 02/05/2014 09:10 PM, Brian C. Lane wrote:
-> The variable that dhclient sets doesn't have dhcp in the name. This
-> could cause problems with setups where the server is not the same as the
-> dhcp server.
-> ---
->  modules.d/95nfs/nfs-lib.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/modules.d/95nfs/nfs-lib.sh b/modules.d/95nfs/nfs-lib.sh
-> index f5fc56d..9ced2e6 100755
-> --- a/modules.d/95nfs/nfs-lib.sh
-> +++ b/modules.d/95nfs/nfs-lib.sh
-> @@ -97,7 +97,7 @@ nfsroot_from_dhcp() {
->      [ -z "$path" ] && [ "$(getarg root=)" == "/dev/nfs" ] && path=/tftpboot/%s
->      [ -z "$server" ] && server=$srv
->      [ -z "$server" ] && server=$new_dhcp_server_identifier
-> -    [ -z "$server" ] && server=$new_dhcp_next_server
-> +    [ -z "$server" ] && server=$new_next_server
->      [ -z "$server" ] && server=${new_root_path%%:*}
->  }
->  
-> 
+- Always use $luksname instead of sometimes $2
+- define $asked_file instead of using the same path twice
+---
+ modules.d/90crypt/cryptroot-ask.sh | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-Thanks! Pushed.
+diff --git a/modules.d/90crypt/cryptroot-ask.sh b/modules.d/90crypt/cryptroot-ask.sh
+index 9665e48..1ab03bc 100755
+--- a/modules.d/90crypt/cryptroot-ask.sh
++++ b/modules.d/90crypt/cryptroot-ask.sh
+@@ -8,19 +8,21 @@ NEWROOT=${NEWROOT:-"/sysroot"}
+ # do not ask, if we already have root
+ [ -f $NEWROOT/proc ] && exit 0
+ 
++# default luksname - luks-UUID
++luksname=$2
++
+ # check if destination already exists
+-[ -b /dev/mapper/$2 ] && exit 0
++[ -b /dev/mapper/luksname ] && exit 0
+ 
+ # we already asked for this device
+-[ -f /tmp/cryptroot-asked-$2 ] && exit 0
++asked_file=/tmp/cryptroot-asked-$luksname
++[ -f $asked_file ] && exit 0
+ 
+ # load dm_crypt if it is not already loaded
+ [ -d /sys/module/dm_crypt ] || modprobe dm_crypt
+ 
+ . /lib/dracut-crypt-lib.sh
+ 
+-# default luksname - luks-UUID
+-luksname=$2
+ 
+ # fallback to passphrase
+ ask_passphrase=1
+@@ -45,7 +47,7 @@ if [ -f /etc/crypttab ] && getargbool 1 rd.luks.crypttab -d -n rd_NO_CRYPTTAB; t
+ 
+         # UUID used in crypttab
+         if [ "${dev%%=*}" = "UUID" ]; then
+-            if [ "luks-${dev##UUID=}" = "$2" ]; then
++            if [ "luks-${dev##UUID=}" = "$luksname" ]; then
+                 luksname="$name"
+                 break
+             fi
+@@ -157,7 +159,7 @@ fi
+ unset device luksname luksfile
+ 
+ # mark device as asked
+->> /tmp/cryptroot-asked-$2
++>> $asked_file
+ 
+ need_shutdown
+ udevsettle
+-- 
+1.8.3.1
