@@ -1,82 +1,133 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] add fsck passno to dracut --mount args
-Date: Thu, 13 Feb 2014 10:08:08 -0500
-Message-ID: <20140213150808.GH30844@redhat.com>
-References: <20140212072229.GA15908@dhcp-16-126.nay.redhat.com>
- <20140213144222.GG30844@redhat.com>
- <52FCDBB0.8080509@redhat.com>
+From: sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org
+Subject: Patch for Manpage
+Date: Thu, 13 Feb 2014 08:03:35 +0000
+Message-ID: <2472246.g3sNxB2UqE@linux-n5po>
 Mime-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart25786604.pUKuXAIhTE"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <52FCDBB0.8080509-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, kexec-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, Feb 13, 2014 at 03:50:24PM +0100, Harald Hoyer wrote:
-> On 02/13/2014 03:42 PM, Vivek Goyal wrote:
-> > On Wed, Feb 12, 2014 at 03:22:30PM +0800, Dave Young wrote:
-> >> We are using dracut --mount to pass fstab lines for mounting filesystems
-> >> other than rootfs. But we did not provide passno for filesystem checking.
-> >>
-> >> Add passno '2' for all the --mount targets.
-> >>
-> >> Tested in F19 guest.
-> >>
-> >> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> >> ---
-> >>  mkdumprd |    2 +-
-> >>  1 file changed, 1 insertion(+), 1 deletion(-)
-> >>
-> >> --- kexec-tools.orig/mkdumprd
-> >> +++ kexec-tools/mkdumprd
-> >> @@ -104,7 +104,7 @@ to_mount() {
-> >>      _o=$(findmnt -k -f -n -r -o OPTIONS $_dev)
-> >>      _o=${_o/#ro/rw} #mount fs target as rw in 2nd kernel
-> >>      _o="${_o},nofail" #with nofail set, systemd won't block for mount failure
-> >> -    _mntopts="$_t $_o"
-> >> +    _mntopts="$_t $_o 0 2"
-> > 
-> > What is 0 here. I think you are trying to emulate the format of an fstab
-> > file and passing 5th and 6th field.
-> > 
-> > I don't think they are filesystem options. If you trying to mount a file
-> > system with 0 and 2 passed as additional parameters, mount will complain
-> > that what is 0 and 2 it does not understand.
-> 
-> yes, kind of... as it is now, it would generate an invalid fstab line
-> 
->     while pop fstab_lines line; do
->         printf "%s\n" "$line 0 0" >> "${initdir}/etc/fstab"
->     done
-> 
-> but most of the tools would accept that and the fsck would be done
-> 
-> > 
-> > I am CCing harald. He might have thoughts on what's the better way to
-> > pass the fsck_passno of filesystem being mounted. I would not mind of
-> > passno 2 is hardcoded for anything passed in using --mount option in
-> > dracut.
-> 
-> we can also check if those are present, and set "0 0" as the default if nothing
-> is given in "--mount"
 
-Ok, so you don't mind being passed in fs_freq and fs_passno as last fields
-of --mount option.
+--nextPart25786604.pUKuXAIhTE
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-In that case, Dave can you please also post a patch to modify dracut to
-parse these fields and use default of "0 0" only if use did not pass those.
+Patch corrects grub paths in the manpage for both GRUB legacy and GRUB2=
 
-Also please modify dracut man page and mention that one can pass in
-fs_freq and fs_passno as last options.
 
-Dave, in the changelog of this patch, can we also please mention that
-why we need to set passno explicitly. We can mention that default is zero
-and that means no fsck will be run. But we want to make sure fsck is
-run before we try to save dump on filesystem.
+diff -rupN dracut-036.old/dracut.8 dracut-036/dracut.8
+=2D-- dracut-036.old/dracut.8=092014-01-29 07:36:45.000000000 +0000
++++ dracut-036/dracut.8=092014-02-13 05:39:56.965246846 +0000
+@@ -189,7 +189,7 @@ If you need a special kernel module in t
+ .sp
+ An initramfs generated without the "hostonly" mode, does not contain a=
+ny=20
+system configuration files (except for some special exceptions), so the=
+=20
+configuration has to be done on the kernel command line\&. With this=20=
 
-Thanks
-Vivek
+flexibility, you can easily boot from a changed root partition, without=
+ the=20
+need to recompile the initramfs image\&. So, you could completly change=
+ your=20
+root partition (move it inside a md raid with encryption and LVM on top=
+), as=20
+long as you specify the correct filesystem LABEL or UUID on the kernel =
+command=20
+line for your root device, dracut will find it and boot from it\&.
+ .sp
+=2DThe kernel command line usually can be configured in=20
+\fI/boot/grub/grub\&.conf\fR, if grub is your bootloader and it also ca=
+n be=20
+edited in the real boot process in the grub menu\&.
++The kernel command line usually can be configured in=20
+\fI/boot/grub/menu\&.lst\fR, for GRUB Legacy, and=20
+\fI/boot/grub2/grub\&.cfg\fR, for GRUB2 if grub is your bootloader and =
+it also=20
+can be edited in the real boot process in the grub menu\&.
+ .sp
+ The kernel command line can also be provided by the dhcp server with t=
+he=20
+root\-path option\&. See the section called \(lqNetwork Boot\(rq\&.
+ .sp
+diff -rupN dracut-036.old/dracut.html dracut-036/dracut.html
+=2D-- dracut-036.old/dracut.html=092014-01-29 07:36:45.000000000 +0000
++++ dracut-036/dracut.html=092014-02-12 21:41:37.988588041 +0000
+@@ -1277,7 +1277,7 @@ boot from a changed root partition, with
+ image. So, you could completly change your root partition (move it ins=
+ide a=20
+md
+ raid with encryption and LVM on top), as long as you specify the corre=
+ct
+ filesystem LABEL or UUID on the kernel command line for your root devi=
+ce,=20
+dracut
+=2Dwill find it and boot from it.</p><p>The kernel command line usually c=
+an be=20
+configured in <span class=3D"emphasis"><em>/boot/grub/grub.conf</em></s=
+pan>, if
++will find it and boot from it.</p><p>The kernel command line usually c=
+an be=20
+configured in <span class=3D"emphasis"><em>/boot/grub/menu.lst</em></sp=
+an>, for=20
+GRUB Legacy, or <span class=3D"emphasis"><em>/boot/grub2/grub.cfg</em><=
+/span>,=20
+for GRUB2 if
+ grub is your bootloader and it also can be edited in the real boot pro=
+cess in
+ the grub menu.</p><p>The kernel command line can also be provided by t=
+he dhcp=20
+server with the
+ root-path option. See <a class=3D"xref" href=3D"#NetworkBoot" title=3D=
+"Network=20
+Boot">the section called =E2=80=9CNetwork Boot=E2=80=9D</a>.</p><p>For =
+a full reference of all=20
+kernel command line parameters,
+@@ -3228,4 +3228,4 @@ local-fs-pre.target                dracu
+                                           switch-root</pre></div><div=20=
+
+class=3D"section"><div class=3D"titlepage"><div><div><h2 class=3D"title=
+"=20
+style=3D"clear: both"><a=20
+id=3D"_author_4"></a>AUTHOR</h2></div></div></div><p>Harald Hoyer</p></=
+div><div=20
+class=3D"section"><div class=3D"titlepage"><div><div><h2 class=3D"title=
+"=20
+style=3D"clear: both"><a id=3D"_see_also_7"></a>SEE=20
+ALSO</h2></div></div></div><p><span=20
+class=3D"strong"><strong>dracut</strong></span>(8) <span=20
+class=3D"strong"><strong>bootup</strong></span>(7)</p></div></div><div=20=
+
+class=3D"appendix"><div class=3D"titlepage"><div><div><h2 class=3D"titl=
+e"><a=20
+id=3D"_license"></a>Appendix A. License</h2></div></div></div><p>This w=
+ork is=20
+licensed under the Creative Commons Attribution/Share-Alike
+ License. To view a copy of this license, visit
+ <a class=3D"ulink" href=3D"http://creativecommons.org/licenses/by-sa/3=
+.0/"=20
+target=3D"_top">http://creativecommons.org/licenses/by-sa/3.0/</a> or s=
+end a=20
+letter to Creative
+=2DCommons, 559 Nathan Abbott Way, Stanford, California 94305,=20
+USA.</p></div></div></div></body></html>
+\ No newline at end of file
++Commons, 559 Nathan Abbott Way, Stanford, California 94305,=20
+USA.</p></div></div></div></body></html>
+
+--nextPart25786604.pUKuXAIhTE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iF4EABEIAAYFAlL8fGIACgkQFoHVlptUfZmHWgD/SC3eg76NCT+Th5Ek/0oHAAtI
+wpavVtJNSovh25VewbkA/3PbpIca2RBPHa94Y8thUAp+we4Wgwo950Y8imcWYrX+
+=msQh
+-----END PGP SIGNATURE-----
+
+--nextPart25786604.pUKuXAIhTE--
