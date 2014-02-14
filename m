@@ -1,40 +1,73 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] add fsck passno to dracut --mount args
-Date: Fri, 14 Feb 2014 11:05:54 +0800
-Message-ID: <20140214030554.GA8125@dhcp-16-126.nay.redhat.com>
-References: <20140212072229.GA15908@dhcp-16-126.nay.redhat.com>
- <20140213144222.GG30844@redhat.com>
- <52FCDBB0.8080509@redhat.com>
- <20140213150808.GH30844@redhat.com>
- <20140214024031.GE4225@dhcp-16-126.nay.redhat.com>
- <20140214025452.GG4225@dhcp-16-126.nay.redhat.com>
+Subject: [PATCH] add default values in fstab_lines
+Date: Fri, 14 Feb 2014 16:49:21 +0800
+Message-ID: <20140214084921.GA30064@dhcp-16-126.nay.redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20140214025452.GG4225-je1gSBvt1TcFLmT5oZ11vB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, kexec-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-> > > Ok, so you don't mind being passed in fs_freq and fs_passno as last fields
-> > > of --mount option.
-> > > 
-> > > In that case, Dave can you please also post a patch to modify dracut to
-> > > parse these fields and use default of "0 0" only if use did not pass those.
-> > 
-> > Sure, will do
-> 
-> Hmm, what Harald mentioned is already in dracut code. I think we only need to
-> pass them in kdump module.
+It's useful for passing a full fstab line including like fs_passno so f=
+sck
+can take effect.
 
-Rechecking it, dracut still need a fix to parse the extra options because it only
-add "0 0" unconditionally.
+Previously it's assumed that there's no fs_freq and fs_passno in fstab =
+lines
+so original code just append "0 0" at the end of each fstab lines.
 
-The previous testing passed of this patch because dracut just regard the "0 2"
-as mount options and later fstab-sys mount.sh parse the "2" as pass_no.
+Improve this issue by assign default value in case they are not passed =
+in.
+Three field are handled here:
+fs_mntops: default to "defaults"
+fs_freq: default to "0"
+fs_passno: default to "0"=20
 
-Thanks
-Dave
+Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut.8.asc |    8 ++++++--
+ dracut.sh    |    6 +++++-
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+--- dracut.orig/dracut.sh
++++ dracut/dracut.sh
+@@ -1222,7 +1222,11 @@ if [[ $kernel_only !=3D yes ]]; then
+     [[ $kernel_cmdline ]] && printf "%s\n" "$kernel_cmdline" >> "${ini=
+tdir}/etc/cmdline.d/01-default.conf"
+=20
+     while pop fstab_lines line; do
+-        printf "%s\n" "$line 0 0" >> "${initdir}/etc/fstab"
++        line=3D($line)
++        [ -z "${line[3]}" ] && line[3]=3D"defaults"
++        [ -z "${line[4]}" ] && line[4]=3D"0"
++        [ -z "${line[5]}" ] && line[5]=3D"0"
++        echo "${line[@]}" >> "${initdir}/etc/fstab"
+     done
+=20
+     for f in $add_fstab; do
+--- dracut.orig/dracut.8.asc
++++ dracut/dracut.8.asc
+@@ -311,9 +311,13 @@ provide a valid _/etc/fstab_.
+ **--add-fstab** _<filename>_::
+     Add entries of _<filename>_ to the initramfs /etc/fstab.
+=20
+-**--mount**=A0"_<device>_ _<mountpoint>_ _<filesystem type>_ _<filesys=
+tem options>_"::
++**--mount**=A0"_<device>_ _<mountpoint>_ _<filesystem type>_ _<filesys=
+tem options>_ _<dump options>_ _<fsck order>_"::
+     Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<=
+filesystem
+-    options>_ in the initramfs
++    options>_ in the initramfs. _<dump options>_ and _<fsck order>_ ca=
+n also be
++    specified, see fstab manpage for the details.
++    The default _<filesystem options>_ is "defaults".
++    The default _<dump options>_ is "0".
++    the default _<fsck order>_ is "2".
+=20
+ **--add-device** _<device>_ ::
+     Bring up _<device>_ in initramfs, _<device>_ should be the device =
+name.
