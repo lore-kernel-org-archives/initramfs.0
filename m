@@ -1,107 +1,96 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: kdump in dracut
-Date: Tue, 18 Feb 2014 06:45:15 -0500
-Message-ID: <20140218114515.GA12633@redhat.com>
-References: <1644005.SfM4K48qYX@skinner>
- <20140218034132.GG18964@dhcp-17-89.nay.redhat.com>
- <1745934.e2BrRKeI5B@skinner>
+Subject: Re: [PATCH] add default values in fstab_lines
+Date: Tue, 18 Feb 2014 08:29:13 -0500
+Message-ID: <20140218132912.GB12633@redhat.com>
+References: <20140214084921.GA30064@dhcp-16-126.nay.redhat.com>
+ <20140217155512.GG11670@redhat.com>
+ <20140218051946.GB3123@dhcp-16-198.nay.redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1745934.e2BrRKeI5B@skinner>
+In-Reply-To: <20140218051946.GB3123-je1gSBvt1Tc/CGXRbJeUwh/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Julian Wolf <juwolf-l3A5Bk7waGM@public.gmane.org>, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, Feb 18, 2014 at 11:58:38AM +0100, Thomas Renninger wrote:
-> On Tuesday, February 18, 2014 11:41:32 AM WANG Chao wrote:
-> > CC Vivek, Bao
-> > 
-> > On 02/17/14 at 04:10pm, Thomas Renninger wrote:
-> > > Hi,
-> > > 
-> > > it looks like Redhat has made up their own kdump dracut module
-> > > in the kexec-tools Fedora package:
-> > > http://pkgs.fedoraproject.org/cgit/kexec-tools.git/tree/
-> > > 
-> > > dracut-kdump.sh
-> > > dracut-module-setup.sh
-> > > dracut-monitor-dd-progress.sh
-> > > 
-> > > I wonder whether there are any plans to get those into the
-> > > dracut mainline git repository.
-> > 
-> > Hi, Thomas
-> > 
-> > AFAICT, we don't have any plan to move these files into dracut.
-> > We want to maintain these files separately, because kdump initrd serves
-> > for a different purpose comparing to a normal initrd created by dracut
-> > by default. Basically we are reusing the dracut framework to achieve our
-> > own purpose (kdump).
-> "Own" purpose sounds strange. Kdump is something every distribution has
-> or should have.
-> I also do not understand the "kdump initrd serves for a different purpose"
-> argue.
-> Dracut is made to build an initrd for any purpose?
->  
-> > > Otherwise we (SUSE) and others will have to come up with our
-> > > own implementations and we are where we do not want to end up:
-> > > Different initrd implementations, setups, configurations across
-> > > Linux distributions.
-> > 
-> > This kdump module is highly associated with other scripts we provide in
-> > our kexec-tools package. What's the worse is that some parts are
-> > hardcoded for Fedora.
-> 
-> That's bad.
-> The stuff should (at least in dracut git repo) be compatible with:
-> ftp://kernel.org/pub/linux/utils/kernel/kexec
-> https://sourceforge.net/projects/makedumpfile
-> and other mainline projects.
-> We also had some specialities implemented in our mkinitrd solution.
-> But it should not be hard to put a basic dracut kdump module together
-> which is compatible.
+On Tue, Feb 18, 2014 at 01:19:46PM +0800, Dave Young wrote:
+> On 02/17/14 at 10:55am, Vivek Goyal wrote:
+> > On Fri, Feb 14, 2014 at 04:49:21PM +0800, Dave Young wrote:
+> > > It's useful for passing a full fstab line including like fs_passn=
+o so fsck
+> > > can take effect.
+> > >=20
+> > > Previously it's assumed that there's no fs_freq and fs_passno in =
+fstab lines
+> > > so original code just append "0 0" at the end of each fstab lines=
+=2E
+> > >=20
+> > > Improve this issue by assign default value in case they are not p=
+assed in.
+> > > Three field are handled here:
+> > > fs_mntops: default to "defaults"
+> > > fs_freq: default to "0"
+> > > fs_passno: default to "0"=20
+> > >=20
+> > > Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > > ---
+> > >  dracut.8.asc |    8 ++++++--
+> > >  dracut.sh    |    6 +++++-
+> > >  2 files changed, 11 insertions(+), 3 deletions(-)
+> > >=20
+> > > --- dracut.orig/dracut.sh
+> > > +++ dracut/dracut.sh
+> > > @@ -1222,7 +1222,11 @@ if [[ $kernel_only !=3D yes ]]; then
+> > >      [[ $kernel_cmdline ]] && printf "%s\n" "$kernel_cmdline" >> =
+"${initdir}/etc/cmdline.d/01-default.conf"
+> > > =20
+> > >      while pop fstab_lines line; do
+> > > -        printf "%s\n" "$line 0 0" >> "${initdir}/etc/fstab"
+> > > +        line=3D($line)
+> > > +        [ -z "${line[3]}" ] && line[3]=3D"defaults"
+> > > +        [ -z "${line[4]}" ] && line[4]=3D"0"
+> > > +        [ -z "${line[5]}" ] && line[5]=3D"0"
+> > > +        echo "${line[@]}" >> "${initdir}/etc/fstab"
+> > >      done
+> > > =20
+> > >      for f in $add_fstab; do
+> > > --- dracut.orig/dracut.8.asc
+> > > +++ dracut/dracut.8.asc
+> > > @@ -311,9 +311,13 @@ provide a valid _/etc/fstab_.
+> > >  **--add-fstab** _<filename>_::
+> > >      Add entries of _<filename>_ to the initramfs /etc/fstab.
+> > > =20
+> > > -**--mount**=A0"_<device>_ _<mountpoint>_ _<filesystem type>_ _<f=
+ilesystem options>_"::
+> > > +**--mount**=A0"_<device>_ _<mountpoint>_ _<filesystem type>_ _<f=
+ilesystem options>_ _<dump options>_ _<fsck order>_"::
+> > >      Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ =
+and _<filesystem
+> > > -    options>_ in the initramfs
+> > > +    options>_ in the initramfs. _<dump options>_ and _<fsck orde=
+r>_ can also be
+> >=20
+> > How do you differentiate between filesystem options and dump option=
+?  IOW,
+> > what is used as separator so that dracut and find out what is a a
+> > filesystem option and what is a dump option or pass number option?
+>=20
+> It should be same as fstab format, use space or tab to seperate them.
 
-Hi Thomas,
+Ok, so filesystem options have to be comma separated. This was not clea=
+r
+from man page to me. I checked it on my system and we are passing
+comma separated filesystem options.
 
-I think in general sharing code is a good idea. Though kdump as a
-mechanism is common across distributions but when it comes to user
-space tooling around it, every distributions went their own way. All
-the init scripts, configuration files, all graphical configuration
-utilities etc.
+dracut --hostonly -o 'plymouth dash' --mount '/dev/disk/by-uuid/87faf93=
+0-fd28-49e0-8b0f-d775141e7f59 /mnt/wd-ssd1 ext4 rw,relatime,seclabel,da=
+ta=3Dordered,nofail' -f /boot/initramfs-3.14.0-rc1+kdump.img 3.14.0-rc1=
++
 
-In fact, IIRC, initially SuSE had taken the approach of dumping to
-Swap (like LKCD) instead of dumping from initramfs to various kind
-of targets and then recover dump from swap over next reboot. But that
-was long ago and things might have changed since then.
-
-Given the fact that we developed all user space tooling in isolation,
-current dracut module is closely tied to configuration options we provide
-in /etc/kdump.conf. And it might be very different on SuSE. One simple
-example is "default" action. Which specifies what action to take if
-saving dump to intended target fails. 
-
-In fact almost all the code of kdump dracut module seems to be cosely
-tied to /etc/kdump.conf. Parsing various options and making sure that
-these user specified options can be executed. 
-
-So if there is a common dracut module, that most likely will mean to
-have some kind of common understanding on what various constructs mean
-in /etc/kdump.conf.
-
-Hence, I think first we will have to figure out what functionality we
-are expecting to have in that common kdump dracut module and how to
-come up with some common understanding on /etc/kdump.conf which tweaks
-the behavior of kdump module.
-
-So personally, I am not opposed to the idea of having common dracut
-module code in dracut repository. I think it is a good idea to have
-common code base which can be used by other distributions too. It just
-means more people can contribute to that common code and make it even
-better.
+If that's the case, then this approach should work.
 
 Thanks
 Vivek
