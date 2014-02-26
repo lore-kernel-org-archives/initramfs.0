@@ -1,40 +1,36 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Patch for Manpage
-Date: Wed, 26 Feb 2014 15:04:20 +0100
-Message-ID: <530DF464.5070305@redhat.com>
-References: <2472246.g3sNxB2UqE@linux-n5po>
+Subject: Re: [PATCH] Added missing quotes
+Date: Wed, 26 Feb 2014 15:04:44 +0100
+Message-ID: <530DF47C.1010601@redhat.com>
+References: <1393173888-10122-1-git-send-email-aidecoe@aidecoe.name>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <2472246.g3sNxB2UqE@linux-n5po>
+In-Reply-To: <1393173888-10122-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 02/23/2014 05:44 PM, Amadeusz =C5=BBo=C5=82nowski wrote:
+> See bug report at https://bugs.gentoo.org/show_bug.cgi?id=3D502064
+> ---
+>  dracut.sh | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/dracut.sh b/dracut.sh
+> index 5267af5..1e35e09 100755
+> --- a/dracut.sh
+> +++ b/dracut.sh
+> @@ -551,7 +551,7 @@ done
+>  # the old fashioned way
+> =20
+>  while (($# > 0)); do
+> -    if [ ${1%%=3D*} =3D=3D "++include" ]; then
+> +    if [ "${1%%=3D*}" =3D=3D "++include" ]; then
+>          push include_src "$2"
+>          push include_target "$3"
+>          PARMS_TO_STORE+=3D" --include '$2' '$3'"
+>=20
 
-On 02/13/2014 09:03 AM, sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org wrote:
-> Patch corrects grub paths in the manpage for both GRUB legacy and GRUB2
-
-Thanks! Patched the real source "dracut.usage.asc" instead.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJTDfRjAAoJEANOs3ABTfJwqqMP/2qFwpBm3oMj+5BZoBEzt3lN
-YDHnHkzASKUw6ep/nZlzNvtZVjuZyV3o6XFdh+G2jF63egAQ7xFtsF2jA/9Xbi+b
-rNeIn1G4cH8FckRThKCjvcuYz35pOikcg65RKpdMmlJ8D47gKmqstkIbPgvORbfA
-fXaDhR3SdK+9vwh4LihZ08zvZhfWqMmRXELfsXjC9+opLqX8wNXKiOci7xHzyikE
-bdOiXPDsenITUB5jkMqw83AnNCSShivwiXW8qQFNCaxPkZ+EaqL84kLBhC0FBMAv
-7SZxBn3Pq/lUqGalH1AJwVjUTJp/WF78krPGb39sBsE2j91NkE5iFQYtX1LajaKA
-ruhu1QJvFOIx0W2qCzak0E75wMwZO2mxmb1MCsiaD09881uYLNMoWNOJUFKuPbHX
-Q3JvfwntmVqpUFWt06vbV05LzQ47Nk9tcQd4Y6/Hb7DI4bQZnVc2y47YR6IqPV4H
-yJRhi5WQyPwdGOx+7MUtcmQB/g6MjOfYUrJpPstE+cC7toNMfH9etotmd5R7ilzI
-rSl5GqOrlB789m+l3/sNwI6cmgzdhWheMrl3G3pH1Vuc0j9lYMGUPPF7bTmeHzyK
-wNqyEcdQHP2yM7NpOX7RNPZeitJYDhRIKXxjzdT7drL6FDaj+WTmIqMatO0EASe4
-TNPmo1wtYh9bVuzuGyCh
-=D5jH
------END PGP SIGNATURE-----
+Thanks! Pushed
