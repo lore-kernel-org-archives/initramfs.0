@@ -1,52 +1,76 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv2] Add legacy flag (-l) to lz4 and update magic number
-Date: Wed, 26 Feb 2014 15:05:14 +0100
-Message-ID: <530DF49A.1010309@redhat.com>
-References: <E1WIdCN-0000Jz-Gd@secretive.ru>
+Subject: Re: [PATCH] add default values in fstab_lines
+Date: Wed, 26 Feb 2014 15:08:25 +0100
+Message-ID: <530DF559.70404@redhat.com>
+References: <20140214084921.GA30064@dhcp-16-126.nay.redhat.com> <20140224015457.GA4043@dhcp-16-126.nay.redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E1WIdCN-0000Jz-Gd-7GBPmfXo8GgjmsMGrRdz4w@public.gmane.org>
+In-Reply-To: <20140224015457.GA4043-je1gSBvt1TcFLmT5oZ11vB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 02/26/2014 12:50 PM, Alexander Tsoy wrote:
-> Linux kernel does not support the new default lz4 format.
+On 02/24/2014 02:54 AM, Dave Young wrote:
+> On 02/14/14 at 04:49pm, Dave Young wrote:
+>> It's useful for passing a full fstab line including like fs_passno so fsck
+>> can take effect.
+>>
+>> Previously it's assumed that there's no fs_freq and fs_passno in fstab lines
+>> so original code just append "0 0" at the end of each fstab lines.
+>>
+>> Improve this issue by assign default value in case they are not passed in.
+>> Three field are handled here:
+>> fs_mntops: default to "defaults"
+>> fs_freq: default to "0"
+>> fs_passno: default to "0" 
+>>
+>> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> ---
+>>  dracut.8.asc |    8 ++++++--
+>>  dracut.sh    |    6 +++++-
+>>  2 files changed, 11 insertions(+), 3 deletions(-)
+>>
+>> --- dracut.orig/dracut.sh
+>> +++ dracut/dracut.sh
+>> @@ -1222,7 +1222,11 @@ if [[ $kernel_only != yes ]]; then
+>>      [[ $kernel_cmdline ]] && printf "%s\n" "$kernel_cmdline" >> "${initdir}/etc/cmdline.d/01-default.conf"
+>>  
+>>      while pop fstab_lines line; do
+>> -        printf "%s\n" "$line 0 0" >> "${initdir}/etc/fstab"
+>> +        line=($line)
+>> +        [ -z "${line[3]}" ] && line[3]="defaults"
+>> +        [ -z "${line[4]}" ] && line[4]="0"
+>> +        [ -z "${line[5]}" ] && line[5]="0"
+>> +        echo "${line[@]}" >> "${initdir}/etc/fstab"
+>>      done
+>>  
+>>      for f in $add_fstab; do
+>> --- dracut.orig/dracut.8.asc
+>> +++ dracut/dracut.8.asc
+>> @@ -311,9 +311,13 @@ provide a valid _/etc/fstab_.
+>>  **--add-fstab** _<filename>_::
+>>      Add entries of _<filename>_ to the initramfs /etc/fstab.
+>>  
+>> -**--mount** "_<device>_ _<mountpoint>_ _<filesystem type>_ _<filesystem options>_"::
+>> +**--mount** "_<device>_ _<mountpoint>_ _<filesystem type>_ _<filesystem options>_ _<dump options>_ _<fsck order>_"::
+>>      Mount _<device>_ on _<mountpoint>_ with _<filesystem type>_ and _<filesystem
+>> -    options>_ in the initramfs
+>> +    options>_ in the initramfs. _<dump options>_ and _<fsck order>_ can also be
+>> +    specified, see fstab manpage for the details.
+>> +    The default _<filesystem options>_ is "defaults".
+>> +    The default _<dump options>_ is "0".
+>> +    the default _<fsck order>_ is "2".
+>>  
+>>  **--add-device** _<device>_ ::
+>>      Bring up _<device>_ in initramfs, _<device>_ should be the device name.
 > 
-> https://bugs.gentoo.org/show_bug.cgi?id=502102
-> ---
->  dracut.sh   | 2 +-
->  lsinitrd.sh | 2 +-
->  2 files changed, 2 insertions(+), 2 deletions(-)
+> Hi, Harald
 > 
-> diff --git a/dracut.sh b/dracut.sh
-> index 5267af5..49077fd 100755
-> --- a/dracut.sh
-> +++ b/dracut.sh
-> @@ -782,7 +782,7 @@ case $compress in
->      xz)    compress="xz --check=crc32 --lzma2=dict=1MiB -T0";;
->      gzip)  compress="gzip -9"; command -v pigz > /dev/null 2>&1 && compress="pigz -9";;
->      lzo)   compress="lzop -9";;
-> -    lz4)   compress="lz4 -9";;
-> +    lz4)   compress="lz4 -l -9";;
->  esac
->  if [[ $_no_compress_l = "cat" ]]; then
->      compress="cat"
-> diff --git a/lsinitrd.sh b/lsinitrd.sh
-> index 2c58f84..8dc9032 100755
-> --- a/lsinitrd.sh
-> +++ b/lsinitrd.sh
-> @@ -172,7 +172,7 @@ case $bin in
->      $'\x71\xc7'*|070701)
->          CAT="cat --"
->          ;;
-> -    $'\x04\x22'*)
-> +    $'\x02\x21'*)
->          CAT="lz4 -d -c";;
->      *)
->          CAT="xzcat --";
+> What's your opinion about this? Could you review it?
 > 
+> Thanks
+> Dave
 
-Thanks! Pushed
+Looks good.. So what should be the default fsck order? 0 or 2?
