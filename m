@@ -1,36 +1,52 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Added missing quotes
-Date: Wed, 26 Feb 2014 15:04:44 +0100
-Message-ID: <530DF47C.1010601@redhat.com>
-References: <1393173888-10122-1-git-send-email-aidecoe@aidecoe.name>
+Subject: Re: [PATCHv2] Add legacy flag (-l) to lz4 and update magic number
+Date: Wed, 26 Feb 2014 15:05:14 +0100
+Message-ID: <530DF49A.1010309@redhat.com>
+References: <E1WIdCN-0000Jz-Gd@secretive.ru>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1393173888-10122-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <E1WIdCN-0000Jz-Gd-7GBPmfXo8GgjmsMGrRdz4w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 02/23/2014 05:44 PM, Amadeusz =C5=BBo=C5=82nowski wrote:
-> See bug report at https://bugs.gentoo.org/show_bug.cgi?id=3D502064
+On 02/26/2014 12:50 PM, Alexander Tsoy wrote:
+> Linux kernel does not support the new default lz4 format.
+> 
+> https://bugs.gentoo.org/show_bug.cgi?id=502102
 > ---
->  dracut.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
+>  dracut.sh   | 2 +-
+>  lsinitrd.sh | 2 +-
+>  2 files changed, 2 insertions(+), 2 deletions(-)
+> 
 > diff --git a/dracut.sh b/dracut.sh
-> index 5267af5..1e35e09 100755
+> index 5267af5..49077fd 100755
 > --- a/dracut.sh
 > +++ b/dracut.sh
-> @@ -551,7 +551,7 @@ done
->  # the old fashioned way
-> =20
->  while (($# > 0)); do
-> -    if [ ${1%%=3D*} =3D=3D "++include" ]; then
-> +    if [ "${1%%=3D*}" =3D=3D "++include" ]; then
->          push include_src "$2"
->          push include_target "$3"
->          PARMS_TO_STORE+=3D" --include '$2' '$3'"
->=20
+> @@ -782,7 +782,7 @@ case $compress in
+>      xz)    compress="xz --check=crc32 --lzma2=dict=1MiB -T0";;
+>      gzip)  compress="gzip -9"; command -v pigz > /dev/null 2>&1 && compress="pigz -9";;
+>      lzo)   compress="lzop -9";;
+> -    lz4)   compress="lz4 -9";;
+> +    lz4)   compress="lz4 -l -9";;
+>  esac
+>  if [[ $_no_compress_l = "cat" ]]; then
+>      compress="cat"
+> diff --git a/lsinitrd.sh b/lsinitrd.sh
+> index 2c58f84..8dc9032 100755
+> --- a/lsinitrd.sh
+> +++ b/lsinitrd.sh
+> @@ -172,7 +172,7 @@ case $bin in
+>      $'\x71\xc7'*|070701)
+>          CAT="cat --"
+>          ;;
+> -    $'\x04\x22'*)
+> +    $'\x02\x21'*)
+>          CAT="lz4 -d -c";;
+>      *)
+>          CAT="xzcat --";
+> 
 
 Thanks! Pushed
