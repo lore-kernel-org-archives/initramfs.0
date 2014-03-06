@@ -1,75 +1,75 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] udev-rules: include *-net-*.rules only if network module
- is included
-Date: Thu, 06 Mar 2014 11:22:30 +0100
-Message-ID: <53184C66.80501@redhat.com>
-References: <E1WLCB8-0001PM-6J@secretive.ru>
+From: glphvgacs <darwinskernel-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: cap on rootfs
+Date: Thu, 6 Mar 2014 14:34:42 -0500
+Message-ID: <20140306193442.GA498@localhost>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E1WLCB8-0001PM-6J-7GBPmfXo8GgjmsMGrRdz4w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=date:from:to:subject:message-id:mime-version:content-type
+         :content-disposition:user-agent;
+        bh=QqgeNXfDzoTWT6OD63B26GcE73qFO5KqVDOOzLYfZX0=;
+        b=XBcf1fXtQXBVn0COdqv44Wb8r5VKNg8GmHG1sMyui+eJSVghwLIcLCOXOG8S3S3/cj
+         3bVIr7sGcgZdf1JUJ1k+4b7rPgFxIeRdxeCrpbaMHZWY5dHFUqw+dwL34hbmN6Jn3tR3
+         OjE6wDCTIvMdjd/T4siGRrS4mZ3ayAu3FIjjGWJ81iub4gLX4f6DpuU67/SRk67G6TLQ
+         TshhClaj57OGDRpqpOSFLY6z0SKEF+Jil+0pdjGQw21664MplwwVlkxFncv4bj0k/eYk
+         U+VDAerakle5gbLuJXKsHQ+tdltNzA6H8/WaJyqTFZPyIIpQ0dUmguQC/KXEmJVlo73z
+         Yhsw==
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 03/05/2014 02:07 PM, Alexander Tsoy wrote:
-> Users have a choice to disable predictable network names by creating
-> a symlink in /etc:
-> ln -s /dev/null /etc/udev/rules.d/80-net-setup-link.rules
 
-I would rather let them use the kernel cmdline switch:
-net.ifnames=0
+hello,
+so after reading
+Documentation/filesystems/ramfs-rootfs-initramfs.txt
+and 
+Documentation/filesystems/tmpfs.txt
 
-That way, it doesn't matter how the udev rules are named.
+i thought i would put everything in /* into initrd since i have 8G of
+ram sitting around with pretty much no use.  crazy? maybe.
+but i must have hit an old cap on how much one can shove into initramfs
+which is not cool, IMHO. here are related sizes:
 
-> 
-> However this doesn't work with non-hostonly initramfs if network drivers are
-> compiled into the kernel - network interfaces gets renamed by udev from
-> initramfs.
-> 
-> So if "network" module is not included in initramfs, let's rename network
-> interfaces during coldplug after switching root.
-> 
-> https://bugs.gentoo.org/show_bug.cgi?id=487184
-> ---
->  modules.d/95udev-rules/module-setup.sh | 18 ++++++++++--------
->  1 file changed, 10 insertions(+), 8 deletions(-)
-> 
-> diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-rules/module-setup.sh
-> index 2d36712..199e9a3 100755
-> --- a/modules.d/95udev-rules/module-setup.sh
-> +++ b/modules.d/95udev-rules/module-setup.sh
-> @@ -32,8 +32,6 @@ install() {
->          60-pcmcia.rules \
->          50-udev.rules 95-late.rules \
->          50-firmware.rules \
-> -        75-net-description.rules \
-> -        80-net-name-slot.rules 80-net-setup-link.rules \
->          "$moddir/59-persistent-storage.rules" \
->          "$moddir/61-persistent-storage.rules"
->  
-> @@ -43,12 +41,16 @@ install() {
->      # eudev rules
->      inst_rules 80-drivers-modprobe.rules
->  
-> -    for _i in \
-> -        ${systemdutildir}/network/*.link \
-> -        ${hostonly:+/etc/systemd/network/*.link} \
-> -        ; do
-> -        [[ -e "$_i" ]] && inst "$_i"
-> -    done
-> +    if dracut_module_included "network"; then
-> +        inst_rules 75-net-description.rules \
-> +            80-net-name-slot.rules 80-net-setup-link.rules
-> +        for _i in \
-> +            ${systemdutildir}/network/*.link \
-> +            ${hostonly:+/etc/systemd/network/*.link} \
-> +            ; do
-> +            [[ -e "$_i" ]] && inst "$_i"
-> +        done
-> +    fi
->  
->      {
->          for i in cdrom tape dialout floppy; do
-> 
+$ ls -lh /boot/initramfs.cpio.gz:
+1.2G Mar  5 16:59 /boot/initramfs.cpio.gz
+
+$ df -h:
+Filesystem      Size  Used Avail Use% Mounted on
+rootfs          3.3G  3.3G     0 100% /
+devtmpfs        3.4G     0  3.4G   0% /dev
+
+
+note that df -h on rootfs is not even consistent; last boot i had 2.8G!
+in both cases it violates what Documentations say, which is 50% of the
+availabe ram.
+
+now services can't write to for example /var/tmp/ since we're out of
+space. remounting / will *fix* it:
+
+# mount -o remount,size=90% /
+
+$ df -h:
+Filesystem      Size  Used Avail Use% Mounted on
+rootfs          7.0G  3.3G  3.8G  47% /
+
+but that's no solution.
+
+so my question:
+where is this set in kernel? is there a kernel param i can pass to
+kernel to give it the go ahead to use 90% of the availabe ram? i have
+btw tried rootflags=size=90% thinking that it might work like it does in
+fstab for tmpfs, no luck. or is there a CONFIG_* that sets this? i
+didn't try messing with CONFIG_BLK_DEV_RAM_SIZE since that seemed to be
+for ramdisk and in any case too small to be the one being used, in my
+case:
+CONFIG_BLK_DEV_RAM_SIZE=4096
+
+kernel version btw:
+3.14.0-rc5 #1 SMP PREEMPT x86_64 Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz
+
+
+thanks
