@@ -1,35 +1,45 @@
-From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
-Subject: [PATCH] modsign: do not hardcode path to keyctl
-Date: Mon, 31 Mar 2014 17:56:13 +0400
-Message-ID: <E1WUcqK-0008KG-Ty@secretive.ru>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] fstab: do not mount and fsck from fstab if using systemd
+Date: Tue, 1 Apr 2014 13:19:13 +0800
+Message-ID: <20140401051913.GA644@dhcp-17-89.nay.redhat.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
-	h=Message-Id:To:Subject:Date:From; bh=r+SI1W2Y0VUKSEf3PGnwoMFtYQbXAXJJhBNbTsOdVzc=;
-	b=cgn0gwUcegREVURFuPfn5c6JEECuxkSF0tnuQA1aYFjQRce1NvnJT4xND3fkoCPGpOuMcjBuYOIK347/Sr629EZuNbnvm+u39o3L3QFB1e7axTDhJES21m0gW8clGd6sHmg7aPS+vBJuOJTXOpfUIEnyuKzz0E17x/TnPN7rDXQ=;
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-https://bugs.gentoo.org/show_bug.cgi?id=506094
+If using systemd in initramfs, we could run into a race condition when
+dracut and systemd both are trying to mount and run fsck for the same
+filesystem, and mount or fsck could be a failure.
+
+To fix such failure, we should use systemd to mount/fsck from /etc/fstab
+only.
+
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/03modsign/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/95fstab-sys/mount-sys.sh | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/03modsign/module-setup.sh b/modules.d/03modsign/module-setup.sh
-index 09285d3..cc0e241 100755
---- a/modules.d/03modsign/module-setup.sh
-+++ b/modules.d/03modsign/module-setup.sh
-@@ -29,7 +29,7 @@ depends() {
- # called by dracut
- install() {
-     inst_dir /lib/modules/keys
--    inst_binary /usr/bin/keyctl
-+    inst_binary keyctl
+diff --git a/modules.d/95fstab-sys/mount-sys.sh b/modules.d/95fstab-sys/mount-sys.sh
+index 12711a0..d65cafd 100755
+--- a/modules.d/95fstab-sys/mount-sys.sh
++++ b/modules.d/95fstab-sys/mount-sys.sh
+@@ -27,7 +27,11 @@ fstab_mount() {
+     return 0
+ }
  
-     inst_hook pre-trigger 01 "$moddir/load-modsign-keys.sh"
+-[ -f /etc/fstab ] && fstab_mount /etc/fstab
++# systemd will mount and run fsck from /etc/fstab and we don't want to
++# run into a race condition.
++if [ `readlink -f /init` != '/usr/lib/systemd/systemd' ]; then
++    [ -f /etc/fstab ] && fstab_mount /etc/fstab
++fi
  
+ # prefer $NEWROOT/etc/fstab.sys over local /etc/fstab.sys
+ if [ -f $NEWROOT/etc/fstab.sys ]; then
 -- 
-1.8.3.2
+1.8.5.3
