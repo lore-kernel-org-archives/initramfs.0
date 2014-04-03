@@ -1,50 +1,48 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] fstab: do not mount and fsck from fstab if using systemd
-Date: Wed, 02 Apr 2014 09:59:37 +0200
-Message-ID: <533BC369.4000909@redhat.com>
-References: <20140401072049.GA23588@dhcp-17-89.nay.redhat.com>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut-initqueue service runs before remote-fs-pre.target
+Date: Thu, 3 Apr 2014 15:49:26 +0800
+Message-ID: <20140403074926.GA25562@dhcp-17-89.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20140401072049.GA23588-2coKmSd1Zb6BYdNaKHuJJRcY2uh10dtjAL8bYrjMMd8@public.gmane.org>
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 01.04.2014 09:20, schrieb WANG Chao:
-> If using systemd in initramfs, we could run into a race condition when
-> dracut and systemd both are trying to mount and run fsck for the same
-> filesystem, and mount or fsck could be a failure.
-> 
-> To fix such failure, we should use systemd to mount/fsck from /etc/fstab
-> only.
-> 
-> v2: check $DRACUT_SYSTEMD suggested by Alexander Tsoy
-> 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/95fstab-sys/mount-sys.sh | 6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
-> 
-> diff --git a/modules.d/95fstab-sys/mount-sys.sh b/modules.d/95fstab-sys/mount-sys.sh
-> index 12711a0..a237810 100755
-> --- a/modules.d/95fstab-sys/mount-sys.sh
-> +++ b/modules.d/95fstab-sys/mount-sys.sh
-> @@ -27,7 +27,11 @@ fstab_mount() {
->      return 0
->  }
->  
-> -[ -f /etc/fstab ] && fstab_mount /etc/fstab
-> +# systemd will mount and run fsck from /etc/fstab and we don't want to
-> +# run into a race condition.
-> +if [ -z "$DRACUT_SYSTEMD" ]; then
-> +    [ -f /etc/fstab ] && fstab_mount /etc/fstab
-> +fi
->  
->  # prefer $NEWROOT/etc/fstab.sys over local /etc/fstab.sys
->  if [ -f $NEWROOT/etc/fstab.sys ]; then
-> 
+With the following commit, dracut doesn't mount anything from /etc/fstab
 
-Thanks. pushed
+commit e920bfb
+Author: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Tue Apr 1 15:20:49 2014 +0800
+
+    fstab: do not mount and fsck from fstab if using systemd
+
+But systemd doesn't mount nfs at all, because no unit is pulling in
+remote-fs.target.
+
+dracut must pull in these remote fs mount and all these remote mounts
+should start only after network is up (ie. after dracut-initqueue).
+
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/98systemd/dracut-initqueue.service | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/modules.d/98systemd/dracut-initqueue.service b/modules.d/98systemd/dracut-initqueue.service
+index 03dcc4e..1b9e701 100644
+--- a/modules.d/98systemd/dracut-initqueue.service
++++ b/modules.d/98systemd/dracut-initqueue.service
+@@ -11,6 +11,8 @@
+ Description=dracut initqueue hook
+ Documentation=man:dracut-initqueue.service(8)
+ DefaultDependencies=no
++Before=remote-fs-pre.target
++Wants=remote-fs-pre.target
+ After=systemd-udev-trigger.service
+ Wants=systemd-udev-trigger.service
+ ConditionPathExists=/etc/initrd-release
+-- 
+1.8.5.3
