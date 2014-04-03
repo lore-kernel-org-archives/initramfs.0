@@ -1,51 +1,40 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut-initqueue service runs before remote-fs-pre.target
-Date: Thu, 03 Apr 2014 10:41:09 +0200
-Message-ID: <533D1EA5.8090008@redhat.com>
-References: <20140403074926.GA25562@dhcp-17-89.nay.redhat.com>
+From: Julian Wolf <juwolf-IBi9RG/b67k@public.gmane.org>
+Subject: [PATCH] udev-rules: include 59-scsi-sg3_utils.rules
+Date: Thu, 03 Apr 2014 14:55:19 +0200
+Message-ID: <5313441.RfDPQevkKo@e117>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20140403074926.GA25562-2coKmSd1Zb6BYdNaKHuJJRcY2uh10dtjAL8bYrjMMd8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 03.04.2014 09:49, schrieb WANG Chao:
-> With the following commit, dracut doesn't mount anything from /etc/fstab
-> 
-> commit e920bfb
-> Author: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Date:   Tue Apr 1 15:20:49 2014 +0800
-> 
->     fstab: do not mount and fsck from fstab if using systemd
-> 
-> But systemd doesn't mount nfs at all, because no unit is pulling in
-> remote-fs.target.
-> 
-> dracut must pull in these remote fs mount and all these remote mounts
-> should start only after network is up (ie. after dracut-initqueue).
-> 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/98systemd/dracut-initqueue.service | 2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/modules.d/98systemd/dracut-initqueue.service b/modules.d/98systemd/dracut-initqueue.service
-> index 03dcc4e..1b9e701 100644
-> --- a/modules.d/98systemd/dracut-initqueue.service
-> +++ b/modules.d/98systemd/dracut-initqueue.service
-> @@ -11,6 +11,8 @@
->  Description=dracut initqueue hook
->  Documentation=man:dracut-initqueue.service(8)
->  DefaultDependencies=no
-> +Before=remote-fs-pre.target
-> +Wants=remote-fs-pre.target
->  After=systemd-udev-trigger.service
->  Wants=systemd-udev-trigger.service
->  ConditionPathExists=/etc/initrd-release
-> 
+Without the 59-scsi-sg3_utils.rules udev-rule a couple of devices are missing 
+in /dev/disk/by-id.
 
-Thanks! pushed
+If the luks device is specified by-id in /etc/crypttab and rd.luks.uuid not 
+passed as a commandline parameter during boot, systemd tries to start its 
+crypto services which depend on those missing devices until it times out and 
+exits to dracut rescue shell.
+
+Signed-off-by: Julian Wolf <juwolf-IBi9RG/b67k@public.gmane.org>
+---
+ modules.d/95udev-rules/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-
+rules/module-setup.sh
+index 2d36712..fab4ffc 100755
+--- a/modules.d/95udev-rules/module-setup.sh
++++ b/modules.d/95udev-rules/module-setup.sh
+@@ -32,6 +32,7 @@ install() {
+         60-pcmcia.rules \
+         50-udev.rules 95-late.rules \
+         50-firmware.rules \
++        59-scsi-sg3_utils.rules \
+         75-net-description.rules \
+         80-net-name-slot.rules 80-net-setup-link.rules \
+         "$moddir/59-persistent-storage.rules" \
+-- 
+1.8.1.4
