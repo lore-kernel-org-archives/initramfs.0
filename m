@@ -1,40 +1,38 @@
-From: Julian Wolf <juwolf-IBi9RG/b67k@public.gmane.org>
-Subject: [PATCH] udev-rules: include 59-scsi-sg3_utils.rules
-Date: Thu, 03 Apr 2014 14:55:19 +0200
-Message-ID: <5313441.RfDPQevkKo@e117>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7Bit
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut-pre-pivot pulls in remote-fs.target
+Date: Fri,  4 Apr 2014 14:37:42 +0800
+Message-ID: <1396593462-29865-1-git-send-email-chaowang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Without the 59-scsi-sg3_utils.rules udev-rule a couple of devices are missing 
-in /dev/disk/by-id.
+It turns out that commit f30b74e (dracut-initqueue service runs before
+remote-fs-pre.target) is partial fix for remote fs mounts. Because no
+one pulls in remote-fs.target, we can never start remote fs mounts.
+Now pull in remote-fs.target in dracut-pre-pivot.
 
-If the luks device is specified by-id in /etc/crypttab and rd.luks.uuid not 
-passed as a commandline parameter during boot, systemd tries to start its 
-crypto services which depend on those missing devices until it times out and 
-exits to dracut rescue shell.
-
-Signed-off-by: Julian Wolf <juwolf-IBi9RG/b67k@public.gmane.org>
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- modules.d/95udev-rules/module-setup.sh | 1 +
- 1 file changed, 1 insertion(+)
+ modules.d/98systemd/dracut-pre-pivot.service | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-
-rules/module-setup.sh
-index 2d36712..fab4ffc 100755
---- a/modules.d/95udev-rules/module-setup.sh
-+++ b/modules.d/95udev-rules/module-setup.sh
-@@ -32,6 +32,7 @@ install() {
-         60-pcmcia.rules \
-         50-udev.rules 95-late.rules \
-         50-firmware.rules \
-+        59-scsi-sg3_utils.rules \
-         75-net-description.rules \
-         80-net-name-slot.rules 80-net-setup-link.rules \
-         "$moddir/59-persistent-storage.rules" \
+diff --git a/modules.d/98systemd/dracut-pre-pivot.service b/modules.d/98systemd/dracut-pre-pivot.service
+index 6db1f2c..d7c7b1d 100644
+--- a/modules.d/98systemd/dracut-pre-pivot.service
++++ b/modules.d/98systemd/dracut-pre-pivot.service
+@@ -13,6 +13,8 @@ Documentation=man:dracut-pre-pivot.service(8)
+ After=initrd.target initrd-parse-etc.service sysroot.mount
+ After=dracut-initqueue.service dracut-pre-mount.service dracut-mount.service
+ Before=initrd-cleanup.service
++Wants=remote-fs.target
++After=remote-fs.target
+ ConditionPathExists=/etc/initrd-release
+ ConditionDirectoryNotEmpty=|/lib/dracut/hooks/pre-pivot
+ ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cleanup
 -- 
-1.8.1.4
+1.8.5.3
