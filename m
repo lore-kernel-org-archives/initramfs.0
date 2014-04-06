@@ -1,38 +1,48 @@
-From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] dracut-pre-pivot pulls in remote-fs.target
-Date: Fri,  4 Apr 2014 14:37:42 +0800
-Message-ID: <1396593462-29865-1-git-send-email-chaowang@redhat.com>
+From: Sebastian =?utf-8?q?K=C3=B6ln?= <skoeln-4JCb7EXykGJ5qnkD1ooD3mPhZIeI7moD@public.gmane.org>
+Subject: Bug in dracut-functions.sh@225(print_vars)
+Date: Sun, 6 Apr 2014 13:38:52 +0200
+Message-ID: <201404061338.54350.skoeln@physnet.uni-hamburg.de>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: Text/Plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-It turns out that commit f30b74e (dracut-initqueue service runs before
-remote-fs-pre.target) is partial fix for remote fs mounts. Because no
-one pulls in remote-fs.target, we can never start remote fs mounts.
-Now pull in remote-fs.target in dracut-pre-pivot.
+Hello,
 
-Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/98systemd/dracut-pre-pivot.service | 2 ++
- 1 file changed, 2 insertions(+)
+I stubled upon the following bug (dracut --verbose output):
 
-diff --git a/modules.d/98systemd/dracut-pre-pivot.service b/modules.d/98systemd/dracut-pre-pivot.service
-index 6db1f2c..d7c7b1d 100644
---- a/modules.d/98systemd/dracut-pre-pivot.service
-+++ b/modules.d/98systemd/dracut-pre-pivot.service
-@@ -13,6 +13,8 @@ Documentation=man:dracut-pre-pivot.service(8)
- After=initrd.target initrd-parse-etc.service sysroot.mount
- After=dracut-initqueue.service dracut-pre-mount.service dracut-mount.service
- Before=initrd-cleanup.service
-+Wants=remote-fs.target
-+After=remote-fs.target
- ConditionPathExists=/etc/initrd-release
- ConditionDirectoryNotEmpty=|/lib/dracut/hooks/pre-pivot
- ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cleanup
--- 
-1.8.5.3
+> ...
+> //usr/lib/dracut/modules.d/10i18n/module-setup.sh@132(install_local_i18n): 
+EXT_KEYMAPS='backspace keypad euro2'
+> ...
+> /usr/lib/dracut/dracut-functions.sh@224(print_vars): eval printf -v _value 
+%s '$EXT_KEYMAPS'
+> //usr/lib/dracut/dracut-functions.sh@224(print_vars): printf -v _value %s 
+backspace keypad euro2
+> /usr/lib/dracut/dracut-functions.sh@225(print_vars): [[ -n 
+backspacekeypadeuro2 ]]
+> /usr/lib/dracut/dracut-functions.sh@225(print_vars): printf '%s=\"%s\"\n' 
+EXT_KEYMAPS backspacekeypadeuro2
+
+the "eval" line of print_vars
+needs to re replaced by
+> eval printf -v _value "%s" \""\$$_var"\"
+
+the modified function is then:
+
+> # Function prints global variables in format name=value line by line.
+> # $@ = list of global variables' name
+> print_vars() {
+>     local _var _value
+> 
+>     for _var in "$@"
+>     do
+>         eval printf -v _value "%s" \""\$$_var"\"
+>         [[ ${_value} ]] && printf '%s="%s"\n' "$_var" "$_value"
+>     done
+> }
+
+this produces the correct result.
