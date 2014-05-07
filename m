@@ -1,34 +1,37 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Intend of hostonly-cmdline?
-Date: Wed, 07 May 2014 15:48:59 +0200
-Message-ID: <536A39CB.1050700@redhat.com>
-References: <2263850.UM9clb02rz@skinner> <536A19D7.2010405@redhat.com> <1706311.vdFaWiovt6@skinner>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [Patch] dracut: write-ifcfg.sh: load net-lib.sh
+Date: Wed, 7 May 2014 10:18:27 -0400
+Message-ID: <20140507141827.27588.20483.sendpatchset@dhcp-33-231.bos.redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1706311.vdFaWiovt6@skinner>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 07.05.2014 15:40, Thomas Renninger wrote:
-> On Wednesday, May 07, 2014 01:32:39 PM Harald Hoyer wrote:
->> Thoughts?
-> 
-> Most parameters are unique and if it is ensured that:
-> single getarg and friends calls prefer the (real)
-> kernel cmdline parameter over the faked one, it should more or less be safe
-> and things can still be overridden via kernel cmdline.
-> 
-> Don't know whether this is the case atm, though.
-> 
->     Thomas
-> 
+When kdump boots the second kernel, it complains:
 
-Unique parameters are already handled that way...
-The problem to solve are the parameters, which can be given multiple times
+dracut-pre-pivot[429]: //lib/dracut/hooks/pre-pivot/85-write-ifcfg.sh: line 168: is_persistent_ethernet_name: command not found 
 
-Hmm, maybe we should also log the parameters in /etc/cmdline.d to let the user
-see, what dracut is parsing.
+is_persistent_ethernet_name is defined in net-lib.sh, but write-ifcfg.sh
+doesn't load that library.  Solution is to load the library.
+
+Tested that this fix eliminates the error message.
+
+Signed-off-by: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
+index 5de2e90..e30749b 100755
+--- a/modules.d/45ifcfg/write-ifcfg.sh
++++ b/modules.d/45ifcfg/write-ifcfg.sh
+@@ -5,6 +5,8 @@
+ # NFS root might have reached here before /tmp/net.ifaces was written
+ udevadm settle --timeout=30
+ 
++command -v is_persistent_ethernet_name || . /lib/net-lib.sh
++
+ if [ -e /tmp/bridge.info ]; then
+     . /tmp/bridge.info
+ fi
