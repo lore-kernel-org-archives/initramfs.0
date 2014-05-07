@@ -1,42 +1,42 @@
-From: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 2/2] network: add static route support
-Date: Tue, 06 May 2014 09:08:14 -0400
-Message-ID: <5368DEBE.90809@redhat.com>
-References: <1398678111-13601-1-git-send-email-bhe@redhat.com> <1398678111-13601-2-git-send-email-bhe@redhat.com> <20140505071214.GA24097@dhcp-16-116.nay.redhat.com>
+From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Subject: Intend of hostonly-cmdline?
+Date: Wed, 07 May 2014 13:12:55 +0200
+Message-ID: <2263850.UM9clb02rz@skinner>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20140505071214.GA24097-je1gSBvt1Tcx0jIIkfS+Ph/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05/05/2014 03:12 AM, Baoquan He wrote:
-> User may specify static route for a target address which is different
-> than default gateway. The static route file could be like below:
->
-> 192.168.200.222 via 192.168.100.222 dev eth0
->
-> Or
->
-> ADDRESS0=192.168.200.0
-> NETMASK0=255.255.255.0
-> GATEWAY0=192.168.100.222
->
-> In this patch, port the static route hanling from ifup-routes of initscript
-> component.
->
-> v1->v2:
->      Remove the commentary line checking code and "MATCH" pattern
-> definition since dracut require posix syntax. Let's focus on the
-> functionality of static route.
->
-> Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Hi,
 
-I tested in my environment.  It works for me, and fixes the problem.
+I wonder for what this one is exactly for?
 
-ACK
+commit ab9457efd78ff74c654b4123956cdbd131935066
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Tue Feb 25 12:35:32 2014 +0100
 
-Marc
+    Add flag to toggle hostonly cmdline storing in the initramfs
+    
+    --hostonly-cmdline:
+        Store kernel command line arguments needed in the initramfs
+    
+    --no-hostonly-cmdline:
+        Do not store kernel command line arguments needed in the initramfs
+
+
+
+Wouldn't it be enough to simply add hostonly command line parameters
+only in hostonly case like:
++    if [[ $hostonly == "yes" ]]; then
++        cmdline  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
++        echo  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
++    fi
+
+why is a hostonly-cmdline extra parameter needed?
+
+Thanks,
+
+  Thomas
