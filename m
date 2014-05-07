@@ -1,37 +1,49 @@
-From: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [Patch] dracut: write-ifcfg.sh: load net-lib.sh
-Date: Wed, 7 May 2014 10:18:27 -0400
-Message-ID: <20140507141827.27588.20483.sendpatchset@dhcp-33-231.bos.redhat.com>
+From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Subject: [PATCH] dracut: Do not stop installing drivers if one fails
+Date: Wed, 07 May 2014 17:58:54 +0200
+Message-ID: <3223446.4k6qIrFfuT@skinner>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-When kdump boots the second kernel, it complains:
+--add-drivers and --filesystems kernel drivers are added via:
+instmods -c
+The check option makes the function return if one driver could not get
+installed without trying to install further drivers which is bad.
 
-dracut-pre-pivot[429]: //lib/dracut/hooks/pre-pivot/85-write-ifcfg.sh: line 168: is_persistent_ethernet_name: command not found 
+The user is still informed ($_silent is by default no), but all modules
+passed to instmods are tried to be loaded, even if one fails.
 
-is_persistent_ethernet_name is defined in net-lib.sh, but write-ifcfg.sh
-doesn't load that library.  Solution is to load the library.
+Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 
-Tested that this fix eliminates the error message.
-
-Signed-off-by: Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
-diff --git a/modules.d/45ifcfg/write-ifcfg.sh b/modules.d/45ifcfg/write-ifcfg.sh
-index 5de2e90..e30749b 100755
---- a/modules.d/45ifcfg/write-ifcfg.sh
-+++ b/modules.d/45ifcfg/write-ifcfg.sh
-@@ -5,6 +5,8 @@
- # NFS root might have reached here before /tmp/net.ifaces was written
- udevadm settle --timeout=30
- 
-+command -v is_persistent_ethernet_name || . /lib/net-lib.sh
-+
- if [ -e /tmp/bridge.info ]; then
-     . /tmp/bridge.info
- fi
+Index: dracut-037/dracut-functions.sh
+===================================================================
+--- dracut-037.orig/dracut-functions.sh
++++ dracut-037/dracut-functions.sh
+@@ -1689,18 +1689,16 @@ instmods() {
+         if (($# == 0)); then  # filenames from stdin
+             while read _mod; do
+                 inst1mod "${_mod%.ko*}" || {
+-                    if [[ "$_check" == "yes" ]]; then
+-                        [[ "$_silent" == "no" ]] && dfatal "Failed to install module $_mod"
+-                        return 1
++                    if [[ "$_check" == "yes" ]] && [[ "$_silent" == "no" ]]; then
++                        dfatal "Failed to install module $_mod"
+                     fi
+                 }
+             done
+         fi
+         while (($# > 0)); do  # filenames as arguments
+             inst1mod ${1%.ko*} || {
+-                if [[ "$_check" == "yes" ]]; then
+-                    [[ "$_silent" == "no" ]] && dfatal "Failed to install module $1"
+-                    return 1
++                if [[ "$_check" == "yes" ]] && [[ "$_silent" == "no" ]]; then
++                    dfatal "Failed to install module $1"
+                 fi
+             }
+             shift
