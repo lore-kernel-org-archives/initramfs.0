@@ -1,112 +1,98 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH] dracut: Introduce --force-drivers parameter and force_drivers=+ config option
-Date: Wed, 07 May 2014 18:00:06 +0200
-Message-ID: <2956069.N6upzrOyu5@skinner>
+From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
+Subject: Re: Intend of hostonly-cmdline?
+Date: Thu, 8 May 2014 17:54:12 +0400
+Message-ID: <20140508175412.2386aa29@work.puleglot>
+References: <2263850.UM9clb02rz@skinner>
+	<536A19D7.2010405@redhat.com>
+	<20140507154733.386369cd@work.puleglot>
+	<536A2222.50606@redhat.com>
+	<536A22C9.8000007@redhat.com>
+	<20140507171527.2d826560@work.puleglot>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7Bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
+	h=Content-Transfer-Encoding:Content-Type:MIME-Version:References:In-Reply-To:Message-ID:Subject:Cc:To:From:Date; bh=Ztkh+42o7RFpl8gP1/i+Z34WtA0V2dWPWZcUvIA5+40=;
+	b=dh+YIGn5nq/52I60xNsCLTC0nGfOp2DKBOtVxTqsFfBn4qOiyDzE5pqX54wEAFvSOAgwZxz5tRKYf/y0+KMFilAy5OhoRCNytKZmEJZDWd99DXe7BWtLZKZDYVBE4dW/jG1/9QMaMx+RTAPRO4JvrmsH+ztBtKKKhLF34OMUgOY=;
+In-Reply-To: <20140507171527.2d826560-d/9N6kaejYfpx9ONITL1FA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="koi8-r"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Which will not only add listed drivers, but also enforce that they are tried
- to be loaded at early boot time.
+=F7 Wed, 7 May 2014 17:15:27 +0400
+Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org> =D0=C9=DB=C5=D4:
 
-This is needed if drivers which are not autoloaded (e.g. loop and a lot others)
-shall get loaded via initramfs.
+> =F7 Wed, 07 May 2014 14:10:49 +0200
+> Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> =D0=C9=DB=C5=D4:
+>=20
+> > On 07.05.2014 14:08, Harald Hoyer wrote:
+> > > On 07.05.2014 13:47, Alexander Tsoy wrote:
+> > >> Actually hostonly-cmdline is partially broken with systemd in
+> > >> initramfs. For example systemd-cryptsetup-generator does not
+> > >> read /etc/cmdline.d/*.conf files, so rd.luks* parameters must be
+> > >> appended to kernel cmdline anyway.
+> > >>
+> > >=20
+> > > True! Good point!
+> > > Although /etc/crypttab is included with hostonly.
+> > >=20
+> >=20
+> > Ah, oh.. I forgot, dracut *does* use rd.luks.uuid from the kernel c=
+ommand line
+> > and creates /etc/crypttab lines from it in the initramfs.
+> > So basically it *should* work with systemd.
+>=20
+> This doesn't work with full disk encryption. Unit file does not get
+> generated and I see this message:
+>=20
+> [    7.142993] testhost dracut-initqueue[202]: Failed to start system=
+d-cryptsetup@luks\x2d342d2414\x2d159c\x2d48d7\x2da0b7\x2d5b59fa6e27a5.s=
+ervice: Unit=20
+> systemd-cryptsetup@luks\x2d342d2414\x2d159c\x2d48d7\x2da0b7\x2d5b59fa=
+6e27a5.service failed to load: No such file or directory.
 
-Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Note that I don't have an entry for this luks device in /etc/crypttab. =
+I
+always thought that this is not necessary since all needed options
+are in cmdline.
 
-Index: dracut-037/dracut.sh
-===================================================================
---- dracut-037.orig/dracut.sh
-+++ dracut-037/dracut.sh
-@@ -81,6 +81,10 @@ Creates initial ramdisk images for prelo
-                          exclusively include in the initramfs.
-   --add-drivers [LIST]  Specify a space-separated list of kernel
-                          modules to add to the initramfs.
-+  --force-drivers [LIST] Specify a space-separated list of kernel
-+                         modules to add to the initramfs and make sure they
-+                         are tried to be loaded via modprobe same as passing
-+                         rd.driver.pre=DRIVER kernel parameter.
-   --omit-drivers [LIST] Specify a space-separated list of kernel
-                          modules not to add to the initramfs.
-   --filesystems [LIST]  Specify a space-separated list of kernel filesystem
-@@ -299,6 +303,7 @@ rearrange_params()
-         --long add: \
-         --long force-add: \
-         --long add-drivers: \
-+        --long force-drivers: \
-         --long omit-drivers: \
-         --long modules: \
-         --long omit: \
-@@ -463,6 +468,7 @@ while :; do
-         -a|--add)      push add_dracutmodules_l  "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-         --force-add)   push force_add_dracutmodules_l  "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-         --add-drivers) push add_drivers_l        "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-+        --force-drivers) push force_drivers_l        "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-         --omit-drivers) push omit_drivers_l      "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-         -m|--modules)  push dracutmodules_l      "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-         -o|--omit)     push omit_dracutmodules_l "$2"; PARMS_TO_STORE+=" '$2'"; shift;;
-@@ -880,6 +886,13 @@ if (( ${#add_drivers_l[@]} )); then
- fi
- add_drivers=${add_drivers/-/_}
- 
-+if (( ${#force_drivers_l[@]} )); then
-+    while pop force_drivers_l val; do
-+        force_drivers+=" $val "
-+    done
-+fi
-+force_drivers=${force_drivers/-/_}
-+
- if (( ${#omit_drivers_l[@]} )); then
-     while pop omit_drivers_l val; do
-         omit_drivers+=" $val "
-@@ -896,6 +909,7 @@ fi
- omit_drivers_corrected=""
- for d in $omit_drivers; do
-     [[ " $drivers $add_drivers " == *\ $d\ * ]] && continue
-+    [[ " $drivers $force_drivers " == *\ $d\ * ]] && continue
-     omit_drivers_corrected+="$d|"
- done
- omit_drivers="${omit_drivers_corrected%|}"
-@@ -1287,6 +1301,13 @@ if [[ $no_kernel != yes ]]; then
-     if [[ $add_drivers ]]; then
-         hostonly='' instmods -c $add_drivers
-     fi
-+    if [[ $force_drivers ]]; then
-+        hostonly='' instmods -c $force_drivers
-+        rm -f $initdir/etc/cmdline.d/20-force_driver.conf
-+        for mod in $force_drivers; do
-+            echo "rd.driver.pre=$mod" >>$initdir/etc/cmdline.d/20-force_drivers.conf
-+        done
-+    fi
-     if [[ $filesystems ]]; then
-         hostonly='' instmods -c $filesystems
-     fi
-Index: dracut-037/dracut.8.asc
-===================================================================
---- dracut-037.orig/dracut.8.asc
-+++ dracut-037/dracut.8.asc
-@@ -136,6 +136,19 @@ example:
- ----
- ===============================
- 
-+**--force-drivers** _<list of kernel modules>_::
-+    See add-drivers above. But in this case it is ensured that the drivers
-+    are tried to be loaded early via modprobe.
-++
-+[NOTE]
-+===============================
-+If [LIST] has multiple arguments, then you have to put these in quotes. For
-+example:
-+----
-+# dracut --force-drivers "kmodule1 kmodule2"  ...
-+----
-+===============================
-+
- **--omit-drivers** _<list of kernel modules>_::
-     specify a space-separated list of kernel modules not to add to the
-     initramfs.
+>=20
+> Probably this is because crypt-run-generator get executed from udev
+> rules only if *both* of the following conditions are true:
+> - there is no rd.luks.uuid parameter in both cmdline
+> and /etc/cmdline.d/*.conf
+> - rd.auto is enabled
+>=20
+
+Here is a possible fix that works fine on my system (hostonly +
+hostonly-cmdline + empty /etc/crypttab + no rd.luks* in kernel
+cmdline).
+
+diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse=
+-crypt.sh
+index a6b5252..8bb1328 100755
+--- a/modules.d/90crypt/parse-crypt.sh
++++ b/modules.d/90crypt/parse-crypt.sh
+@@ -35,8 +35,8 @@ else
+                         printf -- 'ENV{ID_FS_TYPE}=3D=3D"crypto_LUKS",=
+ '
+                         printf -- 'ENV{ID_FS_UUID}=3D=3D"*%s*", ' $luk=
+sid
+                         printf -- 'RUN+=3D"%s --settled --unique --one=
+time ' $(command -v initqueue)
+-                        printf -- '--name systemd-cryptsetup-%%k %s st=
+art ' $(command -v systemctl)
+-                        printf -- 'systemd-cryptsetup@luks$$(dev_unit_=
+name -$env{ID_FS_UUID}).service"\n'
++                        printf -- '--name crypt-run-generator-%%k %s '=
+ $(command -v crypt-run-generator)
++                        printf -- '$env{DEVNAME} luks-$env{ID_FS_UUID}=
+"\n'
+                     } >> /etc/udev/rules.d/70-luks.rules.new
+                 fi
+             fi
+
+--=20
+Alexander Tsoy
