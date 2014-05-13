@@ -1,62 +1,74 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 2/2] network: add static route support
-Date: Mon, 12 May 2014 14:31:55 +0800
-Message-ID: <20140512063155.GB12320@dhcp-16-105.nay.redhat.com>
-References: <1398678111-13601-1-git-send-email-bhe@redhat.com>
- <1398678111-13601-2-git-send-email-bhe@redhat.com>
- <20140505071214.GA24097@dhcp-16-116.nay.redhat.com>
- <5368DEBE.90809@redhat.com>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Subject: check_finished() syntax weirdness
+Date: Tue, 13 May 2014 11:44:50 +0200
+Message-ID: <5371E992.1080802@suse.de>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5368DEBE.90809-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Marc Milgram <mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Thanks for testing and reviewing, Marc.
+Hi all,
 
-Hi Harald,
+I'm trying to figure out why my initqueue scripts are never called.
+Eg 95fcoe is just installing an initqueue job, which should call
+'fcoe-up' on the interface.
+However, this script is never called, irrespective of any 'fcoe=3D'=20
+parameters.
 
-What's your idea on this issue?
+Looking a dracut-initqueue.sh, we have this:
 
-Thanks
-Baoquan
+while :; do
 
+     check_finished && break
 
-On 05/06/14 at 09:08am, Marc Milgram wrote:
-> On 05/05/2014 03:12 AM, Baoquan He wrote:
-> >User may specify static route for a target address which is different
-> >than default gateway. The static route file could be like below:
-> >
-> >192.168.200.222 via 192.168.100.222 dev eth0
-> >
-> >Or
-> >
-> >ADDRESS0=192.168.200.0
-> >NETMASK0=255.255.255.0
-> >GATEWAY0=192.168.100.222
-> >
-> >In this patch, port the static route hanling from ifup-routes of initscript
-> >component.
-> >
-> >v1->v2:
-> >     Remove the commentary line checking code and "MATCH" pattern
-> >definition since dracut require posix syntax. Let's focus on the
-> >functionality of static route.
-> >
-> >Signed-off-by: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> 
-> I tested in my environment.  It works for me, and fixes the problem.
-> 
-> ACK
-> 
-> Marc
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+     udevadm settle --exit-if-exists=3D$hookdir/initqueue/work
+
+     check_finished && break
+
+     if [ -f $hookdir/initqueue/work ]; then
+         rm -f -- "$hookdir/initqueue/work"
+     fi
+
+     for job in $hookdir/initqueue/*.sh; do
+         [ -e "$job" ] || break
+         job=3D$job . $job
+         check_finished && break 2
+     done
+
+     udevadm settle --timeout=3D0 >/dev/null 2>&1 || continue
+=2E..
+
+and check_finished is:
+
+check_finished() {
+     local f
+     for f in $hookdir/initqueue/finished/*.sh; do
+         [ "$f" =3D "$hookdir/initqueue/finished/*.sh" ] && return 0
+         { [ -e "$f" ] && ( . "$f" ) ; } || return 1
+     done
+     return 0
+}
+
+IE if no scripts are present in the 'finished' queue,=20
+'check_finished' will return '0', causing the main initqueue to=20
+short-circuit and the actual initqueue jobs will never be executed.
+
+Is this the intended outcome?
+IE are all jobs for the initqueue are _required_ to supply a=20
+'finished' job?
+
+I would have thought it to be a bit more permissive, ie do a
+'return 1' if no finish j0bs have been found ...
+
+Cheers,
+
+Hannes
+--=20
+Dr. Hannes Reinecke		      zSeries & Storage
+hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
+SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
+GF: J. Hawn, J. Guild, F. Imend=F6rffer, HRB 16746 (AG N=FCrnberg)
