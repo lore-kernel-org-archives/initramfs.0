@@ -1,52 +1,49 @@
-From: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
-Subject: [PATCH] lvm/module-setup.sh: do not hardcode udevdir path
-Date: Tue, 20 May 2014 15:25:18 +0400
-Message-ID: <E1WmiPL-0001QQ-Oe@puleglot.ru>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] resume/module-setup.sh: filter out empty resume= options
+ in cmdline()
+Date: Tue, 20 May 2014 13:30:19 +0200
+Message-ID: <537B3CCB.70909@redhat.com>
+References: <E1WlLlY-0007GR-QD@puleglot.ru>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=tsoy.me; s=secretive;
-	h=Message-Id:To:Subject:Date:From; bh=GIuS65lb3nF1Evh3iFc2hcplGKfGtrqzUmGb6qUGnkk=;
-	b=XPjzXcdJslqlkFzfVQDn7m8KYD0chPI5j7nST//WBT76wMwnQ2rklgK5OZFQqzyTrsMXeTNKGPK6yhz3c4H8qKKX5nCYfazFkop4bYn+uGpE3InSH/Rx7X//ErLATA/N9r7cIYwVHs0YFHuDfRVxqVJ8Nj2a8mKOlJ/95mVp5Eg=;
+In-Reply-To: <E1WlLlY-0007GR-QD-C3g8GgeTu50ox3rIn2DAYQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Do not hardcode udevdir path. Also make sed nicer and fix the
-check for existence of 69-dm-lvm-metad.rules
----
- modules.d/90lvm/module-setup.sh | 18 +++++++++++-------
- 1 file changed, 11 insertions(+), 7 deletions(-)
+On 16.05.2014 19:12, Alexander Tsoy wrote:
+> cmdline() prints empty "resume=" options for non-persistent swap
+> devices, for example zram. Add a check for that.
+> 
+> This patch also fixes printf formatting and removes unused variables.
+> ---
+>  modules.d/95resume/module-setup.sh | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
+> index ceb7855..b1b4684 100755
+> --- a/modules.d/95resume/module-setup.sh
+> +++ b/modules.d/95resume/module-setup.sh
+> @@ -17,12 +17,12 @@ check() {
+>  
+>  # called by dracut
+>  cmdline() {
+> -    local _activated
+> -    declare -A _activated
+> +    local _resume
+>  
+>      for dev in "${!host_fs_types[@]}"; do
+>          [[ ${host_fs_types[$dev]} =~ ^(swap|swsuspend|swsupend)$ ]] || continue
+> -        printf "resume=%s " "$(shorten_persistent_dev "$(get_persistent_dev "$dev")")"
+> +        _resume=$(shorten_persistent_dev "$(get_persistent_dev "$dev")")
+> +        [[ -n ${_resume} ]] && printf " resume=%s" "${_resume}"
+>      done
+>  }
+>  
+> 
 
-diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
-index 5b810b9..529b795 100755
---- a/modules.d/90lvm/module-setup.sh
-+++ b/modules.d/90lvm/module-setup.sh
-@@ -80,13 +80,17 @@ install() {
-     inst_rules 11-dm-lvm.rules 69-dm-lvm-metad.rules
- 
-     # Do not run lvmetad update via pvscan in udev rule  - lvmetad is not running yet in dracut!
--    if [[ -f ${initdir}/lib/udev/rules.d/69-dm-lvm-metad.rules ]] && \
--        grep -q SYSTEMD_WANTS ${initdir}/lib/udev/rules.d/69-dm-lvm-metad.rules; then
--        sed -i -e 's/^ENV{SYSTEMD_ALIAS}=.*/# No LVM pvscan in dracut - lvmetad is not running yet/' ${initdir}/lib/udev/rules.d/69-dm-lvm-metad.rules
--        sed -i -e 's/^ENV{ID_MODEL}=.*//' ${initdir}/lib/udev/rules.d/69-dm-lvm-metad.rules
--        sed -i -e 's/^ENV{SYSTEMD_WANTS}=.*//' ${initdir}/lib/udev/rules.d/69-dm-lvm-metad.rules
--    else
--        sed -i -e 's/.*lvm pvscan.*/# No LVM pvscan for in dracut - lvmetad is not running yet/' ${initdir}/lib/udev/rules.d/69-dm-lvm-metad.rules
-+    if [[ -f ${initdir}${udevdir}/rules.d/69-dm-lvm-metad.rules ]]; then
-+        if grep -q SYSTEMD_WANTS ${initdir}${udevdir}/rules.d/69-dm-lvm-metad.rules; then
-+            sed -i \
-+                -e 's/^ENV{SYSTEMD_ALIAS}=.*/# No LVM pvscan in dracut - lvmetad is not running yet/' \
-+                -e 's/^ENV{ID_MODEL}=.*//' \
-+                -e 's/^ENV{SYSTEMD_WANTS}=.*//' \
-+                ${initdir}${udevdir}/rules.d/69-dm-lvm-metad.rules
-+        else
-+            sed -i -e 's/.*lvm pvscan.*/# No LVM pvscan for in dracut - lvmetad is not running yet/' \
-+                ${initdir}${udevdir}/rules.d/69-dm-lvm-metad.rules
-+        fi
-     fi
- 
-     # Gentoo ebuild for LVM2 prior to 2.02.63-r1 doesn't install above rules
--- 
-1.8.5.5
+thanks!
+
+http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=c4b529f50388474ceffa8c918d2722fc777eac0a
