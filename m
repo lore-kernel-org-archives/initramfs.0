@@ -1,44 +1,46 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 98systemd: fixup rootfs-generator installation path
-Date: Tue, 20 May 2014 13:29:16 +0200
-Message-ID: <537B3C8C.6050103@redhat.com>
-References: <1400577610-119478-1-git-send-email-hare@suse.de>
+Subject: Re: [PATCH] udev-rules: include 59-scsi-sg3_utils.rules
+Date: Tue, 20 May 2014 13:29:49 +0200
+Message-ID: <537B3CAD.7080306@redhat.com>
+References: <5313441.RfDPQevkKo@e117>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1400577610-119478-1-git-send-email-hare-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <5313441.RfDPQevkKo@e117>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+To: Julian Wolf <juwolf-IBi9RG/b67k@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 20.05.2014 11:20, Hannes Reinecke wrote:
-> The rootfs-generator was installed in the wrong path
-> in the initrd, cause it never to be run.
+On 03.04.2014 14:55, Julian Wolf wrote:
+> Without the 59-scsi-sg3_utils.rules udev-rule a couple of devices are missing 
+> in /dev/disk/by-id.
 > 
-> References: bnc#878714
+> If the luks device is specified by-id in /etc/crypttab and rd.luks.uuid not 
+> passed as a commandline parameter during boot, systemd tries to start its 
+> crypto services which depend on those missing devices until it times out and 
+> exits to dracut rescue shell.
 > 
-> Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+> Signed-off-by: Julian Wolf <juwolf-IBi9RG/b67k@public.gmane.org>
 > ---
->  modules.d/98systemd/module-setup.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  modules.d/95udev-rules/module-setup.sh | 1 +
+>  1 file changed, 1 insertion(+)
 > 
-> diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
-> index e14ce39..4516b9a 100755
-> --- a/modules.d/98systemd/module-setup.sh
-> +++ b/modules.d/98systemd/module-setup.sh
-> @@ -192,7 +192,7 @@ install() {
->      inst_script "$moddir/dracut-mount.sh" /bin/dracut-mount
->      inst_script "$moddir/dracut-pre-pivot.sh" /bin/dracut-pre-pivot
->  
-> -    inst_script "$moddir/rootfs-generator.sh" /lib/systemd/system-generators/dracut-rootfs-generator
-> +    inst_script "$moddir/rootfs-generator.sh" $systemdutildir/system-generators/dracut-rootfs-generator
->  
->      inst_binary true
->      ln_r $(type -P true) "/usr/bin/loginctl"
+> diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-
+> rules/module-setup.sh
+> index 2d36712..fab4ffc 100755
+> --- a/modules.d/95udev-rules/module-setup.sh
+> +++ b/modules.d/95udev-rules/module-setup.sh
+> @@ -32,6 +32,7 @@ install() {
+>          60-pcmcia.rules \
+>          50-udev.rules 95-late.rules \
+>          50-firmware.rules \
+> +        59-scsi-sg3_utils.rules \
+>          75-net-description.rules \
+>          80-net-name-slot.rules 80-net-setup-link.rules \
+>          "$moddir/59-persistent-storage.rules" \
 > 
 
 Thanks!
 
-http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=ed2005fa5ba7d618bbb2c63bac616fba32a17a5d
+http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=c96f1b1e6b25f0795d163a5b8ba498565d3201d5
