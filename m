@@ -1,54 +1,121 @@
-From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut-pre-pivot pulls in remote-fs.target
-Date: Mon, 19 May 2014 22:26:41 +0800
-Message-ID: <20140519142641.GA11572@dhcp-17-89.nay.redhat.com>
-References: <1396593462-29865-1-git-send-email-chaowang@redhat.com>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: check_finished() syntax weirdness
+Date: Tue, 20 May 2014 10:46:47 +0200
+Message-ID: <537B1677.9050402@suse.de>
+References: <5371E992.1080802@suse.de> <5371EA56.3000203@redhat.com> <5371EC2E.4020209@suse.de> <5371F250.9040708@redhat.com> <5371F448.5030208@suse.de> <5371F645.3080309@redhat.com> <5371F729.2000100@suse.de> <53720BCF.5080806@redhat.com> <53722A84.7080205@suse.de> <53722CFC.6060500@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1396593462-29865-1-git-send-email-chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <53722CFC.6060500-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 04/04/14 at 02:37pm, WANG Chao wrote:
-> It turns out that commit f30b74e (dracut-initqueue service runs before
-> remote-fs-pre.target) is partial fix for remote fs mounts. Because no
-> one pulls in remote-fs.target, we can never start remote fs mounts.
-> Now pull in remote-fs.target in dracut-pre-pivot.
-> 
-> Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+On 05/13/2014 04:32 PM, Harald Hoyer wrote:
+> On 13.05.2014 16:21, Hannes Reinecke wrote:
+>> On 05/13/2014 02:10 PM, Harald Hoyer wrote:
+>>> On 13.05.2014 12:42, Hannes Reinecke wrote:
+>>>> On 05/13/2014 12:39 PM, Harald Hoyer wrote:
+>>>>>
+>>>>> for systemd:
+>>>>>      modules.d/98systemd/rootfs-generator.sh:
+>>>>> [ "${root%%:*}" =3D "block" ] && generator_wait_for_dev "${root#b=
+lock:}"
+>>>>>
+>>>>> for non-systemd:
+>>>>>     modules.d/95rootfs-block/parse-block.sh:
+>>>>> [ "${root%%:*}" =3D "block" ] && wait_for_dev "${root#block:}"
+>>>>>
+>>>>>
+>>>>> What is your kernel command line?
+>>>>>
+>>>> BOOT_IMAGE=3D/boot/vmlinuz-3.12.18-4-default \
+>>>> root=3DUUID=3D7b90aa11-62ba-4260-81c6-bcf43914e97e \
+>>>> console=3Dtty0 console=3DttyS1,57600 sysrq_always_enabled \
+>>>> panic=3D100 ignore_loglevel unknown_nmi_panic \
+>>>> resume=3D/dev/disk/by-uuid/7be10c24-f0fe-4ecd-b04f-c307b0370c48 \
+>>>> splash=3Dsilent quiet showopts crashkernel=3D166M-:83M \
+>>>> rd.break=3Dpre-mount
+>>>>
+>>>> (The pre-mount thingie is inserted by me so that I have a chance t=
+o debug & fix
+>>>> things)
+>>>>
+>>>> Cheers,
+>>>>
+>>>> Hannes
+>>>
+>>> do a rd.break=3Dinitqueue and look in the
+>>> /lib/dracut/hooks/initqueue/finished
+>>> directory.
+>>>
+>>> If you use systemd in the initramfs, you should have:
+>>>
+>>> /usr/lib/systemd/system-generators/dracut-rootfs-generator
+>>>
+>>> in the initramfs, which transforms root=3DUUID=3D... into the finis=
+hed hook.
+>>>
+>>> You should be able to test it in the dracut shell with:
+>>>
+>>> # bash -x /usr/lib/systemd/system-generators/dracut-rootfs-generato=
+r
+>>
+>> Which seems to be the problem; the generator is present, but apparen=
+tly not
+>> called.
+>> Once I execute the above line the 'finished' entry for the root fs i=
+s there.
+>>  From which I surmise that the generator hasn't been called.
+>>
+>> Hmm.
+>>
+>
+> Does it have the executable bits set?
 
-Hi, Harald
+Argl. Totally stupid.
 
-Would you like to pick up this one?
+Look at modules.d/99base/module_setup.sh:
 
-People run into issue that nfs isn't mount in kdump kernel:
-https://bugzilla.redhat.com/show_bug.cgi?id=1091785
+     ## save host_devs which we need bring up
+     if [[ $hostonly_cmdline =3D=3D "yes" ]]; then
+         if [[ -f "$initdir/lib/dracut/need-initqueue" ]] || !=20
+dracut_module_included "systemd"; then
+             (
+                 if dracut_module_included "systemd"; then
+                     DRACUT_SYSTEMD=3D1
+                 fi
+                 PREFIX=3D"$initdir"
 
-Thanks
-WANG Chao
+                 . "$moddir/dracut-lib.sh"
 
-> ---
->  modules.d/98systemd/dracut-pre-pivot.service | 2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/modules.d/98systemd/dracut-pre-pivot.service b/modules.d/98systemd/dracut-pre-pivot.service
-> index 6db1f2c..d7c7b1d 100644
-> --- a/modules.d/98systemd/dracut-pre-pivot.service
-> +++ b/modules.d/98systemd/dracut-pre-pivot.service
-> @@ -13,6 +13,8 @@ Documentation=man:dracut-pre-pivot.service(8)
->  After=initrd.target initrd-parse-etc.service sysroot.mount
->  After=dracut-initqueue.service dracut-pre-mount.service dracut-mount.service
->  Before=initrd-cleanup.service
-> +Wants=remote-fs.target
-> +After=remote-fs.target
->  ConditionPathExists=/etc/initrd-release
->  ConditionDirectoryNotEmpty=|/lib/dracut/hooks/pre-pivot
->  ConditionDirectoryNotEmpty=|/lib/dracut/hooks/cleanup
-> -- 
-> 1.8.5.3
-> 
+                 for _dev in ${host_devs[@]}; do
+                     [[ "$_dev" =3D=3D "$root_dev" ]] && continue
+                     _pdev=3D$(get_persistent_dev $_dev)
+
+                     case "$_pdev" in
+                         /dev/?*) wait_for_dev $_pdev;;
+                         *) ;;
+                     esac
+                 done
+             )
+         fi
+     fi
+
+So if /etc/fstab contains just the root device (or if the swap=20
+device resides on a different device which is initialized earlier)
+the initqueue will _never_ run, and the worker scripts will never
+be executed.
+Once I remove the '[[ "$_dev" =3D=3D "$root_dev" ]] && continue'
+line the system boots.
+
+Cheers,
+
+Hannes
+--=20
+Dr. Hannes Reinecke		      zSeries & Storage
+hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
+SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
+GF: J. Hawn, J. Guild, F. Imend=F6rffer, HRB 16746 (AG N=FCrnberg)
