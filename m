@@ -1,38 +1,42 @@
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH] 98systemd: fixup rootfs-generator installation path
-Date: Tue, 20 May 2014 11:20:10 +0200
-Message-ID: <1400577610-119478-1-git-send-email-hare@suse.de>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] resume/parse-resume.sh: add missing braces
+Date: Tue, 20 May 2014 11:33:47 +0200
+Message-ID: <537B217B.2060702@redhat.com>
+References: <1397924620-2755-1-git-send-email-farbing@web.de>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1397924620-2755-1-git-send-email-farbing-S0/GAf8tV78@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+To: Daniel Schaal <farbing-S0/GAf8tV78@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The rootfs-generator was installed in the wrong path
-in the initrd, cause it never to be run.
+On 19.04.2014 18:23, Daniel Schaal wrote:
+> ---
+>  modules.d/95resume/parse-resume.sh | 7 ++++---
+>  1 file changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/modules.d/95resume/parse-resume.sh b/modules.d/95resume/parse-resume.sh
+> index d7b2d7f..a97ef7b 100755
+> --- a/modules.d/95resume/parse-resume.sh
+> +++ b/modules.d/95resume/parse-resume.sh
+> @@ -70,9 +70,10 @@ if ! getarg noresume; then
+>          printf '[ -e "%s" ] && { ln -s "%s" /dev/resume; rm -f -- "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
+>              "$resume" "$resume" "$hookdir" >> $hookdir/initqueue/settled/resume.sh
+>  
+> -        printf -- "%s" 'warn "Cancelling resume operation. Device not found.";'
+> -        printf -- ' cancel_wait_for_dev /dev/resume; rm -f -- "$job" "%s/initqueue/settled/resume.sh";\n' \
+> -            "$hookdir" >> $hookdir/initqueue/timeout/resume.sh
+> +	{
+> +            printf -- "%s" 'warn "Cancelling resume operation. Device not found.";'
+> +            printf -- ' cancel_wait_for_dev /dev/resume; rm -f -- "$job" "%s/initqueue/settled/resume.sh";\n' "$hookdir"
+> +        } >> $hookdir/initqueue/timeout/resume.sh
+>  
+>          mv /lib/dracut/resume.sh /lib/dracut/hooks/pre-mount/10-resume.sh
+>      else
+> 
 
-References: bnc#878714
+Thanks!
 
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
----
- modules.d/98systemd/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
-index e14ce39..4516b9a 100755
---- a/modules.d/98systemd/module-setup.sh
-+++ b/modules.d/98systemd/module-setup.sh
-@@ -192,7 +192,7 @@ install() {
-     inst_script "$moddir/dracut-mount.sh" /bin/dracut-mount
-     inst_script "$moddir/dracut-pre-pivot.sh" /bin/dracut-pre-pivot
- 
--    inst_script "$moddir/rootfs-generator.sh" /lib/systemd/system-generators/dracut-rootfs-generator
-+    inst_script "$moddir/rootfs-generator.sh" $systemdutildir/system-generators/dracut-rootfs-generator
- 
-     inst_binary true
-     ln_r $(type -P true) "/usr/bin/loginctl"
--- 
-1.8.5.2
+http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=636cc1ef634704ffc5e037961b6fb8ede3203977
