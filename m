@@ -1,49 +1,32 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] resume/module-setup.sh: filter out empty resume= options
- in cmdline()
-Date: Tue, 20 May 2014 13:30:19 +0200
-Message-ID: <537B3CCB.70909@redhat.com>
-References: <E1WlLlY-0007GR-QD@puleglot.ru>
+From: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
+Subject: live rootfs from squashfs and read write ability
+Date: Wed, 21 May 2014 16:51:14 +0400
+Message-ID: <CACaajQsj71mL4BciOPaNTx2wN_A2SiBM=babpsUK5QGzQ2Yreg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E1WlLlY-0007GR-QD-C3g8GgeTu50ox3rIn2DAYQ@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=selfip.ru; s=google;
+        h=mime-version:sender:from:date:message-id:subject:to:content-type;
+        bh=zGRDBsoTY4vQQUmCSPnC+PvhFcgUDQ7VYeUSEllr3Ic=;
+        b=F3wXqqCtYyVZS+7+sOMLp1qgD5WI4MFr+6RPP3Ohj6+edFJF8WWGhxG1DmVVH2k8d8
+         R0XxmVeBWzSlDtMaldNOjvWPjho+q9s5ktcwW7iy3me9A/w7+L9inpiQmtdoyiuX2jw0
+         mWYtveRJwIUM38XbAlXTOowlizDwmCBbkL7gM=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 16.05.2014 19:12, Alexander Tsoy wrote:
-> cmdline() prints empty "resume=" options for non-persistent swap
-> devices, for example zram. Add a check for that.
-> 
-> This patch also fixes printf formatting and removes unused variables.
-> ---
->  modules.d/95resume/module-setup.sh | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
-> index ceb7855..b1b4684 100755
-> --- a/modules.d/95resume/module-setup.sh
-> +++ b/modules.d/95resume/module-setup.sh
-> @@ -17,12 +17,12 @@ check() {
->  
->  # called by dracut
->  cmdline() {
-> -    local _activated
-> -    declare -A _activated
-> +    local _resume
->  
->      for dev in "${!host_fs_types[@]}"; do
->          [[ ${host_fs_types[$dev]} =~ ^(swap|swsuspend|swsupend)$ ]] || continue
-> -        printf "resume=%s " "$(shorten_persistent_dev "$(get_persistent_dev "$dev")")"
-> +        _resume=$(shorten_persistent_dev "$(get_persistent_dev "$dev")")
-> +        [[ -n ${_resume} ]] && printf " resume=%s" "${_resume}"
->      done
->  }
->  
-> 
+Hello! I'm very happy with dracut (i'm create live squashfs image and
+boot it), but as i see i have my root in read only mode. How can i get
+route in read/write mode (in ram).
+My cmdline like:
+bond=bond0:eth0,eth1:mode=6 net.ifnames=0 ip=bond0:auto6 rd.bootif=0
+rd.md=0 rd.dm=0 rd.lvm=0 rd.luks=0 rd.shell
+root=live:http://[2001:db8:0:f101:92e2:baff:fe31:44e]/image/mh-vm/image.squashfs
+console=tty0 console=ttyS1,115200 rw
 
-thanks!
-
-http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=c4b529f50388474ceffa8c918d2722fc777eac0a
+-- 
+Vasiliy Tolstov,
+e-mail: v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
+jabber: vase-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
