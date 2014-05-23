@@ -1,45 +1,68 @@
-From: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
-Subject: Re: live rootfs from squashfs and read write ability
-Date: Fri, 23 May 2014 01:04:25 +0400
-Message-ID: <CACaajQvz1e=nYW1C49ExcWAAZHCy9e=tZMMJbtevFAA=37t3gQ@mail.gmail.com>
-References: <CACaajQsj71mL4BciOPaNTx2wN_A2SiBM=babpsUK5QGzQ2Yreg@mail.gmail.com>
- <20140522095925.GG1859@darkstar.nay.redhat.com>
-Mime-Version: 1.0
+From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] kernel-modules: Fix storage module selection for sdhci/mmc/ahci
+Date: Fri, 23 May 2014 11:54:01 +0100
+Message-ID: <1400842441-3728-1-git-send-email-pbrobinson@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=selfip.ru; s=google;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc:content-type;
-        bh=4zSv2ZSx0AySzGSUoQjeYO94qjrMuaRjWIEhWyoZpSY=;
-        b=da+szM00SUxDNKGfh+tQnfEmIZjc1imUTIovFJEMdnD/VgUwzH1UNbrYs5dLlGCvCh
-         Hutkvre/ZYDg1M/olmaPJCO8322gpClEWJiOMoniV6SibqXIJbSTEAcNnmERl/M/k59c
-         enxBcbQGrhaDp2LTbu+7L8kbmbojLTANPV3xw=
-In-Reply-To: <20140522095925.GG1859-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id;
+        bh=Rv+JdhdKgyLPCPUTNs+i79/DNOn7TlE83v3yGJfN+VE=;
+        b=aGp0VIgqpN0I9YCdsYsynNU309g89CYDNNaZBns8Vw0xVM83bRVP1HUzrq4t4nzVHc
+         5Sm8h44j7Ua+58F2UfFI1ul2oUU6w8i7K0rGmPajmBWgSqGB6INZVAJ8pmhM+cZSmUOV
+         BLAFrrSqBa190kHdbtIhmCFMLQOx6J+jrAIFj9lH7eImeMAlvrCGCSxsXn33Qg7XmEoM
+         yiusowlvu1DrYdmXmrT06XJrXICQ/NqBD37gHCRad8YcoW4+spqXAejw+BDeEM27ihGE
+         dloPz0439NgLLTfUq+1l25q57CPS4UjZyxdeXszuNlIH+vARL9lEY2Dfk7yCt1S5kBAd
+         wo6A==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-2014-05-22 13:59 GMT+04:00 Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
->
-> I don't think there's easy solution for read-write mount since it need stacked fs like
-> unionfs. But maybe you can try mount some folder as tmpfs such as /tmp, /var etc.
-> and only write to the specific folders.
->
-> I imagine a simpe implement for unionfs specific for initramfs use..
->
-> Thanks
+Currently the block driver detection for generic initrd doesn't include
+the SD/MMC drivers so we fail to boot generic images on any device using
+those platforms as boot devices when using a generic initrd. Add logic
+to detect those modules. This primarily fixes embedded ARM devices but
+also likely intel tablets/dev boards and enterprise hypervisors that
+have the ability to boot from SD.
 
+Also the ahci_init_controller misses a number of drivers that use the
+libahci_platform module for the init so this fixes some missing achi
+moduless too.
 
-I'm try to implement overlayfs mount (backend squashfs, frontend tmpfs).
-Can you check https://github.com/haraldh/dracut/pull/20.patch or
-https://github.com/haraldh/dracut/pull/20 and give to me some
-suggestion, how can i best do this?
+Finally it cleans up the ARM storage module hacks that the above now
+deals with in a more generic manner.
 
+Signed-off-by: <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ modules.d/90kernel-modules/module-setup.sh | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index 2378663..5271438 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -6,7 +6,7 @@
+ installkernel() {
+     if [[ -z $drivers ]]; then
+         block_module_filter() {
+-            local _blockfuncs='ahci_init_controller|ata_scsi_ioctl|scsi_add_host|blk_cleanup_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device|usb_stor_disconnect'
++            local _blockfuncs='ahci_platform_get_resources|ata_scsi_ioctl|scsi_add_host|blk_cleanup_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device|usb_stor_disconnect|mmc_add_host|sdhci_pltfm_init'
+             # subfunctions inherit following FDs
+             local _merge=8 _side2=9
+             function bmf1() {
+@@ -51,9 +51,7 @@ installkernel() {
+ 
+         if [[ "$(uname -p)" == arm* ]]; then
+             # arm specific modules
+-            hostonly='' instmods sdhci_esdhc_imx mmci sdhci_tegra mvsdio omap omapdrm \
+-                omap_hsmmc panel-tfp410 sdhci_dove ahci_platform pata_imx sata_mv \
+-                ehci-tegra mmc_block usb_storage
++            hostonly='' instmods omapdrm panel-tfp410
+         fi
+ 
+         # install virtual machine support
 -- 
-Vasiliy Tolstov,
-e-mail: v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
-jabber: vase-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
+1.9.3
