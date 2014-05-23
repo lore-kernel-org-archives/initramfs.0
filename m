@@ -1,18 +1,18 @@
 From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: [PATCH] kernel-modules: Fix storage module selection for sdhci/mmc/ahci
-Date: Fri, 23 May 2014 11:54:01 +0100
-Message-ID: <1400842441-3728-1-git-send-email-pbrobinson@gmail.com>
+Date: Fri, 23 May 2014 12:28:22 +0100
+Message-ID: <1400844502-4753-1-git-send-email-pbrobinson@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
         h=from:to:cc:subject:date:message-id;
         bh=Rv+JdhdKgyLPCPUTNs+i79/DNOn7TlE83v3yGJfN+VE=;
-        b=aGp0VIgqpN0I9YCdsYsynNU309g89CYDNNaZBns8Vw0xVM83bRVP1HUzrq4t4nzVHc
-         5Sm8h44j7Ua+58F2UfFI1ul2oUU6w8i7K0rGmPajmBWgSqGB6INZVAJ8pmhM+cZSmUOV
-         BLAFrrSqBa190kHdbtIhmCFMLQOx6J+jrAIFj9lH7eImeMAlvrCGCSxsXn33Qg7XmEoM
-         yiusowlvu1DrYdmXmrT06XJrXICQ/NqBD37gHCRad8YcoW4+spqXAejw+BDeEM27ihGE
-         dloPz0439NgLLTfUq+1l25q57CPS4UjZyxdeXszuNlIH+vARL9lEY2Dfk7yCt1S5kBAd
-         wo6A==
+        b=LfhZ3Sq0P3xCtLRNEiAQzRwn8x5DB8Zyjpq4KjmREtSSyUpi1KdPgLlybcwe9HTJgf
+         D+P4UnEYL42iYxmkdPXfoujqxRGp2/+mug9N6OdmG8p7IZ3H3dRqT8DkGgKqvPbcImF+
+         gAGFDxfFh8wiaBZ4mDRDjtTMiveGKOicJETGwC60Q4/rnt2IClHNnl9OwLx9xGnuZdVd
+         FPkcHwqNsr2R6zkxVAuxO1+Jh25yxqlqQAAMVqQA9uaGKk5JWH26eqBUOzvOGexOtCy9
+         /2/pcArIjXc3K7TfRrb0AKJEaGALh1Uo0PhHAIJFk17PB9eHnypEa9EAbfM4tUWYejtV
+         qqqA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
