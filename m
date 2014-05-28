@@ -1,35 +1,55 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut: Introduce --force-drivers parameter and force_drivers=+
- config option
-Date: Wed, 28 May 2014 13:53:56 +0200
-Message-ID: <5385CE54.3070009@redhat.com>
-References: <2956069.N6upzrOyu5@skinner>
+From: Harald Hoyer <harald@redhat.com>
+Subject: Re: failed to bring up bonding interface
+	(dracut+system)
+Date: Wed, 28 May 2014 13:57:46 +0200
+Message-ID: <5385CF3A.1040306@redhat.com>
+References: <CACaajQtBpFPPpt01LLDsubnKczQCAO4SaQF+8G7BnjAQCss20A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <2956069.N6upzrOyu5@skinner>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+Return-path: <systemd-devel-bounces@lists.freedesktop.org>
+In-Reply-To: <CACaajQtBpFPPpt01LLDsubnKczQCAO4SaQF+8G7BnjAQCss20A@mail.gmail.com>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+ <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+ <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Errors-To: systemd-devel-bounces@lists.freedesktop.org
+Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
+To: Vasiliy Tolstov <v.tolstov@selfip.ru>, systemd-devel <systemd-devel@lists.freedesktop.org>, initramfs@vger.kernel.org
 
-On 07.05.2014 18:00, Thomas Renninger wrote:
-> Which will not only add listed drivers, but also enforce that they are tried
->  to be loaded at early boot time.
+On 24.05.2014 09:02, Vasiliy Tolstov wrote:
+> Hello.
+> I'm using dracut to create initramfs and systemd.
+> Dracut configures bond and all works fine, but then it shutdowns and
+> switch rooti, mac address of slave interfaces (eth0 and eth1) changed,
+> but bonding mac saves the same. After that bond interface not works.
+> How to prevent this fail?
+> If i rmmod igb driver and load it mac addresses change to normal and
+> all works fine.
+> dracut from current master, system - 212.
 > 
-> This is needed if drivers which are not autoloaded (e.g. loop and a lot others)
-> shall get loaded via initramfs.
+> my /proc/cmdline
+> bond=bond0:eth0,eth1:mode=balance-xor,miimon=100,updelay=200,downdelay=200
+> net.ifnames=0 ip=bond0:auto6:9000 rd.bootif=0 rd.md=0 rd.dm=0 rd.lvm=0
+> rd.luks=0 console=tty0 console=ttyS1,115200 rw
+> root=live:http://[2001:db8:0:f101:92e2:baff:fe31:44c]/image/mh-vm/image.squashfs
+> rd.live.size=1G
+> chef=http://[2001:db8:0:f101:92e2:baff:fe31:44c]/chef/vm09 rd.shell
+> raid=noautodetect rdshell rd.debug rdnetdebug
+> 
+> Invalid mac addresses is
+> ba:ee:69:7c:ed:4e
+> 4a:0f:e8:44:93:35
+> Valid mac addreses is
+> 00:25:90:d5:bf:bc
+> 00:25:90:d5:bf:bd
+> 
 > 
 
-Hmm, loop should be autoloaded.
+?? something in your real root system assigning MAC adresses to the interfaces?
 
-systemd-udev creates device nodes for all modules with the "devname:" alias:
-
-$ modinfo -F alias loop
-devname:loop-control
-char-major-10-237
-block-major-7-*
-
-so the module loading is triggered on access to /dev/loop-control via losetup.
-
-Which other modules do you have problems with?
+which distribution?
