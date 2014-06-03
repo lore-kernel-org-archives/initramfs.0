@@ -1,134 +1,47 @@
-From: Hari Bathini <hbathini-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH] lsinird: Adding option "-m|--mod" to list dracut modules in
- the image
-Date: Mon, 02 Jun 2014 16:27:37 +0530
-Message-ID: <20140602105737.11356.69989.stgit@localhost.localdomain>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Tobias Geerinckx <tobias.geerinckx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] lsinitrd.sh: don't choke on LZO-compressed images
+Date: Tue,  3 Jun 2014 04:59:34 +0200
+Message-ID: <1401764374-17744-1-git-send-email-tobias.geerinckx@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id;
+        bh=KtL+586h3uV4liUpf8Ow+pacM3JdeqPfLFn98C9H6Jo=;
+        b=xXXZcfzvHavlWi5PJASX+9C7kNuPzKZJ6FRney11+acyQum0wUvSY0oCvZnmHY9WEG
+         Hy1/4nimLZxFKg6g7jeAbMSF6G89pI8Z2Ek5CLJDOwhoxaC+KJZu7dR0BSjeJyUNJ/xB
+         4fng/wkgPZnmUaBTt8Ag6HiqhDtLZ/obemYe4ysKTUQwpCg6JgqxWlG/q6IbEndZxeLQ
+         tdKOvYFLYloILnv49xyFqCy5BdzqrNW+N5LLJ5036WO4+JEgL5zvFBh+7qXgS5OFW3oK
+         00O2QBQFq/KlJGdqBZpn6cwtsMMzeUWQP/aJhh9VzDiNFnG0n6QPdMjHEv9+AIAL/69F
+         602w==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Tobias Geerinckx <tobias.geerinckx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-This patch adds option "-m|--mod" to lsinitrd to list dracut
-modules in the image  because sometimes  having an option to
-only list the dracut modules in the image could be handy.
+lsinitrd (and hence dracut) currently fail to list the contents of any
+LZO-compressed image, and merely spit out misleading xzcat errors.
 
-Sample output:
---------------
-
-[hbathini@localhost dracut]$ sudo ./lsinitrd.sh initramfs-3.11.10-100.fc18.x86_64.img -m
-Image: initramfs-3.11.10-100.fc18.x86_64.img: 33M
-========================================================================
-Version: dracut-029-1.fc18.2
-
-dracut modules:
-i18n
-network
-ifcfg
-drm
-plymouth
-btrfs
-crypt
-dm
-dmraid
-kernel-modules
-lvm
-mdraid
-cifs
-iscsi
-nfs
-resume
-rootfs-block
-terminfo
-udev-rules
-biosdevname
-systemd
-usrmount
-base
-fs-lib
-shutdown
-========================================================================
-
-Signed-off-by: Hari Bathini <hbathini-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+I guess no-one actually uses them.
 ---
- lsinitrd.sh |   30 ++++++++++++++++++++++--------
- 1 file changed, 22 insertions(+), 8 deletions(-)
+ lsinitrd.sh | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/lsinitrd.sh b/lsinitrd.sh
-index a697bc2..8e4baaf 100755
+index a697bc2..4ba8752 100755
 --- a/lsinitrd.sh
 +++ b/lsinitrd.sh
-@@ -27,6 +27,7 @@ usage()
-         echo
-         echo "-h, --help                  print a help message and exit."
-         echo "-s, --size                  sort the contents of the initramfs by size."
-+        echo "-m, --mod                   list modules."
-         echo "-f, --file <filename>       print the contents of <filename>."
-         echo "-k, --kver <kernel version> inspect the initramfs of <kernel version>."
-         echo
-@@ -37,13 +38,15 @@ usage()
- [[ $dracutbasedir ]] || dracutbasedir=/usr/lib/dracut
- 
- sorted=0
-+modules=0
- declare -A filenames
- 
- unset POSIXLY_CORRECT
- TEMP=$(getopt \
--    -o "shf:k:" \
-+    -o "shmf:k:" \
-     --long kver: \
-     --long file: \
-+    --long mod \
-     --long help \
-     --long size \
-     -- "$@")
-@@ -61,6 +64,7 @@ while (($# > 0)); do
-         -f|--file)  filenames[${2#/}]=1; shift;;
-         -s|--size)  sorted=1;;
-         -h|--help)  usage; exit 0;;
-+        -m|--mod)   modules=1;;
-         --)         shift;break;;
-         *)          usage; exit 1;;
-     esac
-@@ -119,6 +123,13 @@ extract_files()
-     done
- }
- 
-+list_modules()
-+{
-+    echo "dracut modules:"
-+    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/modules.txt' 'usr/lib/dracut/modules.txt' 2>/dev/null
-+    ((ret+=$?))
-+}
-+
- list_files()
- {
-     echo "========================================================================"
-@@ -209,13 +220,16 @@ else
-     ((ret+=$?))
-     echo "Version: $version"
-     echo
--    echo -n "Arguments: "
--    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/build-parameter.txt' 'usr/lib/dracut/build-parameter.txt' 2>/dev/null
--    echo
--    echo "dracut modules:"
--    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/modules.txt' 'usr/lib/dracut/modules.txt' 2>/dev/null
--    ((ret+=$?))
--    list_files
-+    if [ "$modules" -eq 1 ]; then
-+        list_modules
-+        echo "========================================================================"
-+    else
-+        echo -n "Arguments: "
-+        $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/build-parameter.txt' 'usr/lib/dracut/build-parameter.txt' 2>/dev/null
-+        echo
-+        list_modules
-+        list_files
-+    fi
- fi
- 
- exit $ret
+@@ -180,6 +180,9 @@ CAT=$({
+             $'\x02\x21'*)
+                 echo "lz4 -d -c"
+                 ;;
++            $'\x89'LZO$'\0'*)
++                echo "lzop -d -c"
++                ;;
+             *)
+                 if echo "test"|xz|xzcat --single-stream >/dev/null 2>&1; then
+                     echo "xzcat --single-stream --"
+-- 
+2.0.0
