@@ -1,53 +1,57 @@
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: iBFT oddities
-Date: Wed, 04 Jun 2014 09:52:34 +0200
-Message-ID: <538ED042.8000904@suse.de>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2 2/2] network: add static route support
+Date: Wed, 04 Jun 2014 13:38:47 +0200
+Message-ID: <538F0547.7060804@redhat.com>
+References: <1398678111-13601-1-git-send-email-bhe@redhat.com> <1398678111-13601-2-git-send-email-bhe@redhat.com> <20140505071214.GA24097@dhcp-16-116.nay.redhat.com> <20140522073359.GD1859@darkstar.nay.redhat.com> <20140527062512.GA1951@dhcp-16-116.nay.redhat.com> <20140529062059.GH2068@darkstar.nay.redhat.com> <20140604062516.GE2194@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20140604062516.GE2194-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-Hi all,
+On 04.06.2014 08:25, Dave Young wrote:
+> On 05/29/14 at 02:20pm, Dave Young wrote:
+>> On 05/27/14 at 02:25pm, Baoquan He wrote:
+>>> On 05/22/14 at 03:33pm, Dave Young wrote:
+>>>> On 05/05/14 at 03:12pm, Baoquan He wrote:
+>>>
+>>>> Hi, Baoquan
+>>>>
+>>>> The route-$netif is supposed in 1st kernel filesystem. Can we passing the
+>>>> detail ip/netmask/gw for specific nic in kernel cmdline instead of copy
+>>>> the route file in initramfs? In that way we can avoid this dracut fix.
+>>>>
+>>>> I'm not sure if it works for the complicate route setup though.
+>>>
+>>> I am not sure, it had better handle the route during setup net. I want
+>>> to hear what Harald will say. He is more familiar with this.
+>>
+>> Ok, the route table item must be a line like "192.168.100.1 via 127.0.0.1 dev lo  metric 203"
+>>
+>> If passing them via cmdline we need quote it with some special character and append
+>> it to the ip= cmdline param
+>>
+>> The other way is copy the route file to /etc/ in initramfs like you are doing.
+>> But we did need the functions to handle the static route.
+>>
+>> So leave to Harald about the interface. 
+> 
+> Harald, what do you prefer to passing static route item to initramfs?
+> Do you have beeter idea in mind?
+> 
+> Thanks
+> Dave
+> 
 
-I'm trying to setup a machine with root on iSCSI via iBFT
-(on SR-IOV, yay!).
+Actually, I would like to parse systemd-networkd like config files.
+As we will integrate systemd-networkd as a replacement for our shell script
+mess in the future, I think it might make more sense not to introduce another
+format, which will be obsoleted.
 
-But anyhow, I'll be setting 'ip=3Dibft' on the commandline as per=20
-documentation and the iBFT settings are applied and everything is=20
-nice and dandy.
+http://www.freedesktop.org/software/systemd/man/systemd.network.html
 
-It's only that dracut complains during boot:
-
-Jun 03 16:28:11 localhost dracut-cmdline[80]: ibft
-Jun 03 16:28:11 localhost dracut-cmdline[80]: Warning: Please supply=20
-bootdev argument for multiple ip=3D lines
-Jun 03 16:28:11 localhost dracut-cmdline[80]: Warning: Setting=20
-bootdev to 'ibft0'
-
-Looking closer, setting 'ip=3Dibft' triggers 'ibft_to_cmdline()',
-which will add _another_ ip=3D argument to the dracut commandline.
-And consequently parse_ip_opts() complains here.
-
-While it's quite easy to fix (just ignore ip=3Dibft when checking for=20
-duplicate ip arguments), I do wonder whether this is the correct way.
-
-Thing is, 'ip=3Dibft' is not really an ip setting, but rather a marker=20
-that iBFT should be evaluated.
-As such, wouldn't 'rd.iscsi.firmware=3Dibft' be a more appropriate=20
-setting?
-Seeing that the ip argument is added to the commandline anyway,=20
-having a duplicate 'ip=3Dibft' setting does look a bit odd.
-And confuses the logic ...
-
-Cheers,
-
-Hannes
---=20
-Dr. Hannes Reinecke		      zSeries & Storage
-hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
-SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
-GF: J. Hawn, J. Guild, F. Imend=F6rffer, HRB 16746 (AG N=FCrnberg)
+What do you think?
