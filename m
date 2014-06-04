@@ -1,81 +1,52 @@
-From: dancy76939-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org
-Subject: Re: Guaranteed Top 10 Google Placements mail-archive.com In 100 Days
-Date: Tue, 3 Jun 2014 23:30:57 -0700
-Message-ID: <538e0d5f.43d7440a.031b.5fe2@mx.google.com>
-Reply-To: reveille48519-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2 2/2] network: add static route support
+Date: Wed, 4 Jun 2014 14:25:16 +0800
+Message-ID: <20140604062516.GE2194@darkstar.nay.redhat.com>
+References: <1398678111-13601-1-git-send-email-bhe@redhat.com>
+ <1398678111-13601-2-git-send-email-bhe@redhat.com>
+ <20140505071214.GA24097@dhcp-16-116.nay.redhat.com>
+ <20140522073359.GD1859@darkstar.nay.redhat.com>
+ <20140527062512.GA1951@dhcp-16-116.nay.redhat.com>
+ <20140529062059.GH2068@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=20120113;
-        h=message-id:from:to:reply-to:subject:date;
-        bh=oYgGgCwsF7I6lqicOrZYIV8vDTN2PzGVQi/A5Up8OTI=;
-        b=Rg/nC48vXwcxzAnqO3Otgw9ZDvTv58ZtzvfGdZYRdvvdPpuRsyR7NTx7C5+plaGEBJ
-         dOkAUf9IOtP0mo4uxUjNcHAoq9kFktZxIQm0t40cytRoeMq51Tf9bciMdnnGqGtAjlhZ
-         wEl6QX0NWXGyWMpsWgLqyPmQW89dXBG83tRKRHyaYWQgcs+Q25ViNGEAArNM3v3DPS84
-         ppqJSl0AOj6EygrWOMKyeiuCnHN8wWzJQ4Vgp9k0S8njaUfjzm9j4MLaVq35goABrYqh
-         dxchgb6+I8jN+GWcEHPfdnSwj1oFQe9X1ytmrwOPPRwGkgg43iinia5pyA972SAfHZOs
-         8QAA==
+Content-Disposition: inline
+In-Reply-To: <20140529062059.GH2068-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; charset="windows-1252"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-=46ree SEO Evaluation!
+On 05/29/14 at 02:20pm, Dave Young wrote:
+> On 05/27/14 at 02:25pm, Baoquan He wrote:
+> > On 05/22/14 at 03:33pm, Dave Young wrote:
+> > > On 05/05/14 at 03:12pm, Baoquan He wrote:
+> > 
+> > > Hi, Baoquan
+> > > 
+> > > The route-$netif is supposed in 1st kernel filesystem. Can we passing the
+> > > detail ip/netmask/gw for specific nic in kernel cmdline instead of copy
+> > > the route file in initramfs? In that way we can avoid this dracut fix.
+> > > 
+> > > I'm not sure if it works for the complicate route setup though.
+> > 
+> > I am not sure, it had better handle the route during setup net. I want
+> > to hear what Harald will say. He is more familiar with this.
+> 
+> Ok, the route table item must be a line like "192.168.100.1 via 127.0.0.1 dev lo  metric 203"
+> 
+> If passing them via cmdline we need quote it with some special character and append
+> it to the ip= cmdline param
+> 
+> The other way is copy the route file to /etc/ in initramfs like you are doing.
+> But we did need the functions to handle the static route.
+> 
+> So leave to Harald about the interface. 
 
-Most business developers do not realize that every website has two kind=
- of audiences:
-a)      People who read the website, click, and take in the look and fe=
-el of the site
-b)      Search engines that crawl, index, and evaluate the site.
+Harald, what do you prefer to passing static route item to initramfs?
+Do you have beeter idea in mind?
 
-Our free SEO evaluation pack looks at your website from a search engine=
-=92s perspective and will tell you what all we need to do to make it mo=
-re Google friendly. We will explain you in detail that how your website=
- is doing in terms of SEO and what are your strengths and weaknesses.
-
-
-Why Local SEO matters?
-
-Tell us one thing when was the last time you used the yellow pages? In =
-today=92s scenario when consumers let their fingers do the walking, it =
-means keying in Google search. So the visibility on web is very importa=
-nt for every business, not only this but being on first page is of utmo=
-st importance to drive traffic. Having a good website is not enough to =
-be found on web, you need to opt for an effective SEO strategy to achie=
-ve visibility on web.
-
-According to the statistics
-
-To find local businesses 68% of the local consumers uses search engines
- Total number of local searches grew by 65% in last 2 years
-Local MAP listings get 10 times more clicks than organic listings
-only 10%-12% of businesses have claimed their Google Places local listi=
-ngs
-
-Here we offer a complete and proven Search Engine Placement strategy to=
- generate more traffic, more leads and  grow your business. Each day ma=
-ny people search for your product or your services online, but poor ran=
-kings on search engines is keeping them away from dealing with you.
-
-We offer Local SEO (Search engine optimization) packages that fit in ev=
-ery pocket. Our main goal is to understand your needs and requirements =
-and make you reach the consumers who are looking for the product or ser=
-vices that you offer.  Presently we are offering Local SEO to more than=
- 500 websites and all rank page 1 for their related keywords.
-Please send us your website for free evaluation. Looking ahead working =
-with you.
-
-
-Regards
-Miss Lara kaur
-SEO Manager : T.O.B
-7 B Green Avenue, Amritsar Punjab
-
------------------------------------------------------------------------=
------------------------------------------
-
-
-Our email above is not intended to waste your time or fill your inbox w=
-ith spam. If you would not like to hear from us, email us back with NOT=
- INTERESTED. We will never email you again.
+Thanks
+Dave
