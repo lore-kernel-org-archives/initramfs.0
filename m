@@ -1,33 +1,53 @@
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: Multithreaded programs crashing due to libgcc_s missing
-Date: Fri, 06 Jun 2014 16:58:47 +0200
-Message-ID: <5391D727.5020907@suse.de>
+From: <Praveen_Paladugu-DYMqY+WieiM@public.gmane.org>
+Subject: Installing an OS with VLAN enabled to an ISCSI LUN (from ibft)
+Date: Tue, 10 Jun 2014 10:35:16 -0500
+Message-ID: <ABF506AF5815F54BB6579628C0CD9F9956345880E3@AUSX7MCPS310.AMER.DELL.COM>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8BIT
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Language: en-US
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Harald,
 
-I've just uncovered a rather nasty issue with dracut, where for no=20
-apparent reason a (multithreaded) program was crashing.
-Reason being here that libpthread _requires_ libgcc_s when any=20
-program is using 'pthread_cancel'. When the library isn't present
-any of those calls will generate a SIGABRT.
-Nasty.
+When installing OS to a VLAN enabled iscsi LUN (extracted from iBFT), "/tmp/net.{xyz}.has_ibft_config" is not being set properly. 
 
-Best would be to pull libgcc_s in always when libpthread is=20
-required. But that would be some library detection magic.
-Can you fix this up?
+Then anaconda installer requires 'BOOTPROTO="ibft"' populated in ifcfg of the vlan interface (ex: ibft0.20), for it to properly populate the kernel parameters post installation. The setting 'BOOTPROTO="ibft"' is populated by write-ifcfg.sh script only if the corresponding interface has a file /tmp/net.{xyz}.has_inft_config
 
-Cheers,
 
-Hannes
---=20
-Dr. Hannes Reinecke		      zSeries & Storage
-hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
-SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
-GF: J. Hawn, J. Guild, F. Imend=F6rffer, HRB 16746 (AG N=FCrnberg)
+To get around this issue, in ibft_to_cmdline() function in net-lib.sh file, I made the following changes to populate the has_ibft_config file for the vlan interface(ex: ibft0.20):
+
+diff -up dracut-033/modules.d/40network/net-lib.sh.old dracut-033/modules.d/40network/net-lib.sh
+--- dracut-033/modules.d/40network/net-lib.sh.old	2014-06-10 10:21:32.326572725 -0500
++++ dracut-033/modules.d/40network/net-lib.sh	2014-06-10 10:24:28.523422425 -0500
+@@ -248,15 +248,19 @@ ibft_to_cmdline() {
+                    case "$vlan" in
+                        [0-9]*)
+                            echo "vlan=$dev.$vlan:$dev"
++                           echo $mac > /tmp/net.${dev}.${vlan}.has_ibft_config
+                            ;;
+                        *)
+                            echo "vlan=$vlan:$dev"
++                           echo $mac > /tmp/net.${dev}.has_ibft_config
+                            ;;
+                    esac
+                fi
++            else
++                echo $mac > /tmp/net.${dev}.has_ibft_config
++                
+             fi
+ 
+-            echo $mac > /tmp/net.${dev}.has_ibft_config
+         done
+     ) >> /etc/cmdline.d/40-ibft.conf
+ }
+
+
+ 
+
+
+Thank you
+Praveen K Paladugu
+Dell Linux Engineering
