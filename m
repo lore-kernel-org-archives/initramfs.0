@@ -1,21 +1,33 @@
-From: <Praveen_Paladugu-DYMqY+WieiM@public.gmane.org>
-Subject: RE: Installing an OS with VLAN enabled to an ISCSI LUN (from ibft)
-Date: Wed, 18 Jun 2014 10:21:31 -0500
-Message-ID: <ABF506AF5815F54BB6579628C0CD9F995634698719@AUSX7MCPS310.AMER.DELL.COM>
-References: <ABF506AF5815F54BB6579628C0CD9F9956345880E3@AUSX7MCPS310.AMER.DELL.COM>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8BIT
+From: Daniel Schaal <farbing-S0/GAf8tV78@public.gmane.org>
+Subject: [PATCH] 98systemd: also install systemd-journald-dev-log.socket
+Date: Thu, 19 Jun 2014 11:38:25 +0200
+Message-ID: <1403170705-1936-1-git-send-email-farbing@web.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <ABF506AF5815F54BB6579628C0CD9F9956345880E3-aIqoxSDCDny0d/9xeFN5lgVY21JRvFwKV6yJEvX+wlw@public.gmane.org>
-Content-Language: en-US
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Daniel Schaal <farbing-S0/GAf8tV78@public.gmane.org>
 
-Any comments here?
+The /dev/log socket was moved to /run on systemd 214, install the
+newly added socket unit.
+---
+ modules.d/98systemd/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thank you
-Praveen K Paladugu
-Dell Linux Engineering
-
+diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
+index cf1b2e7..bf3f4b1 100755
+--- a/modules.d/98systemd/module-setup.sh
++++ b/modules.d/98systemd/module-setup.sh
+@@ -106,6 +106,7 @@ install() {
+         $systemdsystemunitdir/sockets.target.wants/systemd-udevd-control.socket \
+         $systemdsystemunitdir/sockets.target.wants/systemd-udevd-kernel.socket \
+         $systemdsystemunitdir/sockets.target.wants/systemd-journald.socket \
++        $systemdsystemunitdir/sockets.target.wants/systemd-journald-dev-log.socket \
+         $systemdsystemunitdir/sysinit.target.wants/systemd-udevd.service \
+         $systemdsystemunitdir/sysinit.target.wants/systemd-udev-trigger.service \
+         $systemdsystemunitdir/sysinit.target.wants/kmod-static-nodes.service \
+-- 
+2.0.0
