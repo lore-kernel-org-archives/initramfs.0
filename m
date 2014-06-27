@@ -1,22 +1,24 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [Patch v2] network: add static route support
-Date: Fri, 27 Jun 2014 16:34:35 +0800
-Message-ID: <20140627083435.GA13442@dhcp-16-105.nay.redhat.com>
+Date: Fri, 27 Jun 2014 10:57:42 +0200
+Message-ID: <53AD3206.2020601@redhat.com>
 References: <1403856480-13745-1-git-send-email-bhe@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <1403856480-13745-1-git-send-email-bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mmilgram-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-CC Marc.
 
-On 06/27/14 at 04:08pm, Baoquan He wrote:
+"_" or ":" as a seperator??? code and documentation seem to differ
+
+Can we restrict this to network gateway dev ?
+
+On 27.06.2014 10:08, Baoquan He wrote:
 > User may specify static route for a target address which is different
 > than default gateway, hence static route need be added.
 > 
@@ -68,6 +70,4 @@ On 06/27/14 at 04:08pm, Baoquan He wrote:
 >      # Handle STP Timeout: arping the default gateway.
 >      # (or the root server, if a) it's local or b) there's no gateway.)
 >      # Note: This assumes that if no router is present the
-> -- 
-> 1.9.0
 > 
