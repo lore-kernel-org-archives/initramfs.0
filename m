@@ -1,7 +1,7 @@
 From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [Patch v2] network: add static route support
-Date: Fri, 27 Jun 2014 20:31:27 +0800
-Message-ID: <20140627123127.GB12159@dhcp-16-116.nay.redhat.com>
+Date: Fri, 27 Jun 2014 22:23:05 +0800
+Message-ID: <20140627142305.GA2775@dhcp-17-102.nay.redhat.com>
 References: <1403856480-13745-1-git-send-email-bhe@redhat.com>
  <53AD3206.2020601@redhat.com>
  <20140627103335.GA12159@dhcp-16-116.nay.redhat.com>
@@ -44,13 +44,11 @@ On 06/27/14 at 01:24pm, Harald Hoyer wrote:
 > 
 > rd.route=192.168.100.222/32_192.168.1.1_ens10
 
-This is the test environment for this patch. Default gateway goes
-through eth0, while the kdump target (192.168.200.222) goes through
-ens10. These 2 NICs are not in the same subnet. For guiding data path, as
-you said, network/gateway/dev is truly enough. 
-
-default via 192.168.122.1 dev eth0  proto static  metric 1024 
-192.168.200.0/24 via 192.168.100.222 dev ens10  proto static  metric 1
+Well, maybe the patch log is misleading. Usually host route need not be
+added, because it's added automatically by network stack, host route
+means a target connected directly by cable. In this pathc, only subnet
+route need be added specifically. Surely, the
+prefix/nexthop/output_device also are enough.
 
 > 
 > >
@@ -74,11 +72,15 @@ default via 192.168.122.1 dev eth0  proto static  metric 1024
 > 
 > rd.route=192.168.100.222/32:192.168.1.1:ens10
 > rd.route=[2001:DB7::]:[2001:DB8::1]:ens10
-Ah, yeah, this works. 
 
-But using "_" as you suggested before is much easier, code is very
-simple and understandable.
-
+Originally I used ":", later changed to "_". In this situation, dracut
+only need get the string from rd.route and replace the separator with
+space, nothing more need be considered. The content of rd.route is
+guaranteed by user, if they can execute "ip route add route_string", the
+route_string which will be transfered by replacing space with "_" can be
+added in dracut shell script. Then dracut needn't care it's a ipv4 or
+ipv6, whether prefix/nexthop/output_device is enough or special route
+options are needed, just add it into route table.
 
 > 
 > 
