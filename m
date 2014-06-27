@@ -1,63 +1,66 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] write-ifcfg.sh: Don't overwrite network config in root
- filesystem
-Date: Wed, 25 Jun 2014 14:45:01 +0200
-Message-ID: <53AAC44D.6030403@redhat.com>
-References: <alpine.LFD.2.02.1406211239250.1876@bbs.intern> <53AA9B8E.7020801@redhat.com> <53AAAD6E.9010207@wiesinger.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [Patch v2] network: add static route support
+Date: Fri, 27 Jun 2014 16:08:00 +0800
+Message-ID: <1403856480-13745-1-git-send-email-bhe@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <53AAAD6E.9010207-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 25.06.2014 13:07, Gerhard Wiesinger wrote:
-> On 25.06.2014 11:51, Harald Hoyer wrote:
->> On 21.06.2014 12:40, Gerhard Wiesinger wrote:
->>> This patch adds the possibility to keep the original
->>> network configuration specified in the root filesystem.
->>> This is necessary in situations with dual stack IPv4 and
->>> IPv6 configurations or different kind on nameservers
->>> (e.g. public ones at boot time, running a dns server
->>> on localhost later on).
->>>
->>> Keeping original configuration can be activated by:
->>> networkstatic=yes
->>> on the kernel boot command line.
->>>
->>>
->>> I don't understand this. It only copies to /run/initramfs. If you want to keep
->>> your original network configuration, just don't copy over the files from
->>> /run/initramfs to your root filesystem.
-> 
-> Hello Harald,
-> 
-> The topic is: /etc/sysconfig/network-scripts/ifcfg-eth0 is overwritten by
-> dracut when network config is specified on boot command line (e.g. grub
-> config). As normal config is different and more complex (e.g. IPv6 setup) boot
-> config is different.
-> 
-> I found, that this patch doesn't overwrite the network config in
-> /etc/sysconfig/network-scripts/ifcfg-eth0 when you specify network config on
-> the boot command line.
-> 
-> I didn't debug into details and I'm not familiar with dracut in detail so I
-> can't say why it works but it works. I think that some other code parts copy
-> the initramfs afterwards to /etc/sysconfig/....
-> 
-> But maybe you can clarify it.
-> 
-> Ciao,
-> Gerhard
+User may specify static route for a target address which is different
+than default gateway, hence static route need be added.
 
-On Fedora, this is fedora-import-state.service, which calls
-/lib/systemd/fedora-import-state.
+Now add a cmdline parameter rd.route="" and the related operation to
+parse it. User can add static route by specify it in cmdline like:
 
-You could disable/mask that with:
-$ sudo systemctl mask fedora-import-state.service
+rd.route="192.168.200.0/24:via:192.168.100.222:dev:ens10"
+---
+ dracut.cmdline.7.asc           | 8 ++++++++
+ modules.d/40network/net-lib.sh | 9 +++++++++
+ 2 files changed, 17 insertions(+)
 
-
-
-
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index 10550ee..87acc54 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -528,6 +528,14 @@ interface name. Better name it "bootnet" or "bluesocket".
+     list of physical (ethernet) interfaces. Bridge without parameters assumes
+     bridge=br0:eth0
+ 
++**rd.route=**__<route-options>__::
++    Add static route to route table with route options which are separated by
++    underscore. Among them some are necessary, such as the destination prefix
++    of the route, the address of the nexthop route, the output device name.
++    It's like
++    rd.route=192.168.200.0/24:via:192.168.100.222:dev:ens10
++
++
+ NFS
+ ~~~
+ **root=**\[_<server-ip>_:]__<root-dir>__[:__<nfs-options>__]::
+diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
+index a82f1a8..b428abb 100755
+--- a/modules.d/40network/net-lib.sh
++++ b/modules.d/40network/net-lib.sh
+@@ -103,6 +103,15 @@ setup_net() {
+     [ -e /tmp/net.$netif.resolv.conf ] && \
+         cp -f /tmp/net.$netif.resolv.conf /etc/resolv.conf
+ 
++    # add static route
++    local _p _r
++    for _p in $(getargs rd.route=); do
++        if strstr "$_p" "$netif"; then
++            _r=${_p//'_'/' '}
++            ip route add $_r
++        fi
++    done
++
+     # Handle STP Timeout: arping the default gateway.
+     # (or the root server, if a) it's local or b) there's no gateway.)
+     # Note: This assumes that if no router is present the
+-- 
+1.9.0
