@@ -1,36 +1,191 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 98systemd: also install systemd-journald-dev-log.socket
-Date: Thu, 03 Jul 2014 09:22:27 +0200
-Message-ID: <53B504B3.3080605@redhat.com>
-References: <1403170705-1936-1-git-send-email-farbing@web.de>
+From: Harald Hoyer <harald-2VeQXyDyezErK2HsEjNOmQ@public.gmane.org>
+Subject: Re: [PATCH] lsinird: Adding option "-m|--mod" to list dracut modules
+ in the image
+Date: Thu, 03 Jul 2014 09:21:46 +0200
+Message-ID: <53B5048A.9070502@harald-hoyer.de>
+References: <20140602105737.11356.69989.stgit@localhost.localdomain>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms060800080401020707010801"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1403170705-1936-1-git-send-email-farbing-S0/GAf8tV78@public.gmane.org>
+In-Reply-To: <20140602105737.11356.69989.stgit-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Daniel Schaal <farbing-S0/GAf8tV78@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Hari Bathini <hbathini-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 19.06.2014 11:38, Daniel Schaal wrote:
-> The /dev/log socket was moved to /run on systemd 214, install the
-> newly added socket unit.
-> ---
->  modules.d/98systemd/module-setup.sh | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
-> index cf1b2e7..bf3f4b1 100755
-> --- a/modules.d/98systemd/module-setup.sh
-> +++ b/modules.d/98systemd/module-setup.sh
-> @@ -106,6 +106,7 @@ install() {
->          $systemdsystemunitdir/sockets.target.wants/systemd-udevd-control.socket \
->          $systemdsystemunitdir/sockets.target.wants/systemd-udevd-kernel.socket \
->          $systemdsystemunitdir/sockets.target.wants/systemd-journald.socket \
-> +        $systemdsystemunitdir/sockets.target.wants/systemd-journald-dev-log.socket \
->          $systemdsystemunitdir/sysinit.target.wants/systemd-udevd.service \
->          $systemdsystemunitdir/sysinit.target.wants/systemd-udev-trigger.service \
->          $systemdsystemunitdir/sysinit.target.wants/kmod-static-nodes.service \
-> 
+This is a cryptographically signed message in MIME format.
+
+--------------ms060800080401020707010801
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+On 02.06.2014 12:57, Hari Bathini wrote:
+> This patch adds option "-m|--mod" to lsinitrd to list dracut
+> modules in the image  because sometimes  having an option to
+> only list the dracut modules in the image could be handy.
+>=20
+> Sample output:
+> --------------
+>=20
+> [hbathini@localhost dracut]$ sudo ./lsinitrd.sh initramfs-3.11.10-100.f=
+c18.x86_64.img -m
+> Image: initramfs-3.11.10-100.fc18.x86_64.img: 33M
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> Version: dracut-029-1.fc18.2
+>=20
+> dracut modules:
+> i18n
+> network
+> ifcfg
+> drm
+> plymouth
+> btrfs
+> crypt
+> dm
+> dmraid
+> kernel-modules
+> lvm
+> mdraid
+> cifs
+> iscsi
+> nfs
+> resume
+> rootfs-block
+> terminfo
+> udev-rules
+> biosdevname
+> systemd
+> usrmount
+> base
+> fs-lib
+> shutdown
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+>=20
+> Signed-off-by: Hari Bathini <hbathini-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
 Thanks! In dracut-038
+
+
+
+--------------ms060800080401020707010801
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIITPTCC
+BjQwggQcoAMCAQICASAwDQYJKoZIhvcNAQEFBQAwfTELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
+DVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNp
+Z25pbmcxKTAnBgNVBAMTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTA3
+MTAyNDIxMDI1NVoXDTE3MTAyNDIxMDI1NVowgYwxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1T
+dGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWdu
+aW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFByaW1hcnkgSW50ZXJtZWRpYXRlIENs
+aWVudCBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMsohUWcASz7GfKrpTOM
+KqANy9BV7V0igWdGxA8IU77L3aTxErQ+fcxtDYZ36Z6GH0YFn7fq5RADteP0AYzrCA+EQTfi
+8q1+kA3m0nwtwXG94M5sIqsvs7lRP1aycBke/s5g9hJHryZ2acScnzczjBCAo7X1v5G3yw8M
+DP2m2RCye0KfgZ4nODerZJVzhAlOD9YejvAXZqHksw56HzElVIoYSZ3q4+RJuPXXfIoyby+Y
+2m1E+YzX5iCZXBx05gk6MKAW1vaw4/v2OOLy6FZH3XHHtOkzUreG//CsFnB9+uaYSlR65cdG
+zTsmoIK8WH1ygoXhRBm98SD7Hf/r3FELNvUCAwEAAaOCAa0wggGpMA8GA1UdEwEB/wQFMAMB
+Af8wDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBSuVYNv7DHKufcd+q9rMfPIHeOsuzAfBgNV
+HSMEGDAWgBROC+8apEBbpRdphzDKNGhD0EGu8jBmBggrBgEFBQcBAQRaMFgwJwYIKwYBBQUH
+MAGGG2h0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9jYTAtBggrBgEFBQcwAoYhaHR0cDovL3d3
+dy5zdGFydHNzbC5jb20vc2ZzY2EuY3J0MFsGA1UdHwRUMFIwJ6AloCOGIWh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tL3Nmc2NhLmNybDAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20v
+c2ZzY2EuY3JsMIGABgNVHSAEeTB3MHUGCysGAQQBgbU3AQIBMGYwLgYIKwYBBQUHAgEWImh0
+dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUHAgEWKGh0dHA6Ly93
+d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwDQYJKoZIhvcNAQEFBQADggIBADqp
+Jw3I07QWke9plNBpxUxcffc7nUrIQpJHDci91DFG7fVhHRkMZ1J+BKg5UNUxIFJ2Z9B90Mic
+c/NXcs7kPBRdn6XGO/vPc87Y6R+cWS9Nc9+fp3Enmsm94OxOwI9wn8qnr/6o3mD4noP9Jphw
+UPTXwHovjavRnhUQHLfo/i2NG0XXgTHXS2Xm0kVUozXqpYpAdumMiB/vezj1QHQJDmUdPYMc
+p+reg9901zkyT3fDW/ivJVv6pWtkh6Pw2ytZT7mvg7YhX3V50Nv860cV11mocUVcqBLv0gcT
++HBDYtbuvexNftwNQKD5193A7zN4vG7CTYkXxytSjKuXrpEatEiFPxWgb84nVj25SU5q/r1X
+hwby6mLhkbaXslkVtwEWT3Van49rKjlK4XrUKYYWtnfzq6aSak5u0Vpxd1rY79tWhD3EdCvO
+hNz/QplNa+VkIsrcp7+8ZhP1l1b2U6MaxIVteuVMD3X0vziIwr7jxYae9FZjbxlpUemqXjcC
+0QaFfN7qI0JsQMALL7iGRBg7K0CoOBzECdD3fuZil5kU/LP9cr1BK31U0Uy651bFnAMMMkqh
+AChIbn0ei72VnbpSsrrSdF0BAGYQ8vyHae5aCg+H75dVCV33K6FuxZrf09yTz+Vx/PkdRUYk
+XmZz/OTfyJXsUOUXrym6KvI2rYpccSk5MIIGXjCCBUagAwIBAgICSH0wDQYJKoZIhvcNAQEL
+BQAwgYwxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJT
+ZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBD
+bGFzcyAyIFByaW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQTAeFw0xNDA0MDEyMTEzMzFa
+Fw0xNjA0MDIxMDMyNDJaMHcxCzAJBgNVBAYTAkRFMRgwFgYDVQQIEw9SaGVpbmxhbmQtUGZh
+bHoxEDAOBgNVBAcTB0tvYmxlbnoxFTATBgNVBAMTDEhhcmFsZCBIb3llcjElMCMGCSqGSIb3
+DQEJARYWaGFyYWxkQGhhcmFsZC1ob3llci5kZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC
+AQoCggEBAK+XXmGIBIJ7TvSpGO8WfTMmP3mmKIG+E79bLmt0upOs5/0hnz4qt3mqvCYGRaTj
+ePADAwz/isXaO8TQQUklW6wdrNf/nGCKLHJGVuI8uV8SBwG7dCjyPz/xKYnPl2HFiJwWmB1o
+i/OD6Zt2GoAtQVmLsU0Eu6cbexvX9nEUC9DifL4D0WWhyFWiZ+6glW7Qc8wapEESPDvTBmWk
+kZNI2/diWr2wEUdiVkPy8rWOqYwcXNJ332WaMpmPQbBzIWCNkfo+dQWyq2kVDV4MdBZodJ3s
+lR03TJxO85JhwZZTuZPz/weY4i1Q2trr7cJuM2rwCj+WzpnciqBld5wJMUR/dBMCAwEAAaOC
+AtwwggLYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgSwMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggr
+BgEFBQcDBDAdBgNVHQ4EFgQUfENew5NaDtoRMcylHcMPFcS2ylcwHwYDVR0jBBgwFoAUrlWD
+b+wxyrn3HfqvazHzyB3jrLswIQYDVR0RBBowGIEWaGFyYWxkQGhhcmFsZC1ob3llci5kZTCC
+AUwGA1UdIASCAUMwggE/MIIBOwYLKwYBBAGBtTcBAgMwggEqMC4GCCsGAQUFBwIBFiJodHRw
+Oi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMIH3BggrBgEFBQcCAjCB6jAnFiBTdGFy
+dENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTADAgEBGoG+VGhpcyBjZXJ0aWZpY2F0ZSB3
+YXMgaXNzdWVkIGFjY29yZGluZyB0byB0aGUgQ2xhc3MgMiBWYWxpZGF0aW9uIHJlcXVpcmVt
+ZW50cyBvZiB0aGUgU3RhcnRDb20gQ0EgcG9saWN5LCByZWxpYW5jZSBvbmx5IGZvciB0aGUg
+aW50ZW5kZWQgcHVycG9zZSBpbiBjb21wbGlhbmNlIG9mIHRoZSByZWx5aW5nIHBhcnR5IG9i
+bGlnYXRpb25zLjA2BgNVHR8ELzAtMCugKaAnhiVodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9j
+cnR1Mi1jcmwuY3JsMIGOBggrBgEFBQcBAQSBgTB/MDkGCCsGAQUFBzABhi1odHRwOi8vb2Nz
+cC5zdGFydHNzbC5jb20vc3ViL2NsYXNzMi9jbGllbnQvY2EwQgYIKwYBBQUHMAKGNmh0dHA6
+Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3N1Yi5jbGFzczIuY2xpZW50LmNhLmNydDAjBgNV
+HRIEHDAahhhodHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS8wDQYJKoZIhvcNAQELBQADggEBAIJj
+cbTCGFVpR/RmO1Y6kmjstTkcwmzEiAzzJ3AjsqRY1dGs1mRssi9KrDhrgrUg2tcK7fz1K/xr
+0M4r5EYyrQiJhASX81meFCFwNOc7GyuYtZSHOVfgZxXGBVuDQHAHWfvic6fb4RK09nwy79Jc
+OcMETmDbmcsaDqOxbVbE9LPQmVy00TOa+Voqs+rupuL08+W3l2ktVrscmsJ599q5tOxflzFn
+PKp4KuFM3vhxU1OFqA01JNxRbIUkj1FNhnPmqOjJJviCo6Fy+BvPlnZJ3wI6NMiN8BjcUMcI
+tGmJmth8QbWkrrbUpt5vGsT9VR/dgRK2TyH5TRvW6HojJBvcF0QwggafMIIEh6ADAgECAgE9
+MA0GCSqGSIb3DQEBCwUAMFMxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQu
+MSwwKgYDVQQDEyNTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eSBHMjAeFw0wNjA5
+MTcxOTQ2MzdaFw0zNjA5MTcxOTQ2MzdaMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
+dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
+MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTCCAiIwDQYJKoZI
+hvcNAQEBBQADggIPADCCAgoCggIBAMGI2wm8bEZ8eJ+Ve7UzkPJyYtbBNiAiJF7O6XfyQwqi
+BmSkzI42+DjmI/BubbE83XKjhRyh0z20MyvTL6/+6rBBWWe2xAZ9Cp50hdZ5TIA3et85BVJZ
+9/QbRkOk0oWF0sNx83ViNLosin8ej+7tNNARx5bNUj26M9bdTd4LO0pLn8ImL/q1FhxyNXfK
+PF3myuEmixo2dlwB23QUJf7ttaCID914yi0fB5cwAS1yefpG1hMqqLmmq4NJHeXy793kAY4Y
+Co9jUxaFYqkOGTrMtWamwmt0B+Qr4XY+tG3Y9kThc2IfO8S+oFNWJWxRCfeqq8q/dv1tm/Od
+2789ZrwMVqqvmEiVOkvfp1hQ2Th1qVvqQwwC/5nr6GxNcFspZZzdql3MrwEx7Azr0o3o6px7
+5m73J2YMGkjXbkLjP94hPnvhDXD7Y6qobBpUtFwlesmiyYsWprssfhdeBU1YbhIdAe4SEA3G
+Mn8Y//z0+s1ukeg2Sb4aSGmLwpZNGhKyaRfBCpDW+nkiSL+6e2n4cMf6ejfY2A3Sdk9X/5C3
+45HS3e/CYLdnOt3+qpzw1It/ciLOxp+XtviviqAQqNn7GMa2tVxSPIm2GSpzAQoPA7MSYPJ6
+L4Hbo27/JjCX9YvdiVe2rT2zryvFt3YC8KXWK5qGFCpy9uMzjF0JSxPfu4x0E1JLAgMBAAGj
+ggFSMIIBTjASBgNVHRMBAf8ECDAGAQH/AgECMA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQU
+TgvvGqRAW6UXaYcwyjRoQ9BBrvIwHwYDVR0jBBgwFoAUS8W0QGutHLOlHGVuRjaJhwUMDrYw
+bwYIKwYBBQUHAQEEYzBhMCoGCCsGAQUFBzABhh5odHRwOi8vb2NzcC5zdGFydHNzbC5jb20v
+Y2EtZzIwMwYIKwYBBQUHMAKGJ2h0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL2NhLWcy
+LmNlcjAyBgNVHR8EKzApMCegJaAjhiFodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9jYS1nMi5j
+cmwwQwYDVR0gBDwwOjA4BgRVHSAAMDAwLgYIKwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRz
+c2wuY29tL3BvbGljeS5wZGYwDQYJKoZIhvcNAQELBQADggIBADOeU8uuVCwCibCVVgaCtEd5
+cJdIDwrQTTdrVV8ITy6GBFmDtwrc3agSiMEyh4vhWos566px3fP7FKrzm7GfM9z5wAFuJFvi
+C7JC8r92rNaOOYNwRhWTSjMKpaIGT55zhbgeaDKRAd2+Fj7zOAlIJB1+oaSEBRzX9T+ITmMA
+i9zczvucV4nooh7dVqcQEOy0XOVCElKjylLOEvykRgFam50dqdsWiBkMnAb4YLqkTw9KcgQA
+eYspfChF5KvrGgelQOsx3AKG2HTSBFgLPjkA6uRPKUisiXwSXPNdu2MGsIUwohy2ZzFcTSxV
+zZhP04IJQv6bv8so811eikZt7wNYvoeYVTAYvB23y3lbNdVLFLfEADsXoMzPTnA1Prwl91/w
+GUnJDcdGJO/9PbQFs1KpJWw5aykjK5o+EtHX9K/abg96sHmUlgDr9T94VnWi3yB7ndc4ig98
+P30sb1J53icXzbaj90dJcBnxf6ii2gFfm2ID72F8ap9X8m6xhy/6FztKpF3NhNtyzqyL4SFG
+zWEpYuK582hAwc/6Vyik5SW3cin+npYNk0k4mrjouC8MWPtxD9ZKQy7MDl+no0++NCdWaiON
+ROxp2lE3iFudqOs7uuMmE4kE3eRx3jXNrtlD2WHjb3LzLlNslZgngRuUfiuJBUoRCDKDiaqY
+I6WXIxhLsIYZMYID2jCCA9YCAQEwgZMwgYwxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
+dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
+MTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFByaW1hcnkgSW50ZXJtZWRpYXRlIENsaWVu
+dCBDQQICSH0wCQYFKw4DAhoFAKCCAhswGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
+hkiG9w0BCQUxDxcNMTQwNzAzMDcyMTQ2WjAjBgkqhkiG9w0BCQQxFgQUQHTWMASKUFVA0fc5
+b4Sg5Z7DiMMwbAYJKoZIhvcNAQkPMV8wXTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoG
+CCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggq
+hkiG9w0DAgIBKDCBpAYJKwYBBAGCNxAEMYGWMIGTMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UE
+ChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUg
+U2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0
+ZSBDbGllbnQgQ0ECAkh9MIGmBgsqhkiG9w0BCRACCzGBlqCBkzCBjDELMAkGA1UEBhMCSUwx
+FjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRp
+ZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDIgUHJpbWFyeSBJbnRl
+cm1lZGlhdGUgQ2xpZW50IENBAgJIfTANBgkqhkiG9w0BAQEFAASCAQBTA1teTYwHLu8yxQ7t
+ZfO+92+Nhh8nEhOANSfKO1HudAWI7yQqJVcyqdkciHRD+Q4bvpWAVsJBTpX82MT4fbtC2TsZ
+DIa29xPMWJuv1lGXAgWDc6sNaIe3CY1SpiAuFFAIHNt8k6O9DjpvwohhgB6qEUVFut3uE4nn
+hF2QHA523O2nGeh1KXac/yam0udABww940Xn2tyjZtTpLO3va5WbZCFBehB/qntiyJVfzG8t
+7Z3lKszVChgFYooLE9IogXioa7WT4Rb5pdhjM/QiSRUQyWbDghdhdLbzEHbw/nlIzbo4OW20
+XCGzFcDOQT+XRaIboW1K4tfVillyx1I7fkLxAAAAAAAA
+--------------ms060800080401020707010801--
