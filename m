@@ -1,80 +1,40 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Why has the timeout be removed?
-Date: Wed, 02 Jul 2014 09:52:19 +0200
-Message-ID: <53B3BA33.7090002@redhat.com>
-References: <4109187.o2ig1JcEG2@d46>
+Subject: Re: [PATCH] lsinitrd.sh: don't choke on LZO-compressed images
+Date: Thu, 03 Jul 2014 09:22:04 +0200
+Message-ID: <53B5049C.8030306@redhat.com>
+References: <1401764374-17744-1-git-send-email-tobias.geerinckx@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <4109187.o2ig1JcEG2@d46>
+In-Reply-To: <1401764374-17744-1-git-send-email-tobias.geerinckx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tobias Geerinckx <tobias.geerinckx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 01.07.2014 17:59, Thomas Renninger wrote:
-> Hi,
+On 03.06.2014 04:59, Tobias Geerinckx wrote:
+> lsinitrd (and hence dracut) currently fail to list the contents of any
+> LZO-compressed image, and merely spit out misleading xzcat errors.
 > 
+> I guess no-one actually uses them.
+> ---
+>  lsinitrd.sh | 3 +++
+>  1 file changed, 3 insertions(+)
 > 
-> commit 8ee18253644a812184c60e31d7ee3d3f6d8f45c0
-> Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Date:   Tue Mar 4 13:46:14 2014 +0100
-> 
->     dracut: don't let devices timeout
-> 
->     https://bugzilla.redhat.com/show_bug.cgi?id=949697
-> 
-> 
-> See the whole diff at the end.
-> This one removes timeouts on the rootfs and if the rootfs
-> cannot be accessed early boot will remain hung forever.
-> 
-> Unfortunately I cannot access the bug reference from
-> the changelog and the changelog does not describe the problem.
-> 
-> I would like to revive the/a timeout, but need to understand
-> why it got removed.
-> 
-> Thanks,
-> 
->       Thomas
-> 
-> 
-> =============================================
->    
-> 
-> diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
-> index a11ce59..2c09895 100755
-> --- a/modules.d/98systemd/rootfs-generator.sh
-> +++ b/modules.d/98systemd/rootfs-generator.sh
-> @@ -29,7 +29,7 @@ generator_wait_for_dev()
->          mkdir -p /run/systemd/generator/${_name}.device.d
->          {
->              echo "[Unit]"
-> -            echo "JobTimeoutSec=3600"
-> +            echo "JobTimeoutSec=0"
->          } > /run/systemd/generator/${_name}.device.d/timeout.conf
->      fi
->  }
-> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-> index 763b7e2..e4d7da8 100755
-> --- a/modules.d/99base/dracut-lib.sh
-> +++ b/modules.d/99base/dracut-lib.sh
-> @@ -891,7 +891,7 @@ wait_for_dev()
->              mkdir -p ${PREFIX}/etc/systemd/system/${_name}.device.d
->              {
->                  echo "[Unit]"
-> -                echo "JobTimeoutSec=3600"
-> +                echo "JobTimeoutSec=0"
->              } > ${PREFIX}/etc/systemd/system/${_name}.device.d/timeout.conf
->              _needreload=1
->          fi
-> 
-> =============================================
+> diff --git a/lsinitrd.sh b/lsinitrd.sh
+> index a697bc2..4ba8752 100755
+> --- a/lsinitrd.sh
+> +++ b/lsinitrd.sh
+> @@ -180,6 +180,9 @@ CAT=$({
+>              $'\x02\x21'*)
+>                  echo "lz4 -d -c"
+>                  ;;
+> +            $'\x89'LZO$'\0'*)
+> +                echo "lzop -d -c"
+> +                ;;
+>              *)
+>                  if echo "test"|xz|xzcat --single-stream >/dev/null 2>&1; then
+>                      echo "xzcat --single-stream --"
 > 
 
-The main reason was that for encrypted devices it would timeout, if you don't
-enter the password in time.
-
-If you solve that, then you can reintroduce the timeout.
+Thanks! In dracut-038
