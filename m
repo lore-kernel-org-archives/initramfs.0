@@ -1,28 +1,47 @@
-From: <Praveen_Paladugu-DYMqY+WieiM@public.gmane.org>
-Subject: RE: Installing an OS with VLAN enabled to an ISCSI LUN (from ibft)
-Date: Fri, 18 Jul 2014 11:04:00 -0500
-Message-ID: <ABF506AF5815F54BB6579628C0CD9F995689C2CF4B@AUSX7MCPS310.AMER.DELL.COM>
-References: <ABF506AF5815F54BB6579628C0CD9F9956345880E3@AUSX7MCPS310.AMER.DELL.COM>
- <53B549C5.50500@redhat.com>
- <ABF506AF5815F54BB6579628C0CD9F995687F54356@AUSX7MCPS310.AMER.DELL.COM>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8BIT
+From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] ARM: update modules for ARM host only options
+Date: Sun, 20 Jul 2014 22:20:04 +0100
+Message-ID: <1405891204-12001-1-git-send-email-pbrobinson@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <ABF506AF5815F54BB6579628C0CD9F995687F54356-aIqoxSDCDny0d/9xeFN5lgVY21JRvFwKV6yJEvX+wlw@public.gmane.org>
-Content-Language: en-US
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id;
+        bh=AwWD9KyiJNiXiUft5Eoo6ze6oGFMuHijR3GsQMGNkWw=;
+        b=zXy1WOQYK/7UunTCpVkXa2TgtGSpDUWwzbPTMBUwei6dRNX4Cu3X2t/NTV2hkfk+sL
+         4CwpFDYMAIdKpp3liq8+SONRiulLNvwb3x9TcMwWLZh8jQ1/qJi6Tujjm1Khk/pSnTLF
+         DMgCFS9gAGFmVYbMj4HTwi9HhH89LlBUfLDKwJPt6h8MmWLbFQxfFby/8ug7SgSqB/Qw
+         AQUen9lVsZRNPD/BRy9HOMjIaOoyTpqVlWfcGLRqKLwDqQQ3ywO2e41W5ebAoANaPFkm
+         pd31Wqb2mWur77SVEROm11+mBhz9ImvDNc+ZSce2jy6+asM32oE6Gc6nLAg8DW94bcsW
+         u3og==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Harald, 
+---
+ modules.d/90kernel-modules/module-setup.sh | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-This is to confirm the patch https://github.com/haraldh/dracut/commit/f4eb0d98048d51a0782d4a7137f699de174a65e4 works for me. 
-
-Thanks for picking it up. 
-
-
-Thank you
-Praveen K Paladugu
-Dell Linux Engineering
-
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index cc79b88..1ce133f 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -51,9 +51,10 @@ installkernel() {
+ 
+         if [[ "$(uname -p)" == arm* ]]; then
+             # arm specific modules
+-            hostonly='' instmods omapdrm panel-tfp410
+-            instmods i2c-tegra gpio-regulator as3722-regulator \
+-                    phy-tegra-usb ehci-tegra sdhci-tegra
++            hostonly='' instmods \
++	        connector-hdmi connector-dvi encoder-tfp410 \
++	        encoder-tpd12s015 i2c-tegra gpio-regulator \
++		as3722-regulator orion-ehci ehci-tegra 
+         fi
+ 
+         # install virtual machine support
+-- 
+2.0.1
