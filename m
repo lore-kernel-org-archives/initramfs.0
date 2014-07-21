@@ -1,47 +1,46 @@
-From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] ARM: update modules for ARM host only options
-Date: Sun, 20 Jul 2014 22:20:04 +0100
-Message-ID: <1405891204-12001-1-git-send-email-pbrobinson@gmail.com>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] inst_simple doesn't take '-H' parameter
+Date: Mon, 21 Jul 2014 09:54:51 +0200
+Message-ID: <1405929291-6523-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=from:to:cc:subject:date:message-id;
-        bh=AwWD9KyiJNiXiUft5Eoo6ze6oGFMuHijR3GsQMGNkWw=;
-        b=zXy1WOQYK/7UunTCpVkXa2TgtGSpDUWwzbPTMBUwei6dRNX4Cu3X2t/NTV2hkfk+sL
-         4CwpFDYMAIdKpp3liq8+SONRiulLNvwb3x9TcMwWLZh8jQ1/qJi6Tujjm1Khk/pSnTLF
-         DMgCFS9gAGFmVYbMj4HTwi9HhH89LlBUfLDKwJPt6h8MmWLbFQxfFby/8ug7SgSqB/Qw
-         AQUen9lVsZRNPD/BRy9HOMjIaOoyTpqVlWfcGLRqKLwDqQQ3ywO2e41W5ebAoANaPFkm
-         pd31Wqb2mWur77SVEROm11+mBhz9ImvDNc+ZSce2jy6+asM32oE6Gc6nLAg8DW94bcsW
-         u3og==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
+It was introduced in commit 5a5758.
 ---
- modules.d/90kernel-modules/module-setup.sh | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ modules.d/90lvm/module-setup.sh  | 2 +-
+ modules.d/95zfcp/module-setup.sh | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index cc79b88..1ce133f 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -51,9 +51,10 @@ installkernel() {
+diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
+index 2f2b64c..5073082 100755
+--- a/modules.d/90lvm/module-setup.sh
++++ b/modules.d/90lvm/module-setup.sh
+@@ -59,7 +59,7 @@ install() {
  
-         if [[ "$(uname -p)" == arm* ]]; then
-             # arm specific modules
--            hostonly='' instmods omapdrm panel-tfp410
--            instmods i2c-tegra gpio-regulator as3722-regulator \
--                    phy-tegra-usb ehci-tegra sdhci-tegra
-+            hostonly='' instmods \
-+	        connector-hdmi connector-dvi encoder-tfp410 \
-+	        encoder-tpd12s015 i2c-tegra gpio-regulator \
-+		as3722-regulator orion-ehci ehci-tegra 
-         fi
+     if [[ $hostonly ]] || [[ $lvmconf = "yes" ]]; then
+         if [ -f /etc/lvm/lvm.conf ]; then
+-            inst_simple -H /etc/lvm/lvm.conf
++            inst_simple /etc/lvm/lvm.conf
+             # FIXME: near-term hack to establish read-only locking;
+             # use command-line lvm.conf editor once it is available
+             sed -i -e 's/\(^[[:space:]]*\)locking_type[[:space:]]*=[[:space:]]*[[:digit:]]/\1locking_type = 4/' ${initdir}/etc/lvm/lvm.conf
+diff --git a/modules.d/95zfcp/module-setup.sh b/modules.d/95zfcp/module-setup.sh
+index 9526caa..b96ccd2 100755
+--- a/modules.d/95zfcp/module-setup.sh
++++ b/modules.d/95zfcp/module-setup.sh
+@@ -31,6 +31,6 @@ install() {
+     inst_rules 56-zfcp.rules
  
-         # install virtual machine support
+     if [[ $hostonly ]]; then
+-        inst_simple -H /etc/zfcp.conf
++        inst_simple /etc/zfcp.conf
+     fi
+ }
 -- 
-2.0.1
+2.0.0
