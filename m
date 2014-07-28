@@ -1,49 +1,37 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Patch v3] network: add static route support
-Date: Wed, 23 Jul 2014 10:10:41 +0800
-Message-ID: <20140723021041.GH11399@dhcp-16-105.nay.redhat.com>
-References: <1404442881-5654-1-git-send-email-bhe@redhat.com>
- <20140715024612.GA1787@dhcp-16-105.nay.redhat.com>
- <53CE5994.8020407@redhat.com>
-Mime-Version: 1.0
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut-functions: get_persistent_dev() fall back to the original name
+Date: Mon, 28 Jul 2014 22:26:28 +0800
+Message-ID: <1406557588-22484-1-git-send-email-chaowang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <53CE5994.8020407-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07/22/14 at 02:31pm, Harald Hoyer wrote:
-> On 15.07.2014 04:46, Baoquan He wrote:
-> > Hi Harald,
-> > 
-> > Do you have any suggestion on this patch? Or you have any other better
-> > thoughts?
-> > 
-> > Thanks
-> > Baoquan
-> 
-> Thanks! Pushed a version with ":" and bracket for IPV6
-> 
->        rd.route=<net>/<netmask>:<gateway>[:<interface>]
->            Add a static route with route options, which are separated by a
->            colon. IPv6 addresses have to be put in brackets.
-> 
->            Example.
-> 
->                    rd.route=192.168.200.0/24:192.168.100.222:ens10
->                    rd.route=192.168.200.0/24:192.168.100.222
->                    rd.route=192.168.200.0/24::ens10
->                    rd.route=[2001:DB8:3::/8]:[2001:DB8:2::1]:ens10
+In case of raw disk/partition, ex. /dev/vda1, which doesn't contain any
+filesystem on it. get_persistent_dev() would return empty. Now fix it to
+return its original name, /dev/vda1 in above case. So that we don't have
+to check its return string every time.
 
+Signed-off-by: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut-functions.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks, Harald. It's gorgeous. And it includes the cases which only have
-nexthop address and output interface, that's complete and makes sense.
-
-Thanks
-Baoquan
-
-> 
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index 6cdfea0..b07063f 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -388,6 +388,7 @@ get_persistent_dev() {
+             return
+         fi
+     done
++    echo $1
+ }
+ 
+ expand_persistent_dev() {
+-- 
+1.9.3
