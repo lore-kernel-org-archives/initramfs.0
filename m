@@ -1,95 +1,50 @@
-From: Major Hayden <major-rCS72UCksqc@public.gmane.org>
-Subject: [PATCH] Adding support for read/write filesystem images
-Date: Mon, 04 Aug 2014 10:47:32 -0500
-Message-ID: <53DFAB14.1020201@mhtx.net>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 1/3] [ARM] Test soc path for modalias needed by drm
+Date: Mon,  4 Aug 2014 22:04:37 +0200
+Message-ID: <1407182679-22580-2-git-send-email-kwizart@gmail.com>
+References: <1407182679-22580-1-git-send-email-kwizart@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mhtx.net; s=default;
-	t=1407167214; bh=fMkI6R83iG3sToYbu2JFceWXUZJ+/6tYAj7kaJFjF5s=;
-	h=Date:From:To:Subject;
-	b=g/gEPcOIl+38UoYx/kI4aVWILsbX/E1sqzIz1PK3g+mwFg5g9PA55NlEGI8ieSS7N
-	 WxcT9XWHnoK6ucXM/eSFpwgZqfYAVrDePCbPlWJ0phNvyDwmj/SVoE0yNs4SGPXNc7
-	 qyCWtVDJyNyiAbEYmh9lSc/pFvGfL7IX6YyGhF/LF/syBRenzI7Lc0jQOoBsAKa9gK
-	 mZG6+vKkVg3e2tOGOg9Iai2qzv9IGnBa5iP2AK99RydoJRAE9Z7bC/PiVFeMqOuYBy
-	 B9VeW9C1bO6Fc88kXAMx3yKGbOESNkzknZGnNAeXLCWAl6RiHw5rVcdVSrnibAuqVG
-	 y/+kRuQpsuq8A==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references;
+        bh=gkPqBa0E+Lw0VlnY/WLoUwV1xV2QMnL+2QmEcQrGBZo=;
+        b=hqftk7b9gFPsnGmgrKOlFsBcU+xLwz4RdgbeRAnqfN7jannjWzttFidhFJTL6fvJfV
+         jn5CgwK/BZvqErhJPuLY5u7kSnF1nVueVyNN3H2av5ZzGMsH/Ue69xWJViuCL8Uirk+s
+         Fs1+9dn9jhQylDsz1uAixpAT4T74whjWo2IoK2puocV09NM27vwyJjGBnDp1n4pimAVF
+         S+cXSjHvtUjVY3CopgJKb6/kXSibowEyvfp0/K83Yfd60rypl7+ZHvEldXscxjFbcmYa
+         ln9HKlIkTBue/t/TAGbpTWj1DdSMtMDf/aPHL4O6/rO2+dBS/VMNFBKAcFUsieznUmqo
+         fdEw==
+In-Reply-To: <1407182679-22580-1-git-send-email-kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-A user can provide a filesystem image (rootfs.img) inside a compressed
-tarball and that filesystem image will be mounted read/write.  This provides
-some benefits over a device mapper snapshot overlay, especially when the
-live system becomes full.  The boot command line simple needs
-"rd.writable.fsimg" added to utilize this feature.
+On ARM, both pci and soc path can be tested for drm.
 
-Signed-off-by: Major Hayden <major-rCS72UCksqc@public.gmane.org>
+With this patchset, that was missing in recent kernel,
+the tegra_drm case is not needed anymore:
+http://patchwork.ozlabs.org/patch/361765/
+http://www.spinics.net/lists/linux-tegra/msg17948.html
 ---
- modules.d/90dmsquash-live/dmsquash-live-root.sh | 16 ++++++++++++++--
- modules.d/90dmsquash-live/module-setup.sh       |  2 +-
- 2 files changed, 15 insertions(+), 3 deletions(-)
+ modules.d/50drm/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-index 5705e8d..c6c02c7 100755
---- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-+++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-@@ -4,6 +4,8 @@
-
- type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
-
-+command -v unpack_archive >/dev/null || . /lib/img-lib.sh
-+
- PATH=/usr/sbin:/usr/bin:/sbin:/bin
-
- if getargbool 0 rd.live.debug -n -y rdlivedebug; then
-@@ -26,6 +28,7 @@ getargbool 0 rd.live.ram -d -y live_ram && live_ram="yes"
- getargbool 0 rd.live.overlay.reset -d -y reset_overlay &&
-reset_overlay="yes"
- getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay &&
-readonly_overlay="--readonly" || readonly_overlay=""
- overlay=$(getarg rd.live.overlay -d overlay)
-+getargbool 0 rd.writable.fsimg -d -y writable_fsimg && writable_fsimg="yes"
-
- # CD/DVD media check
- [ -b $livedev ] && fs=$(blkid -s TYPE -o value $livedev)
-@@ -180,9 +183,18 @@ fi
-
- if [ -n "$FSIMG" ] ; then
-     BASE_LOOPDEV=$( losetup -f )
--    losetup -r $BASE_LOOPDEV $FSIMG
-
--    do_live_from_base_loop
-+    if [ -n "$writable_fsimg" ] ; then
-+        # mount the provided fileysstem read/write
-+        echo "Unpacking live filesystem (may take some time)"
-+        unpack_archive $FSIMG /tmp/fsimg/
-+        losetup $BASE_LOOPDEV /tmp/fsimg/rootfs.img
-+        echo "0 $( blockdev --getsize $BASE_LOOPDEV ) linear
-$BASE_LOOPDEV 0" | dmsetup create live-rw
-+    else
-+        # mount the filesystem read-only and add a dm snapshot for writes
-+        losetup -r $BASE_LOOPDEV $FSIMG
-+        do_live_from_base_loop
-+    fi
- fi
-
- # we might have an embedded fs image on squashfs (compressed live)
-diff --git a/modules.d/90dmsquash-live/module-setup.sh
-b/modules.d/90dmsquash-live/module-setup.sh
-index 851fd1a..95c3566 100755
---- a/modules.d/90dmsquash-live/module-setup.sh
-+++ b/modules.d/90dmsquash-live/module-setup.sh
-@@ -13,7 +13,7 @@ check() {
- depends() {
-     # if dmsetup is not installed, then we cannot support fedora/red hat
-     # style live images
--    echo dm rootfs-block
-+    echo dm rootfs-block img-lib
-     return 0
- }
-
---
-2.0.3
+diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
+index e25fc9f..9a48aaf 100755
+--- a/modules.d/50drm/module-setup.sh
++++ b/modules.d/50drm/module-setup.sh
+@@ -57,7 +57,7 @@ installkernel() {
+         # as we could e.g. be in the installer; nokmsboot boot parameter will disable
+         # loading of the driver if needed
+         if [[ $hostonly ]] && modinfo -F alias $_modname | sed -e 's,\?,\.,g' -e 's,\*,\.\*,g' \
+-            | grep -qxf - /sys/bus/pci/devices/*/modalias 2>/dev/null; then
++            | grep -qxf - /sys/bus/{pci/devices,soc/devices/soc?}/*/modalias 2>/dev/null; then
+             hostonly='' instmods $_modname
+             continue
+         fi
+-- 
+1.8.3.1
