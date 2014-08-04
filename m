@@ -1,19 +1,19 @@
 From: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/3] [ARM] Test soc path for modalias needed by drm
-Date: Mon,  4 Aug 2014 22:04:37 +0200
-Message-ID: <1407182679-22580-2-git-send-email-kwizart@gmail.com>
+Subject: [PATCH 2/3] [ARM] Categorize needed modules on ARM
+Date: Mon,  4 Aug 2014 22:04:38 +0200
+Message-ID: <1407182679-22580-3-git-send-email-kwizart@gmail.com>
 References: <1407182679-22580-1-git-send-email-kwizart@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
         h=from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=gkPqBa0E+Lw0VlnY/WLoUwV1xV2QMnL+2QmEcQrGBZo=;
-        b=hqftk7b9gFPsnGmgrKOlFsBcU+xLwz4RdgbeRAnqfN7jannjWzttFidhFJTL6fvJfV
-         jn5CgwK/BZvqErhJPuLY5u7kSnF1nVueVyNN3H2av5ZzGMsH/Ue69xWJViuCL8Uirk+s
-         Fs1+9dn9jhQylDsz1uAixpAT4T74whjWo2IoK2puocV09NM27vwyJjGBnDp1n4pimAVF
-         S+cXSjHvtUjVY3CopgJKb6/kXSibowEyvfp0/K83Yfd60rypl7+ZHvEldXscxjFbcmYa
-         ln9HKlIkTBue/t/TAGbpTWj1DdSMtMDf/aPHL4O6/rO2+dBS/VMNFBKAcFUsieznUmqo
-         fdEw==
+        bh=4hK0tvSIJdt9al8nX7qbkyoLY5kZeOE6vTNTaWPGo2U=;
+        b=tuJYSJdwcTCY9z1jshfZOJki3NHhYM1H/DUclBYfoua7EsAw00a1+SkcAj14u0WS+6
+         i1w/16tqDnrNUgQ+RcEdvvsCyHMV84bahC4EPFImzXYHTBkEg9YHyxFwHEqmvVuKxx9W
+         xKJRd6sKX1GXk/OS+IOHxWX55TcANBhSVGakMWIREBUVbBLHu394cRou9bfsj14ol42M
+         3SdH3f3vf9TpWjNOR3GVkLzWzE0YZ3id0Jtw2qUQUOk3zfEFtZ08CBI7FVm5mISfzMhS
+         OMi9VdHSELECXBjEHGy1jwF5AE5pIGzcJENwFpFvuxvYQ28bKnARgzvLcwu8O9rJeSi8
+         2wQw==
 In-Reply-To: <1407182679-22580-1-git-send-email-kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -23,28 +23,31 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On ARM, both pci and soc path can be tested for drm.
-
-With this patchset, that was missing in recent kernel,
-the tegra_drm case is not needed anymore:
-http://patchwork.ozlabs.org/patch/361765/
-http://www.spinics.net/lists/linux-tegra/msg17948.html
 ---
- modules.d/50drm/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/90kernel-modules/module-setup.sh | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/modules.d/50drm/module-setup.sh b/modules.d/50drm/module-setup.sh
-index e25fc9f..9a48aaf 100755
---- a/modules.d/50drm/module-setup.sh
-+++ b/modules.d/50drm/module-setup.sh
-@@ -57,7 +57,7 @@ installkernel() {
-         # as we could e.g. be in the installer; nokmsboot boot parameter will disable
-         # loading of the driver if needed
-         if [[ $hostonly ]] && modinfo -F alias $_modname | sed -e 's,\?,\.,g' -e 's,\*,\.\*,g' \
--            | grep -qxf - /sys/bus/pci/devices/*/modalias 2>/dev/null; then
-+            | grep -qxf - /sys/bus/{pci/devices,soc/devices/soc?}/*/modalias 2>/dev/null; then
-             hostonly='' instmods $_modname
-             continue
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index 1ce133f..f3e4f65 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -51,10 +51,13 @@ installkernel() {
+ 
+         if [[ "$(uname -p)" == arm* ]]; then
+             # arm specific modules
+-            hostonly='' instmods \
+-	        connector-hdmi connector-dvi encoder-tfp410 \
+-	        encoder-tpd12s015 i2c-tegra gpio-regulator \
+-		as3722-regulator orion-ehci ehci-tegra 
++            instmods \
++                "=drivers/i2c/busses" \
++                "=drivers/regulator" \
++                "=drivers/rtc" \
++                "=drivers/usb/host" \
++                "=drivers/usb/phy" \
++                ${NULL}
          fi
+ 
+         # install virtual machine support
 -- 
 1.8.3.1
