@@ -1,47 +1,67 @@
-From: Claudio Clemens <asturio-hi6Y0CQ0nG0@public.gmane.org>
+From: Amadeusz =?utf-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 Subject: Re: cryptsetup + lvm order and crypt name
-Date: Thu, 07 Aug 2014 22:47:53 +0200
-Message-ID: <53E3E5F9.4040507@gmx.net>
-References: <53E15A01.9040604@gmx.net> <871tsuks7j.fsf@freja.aidecoe.name>
+Date: Fri, 08 Aug 2014 09:16:02 +0200
+Message-ID: <8738d7pi31.fsf@freja.aidecoe.name>
+References: <53E15A01.9040604@gmx.net> <871tsuks7j.fsf@freja.aidecoe.name> <53E3E5F9.4040507@gmx.net> <8761i3pi87.fsf@freja.aidecoe.name>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha1; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <871tsuks7j.fsf-txNSArhcdoZACdk+e2mhCEEMvNT87kid@public.gmane.org>
+In-Reply-To: <8761i3pi87.fsf-txNSArhcdoZACdk+e2mhCEEMvNT87kid@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: 
+To: Claudio Clemens <asturio-hi6Y0CQ0nG0@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 06.08.2014 09:11, schrieb Amadeusz =C5=BBo=C5=82nowski:
-> Hi Claudio!
->=20
-> Have you tried setting target vg or lv with dracut kernel params?
-> Something like: rd.vg=3Dmy-vg
+--=-=-=
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Hi Amadeusz,
+(I've forgot to CC list, resending.)
 
-I have tried some options, but I think I configured then in the wrong
-file. So I have many boot Options, like rd.auto and rd.lvm.vg. But I
-wrote then in the file /etc/dracut.conf.d/20-local.conf
+> In which file should I write this Options, and how should the line
+> look like? I tried also in /etc/conf.d/ and /etc/cmdline.d/, but I
+> can't get away with the feeling, that they are not read.
 
-In which file should I write this Options, and how should the line look
-like? I tried also in /etc/conf.d/ and /etc/cmdline.d/, but I can't get
-away with the feeling, that they are not read.
+If you are eventually dropped to shell, you can list cmdline parameters
+with:
 
-And after setting the file correctly, what should I run? dracut, to
-build the initrd again, or grub-update, to put the options in the boot
-parameter?
+  cat /proc/cmdline
 
-Sorry for the noob questions, but I read all the docs, and couldn't
-figure it out.
+
+> And after setting the file correctly, what should I run? dracut, to
+> build the initrd again, or grub-update, to put the options in the boot
+> parameter?
+
+First of all I advise to call dracut like that:
+
+  dracut -H '' <kernel-version>
+
+it will generate host-specific initramfs for specified kernel version in
+default location.  Later edit variable GRUB_CMDLINE_LINUX_DEFAULT in
+/etc/default/grub and put there parameters you want. After that
+regenerate grub2 config with grub2-mkconfig.
+
+I hope that helps. :-)
+
 
 Cheers,
 
-Claudio
---=20
-+- .''`. ---| Dipl.-Inf. Univ. Claudio Clemens |-------| wheezy |-----+
-| : :' :      asturio at gmx (.) net           GNU/Linux User #79942  |
-| `. `'       http://asturio.gmxhome.de/begin.html                    |
-|   `-        "YE GODS, I HAVE FEET??!"         <- Userfriendly       |
-O c=C3=BAmulo da rebeldia =C3=A9 morar sozinho e fugir de casa!
+=2D-=20
+Amadeusz =C5=BBo=C5=82nowski
+
+--=-=-=
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBAgAGBQJT5HkyAAoJEPATRTHh2/q1ejUIAIeM/aobSWb2q/SP41kDHjCd
+pf1I8MItmTqRuah++oa+kGWLU+JoizzwiU945yhuAidlUftxRgJulJS6JoT/gUgR
+QWiJ4lIxOYtbxPJJaC1L/1hu3OrrJSictKwqGfbeihBk7Kyl+eb2/qMJhWphxGgC
+ZuZtM/BCOxpLsN2PZlkGjkL3EwoawKeoQh65MjJZqSV0dDUHaczYO9CozvW2a6dh
+kDB+rYwXU/LA8fW9G9Pa0WokrqSo4+JDwO23IfqaoPDZ40ZaNCqbF6Mlu9yJ/Jrx
+jPrXyECry8YRyp/Wq7PIpZPpD/3TJALG/7ZfE+YryYxcdEyglgIobvgY6g/FrAo=
+=DeW2
+-----END PGP SIGNATURE-----
+--=-=-=--
