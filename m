@@ -1,67 +1,78 @@
-From: Amadeusz =?utf-8?B?xbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: Re: cryptsetup + lvm order and crypt name
-Date: Fri, 08 Aug 2014 09:16:02 +0200
-Message-ID: <8738d7pi31.fsf@freja.aidecoe.name>
-References: <53E15A01.9040604@gmx.net> <871tsuks7j.fsf@freja.aidecoe.name> <53E3E5F9.4040507@gmx.net> <8761i3pi87.fsf@freja.aidecoe.name>
+From: Antony Messerli <antony-M9eEzXzj57sUjmZRR9AIpQ@public.gmane.org>
+Subject: [PATCH] Adds bittorrent support to 45url-lib for live images
+Date: Thu, 14 Aug 2014 15:31:09 -0500
+Message-ID: <CAGgovyGokHpfq8oVfQMi9XCKAhpDK4N1t11KbDdDr2pckc=bDg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha1; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <8761i3pi87.fsf-txNSArhcdoZACdk+e2mhCEEMvNT87kid@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Claudio Clemens <asturio-hi6Y0CQ0nG0@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---=-=-=
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+This patch adds bittorrent support to 45url-lib for those that might want to
+retrive the same live image for multiple systems at once without
+saturating the network.
+This patch requires ctorrent to be installed into initramfs.
 
-(I've forgot to CC list, resending.)
+Torrent kernel command line format:
+root=live:torrent://image_location/image.torrent
 
-> In which file should I write this Options, and how should the line
-> look like? I tried also in /etc/conf.d/ and /etc/cmdline.d/, but I
-> can't get away with the feeling, that they are not read.
+Start a tracker:
+bttrack --bind <tracker_ip> --port 6969 --dfile dstate --reannounce_interval 60
 
-If you are eventually dropped to shell, you can list cmdline parameters
-with:
+Create the torrent:
+ctorrent -t live_image -u http://<tracker_ip>:6969/announce -s
+live_image.torrent
 
-  cat /proc/cmdline
+Seed the initial torrent:
+ctorrent live_image.torrent
 
+Boot the live image.
+---
+ modules.d/45url-lib/url-lib.sh | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-> And after setting the file correctly, what should I run? dracut, to
-> build the initrd again, or grub-update, to put the options in the boot
-> parameter?
+diff --git a/modules.d/45url-lib/url-lib.sh b/modules.d/45url-lib/url-lib.sh
+index c9d143a..d9cebd4 100755
+--- a/modules.d/45url-lib/url-lib.sh
++++ b/modules.d/45url-lib/url-lib.sh
+@@ -82,6 +82,36 @@ set_http_header() {
+     echo "header = \"$1: $2\"" >> $CURL_HOME/.curlrc
+ }
 
-First of all I advise to call dracut like that:
++### TORRENT ##########################################################
++
++ctorrent_args="-E 0 -e 0"
++
++ctorrent_fetch_url() {
++    local url="$1" outloc="$2"
++    url=${url#*//}
++    torrent_outloc="$outloc.torrent"
++    echo "$url" > /proc/self/fd/0
++    if [ -n "$outloc" ]; then
++        curl $curl_args --output - -- "$url" > "$torrent_outloc" || return $?
++    else
++        local outdir="$(mkuniqdir /tmp torrent_fetch_url)"
++        ( cd "$outdir"; curl $curl_args --remote-name "$url" || return $? )
++        torrent_outloc="$outdir/$(ls -A $outdir)"
++        outloc=${torrent_outloc%.*}
++    fi
++    if ! [ -f "$torrent_outloc" ]; then
++        warn "Downloading '$url' failed!"
++        return 253
++    fi
++    ctorrent $ctorrent_args -s $outloc $torrent_outloc >&2
++    if ! [ -f "$outloc" ]; then
++        warn "Torrent download of '$url' failed!"
++        return 253
++    fi
++    if [ -z "$2" ]; then echo "$outloc" ; fi
++}
++add_url_handler ctorrent_fetch_url torrent
++
+ ### NFS ##############################################################
 
-  dracut -H '' <kernel-version>
-
-it will generate host-specific initramfs for specified kernel version in
-default location.  Later edit variable GRUB_CMDLINE_LINUX_DEFAULT in
-/etc/default/grub and put there parameters you want. After that
-regenerate grub2 config with grub2-mkconfig.
-
-I hope that helps. :-)
-
-
-Cheers,
-
-=2D-=20
-Amadeusz =C5=BBo=C5=82nowski
-
---=-=-=
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBAgAGBQJT5HkyAAoJEPATRTHh2/q1ejUIAIeM/aobSWb2q/SP41kDHjCd
-pf1I8MItmTqRuah++oa+kGWLU+JoizzwiU945yhuAidlUftxRgJulJS6JoT/gUgR
-QWiJ4lIxOYtbxPJJaC1L/1hu3OrrJSictKwqGfbeihBk7Kyl+eb2/qMJhWphxGgC
-ZuZtM/BCOxpLsN2PZlkGjkL3EwoawKeoQh65MjJZqSV0dDUHaczYO9CozvW2a6dh
-kDB+rYwXU/LA8fW9G9Pa0WokrqSo4+JDwO23IfqaoPDZ40ZaNCqbF6Mlu9yJ/Jrx
-jPrXyECry8YRyp/Wq7PIpZPpD/3TJALG/7ZfE+YryYxcdEyglgIobvgY6g/FrAo=
-=DeW2
------END PGP SIGNATURE-----
---=-=-=--
+ [ -e /lib/nfs-lib.sh ] && . /lib/nfs-lib.sh
+--
+2.0.4
