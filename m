@@ -1,104 +1,231 @@
-From: Claudio Clemens <asturio-hi6Y0CQ0nG0@public.gmane.org>
-Subject: Re: cryptsetup + lvm order and crypt name
-Date: Fri, 15 Aug 2014 13:11:25 +0200
-Message-ID: <53EDEADD.2070103@gmx.net>
-References: <53E15A01.9040604@gmx.net> <871tsuks7j.fsf@freja.aidecoe.name> <53E3E5F9.4040507@gmx.net> <8761i3pi87.fsf@freja.aidecoe.name>
+From: Major Hayden <major-rCS72UCksqc@public.gmane.org>
+Subject: Re: [PATCH] Adding support for read/write filesystem images
+Date: Fri, 15 Aug 2014 08:22:37 -0500
+Message-ID: <53EE099D.2070402@mhtx.net>
+References: <53DFAB14.1020201@mhtx.net> <53EDE06B.80900@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="a8AucioBXJuaiROHvdGA24fUdll8WCr74"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <8761i3pi87.fsf-txNSArhcdoZACdk+e2mhCEEMvNT87kid@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mhtx.net; s=default;
+	t=1408108908; bh=+JB4I+eFZWVq7Pon3aWfn1Gk18iiRjFnjXM3E9600RU=;
+	h=Date:From:To:Subject:References:In-Reply-To;
+	b=izqKOnePCWsekbDcM0JOpFmQ+2rbF/HSOyD+6+97ruLFy7KLo5e5Ufn7i85ByyjjN
+	 7Ggn8PES/isajOGz4fegcFQlVc1LxPrkx3qVMV3h8Cm0nXDgWHG8MkehFqXoCoq/pe
+	 9Gdq/GnTYBfa049Us0+EOUcGQCnkSqyD+ed9NEvY+31wACks1TDaqH55JeJ0tx9mE8
+	 oTbdFpxQsDHZJwg+NXDpeQx37NKJ0ujIwX9GYMBejno5Kjqjto2jZvovV8bFzoSL7t
+	 HJilAvl11OeCjRewYo12zzRwUJrodIRlciM6NNtE52BdplJDrlVSRDYJCDEHTabKcv
+	 aRkkcxguLySpw==
+In-Reply-To: <53EDE06B.80900-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---a8AucioBXJuaiROHvdGA24fUdll8WCr74
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+> Can you add documentation to the man pages? And if you are really nice add
+> documentation about the other dmsquash parameters, too. :)
 
-Am 08.08.2014 09:12, schrieb Amadeusz =C5=BBo=C5=82nowski:
-> First of all I advise to call dracut like that:
->=20
->   dracut -H '' <kernel-version>
->=20
-> it will generate host-specific initramfs for specified kernel version i=
-n
-> default location.  Later edit variable GRUB_CMDLINE_LINUX_DEFAULT in
-> /etc/default/grub and put there parameters you want. After that
-> regenerate grub2 config with grub2-mkconfig.
->=20
-> I hope that helps. :-)
+Absolutely! :)
 
-Ok... it was a while now. But I managed to boot my system. The -H flag
-wasn't needed. I put the boot configuration Opts in grub, and not
-dracut. Just for the documentation of it I have this setup:
+The patch has grown a bit.  If it's too difficult to process, I added
+the same changes on the GitHub pull request here:
 
-In /etc/default/grub
-GRUB_CMDLINE_LINUX=3D"rd.auto rd.luks rd.luks.crypttab
-rd.luks.uuid=3D83e0aaa5-a8ad-4435-afff-0d52b1071fc3 rd.lvm
-rd.lvm.vg=3Dboromir rd.md=3D0 rd.dm"
+  https://github.com/haraldh/dracut/pull/25
 
-The only really needed option was rd.auto (maybe other options now
-implies rd.auto). But the problem was a conflict between my
-installation, Debian's dracut and Debian's cryptsetup.
-
-When I installed my system and encrypted my /dev/sda5, I gave the
-encrypted partition the name sda5_crypt. This value was written in
-/etc/crypttab. So for accessing the partition at boot-time what is done
-is: cryptsetup luksOpen /dev/sda5 sda5_crypt
-
-When booting /etc/init.d/cryptdisks* looks for sda5_crypt, if it is
-there, it won't do anything and boot will continue. If it is not there,
-it asks for the passphrase and try to decrypt it.
-
-The problem was that dracut, when calling "cryptsetup luksOpen" won't
-use the name given in /etc/crypttab, but "luks-<UUID of the partition>".
-When /etc/init.d/cryptdisk* comes in, there is no sda5_crypt present, so
-it tried to decrypt the partition again, which is not possible, because
-it is actually already in use.
-
-My solution for the problem was to rename the decrypt volume in
-/etc/crypttab from "sda5_crypt" to "luks-<UUID of /dev/sda5>". So I use
-the same name dracut uses when calling cryptsetup and the
-Debian-init-scripts finds the device.
-
-I think the elegant solution would be in dracut, which could have a boot
-option to the name of the decrypted device (or read it from
-/etc/crypttab when creating the image), or the cryptdisks-init-scripts
-which could see if the encrypted device is already decrypted, and not
-only look if the name is present.
-
-I hope this can help any one with a similar problem.
-
-Thanks for the help,
-
-Claudio
-
-PS - I'll fill then a bug-report/wish for both Debian-Packages so they
-are aware of the problem.
-
---=20
-+- .''`. ---| Dipl.-Inf. Univ. Claudio Clemens |-------| wheezy |-----+
-| : :' :      asturio at gmx (.) net           GNU/Linux User #79942  |
-| `. `'       http://asturio.gmxhome.de/begin.html                    |
-|   `-        "YE GODS, I HAVE FEET??!"         <- Userfriendly       |
-"I will take the ring, though I do not know the way" Frodo Baggins
+Thanks!
 
 
---a8AucioBXJuaiROHvdGA24fUdll8WCr74
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+From 9a9fc958a874867cad34dd3dc072a52353fbffd7 Mon Sep 17 00:00:00 2001
+From: Major Hayden <major-rCS72UCksqc@public.gmane.org>
+Date: Mon, 4 Aug 2014 10:27:36 -0500
+Subject: [PATCH] Adding support for read/write filesystem images
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-Comment: Using GnuPG with Icedove - http://www.enigmail.net/
+A user can provide a filesystem image (rootfs.img) inside a compressed
+tarball and that filesystem image will be mounted read/write.  This provides
+some benefits over a device mapper snapshot overlay, especially when the
+live system becomes full.  The boot command line simple needs
+"rd.writable.fsimg" added to utilize this feature.
 
-iEYEARECAAYFAlPt6uwACgkQd4jGrCHoMHpSkwCfRWy+61DwhlrnACyZS7IpfuV7
-QNQAnRsXKCfzvm6aH0qQd6BVvmvq+VLx
-=W/1c
------END PGP SIGNATURE-----
+Additional documentation for this option as well as other live boot
+options is included.
 
---a8AucioBXJuaiROHvdGA24fUdll8WCr74--
+Signed-off-by: Major Hayden <major-rCS72UCksqc@public.gmane.org>
+---
+ dracut.cmdline.7.asc                            | 82
+++++++++++++++++++++++++-
+ modules.d/90dmsquash-live/dmsquash-live-root.sh | 16 ++++-
+ modules.d/90dmsquash-live/module-setup.sh       |  2 +-
+ 3 files changed, 96 insertions(+), 4 deletions(-)
+
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index f66bace..545bab4 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -733,10 +733,90 @@
+rd.znet=qeth,0.0.0600,0.0.0601,0.0.0602,layer2=1,portname=foo
+ rd.znet=ctc,0.0.0600,0.0.0601,protocol=bar
+ --
+
++Booting live images
++~~~~~~~~~~~~~~~~~~~
++Dracut offers multiple options for live booted images:
++
++=====================
++squashfs with read-only filesystem image::: The system will boot with a
+read
++only filesystem from the squashfs and apply a writable device mapper
+snapshot
++over the read only filesystem.  Using this method ensures a relatively fast
++boot and lower RAM usage. Users **must be careful** to avoid writing
+too many
++blocks to the snapshot volume.  Once the blocks of the snapshot are
+exhaused,
++the live filesystem becomes unusable and requires a reboot.
+++
++The filesystem structure is expected to be:
+++
++[listing]
++--
++squashfs.img          |  Squashfs downloaded via network
++   !(mount)
++   /LiveOS
++       |- ext3fs.img  |  Filesystem image to mount read-only
++            !(mount)
++            /bin      |  Live filesystem
++            /boot     |
++            /dev      |
++            ...       |
++--
+++
++Dracut uses this method of live booting by default.  No additional
+command line
++options are required other than **root=live:<URL>** to specify the location
++of your squashed filesystem.
+++
++writable filesystem image::: The system will retrieve a compressed
+filesystem
++image, connect it to a loopback device, and mount it as a writable
+volume.  More
++RAM is required during boot but the live filesystem is easier to manage
+if it
++becomes full.  Users can make a filesystem image of any size and that
+size will
++be maintained when the system boots.
+++
++The filesystem structure is expected to be:
+++
++[listing]
++--
++rootfs.tgz            |  Compressed tarball containing fileystem image
++   !(unpack)
++   /rootfs.img        |  Filesystem image
++      !(mount)
++      /bin            |  Live filesystem
++      /boot           |
++      /dev            |
++      ...             |
++--
+++
++To use this boot option, ensure that **rd.writable_fsimg=1** is in your
+kernel
++command line and add the **root=live:<URL>** to specify the location
++of your compressed filesystem image tarball.
++=====================
++
++**root=**live:__<url>__::
++Boots a live image retrieved from __<url>__.  Valid handlers: __http,
+httpd, ftp, tftp__.
+++
++[listing]
++.Example
++--
++root=live:http://example.com/liveboot.img
++root=live:ftp://ftp.example.com/liveboot.img
++--
++
++**rd.live.debug=**1::
++Enables debug output from the live boot process.
++
++**rd.live.dir=**__<path>__::
++Specifies the directory within the squashfs where the ext3fs.img or
+rootfs.img
++can be found.  By default, this is __LiveOS__.
++
++**rd.writable.fsimg=**1::
++Enables writable filesystem support.  The system will boot with a fully
++writable filesystem without snapshots __(see notes above about
+available live boot options)__.
++You can use the **rootflags** option to set mount options for the live
++filesystem as well __(see documentation about rootflags in the
+**Standard** section above)__.
++
++
+ Plymouth Boot Splash
+ ~~~~~~~~~~~~~~~~~~~~
+ **plymouth.enable=0**::
+-    disable the plymouth bootsplash completly.
++    disable the plymouth bootsplash completely.
+
+ **rd.plymouth=0**::
+     disable the plymouth bootsplash only for the initramfs.
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh
+b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+index 5705e8d..c6c02c7 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
++++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+@@ -4,6 +4,8 @@
+
+ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+
++command -v unpack_archive >/dev/null || . /lib/img-lib.sh
++
+ PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+ if getargbool 0 rd.live.debug -n -y rdlivedebug; then
+@@ -26,6 +28,7 @@ getargbool 0 rd.live.ram -d -y live_ram && live_ram="yes"
+ getargbool 0 rd.live.overlay.reset -d -y reset_overlay &&
+reset_overlay="yes"
+ getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay &&
+readonly_overlay="--readonly" || readonly_overlay=""
+ overlay=$(getarg rd.live.overlay -d overlay)
++getargbool 0 rd.writable.fsimg -d -y writable_fsimg && writable_fsimg="yes"
+
+ # CD/DVD media check
+ [ -b $livedev ] && fs=$(blkid -s TYPE -o value $livedev)
+@@ -180,9 +183,18 @@ fi
+
+ if [ -n "$FSIMG" ] ; then
+     BASE_LOOPDEV=$( losetup -f )
+-    losetup -r $BASE_LOOPDEV $FSIMG
+
+-    do_live_from_base_loop
++    if [ -n "$writable_fsimg" ] ; then
++        # mount the provided fileysstem read/write
++        echo "Unpacking live filesystem (may take some time)"
++        unpack_archive $FSIMG /tmp/fsimg/
++        losetup $BASE_LOOPDEV /tmp/fsimg/rootfs.img
++        echo "0 $( blockdev --getsize $BASE_LOOPDEV ) linear
+$BASE_LOOPDEV 0" | dmsetup create live-rw
++    else
++        # mount the filesystem read-only and add a dm snapshot for writes
++        losetup -r $BASE_LOOPDEV $FSIMG
++        do_live_from_base_loop
++    fi
+ fi
+
+ # we might have an embedded fs image on squashfs (compressed live)
+diff --git a/modules.d/90dmsquash-live/module-setup.sh
+b/modules.d/90dmsquash-live/module-setup.sh
+index 851fd1a..95c3566 100755
+--- a/modules.d/90dmsquash-live/module-setup.sh
++++ b/modules.d/90dmsquash-live/module-setup.sh
+@@ -13,7 +13,7 @@ check() {
+ depends() {
+     # if dmsetup is not installed, then we cannot support fedora/red hat
+     # style live images
+-    echo dm rootfs-block
++    echo dm rootfs-block img-lib
+     return 0
+ }
+
+-- 
+2.0.4
