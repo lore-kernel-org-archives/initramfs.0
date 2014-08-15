@@ -1,32 +1,41 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Adding support for read/write filesystem images
-Date: Fri, 15 Aug 2014 12:26:51 +0200
-Message-ID: <53EDE06B.80900@redhat.com>
-References: <53DFAB14.1020201@mhtx.net>
+Subject: Re: [PATCH] Adds bittorrent support to 45url-lib for live images
+Date: Fri, 15 Aug 2014 12:34:23 +0200
+Message-ID: <53EDE22F.3090501@redhat.com>
+References: <CAGgovyGokHpfq8oVfQMi9XCKAhpDK4N1t11KbDdDr2pckc=bDg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <53DFAB14.1020201-rCS72UCksqc@public.gmane.org>
+In-Reply-To: <CAGgovyGokHpfq8oVfQMi9XCKAhpDK4N1t11KbDdDr2pckc=bDg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Major Hayden <major-rCS72UCksqc@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Antony Messerli <antony-M9eEzXzj57sUjmZRR9AIpQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 04.08.2014 17:47, Major Hayden wrote:
-> A user can provide a filesystem image (rootfs.img) inside a compressed
-> tarball and that filesystem image will be mounted read/write.  This provides
-> some benefits over a device mapper snapshot overlay, especially when the
-> live system becomes full.  The boot command line simple needs
-> "rd.writable.fsimg" added to utilize this feature.
+On 14.08.2014 22:31, Antony Messerli wrote:
+> This patch adds bittorrent support to 45url-lib for those that might want to
+> retrive the same live image for multiple systems at once without
+> saturating the network.
+> This patch requires ctorrent to be installed into initramfs.
 > 
-> Signed-off-by: Major Hayden <major-rCS72UCksqc@public.gmane.org>
+> Torrent kernel command line format:
+> root=live:torrent://image_location/image.torrent
+> 
+> Start a tracker:
+> bttrack --bind <tracker_ip> --port 6969 --dfile dstate --reannounce_interval 60
+> 
+> Create the torrent:
+> ctorrent -t live_image -u http://<tracker_ip>:6969/announce -s
+> live_image.torrent
+> 
+> Seed the initial torrent:
+> ctorrent live_image.torrent
+> 
+> Boot the live image.
 > ---
->  modules.d/90dmsquash-live/dmsquash-live-root.sh | 16 ++++++++++++++--
->  modules.d/90dmsquash-live/module-setup.sh       |  2 +-
->  2 files changed, 15 insertions(+), 3 deletions(-)
-> 
 
-Looks simple enough.
+Can you add
 
-Can you add documentation to the man pages? And if you are really nice add
-documentation about the other dmsquash parameters, too. :)
+inst_multiple -o ctorrent
+
+to module-setup.sh ?
