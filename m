@@ -1,45 +1,31 @@
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: about to release dracut version 039
-Date: Tue, 19 Aug 2014 16:29:49 +0200
-Message-ID: <53F35F5D.3060705@suse.de>
-References: <53CE6A26.2080805@redhat.com> <53CE6B0F.3040101@suse.de> <53F35863.6040708@redhat.com>
+From: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
+Subject: WIP patch for mptcp support
+Date: Tue, 19 Aug 2014 18:50:02 +0400
+Message-ID: <CACaajQsCm357hgssTWBP6pHkTK_nz_3Ojy3H=bFNSmevHk-8Ew@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <53F35863.6040708-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=selfip.ru; s=google;
+        h=mime-version:sender:from:date:message-id:subject:to:content-type;
+        bh=yx6awKBqtYcCdcq5kGKMC7gMF/02Z2aRTdGLoahP9Ck=;
+        b=GPca+I5So0z/vO0vJjHvWTUWMYWW6Y6rIli2tmyUPkCbR4kdF1LmAm25ImhKHy9/sD
+         uGOd+ECoZvqA97ppc/Yw/kpM16CkKV+YEf24a2Xvd0uBnXTf0VZYJKrLcqka9tU9IZba
+         xYD/vtHndg7vICWcjEf6cVAZpPXmpugWOlNWM=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="iso-8859-1"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 08/19/2014 04:00 PM, Harald Hoyer wrote:
-> On 22.07.2014 15:45, Hannes Reinecke wrote:
->> On 07/22/2014 03:41 PM, Harald Hoyer wrote:
->>> Anything missing? Wishes? Bugs?
->> Well, apart from roughly 150 patches queued for SLES ...
->> (cf github.com:/hreinecke/dracut.git branch sles12)
->>
->> Sadly I haven't found the time to clean them up.
->> If you can wait for some more days I can see to have them posted.
->>
->> Cheers,
->>
->> Hannes
->
-> Any progress, or should I pull myself?
-Errm.
+Hi. I have a patch that enables mptcp (create needed routes and
+rules), can you check it ?
+https://github.com/haraldh/dracut/pull/27
 
-Rather not. There are quite some SUSE-specific patches etc.
-And the patches themselves need some cleanup, too.
+Also i don't know hot to best wait for completing network interfaces
+configuration but before anything else.
+Can somebody helps me?
 
-We will be preparing a cleaned up version shortly.
-
-Cheers,
-
-Hannes
---=20
-Dr. Hannes Reinecke		      zSeries & Storage
-hare-l3A5Bk7waGM@public.gmane.org			      +49 911 74053 688
-SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 N=FCrnberg
-GF: J. Hawn, J. Guild, F. Imend=F6rffer, HRB 16746 (AG N=FCrnberg)
+-- 
+Vasiliy Tolstov,
+e-mail: v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
+jabber: vase-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
