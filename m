@@ -1,39 +1,70 @@
-From: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
-Subject: Re: WIP patch for mptcp support
-Date: Mon, 25 Aug 2014 15:16:11 +0400
-Message-ID: <CACaajQtSU9px6y5twL9-Kjf_Ot9qWxe5Q=Sw=6faJsMqYRGvbw@mail.gmail.com>
-References: <CACaajQsCm357hgssTWBP6pHkTK_nz_3Ojy3H=bFNSmevHk-8Ew@mail.gmail.com>
+From: Michael Prokop <mika@debian.org>
+Subject: initramfs-tools 0.116 release
+Date: Sun, 31 Aug 2014 09:53:11 +0200
+Message-ID: <2014-08-31T09-47-27@devnull.michael-prokop.at>
 Mime-Version: 1.0
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=selfip.ru; s=google;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc:content-type;
-        bh=Nbs4LCUKKtX5jMt9ew8oqTwibet9F6W4/XxWK6Inyeo=;
-        b=fwkk6hAQR/Viv5wC9nuOySRZmzn9Rrndz/KIHg+stdE0no66F9cSKvsTZFPuRmGsve
-         PxmoJqqi60N/pUI3lpwAdeCdfh4SW0DKV7TJYYbJSEBJqt1x29jJ3OSlg1DU+t+kcwUB
-         YvXoh6+P135Qfc4QyW9nQswbFQK0a4ZUIe86c=
-In-Reply-To: <CACaajQsCm357hgssTWBP6pHkTK_nz_3Ojy3H=bFNSmevHk-8Ew-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
-Cc: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-
-2014-08-19 18:50 GMT+04:00 Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>:
-> Hi. I have a patch that enables mptcp (create needed routes and
-> rules), can you check it ?
-> https://github.com/haraldh/dracut/pull/27
->
-> Also i don't know hot to best wait for completing network interfaces
-> configuration but before anything else.
-> Can somebody helps me?
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="CE+1k2dSO48ffgeK"
+Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane.org@lists.debian.org>
+Content-Disposition: inline
+Resent-Message-ID: <HSnUFzhvSj.A.nBE.IStAUB@bendel>
+List-Id: <initramfs.vger.kernel.org>
+List-URL: <http://lists.debian.org/debian-kernel/>
+List-Post: <mailto:debian-kernel@lists.debian.org>
+List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
+List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
+List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
+To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
 
 
-Nobody knows?
+--CE+1k2dSO48ffgeK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
--- 
-Vasiliy Tolstov,
-e-mail: v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
-jabber: vase-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
+Hi,
+
+I just released and uploaded version 0.116 of initramfs-tools
+towards Debian/unstable, addressing several bug reports we had
+pending in Debian's BTS and trying to get i-t into better shape for
+the upcoming Debian/jessie release.
+
+The shortlog has the details:
+
+Aurelien Jarno (1):
+      hook-functions: add support for virtio-mmio
+
+Helge Deller (1):
+      get_fstype: initialize FSTYPE variable
+
+Michael Prokop (9):
+      Fix hidden dependency issue with btrfs and crc32c
+      Do not spawn shell when panic=... is used
+      Preserve file permissions if root builds the initramfs images
+      Support drop_capabilities=... boot option
+      Support MODULES=dep usage on i2o hardware RAID controller
+      Support usage of partitioned nbd devices with MODULES=dep
+      Inform user that lsinitramfs doesn't support cpio archives yet
+      Bump Standards-Version to 3.9.5
+      Releasing version 0.116
+
+maximilian attems (1):
+      scripts/nfs: fix nfs mount check for possible init symlink
+
+regards,
+-mika-
+
+--CE+1k2dSO48ffgeK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAlQC1GcACgkQ2N9T+zficugmaACfZuOmln+bo6OLWdueClGCNtD5
+BO0AnAytO2IPoSxJXpaRqe4SVasxwif5
+=nWPO
+-----END PGP SIGNATURE-----
+
+--CE+1k2dSO48ffgeK--
+
