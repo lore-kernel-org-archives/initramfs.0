@@ -1,70 +1,46 @@
-From: Michael Prokop <mika@debian.org>
-Subject: initramfs-tools 0.116 release
-Date: Sun, 31 Aug 2014 09:53:11 +0200
-Message-ID: <2014-08-31T09-47-27@devnull.michael-prokop.at>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Support spaces in mount_nfs (#1109933)
+Date: Wed, 10 Sep 2014 11:08:27 +0200
+Message-ID: <5410150B.6000008@redhat.com>
+References: <1408645911-3268-1-git-send-email-bcl@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="CE+1k2dSO48ffgeK"
-Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane.org@lists.debian.org>
-Content-Disposition: inline
-Resent-Message-ID: <HSnUFzhvSj.A.nBE.IStAUB@bendel>
-List-Id: <initramfs.vger.kernel.org>
-List-URL: <http://lists.debian.org/debian-kernel/>
-List-Post: <mailto:debian-kernel@lists.debian.org>
-List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
-List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
-List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
-To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1408645911-3268-1-git-send-email-bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+To: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+On 21.08.2014 20:31, Brian C. Lane wrote:
+> nfs paths may contain spaces, make sure they are preserved when passed
+> to nfs_to_var and mount.
+> 
+> Related: rhbz#1109933
+> ---
+>  modules.d/95nfs/nfs-lib.sh | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/modules.d/95nfs/nfs-lib.sh b/modules.d/95nfs/nfs-lib.sh
+> index d5377fe..94d05b8 100755
+> --- a/modules.d/95nfs/nfs-lib.sh
+> +++ b/modules.d/95nfs/nfs-lib.sh
+> @@ -125,7 +125,7 @@ munge_nfs_options() {
+>  mount_nfs() {
+>      local nfsroot="$1" mntdir="$2" netif="$3"
+>      local nfs="" server="" path="" options=""
+> -    nfs_to_var $nfsroot $netif
+> +    nfs_to_var "$nfsroot" $netif
+>      munge_nfs_options
+>      if [ "$nfs" = "nfs4" ]; then
+>          options=$options${nfslock:+,$nfslock}
+> @@ -136,5 +136,5 @@ mount_nfs() {
+>              && warn "Locks unsupported on NFSv{2,3}, using nolock" 1>&2
+>          options=$options,nolock
+>      fi
+> -    mount -t $nfs -o$options $server:$path $mntdir
+> +    mount -t $nfs -o$options "$server:$path" "$mntdir"
+>  }
+> 
 
---CE+1k2dSO48ffgeK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-Hi,
-
-I just released and uploaded version 0.116 of initramfs-tools
-towards Debian/unstable, addressing several bug reports we had
-pending in Debian's BTS and trying to get i-t into better shape for
-the upcoming Debian/jessie release.
-
-The shortlog has the details:
-
-Aurelien Jarno (1):
-      hook-functions: add support for virtio-mmio
-
-Helge Deller (1):
-      get_fstype: initialize FSTYPE variable
-
-Michael Prokop (9):
-      Fix hidden dependency issue with btrfs and crc32c
-      Do not spawn shell when panic=... is used
-      Preserve file permissions if root builds the initramfs images
-      Support drop_capabilities=... boot option
-      Support MODULES=dep usage on i2o hardware RAID controller
-      Support usage of partitioned nbd devices with MODULES=dep
-      Inform user that lsinitramfs doesn't support cpio archives yet
-      Bump Standards-Version to 3.9.5
-      Releasing version 0.116
-
-maximilian attems (1):
-      scripts/nfs: fix nfs mount check for possible init symlink
-
-regards,
--mika-
-
---CE+1k2dSO48ffgeK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAlQC1GcACgkQ2N9T+zficugmaACfZuOmln+bo6OLWdueClGCNtD5
-BO0AnAytO2IPoSxJXpaRqe4SVasxwif5
-=nWPO
------END PGP SIGNATURE-----
-
---CE+1k2dSO48ffgeK--
-
+Thanks! pushed
