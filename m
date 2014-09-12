@@ -1,46 +1,61 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Support spaces in mount_nfs (#1109933)
-Date: Wed, 10 Sep 2014 11:08:27 +0200
-Message-ID: <5410150B.6000008@redhat.com>
-References: <1408645911-3268-1-git-send-email-bcl@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] 40network: Copy the customize dhcp config
+Date: Fri, 12 Sep 2014 13:27:51 +0800
+Message-ID: <1410499671-31253-1-git-send-email-mhuang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1408645911-3268-1-git-send-email-bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: "Brian C. Lane" <bcl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 21.08.2014 20:31, Brian C. Lane wrote:
-> nfs paths may contain spaces, make sure they are preserved when passed
-> to nfs_to_var and mount.
-> 
-> Related: rhbz#1109933
-> ---
->  modules.d/95nfs/nfs-lib.sh | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/modules.d/95nfs/nfs-lib.sh b/modules.d/95nfs/nfs-lib.sh
-> index d5377fe..94d05b8 100755
-> --- a/modules.d/95nfs/nfs-lib.sh
-> +++ b/modules.d/95nfs/nfs-lib.sh
-> @@ -125,7 +125,7 @@ munge_nfs_options() {
->  mount_nfs() {
->      local nfsroot="$1" mntdir="$2" netif="$3"
->      local nfs="" server="" path="" options=""
-> -    nfs_to_var $nfsroot $netif
-> +    nfs_to_var "$nfsroot" $netif
->      munge_nfs_options
->      if [ "$nfs" = "nfs4" ]; then
->          options=$options${nfslock:+,$nfslock}
-> @@ -136,5 +136,5 @@ mount_nfs() {
->              && warn "Locks unsupported on NFSv{2,3}, using nolock" 1>&2
->          options=$options,nolock
->      fi
-> -    mount -t $nfs -o$options $server:$path $mntdir
-> +    mount -t $nfs -o$options "$server:$path" "$mntdir"
->  }
-> 
+It is not available to valid the following customize dhcp config
+/etc/dhclient.conf in the initram environment.
 
-Thanks! pushed
+supersede domain-name "machine.test.group";
+supersede domain-name-servers 10.125.97.171, 10.126.98.43, 10.125.97.176;
+
+The dracut doesnot acquire the customize dhcp config from
+/etc/dhclient.conf file when construct the initram image.
+
+Copy the customize config to make the config availably in the
+initram environment by dhcp.
+
+Signed-off-by: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/40network/module-setup.sh | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+index ae1f43f..76761f5 100755
+--- a/modules.d/40network/module-setup.sh
++++ b/modules.d/40network/module-setup.sh
+@@ -67,6 +67,15 @@ installkernel() {
+         ecb arc4 bridge stp llc ipv6 bonding 8021q af_packet virtio_net
+ }
+ 
++setup_custom_dhclient() {
++    _dhclient_file="/etc/dhclient.conf"
++
++    inst_simple "$moddir/dhclient.conf" "/etc/dhclient.conf"
++
++    [ ! -e $_dhclient_file ] && return
++    cat $_dhclient_file | grep ^supersede >> ${initdir}/$_dhclient_file
++}
++
+ # called by dracut
+ install() {
+     local _arch _i _dir
+@@ -79,7 +88,7 @@ install() {
+     inst_script "$moddir/netroot.sh" "/sbin/netroot"
+     inst_script "$moddir/dhclient-script.sh" "/sbin/dhclient-script"
+     inst_simple "$moddir/net-lib.sh" "/lib/net-lib.sh"
+-    inst_simple "$moddir/dhclient.conf" "/etc/dhclient.conf"
++    setup_custom_dhclient
+     inst_hook pre-udev 50 "$moddir/ifname-genrules.sh"
+     inst_hook pre-udev 60 "$moddir/net-genrules.sh"
+     inst_hook cmdline 91 "$moddir/dhcp-root.sh"
+-- 
+1.8.3.1
