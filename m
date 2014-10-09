@@ -1,36 +1,39 @@
-From: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
-Subject: Re: [systemd-devel] LUKS passphrase asked twice when using plain
- device names
-Date: Wed, 8 Oct 2014 23:35:35 +0200
-Message-ID: <20141008213535.GB27889@gardel-login>
-References: <1411452408.5121.15.camel@users.sourceforge.net>
-Mime-Version: 1.0
+From: Vaughan Cao <vaughan.cao-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Add hyperv-keyboard kernel module for Hyper-V Gen2 VM
+Date: Thu,  9 Oct 2014 16:41:31 +0800
+Message-ID: <1412844091-32321-1-git-send-email-vaughan.cao@oracle.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1411452408.5121.15.camel-Rn4VEauK+AKRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Menzel <paulepanter-Rn4VEauK+AKRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
-Cc: systemd-devel <systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vaughan.cao-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
 
-On Tue, 23.09.14 08:06, Paul Menzel (paulepanter-Rn4VEauK+AKRv+LV9MX5uipxlwaOVQ5f@public.gmane.org) wrote:
+The synthetic keyboard of a Gen2 Linux VM doesn't work before the
+hyperv_keyboard module is loaded. Without it, we can't cancel the media check
+phase if boot with rd.live.check option.
+Gen1 Linux VM doesn't have the same issue because the host emulates the legacy
+i8042 keyboard for Gen1 VM.
 
-> Dear systemd and dracut folks,
-> 
-> 
-> with Debian Sid/unstable, using plain device names like `/dev/sda1` in
-> `/etc/fstab` and `/etc/crypttab` the LUKS passphrase has to be entered
-> twice. Once it asked by dracut and once by systemd. I did not yet try
-> with UUIDs and ask first if that is an error?
+Signed-off-by: Vaughan Cao <vaughan.cao-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/90kernel-modules/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Hmm, plain crypt devices are difficult to recognize. 
-
-Do you have both fstab and crypttab in the initrd in the exact same
-version as on the host?
-
-Lennart
-
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index eea30e6..83b8995 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -45,7 +45,7 @@ installkernel() {
+             atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
+             hid-logitech-dj hid-microsoft hid-lcpower firewire-ohci \
+             pcmcia usb_storage nvme hid-hyperv hv-vmbus \
+-            sdhci_acpi
++            sdhci_acpi hyperv-keyboard
+ 
+         if [[ "$(uname -p)" == arm* ]]; then
+             # arm specific modules
 -- 
-Lennart Poettering, Red Hat
+1.9.0
