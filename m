@@ -1,39 +1,28 @@
-From: Vaughan Cao <vaughan.cao-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Add hyperv-keyboard kernel module for Hyper-V Gen2 VM
-Date: Thu,  9 Oct 2014 16:41:31 +0800
-Message-ID: <1412844091-32321-1-git-send-email-vaughan.cao@oracle.com>
+From: Orion Poplawski <orion-CVdf0l11yl+B+jHODAdFcQ@public.gmane.org>
+Subject: Question about netmask format
+Date: Mon, 13 Oct 2014 22:23:45 +0000 (UTC)
+Message-ID: <loom.20141014T001540-462@post.gmane.org>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vaughan.cao-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The synthetic keyboard of a Gen2 Linux VM doesn't work before the
-hyperv_keyboard module is loaded. Without it, we can't cancel the media check
-phase if boot with rd.live.check option.
-Gen1 Linux VM doesn't have the same issue because the host emulates the legacy
-i8042 keyboard for Gen1 VM.
+The dracut.cmdline man page lists:
 
-Signed-off-by: Vaughan Cao <vaughan.cao-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
----
- modules.d/90kernel-modules/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ip=<client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:
+   {none|off|dhcp|on|any|dhcp6|auto6|ibft}[:[<dns1>][:<dns2>]]
 
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index eea30e6..83b8995 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -45,7 +45,7 @@ installkernel() {
-             atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
-             hid-logitech-dj hid-microsoft hid-lcpower firewire-ohci \
-             pcmcia usb_storage nvme hid-hyperv hv-vmbus \
--            sdhci_acpi
-+            sdhci_acpi hyperv-keyboard
- 
-         if [[ "$(uname -p)" == arm* ]]; then
-             # arm specific modules
--- 
-1.9.0
+for explicit (static) network configuration.  To my old mind, "netmask"
+refers to something of the form 255.X.X.X.  However if I use that form with
+EL7 or Fedora 20, it fails with a message like:
+
+Bringing up interface eth0:  Error: an inet prefix is expected rather than
+"10.8.0.0/255.255.255.0".
+
+It works if I give it a CIDR suffix.  It appears that the netmask for used
+to work.
+
+- Orion
