@@ -1,71 +1,70 @@
-From: minfei <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 40network: Copy the customize dhcp config
-Date: Fri, 24 Oct 2014 16:25:25 +0800
-Message-ID: <20141024082525.GA15264@dhcp-17-62.nay.redhat.com>
-References: <1410499671-31253-1-git-send-email-mhuang@redhat.com>
- <20140912133530.GB32421@redhat.com>
- <A76B1C96-974B-4A3D-BAE5-CBD231FB35DC@redhat.com>
- <5449FD91.6070700@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCE] dracut 040
+Date: Fri, 24 Oct 2014 14:03:29 +0200
+Message-ID: <544A4011.8030400@redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5449FD91.6070700-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 10/24/14 at 09:19am, Harald Hoyer wrote:
-> On 15.09.2014 03:59, minfei wrote:
-> > 
-> > On Sep 12, 2014, at 21:35, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > 
-> >> On Fri, Sep 12, 2014 at 01:27:51PM +0800, Minfei Huang wrote:
-> >>> It is not available to valid the following customize dhcp config
-> >>> /etc/dhclient.conf in the initram environment.
-> >>>
-> >>> supersede domain-name "machine.test.group";
-> >>> supersede domain-name-servers 10.125.97.171, 10.126.98.43, 10.125.97.176;
-> >>>
-> >>> The dracut doesnot acquire the customize dhcp config from
-> >>> /etc/dhclient.conf file when construct the initram image.
-> >>>
-> >>> Copy the customize config to make the config availably in the
-> >>> initram environment by dhcp.
-> >>>
-> >>> Signed-off-by: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> >>
-> >> Can you give more information about the problem here. Why only look
-> >> for "supercede" options only. What about rest of the options in
-> >> dhclient.conf?
-> >>
-> >> Thanks
-> >> Vivek
-> > 
-> > Maybe the supercede is the frequently options which is customised.  But I think
-> > I should not ignore the customised dhcp configuration /etc/dhclient.conf instead of
-> > using the default dhcp configuration in dracut source directory.
-> > 
-> > Of course it will be fine to append all of the configuration customised dhclient.conf
-> > to the default configuration by constructing the initram image. 
-> 
-> 
-> Hmmm, maybe simply do this?
-> 
-> -    inst_simple "$moddir/dhclient.conf" "/etc/dhclient.conf"
-> +    inst_simple -H -o "/etc/dhclient.conf"
-> +    cat "$moddir/dhclient.conf" >> "${initdir}/etc/dhclient.conf"
+Here comes a new dracut version. Thanks to all who have contributed to this
+release.
 
-Thank you for your review.
-We will test and correct it.
+The tarball can be found here:
+        http://www.kernel.org/pub/linux/utils/boot/dracut/
+        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
 
-Minfei
-Thanks
+Git:
+        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Git Web:
+        http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+        http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+
+dracut-040
+==========
+- fixed dracut module dependency checks
+- fixed test suite
+
+dracut-039
+==========
+- DRACUT_PATH can now be used to specify the PATH used by dracut
+  to search for binaries instead of the default
+  /usr/sbin:/sbin:/usr/bin:/bin
+  This should be set in the distribution config file
+  /usr/lib/dracut/dracut.conf.d/01-dist.conf
+- add "--loginstall <DIR>" and loginstall="<DIR>" options
+  to record all files, which are installed from the host fs
+- "rd.writable.fsimg" - support for read/write filesystem images
+- "rd.route" kernel command line parameter added
+- "--install-optional" and install_optional_items added
+- find plymouth pkglibdir on debian
+- torrent support for live images
+  root=live:torrent://example.com/liveboot.img.torrent
+  and generally added as a download handler
+- disable microcode, if the kernel does not support it
+- speed up ldconfig_paths()
+- more ARM modules
+- fixed inst*() functions and "-H" handling
+- fixed bridge setup
+- added --force-drivers parameter and force_drivers=+ config option
+  to enforce driver loading at early boot time
+- documented "iso-scan/filename" usage in grub
+- various bugfixes
+
