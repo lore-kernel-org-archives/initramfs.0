@@ -1,70 +1,47 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 040
-Date: Fri, 24 Oct 2014 14:03:29 +0200
-Message-ID: <544A4011.8030400@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] kernel-modules: Drop explicit modules that are found with block_module_filter
+Date: Sun, 26 Oct 2014 11:48:15 +0000
+Message-ID: <1414324095-29818-1-git-send-email-pbrobinson@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id;
+        bh=ZyCoQPKBR2NLdyut9qcVYzHIyidkv5ppC+JehmFTOGM=;
+        b=Y0CzeaR4wL7wokYx2RjReaBIR1eV50efI8+oiDqeJtqV2zLe7Tt6yMcfMkW9ABueB/
+         p9hMw6dFkkSeRRjCWwQC4zalOoEFIlyoocxrPe/kTYe9DsYBkUzBlQnjq3/9uZnPtVsW
+         drVnRm1t4cCmz9h00icJjDCpSr0ZUZtEEu12KaYTgAHyMRQfcUWlM/n8eF03Bxl0NKTq
+         nld9WUXsW4H3oCpVpsv5vAemBwCrJk+pfuWponlDNhScCDdM9PU64My9cAAWeyxjF5Vo
+         EJaWE4651ljg35IwcgQIPfv1lWGxwzlhosimNZe9EEXDS+yT8txjqDnAK+iHStjsbznB
+         JKTQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Here comes a new dracut version. Thanks to all who have contributed to this
-release.
+The usb_storage, nvme and sdhci_acpi modules are discovered with the
+block_module_filter so there's no need to explicitly list them here.
 
-The tarball can be found here:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/
-        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Signed-off-by: <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ modules.d/90kernel-modules/module-setup.sh | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-Git:
-        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
-
-Git Web:
-        http://git.kernel.org/?p=boot/dracut/dracut.git
-
-Git Web RSS Feed:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-        http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
-
-dracut-040
-==========
-- fixed dracut module dependency checks
-- fixed test suite
-
-dracut-039
-==========
-- DRACUT_PATH can now be used to specify the PATH used by dracut
-  to search for binaries instead of the default
-  /usr/sbin:/sbin:/usr/bin:/bin
-  This should be set in the distribution config file
-  /usr/lib/dracut/dracut.conf.d/01-dist.conf
-- add "--loginstall <DIR>" and loginstall="<DIR>" options
-  to record all files, which are installed from the host fs
-- "rd.writable.fsimg" - support for read/write filesystem images
-- "rd.route" kernel command line parameter added
-- "--install-optional" and install_optional_items added
-- find plymouth pkglibdir on debian
-- torrent support for live images
-  root=live:torrent://example.com/liveboot.img.torrent
-  and generally added as a download handler
-- disable microcode, if the kernel does not support it
-- speed up ldconfig_paths()
-- more ARM modules
-- fixed inst*() functions and "-H" handling
-- fixed bridge setup
-- added --force-drivers parameter and force_drivers=+ config option
-  to enforce driver loading at early boot time
-- documented "iso-scan/filename" usage in grub
-- various bugfixes
-
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index 83b8995..2fa263c 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -44,8 +44,7 @@ installkernel() {
+         instmods yenta_socket scsi_dh_rdac scsi_dh_emc \
+             atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
+             hid-logitech-dj hid-microsoft hid-lcpower firewire-ohci \
+-            pcmcia usb_storage nvme hid-hyperv hv-vmbus \
+-            sdhci_acpi hyperv-keyboard
++            pcmcia hid-hyperv hv-vmbus hyperv-keyboard
+ 
+         if [[ "$(uname -p)" == arm* ]]; then
+             # arm specific modules
+-- 
+2.1.0
