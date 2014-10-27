@@ -1,46 +1,43 @@
-From: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v2] 40network: Copy the customize dhcp config
-Date: Mon, 27 Oct 2014 14:33:11 +0800
-Message-ID: <1414391591-2828-1-git-send-email-mhuang@redhat.com>
+From: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
+Subject: [PATCH] fix gzip compress then it not supports rsyncable option
+Date: Mon, 27 Oct 2014 13:43:53 +0300
+Message-ID: <1414406633-5262-1-git-send-email-v.tolstov@selfip.ru>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=selfip.ru; s=google;
+        h=sender:from:to:cc:subject:date:message-id;
+        bh=bT4ZU5Ei3+JKEaQ4GdWRsQmGKNxiP4X7QyT6eEsQUvQ=;
+        b=QoIzLcHHXvHdmBvPCm1hj60KgVlRiKhkSW/xV5XK7fxt9FtDiJGIa/FRKKoBE8Epaq
+         EDyYu5ogT2Hx93vpcaGLhJ0An5JBZo52mrAjKRA54pZPPMKX/81UBZf3VpiTpOhOoPsx
+         bxQ37R7PRyJJPswqMBcC1GfwCf8KNcaoijdto=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
 
-It is not available to valid the customize dhcp config
-/etc/dhclient.conf in the initram environment.
+dracut fail to create initramfs when compressor gzip and
+it not have rsyncable option
 
-Dracut uses the default follow config to construct the initramfs.
-
-request subnet-mask, broadcast-address, time-offset, routers,
-        domain-name, domain-name-servers, domain-search, host-name,
-        root-path, interface-mtu;
-
-Copy the customize config to make the config availably in the
-initram environment.
-
-Signed-off-by: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
 ---
- modules.d/40network/module-setup.sh | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ dracut.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index ae1f43f..55bee4c 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -79,7 +79,8 @@ install() {
-     inst_script "$moddir/netroot.sh" "/sbin/netroot"
-     inst_script "$moddir/dhclient-script.sh" "/sbin/dhclient-script"
-     inst_simple "$moddir/net-lib.sh" "/lib/net-lib.sh"
--    inst_simple "$moddir/dhclient.conf" "/etc/dhclient.conf"
-+    inst_simple -H "/etc/dhclient.conf"
-+    cat "$moddir/dhclient.conf" >> "${initdir}/etc/dhclient.conf"
-     inst_hook pre-udev 50 "$moddir/ifname-genrules.sh"
-     inst_hook pre-udev 60 "$moddir/net-genrules.sh"
-     inst_hook cmdline 91 "$moddir/dhcp-root.sh"
+diff --git a/dracut.sh b/dracut.sh
+index 1c7e208..7aa1264 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -822,7 +822,7 @@ case $compress in
+     bzip2) compress="bzip2 -9";;
+     lzma)  compress="lzma -9 -T0";;
+     xz)    compress="xz --check=crc32 --lzma2=dict=1MiB -T0";;
+-    gzip)  compress="gzip -n -9 --rsyncable"; command -v pigz > /dev/null 2>&1 && compress="pigz -9 -n -T -R";;
++    gzip)  compress="gzip -n -9"; command -v gzip --help 2>&1 | grep -q rsyncable && compress="gzip -n -9 --rsyncable"; command -v pigz > /dev/null 2>&1 && compress="pigz -9 -n -T -R";;
+     lzo)   compress="lzop -9";;
+     lz4)   compress="lz4 -l -9";;
+ esac
 -- 
-1.8.3.1
+2.1.2
