@@ -1,41 +1,33 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] kernel-modules: Drop explicit modules that are found
- with block_module_filter
-Date: Wed, 29 Oct 2014 14:14:45 +0100
-Message-ID: <5450E845.5060702@redhat.com>
-References: <1414324095-29818-1-git-send-email-pbrobinson@gmail.com>
+From: Vasiliy Tolstov <v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org>
+Subject: Re: [PATCH] fix gzip compress then it not supports rsyncable option
+Date: Wed, 29 Oct 2014 17:15:21 +0400
+Message-ID: <CACaajQstiFQQZnPv2nq6CCxbmEoy=ufjXT9geQzZZ+ma-NAoDA@mail.gmail.com>
+References: <1414406633-5262-1-git-send-email-v.tolstov@selfip.ru> <5450E805.4060200@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1414324095-29818-1-git-send-email-pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=selfip.ru; s=google;
+        h=mime-version:sender:in-reply-to:references:from:date:message-id
+         :subject:to:cc:content-type;
+        bh=zuaFa2IqHDbdFOLmCnrIhsRk/ffJtDcsUv+3xa8TwjQ=;
+        b=ZjUVHwXmrUQbqy4VHqzbPZojOTGbr0lu42OjRrYq9uU7/ZiZTr7H6w1AX0ACKDvs+d
+         +OQ3ZRFl6e9PBtUoMnOXoU1qN714xY3uXBt0gphUy0ZKk7cAy294E90iE5uEVgnJECay
+         iV3O0Yry7voMd7hwrJR8ExsXkUE9xITcOC8Ks=
+In-Reply-To: <5450E805.4060200-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 26.10.2014 12:48, Peter Robinson wrote:
-> The usb_storage, nvme and sdhci_acpi modules are discovered with the
-> block_module_filter so there's no need to explicitly list them here.
-> 
-> Signed-off-by: <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->  modules.d/90kernel-modules/module-setup.sh | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
-> 
-> diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-> index 83b8995..2fa263c 100755
-> --- a/modules.d/90kernel-modules/module-setup.sh
-> +++ b/modules.d/90kernel-modules/module-setup.sh
-> @@ -44,8 +44,7 @@ installkernel() {
->          instmods yenta_socket scsi_dh_rdac scsi_dh_emc \
->              atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
->              hid-logitech-dj hid-microsoft hid-lcpower firewire-ohci \
-> -            pcmcia usb_storage nvme hid-hyperv hv-vmbus \
-> -            sdhci_acpi hyperv-keyboard
-> +            pcmcia hid-hyperv hv-vmbus hyperv-keyboard
->  
->          if [[ "$(uname -p)" == arm* ]]; then
->              # arm specific modules
-> 
+2014-10-29 16:13 GMT+03:00 Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
+> Thanks! pushed
 
-Thanks! Pushed
+
+Thanks!
+
+-- 
+Vasiliy Tolstov,
+e-mail: v.tolstov-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
+jabber: vase-+9FY0jupvH6HXe+LvDLADg@public.gmane.org
