@@ -1,38 +1,65 @@
-From: Orion Poplawski <orion-CVdf0l11yl+B+jHODAdFcQ@public.gmane.org>
-Subject: Re: Question about netmask format
-Date: Mon, 03 Nov 2014 12:08:02 -0700
-Message-ID: <5457D292.806@cora.nwra.com>
-References: <loom.20141014T001540-462@post.gmane.org> <5449FB04.9030803@redhat.com> <5453BEE5.3030908@cora.nwra.com> <545766EC.9020408@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [Dracut PATCH] base: Set udevd log level via environment var to cover early startup.
+Date: Mon, 10 Nov 2014 14:17:39 +0000
+Message-ID: <1415629059-27564-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=cora.nwra.com;
-	s=default; t=1415041683;
-	bh=BqApcH2H6d66BUpu9Ske/txZLjIawGu1N7iHOTuHm1g=;
-	h=Message-ID:Date:From:MIME-Version:To:Subject:References:
-	 In-Reply-To:Content-Type:Content-Transfer-Encoding;
-	b=kzDATD+4mlFNk4QmShJIFBIgzDnph1sRU5L3KHPcMZMl390GdRu9A+yLcAK+GNBoG
-	 PsbUzncN4T9oIZgtbMG/xXS4qdIDivxJB7+lJy7s+9n+yGrTc3mo3wjQDtV0AuP+/+
-	 jLlSWR1F5GgBD1MMeOCRsFH7aA6fkPPF3loilyAY=
-In-Reply-To: <545766EC.9020408-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-On 11/03/2014 04:28 AM, Harald Hoyer wrote:
-> 
-> add "rd.debug" to the kernel cmdline.
-> 
-> Then inspect /run/initramfs/rdsosreport.txt
-> 
+udevd will these days default to 'info' logging and thus will
+often print out the 'starting version nnn' message (which is
+logged at level 'info'), thus spamming the console, even on
+'quiet' boots.
 
-Turns out I had 255.255.225.224 instead of 255.255.255.224.  Finally started
-at it enough to catch it.  Sorry for the noise.
+We generally expect a udev log level of err (the old default
+from pre-October 2013) so we should set that explicilty before
+launching udevd in order to suppress the spurious 'info' message.
 
+As we are using the environment variable approach anyway, we
+may as well use this method rather than setting the log level
+later via udevadm control commands when rd.udev.info/debug are
+given on the kernel command line.
+
+The enviroment variable has been around since udev 6b493a20e1
+around 2005 so should be safe to use in all cases without version
+checks.
+---
+ modules.d/99base/init.sh | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
+index e249b27..3afe6d5 100755
+--- a/modules.d/99base/init.sh
++++ b/modules.d/99base/init.sh
+@@ -137,19 +137,19 @@ make_trace_mem "hook pre-udev" '1:shortmem' '2+:mem' '3+:slab'
+ getarg 'rd.break=pre-udev' -d 'rdbreak=pre-udev' && emergency_shell -n pre-udev "Break before pre-udev"
+ source_hook pre-udev
+ 
++UDEV_LOG=err
++getargbool 0 rd.udev.info -d -y rdudevinfo && UDEV_LOG=info
++getargbool 0 rd.udev.debug -d -y rdudevdebug && UDEV_LOG=debug
++
+ # start up udev and trigger cold plugs
+-$systemdutildir/systemd-udevd --daemon --resolve-names=never
++UDEV_LOG=$UDEV_LOG $systemdutildir/systemd-udevd --daemon --resolve-names=never
+ 
+-UDEV_LOG_PRIO_ARG=--log-priority
+ UDEV_QUEUE_EMPTY="udevadm settle --timeout=0"
+ 
+ if [ $UDEVVERSION -lt 140 ]; then
+-    UDEV_LOG_PRIO_ARG=--log_priority
+     UDEV_QUEUE_EMPTY="udevadm settle --timeout=1"
+ fi
+ 
+-getargbool 0 rd.udev.info -d -y rdudevinfo && udevadm control "$UDEV_LOG_PRIO_ARG=info"
+-getargbool 0 rd.udev.debug -d -y rdudevdebug && udevadm control "$UDEV_LOG_PRIO_ARG=debug"
+ udevproperty "hookdir=$hookdir"
+ 
+ make_trace_mem "hook pre-trigger" '1:shortmem' '2+:mem' '3+:slab'
 -- 
-Orion Poplawski
-Technical Manager                     303-415-9701 x222
-NWRA, Boulder/CoRA Office             FAX: 303-415-9702
-3380 Mitchell Lane                       orion-CfuHcwXVrUc@public.gmane.org
-Boulder, CO 80301                   http://www.nwra.com
+2.1.3
