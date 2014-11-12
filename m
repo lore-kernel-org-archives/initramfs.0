@@ -1,65 +1,54 @@
-From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Subject: [Dracut PATCH] base: Set udevd log level via environment var to cover early startup.
-Date: Mon, 10 Nov 2014 14:17:39 +0000
-Message-ID: <1415629059-27564-1-git-send-email-colin@mageia.org>
+From: cubic34956-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Subject: Fix Penguin Penalty 17th October2014 ( mail-archive.com )
+Date: Wed, 12 Nov 2014 07:46:08 +0530
+Message-ID: <5462c2ef.e340460a.314b.ffffca0d@mx.google.com>
+Reply-To: seo.expert388-/E1597aS9LQAvxtiuMwx3w@public.gmane.org
+Mime-Version: 1.0
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=message-id:from:to:reply-to:subject:date;
+        bh=3gU2Wt416a2wtfaVbXNiJ6+/+GmwZDzB5fZwaw88oUk=;
+        b=grXR7PFpzitPo4sOFzWT5oxanTJ8QnKuJSxqqOadZZOvQlvoy/+qLs1aYHKKP+hAaV
+         dTEQTdgXH+kWUy4q3bA7xXSUVrwJX7s25kdOq0qNYzKNeiHsScTszHz48mE8tVwxU8xK
+         mdIZYGF9BNAdscrfpeoR9M7lS1gFEGojMFINc/yeuoyA+M7QUIwIWv0EvZ++xp0b93nB
+         Z2vKHy18naGV/SLcPaZ6Iu8apHVDBtcIzgzf+sNwsc0Q7268pdwYq796aTlcBUg78w29
+         umg4txjnpAD4SGCPgnD2tQFUWHcN+I7Obj2qasj4091pVgkDOUSxsn8jyIIHen4Oj31M
+         IB/Q==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: TEXT/PLAIN; charset="windows-1252"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-udevd will these days default to 'info' logging and thus will
-often print out the 'starting version nnn' message (which is
-logged at level 'info'), thus spamming the console, even on
-'quiet' boots.
+Dear Sir
 
-We generally expect a udev log level of err (the old default
-from pre-October 2013) so we should set that explicilty before
-launching udevd in order to suppress the spurious 'info' message.
+Did your website get hit by Google Penguin update on October 17th 2014?=
+ What basically is Google Penguin Update? It is actually a code name fo=
+r Google algorithm which aims at decreasing your websites search engine=
+ rankings that violate Google=92s guidelines by using black hat SEO tec=
+hniques to rank your webpage by giving number of spammy links to the pa=
+ge.
+=20
+We are one of those few SEO companies that can help you avoid penalties=
+ from Google Updates like Penguin and Panda. Our clients have survived =
+all the previous and present updates with ease. They have never been hi=
+t because we use 100% white hat SEO techniques to rank Webpages.  Simpl=
+e thing that we do to keep websites away from any Penguin or Panda pena=
+lties is follow Google guidelines and we give Google users the best ans=
+wers to their queries.
 
-As we are using the environment variable approach anyway, we
-may as well use this method rather than setting the log level
-later via udevadm control commands when rd.udev.info/debug are
-given on the kernel command line.
+If you are looking to increase the quality of your websites and to get =
+more targeted traffic or save your websites from these Google penalties=
+ email us back with your interest.=20
 
-The enviroment variable has been around since udev 6b493a20e1
-around 2005 so should be safe to use in all cases without version
-checks.
----
- modules.d/99base/init.sh | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+We will be glad to serve you and help you grow your business.
 
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index e249b27..3afe6d5 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -137,19 +137,19 @@ make_trace_mem "hook pre-udev" '1:shortmem' '2+:mem' '3+:slab'
- getarg 'rd.break=pre-udev' -d 'rdbreak=pre-udev' && emergency_shell -n pre-udev "Break before pre-udev"
- source_hook pre-udev
- 
-+UDEV_LOG=err
-+getargbool 0 rd.udev.info -d -y rdudevinfo && UDEV_LOG=info
-+getargbool 0 rd.udev.debug -d -y rdudevdebug && UDEV_LOG=debug
-+
- # start up udev and trigger cold plugs
--$systemdutildir/systemd-udevd --daemon --resolve-names=never
-+UDEV_LOG=$UDEV_LOG $systemdutildir/systemd-udevd --daemon --resolve-names=never
- 
--UDEV_LOG_PRIO_ARG=--log-priority
- UDEV_QUEUE_EMPTY="udevadm settle --timeout=0"
- 
- if [ $UDEVVERSION -lt 140 ]; then
--    UDEV_LOG_PRIO_ARG=--log_priority
-     UDEV_QUEUE_EMPTY="udevadm settle --timeout=1"
- fi
- 
--getargbool 0 rd.udev.info -d -y rdudevinfo && udevadm control "$UDEV_LOG_PRIO_ARG=info"
--getargbool 0 rd.udev.debug -d -y rdudevdebug && udevadm control "$UDEV_LOG_PRIO_ARG=debug"
- udevproperty "hookdir=$hookdir"
- 
- make_trace_mem "hook pre-trigger" '1:shortmem' '2+:mem' '3+:slab'
--- 
-2.1.3
+Regards
+
+Vince G
+
+SEO Manager ( TOB )
+B7 Green Avenue, Amritsar 143001 Punjab
+____________________________
+NO CLICK in the subject to STOP EMAILS
