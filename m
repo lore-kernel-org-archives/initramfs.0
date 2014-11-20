@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 20/33] Implement 'rd.timeout' to modify the device timeout
-Date: Thu, 20 Nov 2014 15:56:55 +0100
-Message-ID: <1416495428-36978-21-git-send-email-trenn@suse.de>
+Subject: [PATCH 06/33] 95udev-rules: Include correct sg3_utils rules
+Date: Thu, 20 Nov 2014 15:56:41 +0100
+Message-ID: <1416495428-36978-7-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,104 +15,29 @@ Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initr
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-When generating units for devices the administrator might
-want to use a different timeout than the default.
-So implement a new parameter 'rd.timeout' for this.
+sg3_utils now provides two rules 55-scsi-sg3_id.rules and
+58-scsi-sg3_symlink.rules, which need to be included instead
+of the older 59-scsi-sg3_utils.rules.
 
-References: bnc#878770
+References: bnc#873151
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.cmdline.7.asc                    | 7 ++++++-
- modules.d/98systemd/rootfs-generator.sh | 7 +++++--
- modules.d/99base/dracut-lib.sh          | 6 +++++-
- 3 files changed, 16 insertions(+), 4 deletions(-)
+ modules.d/95udev-rules/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index 48356c7..9741cf7 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -142,11 +142,16 @@ Misc
-     have been loaded. This parameter can be specified multiple times.
- 
- **rd.retry=**__<seconds>__::
--    specify how long dracut should wait for devices to appear.
-+    specify how long dracut should retry the initqueue to configure devices.
-     The default is 30 seconds. After 2/3 of the time, degraded raids are force
-     started. If you have hardware, which takes a very long time to announce its
-     drives, you might want to extend this value.
- 
-+**rd.timeout=**__<seconds>__::
-+    specify how long dracut should wait for devices to appear. The
-+    default is '0', which means 'forever'. Note that this timeout
-+    should be longer than rd.retry to allow for proper configuration.
-+
- **rd.noverifyssl**::
-     accept self-signed certificates for ssl downloads.
- 
-diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
-index 9523729..5b06137 100755
---- a/modules.d/98systemd/rootfs-generator.sh
-+++ b/modules.d/98systemd/rootfs-generator.sh
-@@ -5,8 +5,11 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
- generator_wait_for_dev()
- {
-     local _name
-+    local _timeout
- 
-     _name="$(str_replace "$1" '/' '\x2f')"
-+    _timeout=$(getarg rd.timeout)
-+    _timeout=${_timeout:-0}
- 
-     [ -e "$hookdir/initqueue/finished/devexists-${_name}.sh" ] && return 0
- 
-@@ -27,7 +30,7 @@ generator_wait_for_dev()
-         mkdir -p /run/systemd/generator/${_name}.device.d
-         {
-             echo "[Unit]"
--            echo "JobTimeoutSec=0"
-+            echo "JobTimeoutSec=$_timeout"
-         } > /run/systemd/generator/${_name}.device.d/timeout.conf
-     fi
- }
-@@ -58,6 +61,6 @@ case "$root" in
-         rootok=1 ;;
- esac
- 
--[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}"
-+[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}" "$RDRETRY"
- 
- exit 0
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index 8bc6b26..7080f1a 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -886,12 +886,16 @@ wait_for_dev()
-     local _name
-     local _needreload
-     local _noreload
-+    local _timeout
- 
-     if [ "$1" = "-n" ]; then
-         _noreload=1
-         shift
-     fi
- 
-+    _timeout=$(getarg rd.timeout)
-+    _timeout=${_timeout:-0}
-+
-     _name="$(str_replace "$1" '/' '\x2f')"
- 
-     type mark_hostonly >/dev/null 2>&1 && mark_hostonly "$hookdir/initqueue/finished/devexists-${_name}.sh"
-@@ -918,7 +922,7 @@ wait_for_dev()
-             mkdir -p ${PREFIX}/etc/systemd/system/${_name}.device.d
-             {
-                 echo "[Unit]"
--                echo "JobTimeoutSec=0"
-+                echo "JobTimeoutSec=$_timeout"
-             } > ${PREFIX}/etc/systemd/system/${_name}.device.d/timeout.conf
-             type mark_hostonly >/dev/null 2>&1 && mark_hostonly /etc/systemd/system/${_name}.device.d/timeout.conf
-             _needreload=1
+diff --git a/modules.d/95udev-rules/module-setup.sh b/modules.d/95udev-rules/module-setup.sh
+index 9d6f960..e50709d 100755
+--- a/modules.d/95udev-rules/module-setup.sh
++++ b/modules.d/95udev-rules/module-setup.sh
+@@ -31,6 +31,7 @@ install() {
+         50-udev.rules 95-late.rules \
+         50-firmware.rules \
+         59-scsi-sg3_utils.rules \
++        55-scsi-sg3_id.rules 58-scsi-sg3_symlink.rules \
+         70-uaccess.rules 71-seat.rules 73-seat-late.rules \
+         75-net-description.rules \
+         80-net-name-slot.rules 80-net-setup-link.rules \
 -- 
 1.8.5.2
