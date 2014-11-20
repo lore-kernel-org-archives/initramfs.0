@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 33/33] nfs: Add ip=... and root=nfs... parameters to internal dracut
-Date: Thu, 20 Nov 2014 15:57:08 +0100
-Message-ID: <1416495428-36978-34-git-send-email-trenn@suse.de>
+Subject: [PATCH 09/33] 90multipath: Load device_handler modules early during boot
+Date: Thu, 20 Nov 2014 15:56:44 +0100
+Message-ID: <1416495428-36978-10-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,90 +13,50 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
- cmdline
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-If the rootfs is an nfs mount, also know as nfsroot, add the correct
-parameter to the dracut cmdline.
+The device handler modules need to be loaded early during boot
+to avoid I/O errors being printed to the system log.
 
+References: bnc#871617
+
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95nfs/module-setup.sh | 46 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 43 insertions(+), 3 deletions(-)
+ modules.d/90multipath/module-setup.sh | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
-index e1340b3..41c6ef7 100755
---- a/modules.d/95nfs/module-setup.sh
-+++ b/modules.d/95nfs/module-setup.sh
-@@ -14,7 +14,6 @@ check() {
-         done
-         return 255
-     }
--
-     return 0
+diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
+index 7a60b2e..bbee5d9 100755
+--- a/modules.d/90multipath/module-setup.sh
++++ b/modules.d/90multipath/module-setup.sh
+@@ -28,6 +28,15 @@ depends() {
  }
  
-@@ -29,14 +28,56 @@ installkernel() {
-     instmods nfs sunrpc ipv6 nfsv2 nfsv3 nfsv4 nfs_acl nfs_layout_nfsv41_files
- }
- 
+ # called by dracut
 +cmdline() {
-+    local nfs_device
-+    local nfs_options
-+    local nfs_root
-+    local nfs_address
-+    local lookup
-+    local ifname
-+
-+    ### nfsroot= ###
-+    nfs_device=$(findmnt -t nfs4 -n -o SOURCE /)
-+    if [ -n "$nfs_device" ];then
-+        nfs_root="root=nfs4:$nfs_device"
-+    else
-+        nfs_device=$(findmnt -t nfs -n -o SOURCE /)
-+        [ -z "$nfs_device" ] && return
-+        nfs_root="root=nfs:$nfs_device"
-+    fi
-+    nfs_options=$(findmnt -t nfs4,nfs -n -o OPTIONS /)
-+    [ -n "$nfs_options" ] && nfs_root="$nfs_root:$nfs_options"
-+    echo "$nfs_root"
-+
-+    ### ip= ###
-+    if [[ $nfs_device = [0-9]*\.[0-9]*\.[0-9]*.[0-9]* ]] || [[ $nfs_device = \[.*\] ]]; then
-+        nfs_address="$nfs_device"
-+    else
-+        lookup=$(host $(echo ${nfs_device%%:*})| head -n1)
-+        nfs_address=${lookup##* }
-+    fi
-+    ifname=$(ip -o route get to $nfs_address | sed -n 's/.*dev \([^ ]*\).*/\1/p')
-+    if [ -e /sys/class/net/$ifname/address ] ; then
-+        ifmac=$(cat /sys/class/net/$ifname/address)
-+        printf 'ifname=%s:%s ' ${ifname} ${ifmac}
-+    fi
-+
-+    printf 'ip=%s:static\n' ${ifname}
++    for m in scsi_dh_alua scsi_dh_emc scsi_dh_rdac ; do
++        if module_is_host_only $m ; then
++            printf 'rd.driver.pre=%s ' "$m"
++        fi
++    done
 +}
 +
- # called by dracut
- install() {
-     local _i
-     local _nsslibs
-     inst_multiple -o portmap rpcbind rpc.statd mount.nfs \
--        mount.nfs4 umount rpc.idmapd sed /etc/netconfig
-+        mount.nfs4 umount rpc.idmapd sed /etc/netconfig host sed
-     inst_multiple /etc/services /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/idmapd.conf
++# called by dracut
+ installkernel() {
+     local _ret
+     local _arch=$(uname -m)
+@@ -89,6 +98,11 @@ install() {
+     inst_libdir_file "libmultipath*" "multipath/*"
+     inst_libdir_file 'libgcc_s.so*'
  
-+    if [[ $hostonly_cmdline == "yes" ]]; then
-+        local _netconf="$(cmdline)"
-+        [[ $_netconf ]] && printf "%s\n" "$_netconf" >> "${initdir}/etc/cmdline.d/95nfs.conf"
++    if [[ $hostonly_cmdline ]] ; then
++        local _conf=$(cmdline)
++        [[ $_conf ]] && echo "$_conf" >> "${initdir}/etc/cmdline.d/90multipath.conf"
 +    fi
 +
-     if [ -f /lib/modprobe.d/nfs.conf ]; then
-         inst_multiple /lib/modprobe.d/nfs.conf
-     else
-@@ -75,4 +116,3 @@ install() {
-         && chown rpc.rpc "$initdir/var/lib/rpcbind"
-     dracut_need_initqueue
- }
--
+     if dracut_module_included "systemd"; then
+         inst_multiple \
+             $systemdsystemunitdir/multipathd.service
 -- 
 1.8.5.2
