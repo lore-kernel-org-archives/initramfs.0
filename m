@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 12/33] 95iscsi: Install libgcc_s library
-Date: Thu, 20 Nov 2014 15:56:47 +0100
-Message-ID: <1416495428-36978-13-git-send-email-trenn@suse.de>
+Subject: [PATCH 14/33] 95iscsi: strip one set of quotes when calling initqueue
+Date: Thu, 20 Nov 2014 15:56:49 +0100
+Message-ID: <1416495428-36978-15-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,29 +15,52 @@ Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initr
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-iscsiuio is using pthread, which requires libgcc_s for
-pthread_cancel to work.
-Without this library iscsiuio will crash with SIGABRT.
+The bad initqueue parameter passing is already addressed by git commit:
+commit bb8c16d12178373f17553294603ff5187e318b51
+and
+commit 486a8f33e2edaf249e3a09c98a910094e201cf9e
 
-References: bnc#881692
+However this appraoch is slightly different:
+"$netroot" instead of "'$netroot'", etc.
+
+initqueue will process the arguments, assuming the first non-option
+argument to be the program to be executed. Putting the entire
+commandline into this argument confuses both, initqueue and the
+program in question.
+
+References: bnc#879038
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95iscsi/module-setup.sh | 1 +
- 1 file changed, 1 insertion(+)
+ modules.d/95iscsi/parse-iscsiroot.sh | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index 5d2a39b..3641fb8 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -106,6 +106,7 @@ cmdline() {
- install() {
-     inst_multiple umount iscsistart hostname iscsi-iname
-     inst_multiple -o iscsiuio
-+    inst_libdir_file 'libgcc_s.so*'
-     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
-     inst_hook cleanup 90 "$moddir/cleanup-iscsi.sh"
-     inst "$moddir/iscsiroot.sh" "/sbin/iscsiroot"
+diff --git a/modules.d/95iscsi/parse-iscsiroot.sh b/modules.d/95iscsi/parse-iscsiroot.sh
+index 85c3027..37e46ad 100755
+--- a/modules.d/95iscsi/parse-iscsiroot.sh
++++ b/modules.d/95iscsi/parse-iscsiroot.sh
+@@ -59,10 +59,10 @@ fi
+ 
+ # iscsi_firmware does not need argument checking
+ if [ -n "$iscsi_firmware" ] ; then
+-    netroot=${netroot:-iscsi:}
++    [ -z "$netroot" ] && netroot=iscsi:
+     modprobe -q iscsi_boot_sysfs 2>/dev/null
+     modprobe -q iscsi_ibft
+-    initqueue --onetime --timeout /sbin/iscsiroot dummy "'$netroot'" "'$NEWROOT'"
++    initqueue --onetime --timeout /sbin/iscsiroot dummy "$netroot" "$NEWROOT"
+ fi
+ 
+ # If it's not iscsi we don't continue
+@@ -86,7 +86,7 @@ fi
+ 
+ if [ -n "$netroot" ] && [ "$root" != "/dev/root" ] && [ "$root" != "dhcp" ]; then
+     if ! getargbool 1 rd.neednet >/dev/null || ! getarg "ip="; then
+-        initqueue --onetime --settled /sbin/iscsiroot dummy "'$netroot'" "'$NEWROOT'"
++        initqueue --onetime --settled /sbin/iscsiroot dummy "$netroot" "$NEWROOT"
+     fi
+ fi
+ 
 -- 
 1.8.5.2
