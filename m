@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 31/33] dracut.sh: Fix UUID= fstab parsing in case --mount option is passed
-Date: Thu, 20 Nov 2014 15:57:06 +0100
-Message-ID: <1416495428-36978-32-git-send-email-trenn@suse.de>
+Subject: [PATCH 20/33] Implement 'rd.timeout' to modify the device timeout
+Date: Thu, 20 Nov 2014 15:56:55 +0100
+Message-ID: <1416495428-36978-21-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,49 +13,106 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Dracut parses /etc/fstab when --mount is option is passed (e.g. kdump).
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-In host_devs variable the real block device must be stored, not UUID=
-There are other /etc/fstab syntax possibilities we now warn that they
-are not correctly parsed. This will be fixed by another patch
-when there is time to test this properly.
+When generating units for devices the administrator might
+want to use a different timeout than the default.
+So implement a new parameter 'rd.timeout' for this.
 
+References: bnc#878770
+
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.sh | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
+ dracut.cmdline.7.asc                    | 7 ++++++-
+ modules.d/98systemd/rootfs-generator.sh | 7 +++++--
+ modules.d/99base/dracut-lib.sh          | 6 +++++-
+ 3 files changed, 16 insertions(+), 4 deletions(-)
 
-diff --git a/dracut.sh b/dracut.sh
-index f384f73..3c3efc1 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -1071,9 +1071,25 @@ declare -A host_fs_types
+diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
+index 48356c7..9741cf7 100644
+--- a/dracut.cmdline.7.asc
++++ b/dracut.cmdline.7.asc
+@@ -142,11 +142,16 @@ Misc
+     have been loaded. This parameter can be specified multiple times.
  
- for line in "${fstab_lines[@]}"; do
-     set -- $line
-+    dev="$1"
-     #dev mp fs fsopts
--    push_host_devs "$1"
--    host_fs_types["$1"]="$3"
-+    case "$dev" in
-+        UUID=*)
-+            dev=$(blkid -l -t UUID=${dev#UUID=} -o device)
-+            ;;
-+        LABEL=*)
-+            dev=$(blkid -l -t LABEL=${dev#LABEL=} -o device)
-+            ;;
-+        PARTUUID=*)
-+            dev=$(blkid -l -t PARTUUID=${dev#PARTUUID=} -o device)
-+            ;;
-+        PARTLABEL=*)
-+            dev=$(blkid -l -t PARTLABEL=${dev#PARTLABEL=} -o device)
-+            ;;
-+    esac
-+    [ -z "$dev" ] && dwarn "Bad fstab entry $@" && continue
-+    push_host_devs "$dev"
-+    host_fs_types["$dev"]="$3"
- done
+ **rd.retry=**__<seconds>__::
+-    specify how long dracut should wait for devices to appear.
++    specify how long dracut should retry the initqueue to configure devices.
+     The default is 30 seconds. After 2/3 of the time, degraded raids are force
+     started. If you have hardware, which takes a very long time to announce its
+     drives, you might want to extend this value.
  
- for f in $add_fstab; do
++**rd.timeout=**__<seconds>__::
++    specify how long dracut should wait for devices to appear. The
++    default is '0', which means 'forever'. Note that this timeout
++    should be longer than rd.retry to allow for proper configuration.
++
+ **rd.noverifyssl**::
+     accept self-signed certificates for ssl downloads.
+ 
+diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
+index 9523729..5b06137 100755
+--- a/modules.d/98systemd/rootfs-generator.sh
++++ b/modules.d/98systemd/rootfs-generator.sh
+@@ -5,8 +5,11 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ generator_wait_for_dev()
+ {
+     local _name
++    local _timeout
+ 
+     _name="$(str_replace "$1" '/' '\x2f')"
++    _timeout=$(getarg rd.timeout)
++    _timeout=${_timeout:-0}
+ 
+     [ -e "$hookdir/initqueue/finished/devexists-${_name}.sh" ] && return 0
+ 
+@@ -27,7 +30,7 @@ generator_wait_for_dev()
+         mkdir -p /run/systemd/generator/${_name}.device.d
+         {
+             echo "[Unit]"
+-            echo "JobTimeoutSec=0"
++            echo "JobTimeoutSec=$_timeout"
+         } > /run/systemd/generator/${_name}.device.d/timeout.conf
+     fi
+ }
+@@ -58,6 +61,6 @@ case "$root" in
+         rootok=1 ;;
+ esac
+ 
+-[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}"
++[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}" "$RDRETRY"
+ 
+ exit 0
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 8bc6b26..7080f1a 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -886,12 +886,16 @@ wait_for_dev()
+     local _name
+     local _needreload
+     local _noreload
++    local _timeout
+ 
+     if [ "$1" = "-n" ]; then
+         _noreload=1
+         shift
+     fi
+ 
++    _timeout=$(getarg rd.timeout)
++    _timeout=${_timeout:-0}
++
+     _name="$(str_replace "$1" '/' '\x2f')"
+ 
+     type mark_hostonly >/dev/null 2>&1 && mark_hostonly "$hookdir/initqueue/finished/devexists-${_name}.sh"
+@@ -918,7 +922,7 @@ wait_for_dev()
+             mkdir -p ${PREFIX}/etc/systemd/system/${_name}.device.d
+             {
+                 echo "[Unit]"
+-                echo "JobTimeoutSec=0"
++                echo "JobTimeoutSec=$_timeout"
+             } > ${PREFIX}/etc/systemd/system/${_name}.device.d/timeout.conf
+             type mark_hostonly >/dev/null 2>&1 && mark_hostonly /etc/systemd/system/${_name}.device.d/timeout.conf
+             _needreload=1
 -- 
 1.8.5.2
