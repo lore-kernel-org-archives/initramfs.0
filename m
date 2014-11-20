@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 21/33] Do not call 'lvm' for non-LVM device-mapper devices
-Date: Thu, 20 Nov 2014 15:56:56 +0100
-Message-ID: <1416495428-36978-22-git-send-email-trenn@suse.de>
+Subject: [PATCH 18/33] iscsi: iscsi.initiator and others can and must only show up once
+Date: Thu, 20 Nov 2014 15:56:53 +0100
+Message-ID: <1416495428-36978-19-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,37 +13,69 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Make sure duplicates of iscsi.initiator vanish.
+Only get one rd.iscsi.* paramter value. If getargs is used and several
+parameters are parsed, one gets two values separated by whitespace in a
+variable which breaks later code and is not suppported.
 
-If a device-mapper device is not created by LVM it's pointless
-to call any 'lvm' programs got extract details; they'll be
-failing anyway. So check the UUID before calling 'lvm'.
-This speeds up initrd creation and avoids I/O errors on
-multipath devices.
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut-functions.sh | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ modules.d/95iscsi/iscsiroot.sh    | 18 +++++++++---------
+ modules.d/95iscsi/module-setup.sh |  5 ++++-
+ 2 files changed, 13 insertions(+), 10 deletions(-)
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index b43b766..02aba04 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -698,10 +698,12 @@ for_each_host_dev_and_slaves()
- # but you cannot create the logical volume without the volume group.
- # And the volume group might be bigger than the devices the LV needs.
- check_vol_slaves() {
--    local _lv _vg _pv
-+    local _lv _vg _pv _dm
-     for i in /dev/mapper/*; do
-         [[ $i == /dev/mapper/control ]] && continue
-         _lv=$(get_maj_min $i)
-+        _dm=/sys/dev/block/$_lv/dm
-+        [[ -f $_dm/uuid  && $(<$_dm/uuid) =~ LVM-* ]] || continue
-         if [[ $_lv = $2 ]]; then
-             _vg=$(lvm lvs --noheadings -o vg_name $i 2>/dev/null)
-             # strip space
+diff --git a/modules.d/95iscsi/iscsiroot.sh b/modules.d/95iscsi/iscsiroot.sh
+index 7351427..5bfb017 100755
+--- a/modules.d/95iscsi/iscsiroot.sh
++++ b/modules.d/95iscsi/iscsiroot.sh
+@@ -81,23 +81,23 @@ handle_netroot()
+     local p
+ 
+     # override conf settings by command line options
+-    arg=$(getargs rd.iscsi.initiator -d iscsi_initiator=)
++    arg=$(getarg rd.iscsi.initiator -d iscsi_initiator=)
+     [ -n "$arg" ] && iscsi_initiator=$arg
+-    arg=$(getargs rd.iscsi.target.name -d iscsi_target_name=)
++    arg=$(getarg rd.iscsi.target.name -d iscsi_target_name=)
+     [ -n "$arg" ] && iscsi_target_name=$arg
+-    arg=$(getargs rd.iscsi.target.ip -d iscsi_target_ip)
++    arg=$(getarg rd.iscsi.target.ip -d iscsi_target_ip)
+     [ -n "$arg" ] && iscsi_target_ip=$arg
+-    arg=$(getargs rd.iscsi.target.port -d iscsi_target_port=)
++    arg=$(getarg rd.iscsi.target.port -d iscsi_target_port=)
+     [ -n "$arg" ] && iscsi_target_port=$arg
+-    arg=$(getargs rd.iscsi.target.group -d iscsi_target_group=)
++    arg=$(getarg rd.iscsi.target.group -d iscsi_target_group=)
+     [ -n "$arg" ] && iscsi_target_group=$arg
+-    arg=$(getargs rd.iscsi.username -d iscsi_username=)
++    arg=$(getarg rd.iscsi.username -d iscsi_username=)
+     [ -n "$arg" ] && iscsi_username=$arg
+-    arg=$(getargs rd.iscsi.password -d iscsi_password)
++    arg=$(getarg rd.iscsi.password -d iscsi_password)
+     [ -n "$arg" ] && iscsi_password=$arg
+-    arg=$(getargs rd.iscsi.in.username -d iscsi_in_username=)
++    arg=$(getarg rd.iscsi.in.username -d iscsi_in_username=)
+     [ -n "$arg" ] && iscsi_in_username=$arg
+-    arg=$(getargs rd.iscsi.in.password -d iscsi_in_password=)
++    arg=$(getarg rd.iscsi.in.password -d iscsi_in_password=)
+     [ -n "$arg" ] && iscsi_in_password=$arg
+     for p in $(getargs rd.iscsi.param -d iscsi_param); do
+ 	iscsi_param="$iscsi_param --param $p"
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index cd6cb4b..9975e59 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -123,7 +123,10 @@ install_iscsiroot() {
+                 iscsi_address="[$iscsi_address]"
+                 ;;
+         esac
+-        echo "rd.iscsi.initiator=${iscsi_initiator} netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
++        # Must be two separate lines, so that "sort | uniq" commands later
++        # can sort out rd.iscsi.initiator= duplicates
++        echo "rd.iscsi.initiator=${iscsi_initiator}"
++        echo "netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
+     fi
+     return 0
+ }
 -- 
 1.8.5.2
