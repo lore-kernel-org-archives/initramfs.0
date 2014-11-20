@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 32/33] dracut.usage.asc: Remove distro specific help from manpage
-Date: Thu, 20 Nov 2014 15:57:07 +0100
-Message-ID: <1416495428-36978-33-git-send-email-trenn@suse.de>
+Subject: [PATCH 27/33] 99base: Increase initqueue timeout in non systemd case
+Date: Thu, 20 Nov 2014 15:57:02 +0100
+Message-ID: <1416495428-36978-28-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,47 +13,28 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+In case of systemd is used the timeout already is set to 180s, compare
+with file: modules.d/98systemd/dracut-initqueue.sh
+
+Do the same if systemd is not used, e.g. in kdump case.
+
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.usage.asc | 19 +------------------
- 1 file changed, 1 insertion(+), 18 deletions(-)
+ modules.d/99base/init.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/dracut.usage.asc b/dracut.usage.asc
-index 1a79638..e2182d9 100644
---- a/dracut.usage.asc
-+++ b/dracut.usage.asc
-@@ -246,23 +246,6 @@ specified multiple times.
- If your root partition is on a network drive, you have to have the network
- dracut modules installed to create a network aware initramfs image.
+diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
+index 3afe6d5..76b1247 100755
+--- a/modules.d/99base/init.sh
++++ b/modules.d/99base/init.sh
+@@ -165,7 +165,7 @@ make_trace_mem "hook initqueue" '1:shortmem' '2+:mem' '3+:slab'
+ getarg 'rd.break=initqueue' -d 'rdbreak=initqueue' && emergency_shell -n initqueue "Break before initqueue"
  
--On a Red Hat Enterprise Linux or Fedora system, this means, you have to install
--the _dracut-network_ rpm package:
--
--
------
--# yum install dracut-network
------
--
--The resulting initramfs image can be served by a boot manager residing on your
--local hard drive or it can be served by a PXE/TFTP server.
--
--How to setup your PXE/TFTP server can be found in the
--http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Storage_Administration_Guide/[Red
--Hat Enterprise Linux 6 Storage Administration Guide]
--or http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Storage_Administration_Guide/[Red
--Hat Enterprise Linux 7 Storage Administration Guide].
--
- If you specify ip=dhcp on the kernel command line, then dracut asks a dhcp
- server about the ip adress for the machine. The dhcp server can also serve an
- additional root-path, which will set the root device for dracut. With this
-@@ -302,7 +285,7 @@ This will reduce the size of the initramfs image significantly.
- If the boot process does not succeed, you have several options to debug the
- situation. Some of the basic operations are covered here. For more information
- you should also visit:
--http://fedoraproject.org/wiki/How_to_debug_Dracut_problems
-+https://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
- 
- 
- [[identifying-your-problem-area]]
+ RDRETRY=$(getarg rd.retry -d 'rd_retry=')
+-RDRETRY=${RDRETRY:-30}
++RDRETRY=${RDRETRY:-180}
+ RDRETRY=$(($RDRETRY*2))
+ export RDRETRY
+ main_loop=0
 -- 
 1.8.5.2
