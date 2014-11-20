@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 29/33] Check for logfile (--logfile option) and create it if necessary
-Date: Thu, 20 Nov 2014 15:57:04 +0100
-Message-ID: <1416495428-36978-30-git-send-email-trenn@suse.de>
+Subject: [PATCH 12/33] 95iscsi: Install libgcc_s library
+Date: Thu, 20 Nov 2014 15:56:47 +0100
+Message-ID: <1416495428-36978-13-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,40 +11,33 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jloeser <jloeser-l3A5Bk7waGM@public.gmane.org>
+Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: jloeser <jloeser-l3A5Bk7waGM@public.gmane.org>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-If a logfile is passed to dracut via --logfile option and doesn't
-exist, dracut doesn't create it and logs nothing. Instead, dracut
-should try to touch the file and print a warning if creating fails.
+iscsiuio is using pthread, which requires libgcc_s for
+pthread_cancel to work.
+Without this library iscsiuio will crash with SIGABRT.
 
-References: bnc#892191
+References: bnc#881692
+
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.sh | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ modules.d/95iscsi/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/dracut.sh b/dracut.sh
-index 9a19b43..c657649 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -816,6 +816,16 @@ stdloglvl=$((stdloglvl + verbosity_mod_l))
- # eliminate IFS hackery when messing with fw_dir
- fw_dir=${fw_dir//:/ }
- 
-+# check for logfile and try to create one if it doesn't exist
-+if [[ -n "$logfile" ]];then
-+    if [[ ! -f "$logfile" ]];then
-+        touch "$logfile"
-+        if [ ! $? -eq 0 ] ;then
-+            printf "%s\n" "dracut: touch $logfile failed." >&2
-+        fi
-+    fi
-+fi
-+
- # handle compression options.
- [[ $compress ]] || compress="gzip"
- case $compress in
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index 5d2a39b..3641fb8 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -106,6 +106,7 @@ cmdline() {
+ install() {
+     inst_multiple umount iscsistart hostname iscsi-iname
+     inst_multiple -o iscsiuio
++    inst_libdir_file 'libgcc_s.so*'
+     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
+     inst_hook cleanup 90 "$moddir/cleanup-iscsi.sh"
+     inst "$moddir/iscsiroot.sh" "/sbin/iscsiroot"
 -- 
 1.8.5.2
