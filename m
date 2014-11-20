@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 10/33] 90multipath: install dracut-specific service file
-Date: Thu, 20 Nov 2014 15:56:45 +0100
-Message-ID: <1416495428-36978-11-git-send-email-trenn@suse.de>
+Subject: [PATCH 29/33] Check for logfile (--logfile option) and create it if necessary
+Date: Thu, 20 Nov 2014 15:57:04 +0100
+Message-ID: <1416495428-36978-30-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,67 +11,40 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jloeser <jloeser-l3A5Bk7waGM@public.gmane.org>
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+From: jloeser <jloeser-l3A5Bk7waGM@public.gmane.org>
 
-The multipathd package might install a service and a socket
-file. Using the original service file from the installed
-system without the socket file triggers a bug in systemd,
-causing systemd to crash.
+If a logfile is passed to dracut via --logfile option and doesn't
+exist, dracut doesn't create it and logs nothing. Instead, dracut
+should try to touch the file and print a warning if creating fails.
 
-As we don't actually need to socket file in the initrd we
-should be installing our own service file which does not
-reference the socket file at all.
-
-References: bnc#871610
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+References: bnc#892191
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/90multipath/module-setup.sh    |  7 +++----
- modules.d/90multipath/multipathd.service | 15 +++++++++++++++
- 2 files changed, 18 insertions(+), 4 deletions(-)
- create mode 100644 modules.d/90multipath/multipathd.service
+ dracut.sh | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
-index bbee5d9..0f88f82 100755
---- a/modules.d/90multipath/module-setup.sh
-+++ b/modules.d/90multipath/module-setup.sh
-@@ -104,10 +104,9 @@ install() {
-     fi
+diff --git a/dracut.sh b/dracut.sh
+index 9a19b43..c657649 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -816,6 +816,16 @@ stdloglvl=$((stdloglvl + verbosity_mod_l))
+ # eliminate IFS hackery when messing with fw_dir
+ fw_dir=${fw_dir//:/ }
  
-     if dracut_module_included "systemd"; then
--        inst_multiple \
--            $systemdsystemunitdir/multipathd.service
--        mkdir -p "${initdir}${systemdsystemconfdir}/sysinit.target.wants"
--        ln -rfs "${initdir}${systemdsystemunitdir}/multipathd.service" "${initdir}${systemdsystemconfdir}/sysinit.target.wants/multipathd.service"
-+        inst_simple "${moddir}/multipathd.service" "${systemdsystemunitdir}/multipathd.service"
-+        mkdir -p "${initdir}${systemdsystemunitdir}/sysinit.target.wants"
-+        ln -rfs "${initdir}${systemdsystemunitdir}/multipathd.service" "${initdir}${systemdsystemunitdir}/sysinit.target.wants/multipathd.service"
-     else
-         inst_hook pre-trigger 02 "$moddir/multipathd.sh"
-         inst_hook cleanup   02 "$moddir/multipathd-stop.sh"
-diff --git a/modules.d/90multipath/multipathd.service b/modules.d/90multipath/multipathd.service
-new file mode 100644
-index 0000000..44a7b80
---- /dev/null
-+++ b/modules.d/90multipath/multipathd.service
-@@ -0,0 +1,15 @@
-+[Unit]
-+Description=Device-Mapper Multipath Device Controller
-+Before=iscsi.service iscsid.service lvm2-activation-early.service
-+DefaultDependencies=no
-+Conflicts=shutdown.target
++# check for logfile and try to create one if it doesn't exist
++if [[ -n "$logfile" ]];then
++    if [[ ! -f "$logfile" ]];then
++        touch "$logfile"
++        if [ ! $? -eq 0 ] ;then
++            printf "%s\n" "dracut: touch $logfile failed." >&2
++        fi
++    fi
++fi
 +
-+[Service]
-+Type=simple
-+ExecStartPre=/sbin/modprobe dm-multipath
-+ExecStart=/sbin/multipathd -s -d
-+ExecReload=/sbin/multipathd reconfigure
-+ExecStop=/sbin/multipathd shutdown
-+
-+[Install]
-+WantedBy=sysinit.target
+ # handle compression options.
+ [[ $compress ]] || compress="gzip"
+ case $compress in
 -- 
 1.8.5.2
