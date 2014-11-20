@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 18/33] iscsi: iscsi.initiator and others can and must only show up once
-Date: Thu, 20 Nov 2014 15:56:53 +0100
-Message-ID: <1416495428-36978-19-git-send-email-trenn@suse.de>
+Subject: [PATCH 24/33] Generate fallback mount unit for root filesystem
+Date: Thu, 20 Nov 2014 15:56:59 +0100
+Message-ID: <1416495428-36978-25-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,71 +11,72 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-Make sure duplicates of iscsi.initiator vanish.
-Only get one rd.iscsi.* paramter value. If getargs is used and several
-parameters are parsed, one gets two values separated by whitespace in a
-variable which breaks later code and is not suppported.
+From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
+If kernel cmdline has no root= provided, *and* the initrd carries
+a default value, create a systemd mount unit to have it available
+in /sysroot
+
+References: bnc#855258
+
+Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95iscsi/iscsiroot.sh    | 18 +++++++++---------
- modules.d/95iscsi/module-setup.sh |  5 ++++-
- 2 files changed, 13 insertions(+), 10 deletions(-)
+ modules.d/98systemd/rootfs-generator.sh | 34 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/95iscsi/iscsiroot.sh b/modules.d/95iscsi/iscsiroot.sh
-index 7351427..5bfb017 100755
---- a/modules.d/95iscsi/iscsiroot.sh
-+++ b/modules.d/95iscsi/iscsiroot.sh
-@@ -81,23 +81,23 @@ handle_netroot()
-     local p
- 
-     # override conf settings by command line options
--    arg=$(getargs rd.iscsi.initiator -d iscsi_initiator=)
-+    arg=$(getarg rd.iscsi.initiator -d iscsi_initiator=)
-     [ -n "$arg" ] && iscsi_initiator=$arg
--    arg=$(getargs rd.iscsi.target.name -d iscsi_target_name=)
-+    arg=$(getarg rd.iscsi.target.name -d iscsi_target_name=)
-     [ -n "$arg" ] && iscsi_target_name=$arg
--    arg=$(getargs rd.iscsi.target.ip -d iscsi_target_ip)
-+    arg=$(getarg rd.iscsi.target.ip -d iscsi_target_ip)
-     [ -n "$arg" ] && iscsi_target_ip=$arg
--    arg=$(getargs rd.iscsi.target.port -d iscsi_target_port=)
-+    arg=$(getarg rd.iscsi.target.port -d iscsi_target_port=)
-     [ -n "$arg" ] && iscsi_target_port=$arg
--    arg=$(getargs rd.iscsi.target.group -d iscsi_target_group=)
-+    arg=$(getarg rd.iscsi.target.group -d iscsi_target_group=)
-     [ -n "$arg" ] && iscsi_target_group=$arg
--    arg=$(getargs rd.iscsi.username -d iscsi_username=)
-+    arg=$(getarg rd.iscsi.username -d iscsi_username=)
-     [ -n "$arg" ] && iscsi_username=$arg
--    arg=$(getargs rd.iscsi.password -d iscsi_password)
-+    arg=$(getarg rd.iscsi.password -d iscsi_password)
-     [ -n "$arg" ] && iscsi_password=$arg
--    arg=$(getargs rd.iscsi.in.username -d iscsi_in_username=)
-+    arg=$(getarg rd.iscsi.in.username -d iscsi_in_username=)
-     [ -n "$arg" ] && iscsi_in_username=$arg
--    arg=$(getargs rd.iscsi.in.password -d iscsi_in_password=)
-+    arg=$(getarg rd.iscsi.in.password -d iscsi_in_password=)
-     [ -n "$arg" ] && iscsi_in_password=$arg
-     for p in $(getargs rd.iscsi.param -d iscsi_param); do
- 	iscsi_param="$iscsi_param --param $p"
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index cd6cb4b..9975e59 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -123,7 +123,10 @@ install_iscsiroot() {
-                 iscsi_address="[$iscsi_address]"
-                 ;;
-         esac
--        echo "rd.iscsi.initiator=${iscsi_initiator} netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
-+        # Must be two separate lines, so that "sort | uniq" commands later
-+        # can sort out rd.iscsi.initiator= duplicates
-+        echo "rd.iscsi.initiator=${iscsi_initiator}"
-+        echo "netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
+diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
+index 5b06137..f3c7d1f 100755
+--- a/modules.d/98systemd/rootfs-generator.sh
++++ b/modules.d/98systemd/rootfs-generator.sh
+@@ -35,6 +35,35 @@ generator_wait_for_dev()
      fi
-     return 0
  }
+ 
++generator_mount_rootfs()
++{
++    local _type=$2
++    local _flags=$3
++    local _name
++
++    [ -z "$1" ] && return 0
++
++    _name=$(dev_unit_name "$1")
++    [ -d /run/systemd/generator ] || mkdir -p /run/systemd/generator
++    if ! [ -f /run/systemd/generator/sysroot.mount ]; then
++        {
++            echo "[Unit]"
++            echo "Before=initrd-root-fs.target"
++            echo "RequiresOverridable=systemd-fsck@${_name}.service"
++            echo "After=systemd-fsck@${_name}.service"
++            echo "[Mount]"
++            echo "Where=/sysroot"
++            echo "What=$1"
++            echo "Options=${_flags}"
++            echo "Type=${_type}"
++        } > /run/systemd/generator/sysroot.mount
++    fi
++    if ! [ -L /run/systemd/generator/initrd-root-fs.target.requires/sysroot.mount ]; then
++        [ -d /run/systemd/generator/initrd-root-fs.target.requires ] || mkdir -p /run/systemd/generator/initrd-root-fs.target.requires
++        ln -s ../sysroot.mount /run/systemd/generator/initrd-root-fs.target.requires/sysroot.mount
++    fi
++}
++
+ root=$(getarg root=)
+ case "$root" in
+     block:LABEL=*|LABEL=*)
+@@ -61,6 +90,9 @@ case "$root" in
+         rootok=1 ;;
+ esac
+ 
+-[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}" "$RDRETRY"
++if [ "${root%%:*}" = "block" ]; then
++   generator_wait_for_dev "${root#block:}" "$RDRETRY"
++   grep -q 'root=' /proc/cmdline || generator_mount_rootfs "${root#block:}" "$(getarg rootfstype=)" "$(getarg rootflags=)"
++fi
+ 
+ exit 0
 -- 
 1.8.5.2
