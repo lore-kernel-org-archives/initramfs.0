@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 15/33] 95iscsi: Fixup bnx2i offload booting
-Date: Thu, 20 Nov 2014 15:56:50 +0100
-Message-ID: <1416495428-36978-16-git-send-email-trenn@suse.de>
+Subject: [PATCH 21/33] Do not call 'lvm' for non-LVM device-mapper devices
+Date: Thu, 20 Nov 2014 15:56:56 +0100
+Message-ID: <1416495428-36978-22-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,67 +15,35 @@ Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initr
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-bnx2i is using a separate iSCSI offload engine with a separate
-MAC address. As a result, the iBFT information is displaying
-a MAC address which does not relate to any MAC address from
-the network interfaces.
-In addition, the iSCSI offload engine works independently on
-the NIC, so we do not need to enable the NIC for iSCSI offload
-to work.
-This patch modifies the automatic iBFT detection to not set
-the 'ip=ibft' flag when bnx2i offload is detected.
-
-References: bnc#855747
+If a device-mapper device is not created by LVM it's pointless
+to call any 'lvm' programs got extract details; they'll be
+failing anyway. So check the UUID before calling 'lvm'.
+This speeds up initrd creation and avoids I/O errors on
+multipath devices.
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95iscsi/module-setup.sh | 26 +++++++++++++++++++++++++-
- 1 file changed, 25 insertions(+), 1 deletion(-)
+ dracut-functions.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index 3641fb8..d30e64f 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -28,14 +28,38 @@ check() {
-     return 0
- }
- 
-+get_ibft_mod() {
-+    local ibft_mac=$1
-+    # Return the iSCSI offload module for a given MAC address
-+    iscsiadm -m iface | while read iface_name iface_desc ; do
-+        IFS=$','
-+        set -- $iface_desc
-+        if [ "$ibft_mac" = "$2" ] ; then
-+            echo $1
-+            return 0
-+        fi
-+        unset IFS
-+    done
-+}
-+
- install_ibft() {
-     # When iBFT / iscsi_boot is detected:
-     # - Use 'ip=ibft' to set up iBFT network interface
-+    #   Note: bnx2i is using a different MAC address of iSCSI offloading
-+    #         so the 'ip=ibft' parameter must not be set
-     # - specify firmware booting cmdline parameter
- 
-     for d in /sys/firmware/* ; do
-+        if [ -d ${d}/ethernet0 ] ; then
-+            read ibft_mac < ${d}/ethernet0/mac
-+            ibft_mod=$(get_ibft_mod $ibft_mac)
-+        fi
-+        if [ -z "$ibft_mod" ] && [ -d ${d}/ethernet1 ] ; then
-+            read ibft_mac < ${d}/ethernet1/mac
-+            ibft_mod=$(get_ibft_mod $ibft_mac)
-+        fi
-         if [ -d ${d}/initiator ] ; then
--            if [ ${d##*/} = "ibft" ] ; then
-+            if [ ${d##*/} = "ibft" ] && [ "$ibft_mod" != "bnx2i" ] ; then
-                 echo -n "ip=ibft "
-             fi
-             echo -n "rd.iscsi.firmware=1"
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index b43b766..02aba04 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -698,10 +698,12 @@ for_each_host_dev_and_slaves()
+ # but you cannot create the logical volume without the volume group.
+ # And the volume group might be bigger than the devices the LV needs.
+ check_vol_slaves() {
+-    local _lv _vg _pv
++    local _lv _vg _pv _dm
+     for i in /dev/mapper/*; do
+         [[ $i == /dev/mapper/control ]] && continue
+         _lv=$(get_maj_min $i)
++        _dm=/sys/dev/block/$_lv/dm
++        [[ -f $_dm/uuid  && $(<$_dm/uuid) =~ LVM-* ]] || continue
+         if [[ $_lv = $2 ]]; then
+             _vg=$(lvm lvs --noheadings -o vg_name $i 2>/dev/null)
+             # strip space
 -- 
 1.8.5.2
