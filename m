@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 07/33] 90multipath: install correct multipath rules
-Date: Thu, 20 Nov 2014 15:56:42 +0100
-Message-ID: <1416495428-36978-8-git-send-email-trenn@suse.de>
+Subject: [PATCH 17/33] 95iscsi: generate commandline for software iscsi
+Date: Thu, 20 Nov 2014 15:56:52 +0100
+Message-ID: <1416495428-36978-18-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,33 +15,142 @@ Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initr
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-The multipath and kpartx rules have different numbers in SUSE.
+When installing on an software iscsi root we need to generate
+the correct commandline, otherwise the system cannot boot.
 
-The 11-dm-mpath.rules file had been missing, causing
-blacklisting to not work properly.
+References: bnc#880108
+Patch: 0093
 
-References: bnc#873151, bnc#872662, bnc#883149
+When using software iscsi we should be using the existing
+configuration from the system for the time being.
+
+References: bnc#884768
+Patch: 0095
+
+Avoid bad ip route call on empty address
+Patch: 0143
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/90multipath/module-setup.sh | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ modules.d/95iscsi/module-setup.sh | 91 +++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 88 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
-index c86c5d9..3c2e3a9 100755
---- a/modules.d/90multipath/module-setup.sh
-+++ b/modules.d/90multipath/module-setup.sh
-@@ -100,6 +100,9 @@ install() {
- 
-     inst_hook cleanup   80 "$moddir/multipathd-needshutdown.sh"
- 
--    inst_rules 40-multipath.rules 62-multipath.rules 65-multipath.rules 66-kpartx.rules
-+    inst_rules 40-multipath.rules 56-multipath.rules \
-+	62-multipath.rules 65-multipath.rules \
-+	66-kpartx.rules 67-kpartx-compat.rules \
-+	11-dm-mpath.rules
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index 29bba82..cd6cb4b 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -67,6 +67,84 @@ install_ibft() {
+     done
  }
  
++install_iscsiroot() {
++    local devpath=$1
++    local scsi_path iscsi_lun session c d conn
++    local iscsi_session iscsi_address iscsi_port iscsi_targetname iscsi_tpgt
++
++    scsi_path=${devpath%%/block*}
++    [ "$scsi_path" = "$devpath" ] && return 1
++    iscsi_lun=${scsi_path##*:}
++    [ "$iscsi_lun" = "$scsi_path" ] && return 1
++    session=${devpath%%/target*}
++    [ "$session" = "$devpath" ] && return 1
++    iscsi_session=${session##*/}
++    [ "$iscsi_session" = "$session" ] && return 1
++
++    for d in ${session}/* ; do
++        case $d in
++	    *connection*)
++	        c=${d##*/}
++	        conn=${d}/iscsi_connection/${c}
++	        if [ -d ${conn} ] ; then
++		    iscsi_address=$(cat ${conn}/persistent_address)
++		    iscsi_port=$(cat ${conn}/persistent_port)
++	        fi
++	        ;;
++	    *session)
++	        if [ -d ${d}/${iscsi_session} ] ; then
++                    iscsi_initiator=$(cat ${d}/${iscsi_session}/initiatorname)
++		    iscsi_targetname=$(cat ${d}/${iscsi_session}/targetname)
++	        fi
++	        ;;
++        esac
++    done
++
++    [ -z "$iscsi_address" ] && return
++    local_address=$(ip -o route get to $iscsi_address | sed -n 's/.*src \([0-9a-f.:]*\).*/\1/p')
++    ifname=$(ip -o route get to $iscsi_address | sed -n 's/.*dev \([^ ]*\).*/\1/p')
++    printf 'ip=%s:static ' ${ifname}
++
++    if [ -e /sys/class/net/$ifname/address ] ; then
++        ifmac=$(cat /sys/class/net/$ifname/address)
++        printf 'ifname=%s:%s ' ${ifname} ${ifmac}
++    fi
++
++    if [ -n "$iscsi_address" -a -n "$iscsi_targetname" ] ; then
++        if [ -n "$iscsi_port" -a "$iscsi_port" -eq 3260 ] ; then
++            iscsi_port=
++        fi
++        if [ -n "$iscsi_lun" -a "$iscsi_lun" -eq 0 ] ; then
++            iscsi_lun=
++        fi
++        # In IPv6 case rd.iscsi.initatior= must pass address in [] brackets
++        case "$iscsi_address" in
++            *:*)
++                iscsi_address="[$iscsi_address]"
++                ;;
++        esac
++        echo "rd.iscsi.initiator=${iscsi_initiator} netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
++    fi
++    return 0
++}
++
++
++install_softiscsi() {
++    [ -d /sys/firmware/ibft ] && return 0
++
++    is_softiscsi() {
++        local _dev=$1
++        local iscsi_dev
++
++        [[ -L "/sys/dev/block/$_dev" ]] || return
++        iscsi_dev=$(cd -P /sys/dev/block/$_dev; echo $PWD)
++        install_iscsiroot $iscsi_dev
++    }
++
++    for_each_host_dev_and_slaves_all is_softiscsi || return 255
++    return 0
++}
++
+ # called by dracut
+ depends() {
+     echo network rootfs-block
+@@ -117,7 +195,14 @@ installkernel() {
+ 
+ # called by dracut
+ cmdline() {
+-    install_ibft
++    local _iscsiconf=$(install_ibft)
++    {
++        if [ "$_iscsiconf" ] ; then
++            echo ${_iscsiconf}
++        else
++            install_softiscsi
++        fi
++    } | sort | uniq
+ }
+ 
+ # called by dracut
+@@ -128,8 +213,8 @@ install() {
+ 
+     # Detect iBFT and perform mandatory steps
+     if [[ $hostonly_cmdline == "yes" ]] ; then
+-        local _ibftconf=$(install_ibft)
+-        [[ $_ibftconf ]] && printf "%s\n" "$_ibftconf" >> "${initdir}/etc/cmdline.d/95iscsi.conf"
++        local _iscsiconf=$(cmdline)
++        [[ $_iscsiconf ]] && printf "%s\n" "$_iscsiconf" >> "${initdir}/etc/cmdline.d/95iscsi.conf"
+     fi
+ 
+     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
 -- 
 1.8.5.2
