@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 26/33] Handle module alias properly
-Date: Thu, 20 Nov 2014 15:57:01 +0100
-Message-ID: <1416495428-36978-27-git-send-email-trenn@suse.de>
+Subject: [PATCH 32/33] dracut.usage.asc: Remove distro specific help from manpage
+Date: Thu, 20 Nov 2014 15:57:07 +0100
+Message-ID: <1416495428-36978-33-git-send-email-trenn@suse.de>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416495428-36978-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,38 +13,47 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-
-Some modules (like ext4) provide aliases by which the modules
-can be accessed, too. But when using aliases directly dracut
-fails to include the correct module. So translate the alias
-into the correct module name before checking the module.
-
-References: bnc#886839
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut-functions.sh | 7 +++++++
- 1 file changed, 7 insertions(+)
+ dracut.usage.asc | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 02aba04..d85c639 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -1689,6 +1689,13 @@ instmods() {
-             --*) _mpargs+=" $_mod" ;;
-             *)
-                 _mod=${_mod##*/}
-+                # Check for aliased modules
-+                _modalias=$(modinfo -k $kernel -F filename $_mod 2> /dev/null)
-+                _modalias=${_modalias%.ko}
-+                if [ "${_modalias##*/}" != "$_mod" ] ; then
-+                    _mod=${_modalias##*/}
-+                fi
-+
-                 # if we are already installed, skip this module and go on
-                 # to the next one.
-                 if [[ $DRACUT_KERNEL_LAZY_HASHDIR ]] && \
+diff --git a/dracut.usage.asc b/dracut.usage.asc
+index 1a79638..e2182d9 100644
+--- a/dracut.usage.asc
++++ b/dracut.usage.asc
+@@ -246,23 +246,6 @@ specified multiple times.
+ If your root partition is on a network drive, you have to have the network
+ dracut modules installed to create a network aware initramfs image.
+ 
+-On a Red Hat Enterprise Linux or Fedora system, this means, you have to install
+-the _dracut-network_ rpm package:
+-
+-
+-----
+-# yum install dracut-network
+-----
+-
+-The resulting initramfs image can be served by a boot manager residing on your
+-local hard drive or it can be served by a PXE/TFTP server.
+-
+-How to setup your PXE/TFTP server can be found in the
+-http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Storage_Administration_Guide/[Red
+-Hat Enterprise Linux 6 Storage Administration Guide]
+-or http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Storage_Administration_Guide/[Red
+-Hat Enterprise Linux 7 Storage Administration Guide].
+-
+ If you specify ip=dhcp on the kernel command line, then dracut asks a dhcp
+ server about the ip adress for the machine. The dhcp server can also serve an
+ additional root-path, which will set the root device for dracut. With this
+@@ -302,7 +285,7 @@ This will reduce the size of the initramfs image significantly.
+ If the boot process does not succeed, you have several options to debug the
+ situation. Some of the basic operations are covered here. For more information
+ you should also visit:
+-http://fedoraproject.org/wiki/How_to_debug_Dracut_problems
++https://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+ 
+ 
+ [[identifying-your-problem-area]]
 -- 
 1.8.5.2
