@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 08/15] 40network: add missing _arch variable declaration
-Date: Fri, 21 Nov 2014 14:20:44 +0100
-Message-ID: <1416576051-62838-9-git-send-email-trenn@suse.de>
+Subject: [PATCH 02/15] dracut: Do not stop installing drivers if one fails
+Date: Fri, 21 Nov 2014 14:20:38 +0100
+Message-ID: <1416576051-62838-3-git-send-email-trenn@suse.de>
 References: <1416576051-62838-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416576051-62838-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,27 +13,45 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+--add-drivers and --filesystems kernel drivers are added via:
+instmods -c
+The check option makes the function return if one driver could not get
+installed without trying to install further drivers which is bad.
 
-The module_setup.sh script was missing an '_arch' declaration,
-causing network not to be installed on s390.
+The user is still informed ($_silent is by default no), but all modules
+passed to instmods are tried to be loaded, even if one fails.
 
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/40network/module-setup.sh | 1 +
- 1 file changed, 1 insertion(+)
+ dracut-functions.sh | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index 55bee4c..f7e0a87 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -17,6 +17,7 @@ depends() {
- # called by dracut
- installkernel() {
-     # Include wired net drivers, excluding wireless
-+    local _arch=$(uname -m)
- 
-     net_module_filter() {
-         local _net_drivers='eth_type_trans|register_virtio_device|usbnet_open'
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index d85c639..13c2f11 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -1742,18 +1742,16 @@ instmods() {
+         if (($# == 0)); then  # filenames from stdin
+             while read _mod; do
+                 inst1mod "${_mod%.ko*}" || {
+-                    if [[ "$_check" == "yes" ]]; then
+-                        [[ "$_silent" == "no" ]] && dfatal "Failed to install module $_mod"
+-                        return 1
++                    if [[ "$_check" == "yes" ]] && [[ "$_silent" == "no" ]]; then
++                        dfatal "Failed to install module $_mod"
+                     fi
+                 }
+             done
+         fi
+         while (($# > 0)); do  # filenames as arguments
+             inst1mod ${1%.ko*} || {
+-                if [[ "$_check" == "yes" ]]; then
+-                    [[ "$_silent" == "no" ]] && dfatal "Failed to install module $1"
+-                    return 1
++                if [[ "$_check" == "yes" ]] && [[ "$_silent" == "no" ]]; then
++                    dfatal "Failed to install module $1"
+                 fi
+             }
+             shift
 -- 
 1.8.5.2
