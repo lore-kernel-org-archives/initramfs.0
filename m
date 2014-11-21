@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 13/15] Don't create lots of empty cmdline files for hostonly-cmdline case
-Date: Fri, 21 Nov 2014 14:20:49 +0100
-Message-ID: <1416576051-62838-14-git-send-email-trenn@suse.de>
+Subject: [PATCH 14/15] 95rootfs-block: Correctly terminate commandline parameter
+Date: Fri, 21 Nov 2014 14:20:50 +0100
+Message-ID: <1416576051-62838-15-git-send-email-trenn@suse.de>
 References: <1416576051-62838-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416576051-62838-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,97 +11,63 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
 
-From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-This aligns other places piping cmdline() output to cmdline.d files
-with the earlier fix for 95rootfs-block.
+95rootfs-block would not terminate the commandline parameter with
+a space or newline, instead it'll rely on the main routine from
+dracut.sh to do this.
+Which will cause unexpected problems for any modules called
+after this.
 
-Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+So terminate the commandline parameters correctly here and remove
+the newline from dracut.sh.
+
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/90crypt/module-setup.sh  | 4 ++--
- modules.d/90dmraid/module-setup.sh | 4 ++--
- modules.d/90lvm/module-setup.sh    | 4 ++--
- modules.d/90mdraid/module-setup.sh | 4 ++--
- modules.d/95resume/module-setup.sh | 4 ++--
- 5 files changed, 10 insertions(+), 10 deletions(-)
+ dracut.sh                                | 1 -
+ modules.d/95rootfs-block/module-setup.sh | 8 ++++----
+ 2 files changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
-index 37ae859..ea1e340 100755
---- a/modules.d/90crypt/module-setup.sh
-+++ b/modules.d/90crypt/module-setup.sh
-@@ -50,8 +50,8 @@ cmdline() {
- install() {
+diff --git a/dracut.sh b/dracut.sh
+index 3c3efc1..3577e51 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1290,7 +1290,6 @@ if [[ $print_cmdline ]]; then
+         module_cmdline "$_d_mod"
+     done
+     unset moddir
+-    printf "\n"
+     exit 0
+ fi
  
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline >> "${initdir}/etc/cmdline.d/90crypt.conf"
--        echo >> "${initdir}/etc/cmdline.d/90crypt.conf"
-+        local _cryptconf=$(cmdline)
-+        [[ $_cryptconf ]] && printf "%s\n" "$_cryptconf" >> "${initdir}/etc/cmdline.d/90crypt.conf"
+diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
+index 81de177..33875f8 100755
+--- a/modules.d/95rootfs-block/module-setup.sh
++++ b/modules.d/95rootfs-block/module-setup.sh
+@@ -22,7 +22,7 @@ cmdline_journal() {
+             fi
+ 
+             if [ -n "$journaldev" ]; then
+-                printf " root.journaldev=%s" "$journaldev"
++                echo "root.journaldev=${journaldev}"
+             fi
+         done
      fi
- 
-     inst_multiple cryptsetup rmdir readlink umount
-diff --git a/modules.d/90dmraid/module-setup.sh b/modules.d/90dmraid/module-setup.sh
-index 508598b..044e01f 100755
---- a/modules.d/90dmraid/module-setup.sh
-+++ b/modules.d/90dmraid/module-setup.sh
-@@ -64,8 +64,8 @@ install() {
-     local _i
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline >> "${initdir}/etc/cmdline.d/90dmraid.conf"
--        echo >> "${initdir}/etc/cmdline.d/90dmraid.conf"
-+        local _raidconf=$(cmdline)
-+        [[ $_raidconf ]] && printf "%s\n" "$_raidconf" >> "${initdir}/etc/cmdline.d/90dmraid.conf"
+@@ -32,9 +32,9 @@ cmdline_journal() {
+ cmdline_rootfs() {
+     local dev=/dev/block/$(find_root_block_device)
+     if [ -e $dev ]; then
+-        printf " root=%s" "$(shorten_persistent_dev "$(get_persistent_dev "$dev")")"
+-        printf " rootflags=%s" "$(find_mp_fsopts /)"
+-        printf " rootfstype=%s" "$(find_mp_fstype /)"
++        printf "root=%s" "$(shorten_persistent_dev "$(get_persistent_dev "$dev")")"
++        printf "rootflags=%s" "$(find_mp_fsopts /)"
++        printf "rootfstype=%s\n" "$(find_mp_fstype /)"
      fi
+ }
  
-     inst_multiple dmraid
-diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
-index 5515ac0..592a2e2 100755
---- a/modules.d/90lvm/module-setup.sh
-+++ b/modules.d/90lvm/module-setup.sh
-@@ -53,8 +53,8 @@ install() {
-     inst lvm
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline >> "${initdir}/etc/cmdline.d/90lvm.conf"
--        echo >> "${initdir}/etc/cmdline.d/90lvm.conf"
-+        local _lvmconf=$(cmdline)
-+        [[ $_lvmconf ]] && printf "%s\n" "$_lvmconf" >> "${initdir}/etc/cmdline.d/90lvm.conf"
-     fi
- 
-     inst_rules "$moddir/64-lvm.rules"
-diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index ce3394a..747ea8a 100755
---- a/modules.d/90mdraid/module-setup.sh
-+++ b/modules.d/90mdraid/module-setup.sh
-@@ -71,8 +71,8 @@ install() {
-     inst $(command -v mdadm) /sbin/mdadm
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
--        echo  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
-+        local _raidconf=$(cmdline)
-+        [[ $_raidconf ]] && printf "%s\n" "$_raidconf" >> "${initdir}/etc/cmdline.d/90mdraid.conf"
-     fi
- 
-     # <mdadm-3.3 udev rule
-diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
-index 1ddb6e4..dfd4350 100755
---- a/modules.d/95resume/module-setup.sh
-+++ b/modules.d/95resume/module-setup.sh
-@@ -29,8 +29,8 @@ install() {
-     local _bin
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline  >> "${initdir}/etc/cmdline.d/95resume.conf"
--        echo  >> "${initdir}/etc/cmdline.d/95resume.conf"
-+	local _resumeconf=$(cmdline)
-+	[[ $_resumeconf ]] && printf "%s\n" "$_resumeconf" >> "${initdir}/etc/cmdline.d/95resume.conf"
-     fi
- 
-     # Optional uswsusp support
 -- 
 1.8.5.2
