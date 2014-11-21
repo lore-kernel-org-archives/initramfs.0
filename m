@@ -1,8 +1,10 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: Rest of the patches, including better fcoe integration and other fixes
-Date: Fri, 21 Nov 2014 14:20:36 +0100
-Message-ID: <1416576051-62838-1-git-send-email-trenn@suse.de>
+Subject: [PATCH 09/15] 99base: Add chown binary
+Date: Fri, 21 Nov 2014 14:20:45 +0100
+Message-ID: <1416576051-62838-10-git-send-email-trenn@suse.de>
+References: <1416576051-62838-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1416576051-62838-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -11,17 +13,31 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
 
-I tried to put as much patches together, but some should retain to keep
-the changelog, etc.
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-Would be nice to see these merged mainline together with the other series.
+nvidia driver needs this via modprobe script.
+Needs to do change the group after a device node got created.
+Add chown instead of chgrp which can also change the owner of a file.
 
-As the other series already needs some adjusting, I guess best is if
-I re-submit everything after some discussion time.
+Ask Stefand Dirsch <sndirsch-l3A5Bk7waGM@public.gmane.org> for details.
 
-I am on holidays for a week now. Please send comments/suggestions/fixes
-and I will re-submit when I am back.
+Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+---
+ modules.d/99base/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks,
-
-    Thomas
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index fab4a78..5bb2ab9 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -15,7 +15,7 @@ depends() {
+ install() {
+     local _d
+ 
+-    inst_multiple mount mknod mkdir sleep chroot \
++    inst_multiple mount mknod mkdir sleep chroot chown \
+         sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink setsid
+     inst $(command -v modprobe) /sbin/modprobe
+ 
+-- 
+1.8.5.2
