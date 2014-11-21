@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 03/15] 95fcoe: update fcoe interface check
-Date: Fri, 21 Nov 2014 14:20:39 +0100
-Message-ID: <1416576051-62838-4-git-send-email-trenn@suse.de>
+Subject: [PATCH 13/15] Don't create lots of empty cmdline files for hostonly-cmdline case
+Date: Fri, 21 Nov 2014 14:20:49 +0100
+Message-ID: <1416576051-62838-14-git-send-email-trenn@suse.de>
 References: <1416576051-62838-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1416576051-62838-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,40 +11,97 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-The 'create' sysfs entry has been removed for newer fcoe modules,
-so just check if the module directory exists.
+This aligns other places piping cmdline() output to cmdline.d files
+with the earlier fix for 95rootfs-block.
 
-References: bnc#877288
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95fcoe/parse-fcoe.sh | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ modules.d/90crypt/module-setup.sh  | 4 ++--
+ modules.d/90dmraid/module-setup.sh | 4 ++--
+ modules.d/90lvm/module-setup.sh    | 4 ++--
+ modules.d/90mdraid/module-setup.sh | 4 ++--
+ modules.d/95resume/module-setup.sh | 4 ++--
+ 5 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/modules.d/95fcoe/parse-fcoe.sh b/modules.d/95fcoe/parse-fcoe.sh
-index 59de56f..9604503 100755
---- a/modules.d/95fcoe/parse-fcoe.sh
-+++ b/modules.d/95fcoe/parse-fcoe.sh
-@@ -20,14 +20,11 @@
+diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
+index 37ae859..ea1e340 100755
+--- a/modules.d/90crypt/module-setup.sh
++++ b/modules.d/90crypt/module-setup.sh
+@@ -50,8 +50,8 @@ cmdline() {
+ install() {
  
+     if [[ $hostonly_cmdline == "yes" ]]; then
+-        cmdline >> "${initdir}/etc/cmdline.d/90crypt.conf"
+-        echo >> "${initdir}/etc/cmdline.d/90crypt.conf"
++        local _cryptconf=$(cmdline)
++        [[ $_cryptconf ]] && printf "%s\n" "$_cryptconf" >> "${initdir}/etc/cmdline.d/90crypt.conf"
+     fi
  
- # BRCM: Later, should check whether bnx2x is loaded first before loading bnx2fc so do not load bnx2fc when there are no Broadcom adapters
--[ -e /sys/module/fcoe/parameters/create ] || modprobe -a fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
-+[ -d /sys/module/fcoe ] || modprobe -a fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
+     inst_multiple cryptsetup rmdir readlink umount
+diff --git a/modules.d/90dmraid/module-setup.sh b/modules.d/90dmraid/module-setup.sh
+index 508598b..044e01f 100755
+--- a/modules.d/90dmraid/module-setup.sh
++++ b/modules.d/90dmraid/module-setup.sh
+@@ -64,8 +64,8 @@ install() {
+     local _i
  
- modprobe bnx2fc >/dev/null 2>&1
- udevadm settle --timeout=30
+     if [[ $hostonly_cmdline == "yes" ]]; then
+-        cmdline >> "${initdir}/etc/cmdline.d/90dmraid.conf"
+-        echo >> "${initdir}/etc/cmdline.d/90dmraid.conf"
++        local _raidconf=$(cmdline)
++        [[ $_raidconf ]] && printf "%s\n" "$_raidconf" >> "${initdir}/etc/cmdline.d/90dmraid.conf"
+     fi
  
--# FCoE actually supported?
--[ -e /sys/module/fcoe/parameters/create ] || modprobe fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
--
- parse_fcoe_opts() {
-     local IFS=:
-     set $fcoe
+     inst_multiple dmraid
+diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
+index 5515ac0..592a2e2 100755
+--- a/modules.d/90lvm/module-setup.sh
++++ b/modules.d/90lvm/module-setup.sh
+@@ -53,8 +53,8 @@ install() {
+     inst lvm
+ 
+     if [[ $hostonly_cmdline == "yes" ]]; then
+-        cmdline >> "${initdir}/etc/cmdline.d/90lvm.conf"
+-        echo >> "${initdir}/etc/cmdline.d/90lvm.conf"
++        local _lvmconf=$(cmdline)
++        [[ $_lvmconf ]] && printf "%s\n" "$_lvmconf" >> "${initdir}/etc/cmdline.d/90lvm.conf"
+     fi
+ 
+     inst_rules "$moddir/64-lvm.rules"
+diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
+index ce3394a..747ea8a 100755
+--- a/modules.d/90mdraid/module-setup.sh
++++ b/modules.d/90mdraid/module-setup.sh
+@@ -71,8 +71,8 @@ install() {
+     inst $(command -v mdadm) /sbin/mdadm
+ 
+     if [[ $hostonly_cmdline == "yes" ]]; then
+-        cmdline  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
+-        echo  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
++        local _raidconf=$(cmdline)
++        [[ $_raidconf ]] && printf "%s\n" "$_raidconf" >> "${initdir}/etc/cmdline.d/90mdraid.conf"
+     fi
+ 
+     # <mdadm-3.3 udev rule
+diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
+index 1ddb6e4..dfd4350 100755
+--- a/modules.d/95resume/module-setup.sh
++++ b/modules.d/95resume/module-setup.sh
+@@ -29,8 +29,8 @@ install() {
+     local _bin
+ 
+     if [[ $hostonly_cmdline == "yes" ]]; then
+-        cmdline  >> "${initdir}/etc/cmdline.d/95resume.conf"
+-        echo  >> "${initdir}/etc/cmdline.d/95resume.conf"
++	local _resumeconf=$(cmdline)
++	[[ $_resumeconf ]] && printf "%s\n" "$_resumeconf" >> "${initdir}/etc/cmdline.d/95resume.conf"
+     fi
+ 
+     # Optional uswsusp support
 -- 
 1.8.5.2
