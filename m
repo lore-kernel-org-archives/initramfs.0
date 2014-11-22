@@ -1,62 +1,77 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 12/15] Also export root= boot param for hostonly-cmdline case.
-Date: Fri, 21 Nov 2014 14:20:48 +0100
-Message-ID: <1416576051-62838-13-git-send-email-trenn@suse.de>
-References: <1416576051-62838-1-git-send-email-trenn@suse.de>
+From: Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] Order root fsck after dracut-pre-mount.service
+Date: Sat, 22 Nov 2014 19:43:40 +0300
+Message-ID: <1416674620-1024-1-git-send-email-arvidjaar@gmail.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1416576051-62838-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:subject:date:message-id;
+        bh=ZxekjW41HIiIKHXJp+W8sQDp4IaxoYsL6KNNW+kzqGc=;
+        b=IYUE10lyT9Ie75uyUmjw6EZW05cOzprBGDC5kLbiGA3oUhSSZCKfyD9e0YlsUbTziK
+         dka0JrjKqx7MbT7rHr2ku907XiO1/394WoRhyClTPphkX2tt5d0aaeorDrG8ItATyFGX
+         /CzlUcEGcmoJ8tsytPFvC2xUpLaosinU/qIaV/N4HHkkUbg1e/PxpML6FMzdr1G80vVP
+         4DRGzawKPI1yte3KC8sMI3oDFC9eh7vy/Sbxd4M6ekwhLULl38DEIBfJeA3M/qYQdLx6
+         cA/a4AtH8aflZG9sPYKIpIsr/Tq2eSk8Vd1ovTFrWat1aLQWAKjETGpBiPb8TPHpLqKR
+         SDMA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+Currently root fsck runs concurrently with dracut-pre-mount and so
+races with resume from disk (started by dracut-pre-mount). This leads
+to data corruption if fsck changes filesystem.
 
-If there's a root fallback, at least attempt to have it falling
-back to the last root filesystem this system ran off of.
+Make sure root fsck runs after dracut-pre-mount.service.
 
-Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
-Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Details including console logs:
+https://bugzilla.suse.com/show_bug.cgi?id=906592
+
+Signed-off-by: Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
 ---
- modules.d/95rootfs-block/module-setup.sh | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ modules.d/98systemd/rootfs-generator.sh | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
-index c2f71bb..81de177 100755
---- a/modules.d/95rootfs-block/module-setup.sh
-+++ b/modules.d/95rootfs-block/module-setup.sh
-@@ -29,14 +29,18 @@ cmdline_journal() {
-     return 0
+diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
+index 9523729..a2d26b9 100755
+--- a/modules.d/98systemd/rootfs-generator.sh
++++ b/modules.d/98systemd/rootfs-generator.sh
+@@ -32,6 +32,22 @@ generator_wait_for_dev()
+     fi
  }
  
--# called by dracut
--cmdline() {
-+cmdline_rootfs() {
-     local dev=/dev/block/$(find_root_block_device)
-     if [ -e $dev ]; then
-         printf " root=%s" "$(shorten_persistent_dev "$(get_persistent_dev "$dev")")"
-         printf " rootflags=%s" "$(find_mp_fsopts /)"
-         printf " rootfstype=%s" "$(find_mp_fstype /)"
-     fi
++generator_fsck_after_pre_mount()
++{
++    local _name
++
++    [ -z "$1" ] && return 0
++
++    _name=$(dev_unit_name "$1")
++    [ -d /run/systemd/generator/systemd-fsck@${_name}.service.d ] || mkdir -p /run/systemd/generator/systemd-fsck@${_name}.service.d
++    if ! [ -f /run/systemd/generator/systemd-fsck@${_name}.service.d/after-pre-mount.conf ]; then
++        {
++            echo "[Unit]"
++            echo "After=dracut-pre-mount.service"
++        } > /run/systemd/generator/systemd-fsck@${_name}.service.d/after-pre-mount.conf
++    fi
 +}
 +
-+# called by dracut
-+cmdline() {
-+    cmdline_rootfs
-     cmdline_journal
- }
+ root=$(getarg root=)
+ case "$root" in
+     block:LABEL=*|LABEL=*)
+@@ -58,6 +74,9 @@ case "$root" in
+         rootok=1 ;;
+ esac
  
-@@ -45,6 +49,8 @@ install() {
-     if [[ $hostonly_cmdline == "yes" ]]; then
-         local _journaldev=$(cmdline_journal)
-         [[ $_journaldev ]] && printf "%s\n" "$_journaldev" >> "${initdir}/etc/cmdline.d/95root-journaldev.conf"
-+        local _rootdev=$(cmdline_rootfs)
-+        [[ $_rootdev ]] && printf "%s\n" "$_rootdev" >> "${initdir}/etc/cmdline.d/95root-dev.conf"
-     fi
+-[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}"
++if [ "${root%%:*}" = "block" ]; then
++    generator_wait_for_dev "${root#block:}"
++    generator_fsck_after_pre_mount "${root#block:}"
++fi
  
-     inst_multiple umount
+ exit 0
 -- 
-1.8.5.2
+tg: (778b354..) u/root-fsck-after-pre-mount (depends on: master)
