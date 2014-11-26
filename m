@@ -1,7 +1,7 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 03/33] 00warpclock: Set correct timezone
-Date: Wed, 26 Nov 2014 13:36:37 +0800
-Message-ID: <20141126053636.GF3505@darkstar.nay.redhat.com>
+Date: Wed, 26 Nov 2014 13:52:37 +0800
+Message-ID: <20141126055237.GG2657@dhcp-17-37.nay.redhat.com>
 References: <1416495428-36978-1-git-send-email-trenn@suse.de>
  <1416495428-36978-4-git-send-email-trenn@suse.de>
 Mime-Version: 1.0
@@ -13,15 +13,38 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Ccing Chao who was handling the Fedora kdump timezone issues..
+Hi,
 
 On 11/20/14 at 03:56pm, Thomas Renninger wrote:
 > From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 > 
 > Add module for setting correct timezone.
 > References: bnc#830060
+
+I used to implement such functionality but it's reverted later:
+
+commit d27cd4d
+Author: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Jul 31 15:55:13 2013 +0200
+
+    Revert "base: setup correct system time and time zone in initrd"
+
+    This reverts commit
+    77364fd6bb01ea184db73b1a5ad05da984752293.
+
+    Too many problems with adjtime in the initramfs
+
+    https://bugzilla.redhat.com/show_bug.cgi?id=981617
+
+After that what we do for kdump is to copy /etc/localtime and
+/etc/adjtime to initramfs ourselves. In 2nd kernel, systemd will take
+care of time zone setup according to these two files.
+
+Thanks
+WANG Chao
+
 > 
 > Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 > ---
