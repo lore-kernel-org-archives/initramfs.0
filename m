@@ -1,42 +1,57 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 40network: Fix the syntax to correct the judgment sentence
-Date: Mon, 01 Dec 2014 17:04:23 +0100
-Message-ID: <547C9187.3070209@redhat.com>
-References: <1417408626-28037-1-git-send-email-mhuang@redhat.com>
+From: "ferjulian, bruce" <bruce.ferjulian-mb1K0bWo544@public.gmane.org>
+Subject: Simple "dracut" question.
+Date: Mon, 8 Dec 2014 16:28:05 -0500
+Message-ID: <69701992-AE19-47FE-AC98-3D46320189EA@emc.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1417408626-28037-1-git-send-email-mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=emc.com; s=jan2013;
+	t=1418073927; bh=2j15+cpQt7h8szu+SMBZx6OICJA=;
+	h=From:To:Date:Subject:Message-ID:Content-Type:
+	 Content-Transfer-Encoding:MIME-Version;
+	b=IivZervdsVGkfQidkV7Mt4Cl/6RqO+OEhqFtRdyinqemfH8mOIOubX1PeVWa6xUMJ
+	 hzgKTsW6jEHekyB3QdPUuQg74pxdgMJJ+cEV4sWdmt5+h05hGWatWKsaPsGNxq6UO5
+	 I0TYTnQK5U/DyMgyS2US1hYv2GshihT4a7s0fulE=
+Content-Language: en-US
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 01.12.2014 05:37, Minfei Huang wrote:
-> In the judgment sentence, it will print the following warning message,
-> becasuse of lacking the blank on the left of ']'.
-> 
-> /lib/net-lib.sh: line 110: [: missing `]'
-> 
-> Signed-off-by: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/40network/net-lib.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
-> index 48e7014..d9c5a1d 100755
-> --- a/modules.d/40network/net-lib.sh
-> +++ b/modules.d/40network/net-lib.sh
-> @@ -105,7 +105,7 @@ setup_net() {
->      # add static route
->      for _p in $(getargs rd.route); do
->          route_to_var "$_p" || continue
-> -        [ -n "$route_dev" ] && [ "$route_dev" != "$netif"] && continue
-> +        [ -n "$route_dev" ] && [ "$route_dev" != "$netif" ] && continue
->          ip route add "$route_mask" ${route_gw:+via "$route_gw"} ${route_dev:+dev "$route_dev"}
->          if strstr ":" "$route_mask"; then
->              printf -- "%s\n" "$route_mask ${route_gw:+via $route_gw} ${route_dev:+dev $route_dev}" \
-> 
-
-pushed... Thanks!
+MS4gSSBpc3N1ZSB0aGlzICIjIGRyYWN1dCAtLXByaW50LWNtZGxpbmUiDQoNCkkgZ2V0IHRoaXMg
+InJlc3VtZT1VVUlEPWRlZWIyNjhhLTc0MGEtNDM5My05MzVhLTY1YTU4ZTVjZmIyMHJvb3Q9VVVJ
+RD1iZGYwN2RlNS04ZmI4LTQxNDQtYTNhYi1hMTNlZGIxYjQxYTkgcm9vdGZsYWdzPXJ3LHJlbGF0
+aW1lLGRhdGE9b3JkZXJlZCByb290ZnN0eXBlPWV4dDQiDQoNCkkgd2FudCB0aGlzICJyZXN1bWU9
+L2Rldi9zZGExIHJvb3Q9L2Rldi9zZGEyIHJvb3RmbGFncz1ydyxyZWxhdGltZSxkYXRhPW9yZGVy
+ZWQgcm9vdGZzdHlwZT1leHQ0DQoNCg0KVGhlIG1hbiBwYWdlIHN0YXRlcyBpdCBjYW4gYmUgZG9u
+ZSBidXQgSSBjYW4gZmluZCBhIGNvbW1hbmQgbGlrZS4uLi4NCg0KIyBkcmFjdXQgLS1zZXQtY21k
+bGluZSAicmVzdW1lPS9kZXYvc2RhMSByb290PS9kZXYvc2RhMiByb290ZmxhZ3M9cncscmVsYXRp
+bWUsZGF0YT1vcmRlcmVkIHJvb3Rmc3R5cGU9ZXh0NCINCg0KDQoNCg0KDQotQnJ1Y2UtDQoNCg0K
+DQoNCg0KICAgICAgIFRvIGdldCBhIHF1aWNrIHN0YXJ0IGZvciB0aGUgc3VpdGFibGUga2VybmVs
+IGNvbW1hbmQgbGluZSBvbiB5b3VyIHN5c3RlbSwgdXNlIHRoZSAtLXByaW50LWNtZGxpbmUgb3B0
+aW9uOg0KDQogICAgICAgICAgICMgZHJhY3V0IC0tcHJpbnQtY21kbGluZQ0KICAgICAgICAgICAg
+cm9vdD1VVUlEPThiOGI2ZjkxLTk1YzctNGRhMi04MzFiLTE3MWUxMjE3OTA4MSByb290ZmxhZ3M9
+cncscmVsYXRpbWUsZGlzY2FyZCxkYXRhPW9yZGVyZWQgcm9vdGZzdHlwZT1leHQ0DQoNCiAgICAg
+ICBTcGVjaWZ5aW5nIHRoZSByb290IERldmljZQ0KICAgICAgICAgICBUaGlzIGlzIHRoZSBvbmx5
+IG9wdGlvbiBkcmFjdXQgcmVhbGx5IG5lZWRzIHRvIGJvb3QgZnJvbSB5b3VyIHJvb3QgcGFydGl0
+aW9uLiBCZWNhdXNlIHlvdXIgcm9vdCBwYXJ0aXRpb24gY2FuIGxpdmUgaW4gdmFyaW91cyBlbnZp
+cm9ubWVudHMsIHRoZXJlIGFyZSBhIGxvdCBvZg0KICAgICAgICAgICBmb3JtYXRzIGZvciB0aGUg
+cm9vdD0gb3B0aW9uLiBUaGUgbW9zdCBiYXNpYyBvbmUgaXMgcm9vdD08cGF0aCB0byBkZXZpY2Ug
+bm9kZT46DQoNCiAgICAgICAgICAgICAgIHJvb3Q9L2Rldi9zZGEyDQoNCiAgICAgICAgICAgQmVj
+YXVzZSBkZXZpY2Ugbm9kZSBuYW1lcyBjYW4gY2hhbmdlLCBkZXBlbmRlbnQgb24gdGhlIGRyaXZl
+IG9yZGVyaW5nLCB5b3UgYXJlIGVuY291cmFnZWQgdG8gdXNlIHRoZSBmaWxlc3lzdGVtIGlkZW50
+aWZpZXIgKFVVSUQpIG9yIGZpbGVzeXN0ZW0gbGFiZWwgKExBQkVMKSB0bw0KICAgICAgICAgICBz
+cGVjaWZ5IHlvdXIgcm9vdCBwYXJ0aXRpb246DQoNCiAgICAgICAgICAgICAgIHJvb3Q9VVVJRD0x
+OWU5ZGRhMy01YTM4LTQ4NGQtYTliMC1mYTZiMDY3ZDAzMzENCg0KICAgICAgICAgICBvcg0KDQog
+ICAgICAgICAgICAgICByb290PUxBQkVMPW15cm9vdHBhcnRpdGlvbmxhYmVsDQoNCiAgICAgICAg
+ICAgVG8gc2VlIGFsbCBVVUlEcyBvciBMQUJFTHMgb24geW91ciBzeXN0ZW0sIGRvOg0KDQogICAg
+ICAgICAgICAgICAjIGxzIC1sIC9kZXYvZGlzay9ieS11dWlkDQoNCiAgICAgICAgICAgb3INCg0K
+ICAgICAgICAgICAgICAgIyBscyAtbCAvZGV2L2Rpc2svYnktbGFiZWwNCg0KICAgICAgICAgICBJ
+ZiB5b3VyIHJvb3QgcGFydGl0aW9uIGlzIG9uIHRoZSBuZXR3b3JrIHNlZSB0aGUgc2VjdGlvbiBj
+YWxsZWQgw6LigqzFk05ldHdvcmsgQm9vdMOi4oKswp0uDQoNCg0KDQoNCg0KDQouLi4uLi4uLi4u
+Li4uLi4uLi4uLi4uLi4uLi4uLi4uDQoNCkJydWNlIEZlcmp1bGlhbg0KRU1DIENvcnBvcmF0aW9u
+DQpCbGRnIDE3NiwgMS9Qb2xlLU0xOQ0KSG9wa2ludG9uLCBNQSAwMTc0OA0KRXh0OiAtLS0tLS00
+LTQ0NzMNClRlbDogNTA4LTI0OS00NDczDQpDZWw6IDk3OC03NzEtNDMzOA0KDQoNCi4uLi4uLi4u
+Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4NCg0KQnJ1Y2UgRmVyanVsaWFuDQpFTUMgQ29ycG9yYXRp
+b24NCkJsZGcgMTc2LCAxL1BvbGUtTTE5DQpIb3BraW50b24sIE1BIDAxNzQ4DQpFeHQ6IC0tLS0t
+LTQtNDQ3Mw0KVGVsOiA1MDgtMjQ5LTQ0NzMNCkNlbDogOTc4LTc3MS00MzM4DQoNCg==
