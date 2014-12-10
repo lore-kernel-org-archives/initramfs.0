@@ -1,57 +1,54 @@
-From: "ferjulian, bruce" <bruce.ferjulian-mb1K0bWo544@public.gmane.org>
-Subject: Simple "dracut" question.
-Date: Mon, 8 Dec 2014 16:28:05 -0500
-Message-ID: <69701992-AE19-47FE-AC98-3D46320189EA@emc.com>
+From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH 02/33] Update dracut manpage for GRUB Legacy and GRUB2
+Date: Wed, 10 Dec 2014 16:08:02 +0100
+Message-ID: <3178434.xaXNtrdhXn@skinner>
+References: <1416495428-36978-1-git-send-email-trenn@suse.de> <1416495428-36978-3-git-send-email-trenn@suse.de> <20141126053216.GE3505@darkstar.nay.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=emc.com; s=jan2013;
-	t=1418073927; bh=2j15+cpQt7h8szu+SMBZx6OICJA=;
-	h=From:To:Date:Subject:Message-ID:Content-Type:
-	 Content-Transfer-Encoding:MIME-Version;
-	b=IivZervdsVGkfQidkV7Mt4Cl/6RqO+OEhqFtRdyinqemfH8mOIOubX1PeVWa6xUMJ
-	 hzgKTsW6jEHekyB3QdPUuQg74pxdgMJJ+cEV4sWdmt5+h05hGWatWKsaPsGNxq6UO5
-	 I0TYTnQK5U/DyMgyS2US1hYv2GshihT4a7s0fulE=
-Content-Language: en-US
+In-Reply-To: <20141126053216.GE3505-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shawn Dunn <sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 
-MS4gSSBpc3N1ZSB0aGlzICIjIGRyYWN1dCAtLXByaW50LWNtZGxpbmUiDQoNCkkgZ2V0IHRoaXMg
-InJlc3VtZT1VVUlEPWRlZWIyNjhhLTc0MGEtNDM5My05MzVhLTY1YTU4ZTVjZmIyMHJvb3Q9VVVJ
-RD1iZGYwN2RlNS04ZmI4LTQxNDQtYTNhYi1hMTNlZGIxYjQxYTkgcm9vdGZsYWdzPXJ3LHJlbGF0
-aW1lLGRhdGE9b3JkZXJlZCByb290ZnN0eXBlPWV4dDQiDQoNCkkgd2FudCB0aGlzICJyZXN1bWU9
-L2Rldi9zZGExIHJvb3Q9L2Rldi9zZGEyIHJvb3RmbGFncz1ydyxyZWxhdGltZSxkYXRhPW9yZGVy
-ZWQgcm9vdGZzdHlwZT1leHQ0DQoNCg0KVGhlIG1hbiBwYWdlIHN0YXRlcyBpdCBjYW4gYmUgZG9u
-ZSBidXQgSSBjYW4gZmluZCBhIGNvbW1hbmQgbGlrZS4uLi4NCg0KIyBkcmFjdXQgLS1zZXQtY21k
-bGluZSAicmVzdW1lPS9kZXYvc2RhMSByb290PS9kZXYvc2RhMiByb290ZmxhZ3M9cncscmVsYXRp
-bWUsZGF0YT1vcmRlcmVkIHJvb3Rmc3R5cGU9ZXh0NCINCg0KDQoNCg0KDQotQnJ1Y2UtDQoNCg0K
-DQoNCg0KICAgICAgIFRvIGdldCBhIHF1aWNrIHN0YXJ0IGZvciB0aGUgc3VpdGFibGUga2VybmVs
-IGNvbW1hbmQgbGluZSBvbiB5b3VyIHN5c3RlbSwgdXNlIHRoZSAtLXByaW50LWNtZGxpbmUgb3B0
-aW9uOg0KDQogICAgICAgICAgICMgZHJhY3V0IC0tcHJpbnQtY21kbGluZQ0KICAgICAgICAgICAg
-cm9vdD1VVUlEPThiOGI2ZjkxLTk1YzctNGRhMi04MzFiLTE3MWUxMjE3OTA4MSByb290ZmxhZ3M9
-cncscmVsYXRpbWUsZGlzY2FyZCxkYXRhPW9yZGVyZWQgcm9vdGZzdHlwZT1leHQ0DQoNCiAgICAg
-ICBTcGVjaWZ5aW5nIHRoZSByb290IERldmljZQ0KICAgICAgICAgICBUaGlzIGlzIHRoZSBvbmx5
-IG9wdGlvbiBkcmFjdXQgcmVhbGx5IG5lZWRzIHRvIGJvb3QgZnJvbSB5b3VyIHJvb3QgcGFydGl0
-aW9uLiBCZWNhdXNlIHlvdXIgcm9vdCBwYXJ0aXRpb24gY2FuIGxpdmUgaW4gdmFyaW91cyBlbnZp
-cm9ubWVudHMsIHRoZXJlIGFyZSBhIGxvdCBvZg0KICAgICAgICAgICBmb3JtYXRzIGZvciB0aGUg
-cm9vdD0gb3B0aW9uLiBUaGUgbW9zdCBiYXNpYyBvbmUgaXMgcm9vdD08cGF0aCB0byBkZXZpY2Ug
-bm9kZT46DQoNCiAgICAgICAgICAgICAgIHJvb3Q9L2Rldi9zZGEyDQoNCiAgICAgICAgICAgQmVj
-YXVzZSBkZXZpY2Ugbm9kZSBuYW1lcyBjYW4gY2hhbmdlLCBkZXBlbmRlbnQgb24gdGhlIGRyaXZl
-IG9yZGVyaW5nLCB5b3UgYXJlIGVuY291cmFnZWQgdG8gdXNlIHRoZSBmaWxlc3lzdGVtIGlkZW50
-aWZpZXIgKFVVSUQpIG9yIGZpbGVzeXN0ZW0gbGFiZWwgKExBQkVMKSB0bw0KICAgICAgICAgICBz
-cGVjaWZ5IHlvdXIgcm9vdCBwYXJ0aXRpb246DQoNCiAgICAgICAgICAgICAgIHJvb3Q9VVVJRD0x
-OWU5ZGRhMy01YTM4LTQ4NGQtYTliMC1mYTZiMDY3ZDAzMzENCg0KICAgICAgICAgICBvcg0KDQog
-ICAgICAgICAgICAgICByb290PUxBQkVMPW15cm9vdHBhcnRpdGlvbmxhYmVsDQoNCiAgICAgICAg
-ICAgVG8gc2VlIGFsbCBVVUlEcyBvciBMQUJFTHMgb24geW91ciBzeXN0ZW0sIGRvOg0KDQogICAg
-ICAgICAgICAgICAjIGxzIC1sIC9kZXYvZGlzay9ieS11dWlkDQoNCiAgICAgICAgICAgb3INCg0K
-ICAgICAgICAgICAgICAgIyBscyAtbCAvZGV2L2Rpc2svYnktbGFiZWwNCg0KICAgICAgICAgICBJ
-ZiB5b3VyIHJvb3QgcGFydGl0aW9uIGlzIG9uIHRoZSBuZXR3b3JrIHNlZSB0aGUgc2VjdGlvbiBj
-YWxsZWQgw6LigqzFk05ldHdvcmsgQm9vdMOi4oKswp0uDQoNCg0KDQoNCg0KDQouLi4uLi4uLi4u
-Li4uLi4uLi4uLi4uLi4uLi4uLi4uDQoNCkJydWNlIEZlcmp1bGlhbg0KRU1DIENvcnBvcmF0aW9u
-DQpCbGRnIDE3NiwgMS9Qb2xlLU0xOQ0KSG9wa2ludG9uLCBNQSAwMTc0OA0KRXh0OiAtLS0tLS00
-LTQ0NzMNClRlbDogNTA4LTI0OS00NDczDQpDZWw6IDk3OC03NzEtNDMzOA0KDQoNCi4uLi4uLi4u
-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4NCg0KQnJ1Y2UgRmVyanVsaWFuDQpFTUMgQ29ycG9yYXRp
-b24NCkJsZGcgMTc2LCAxL1BvbGUtTTE5DQpIb3BraW50b24sIE1BIDAxNzQ4DQpFeHQ6IC0tLS0t
-LTQtNDQ3Mw0KVGVsOiA1MDgtMjQ5LTQ0NzMNCkNlbDogOTc4LTc3MS00MzM4DQoNCg==
+On Wednesday, November 26, 2014 01:32:16 PM Dave Young wrote:
+> On 11/20/14 at 03:56pm, Thomas Renninger wrote:
+> > From: Shawn Dunn <sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+> > 
+> > Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+> > ---
+> > 
+> >  dracut.usage.asc | 6 +++---
+> >  1 file changed, 3 insertions(+), 3 deletions(-)
+> > 
+> > diff --git a/dracut.usage.asc b/dracut.usage.asc
+> > index 9e788c1..1a79638 100644
+> > --- a/dracut.usage.asc
+> > +++ b/dracut.usage.asc
+> > @@ -99,9 +99,9 @@ raid with encryption and LVM on top), as long as you
+> > specify the correct> 
+> >  filesystem LABEL or UUID on the kernel command line for your root device,
+> >  dracut will find it and boot from it.
+> > 
+> > -The kernel command line usually can be configured in
+> > _/boot/grub/grub.conf_ or -_/boot/grub2/grub.cfg_, if grub is your
+> > bootloader and it also can be edited in -the real boot process in the
+> > grub menu.
+> > +The kernel command line usually can be configured in
+> > _/boot/grub/grub.conf_, +for GRUB legacy, or _/boot/grub2/grub.cfg_, for
+> > GRUB2 if grub is your +bootloader and it also can be edited in the real
+> > boot process in the grub menu.
+> In case you are enhance the documentation, how about add case for uefi boot
+
+I am not aware of any UEFI specialities.
+This also sounds as if a seperate submit makes sense.
+It's also a non trivial task to get all these patches in line and submitted.
+In this case adjusting is unneeded overhead, please submit the changes
+you have in mind on top.
+If you think the patch is not worth it, leave it out.
+
+Thanks,
+
+   Thomas
