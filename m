@@ -1,54 +1,65 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 02/33] Update dracut manpage for GRUB Legacy and GRUB2
-Date: Wed, 10 Dec 2014 16:08:02 +0100
-Message-ID: <3178434.xaXNtrdhXn@skinner>
-References: <1416495428-36978-1-git-send-email-trenn@suse.de> <1416495428-36978-3-git-send-email-trenn@suse.de> <20141126053216.GE3505@darkstar.nay.redhat.com>
+Subject: Re: [PATCH 11/33] 95iscsi: Autodetect iSCSI firmware
+Date: Wed, 10 Dec 2014 17:29:45 +0100
+Message-ID: <1495590.WiuBmiIXgM@skinner>
+References: <1416495428-36978-1-git-send-email-trenn@suse.de> <546EE10A.5010606@suse.de> <20141121073255.GE2591@dhcp-17-37.nay.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20141126053216.GE3505-4/PLUo9XfK+sDdueE5tM26fLeoKvNuZc@public.gmane.org>
+In-Reply-To: <20141121073255.GE2591-2coKmSd1Zb7VyFQaPrqbSRcY2uh10dtjAL8bYrjMMd8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hare-l3A5Bk7waGM@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shawn Dunn <sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+To: WANG Chao <chaowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Wieczorkiewicz <pwieczorkiewicz-IBi9RG/b67k@public.gmane.org>
 
-On Wednesday, November 26, 2014 01:32:16 PM Dave Young wrote:
-> On 11/20/14 at 03:56pm, Thomas Renninger wrote:
-> > From: Shawn Dunn <sfalken-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+On Friday, November 21, 2014 03:32:55 PM WANG Chao wrote:
+> On 11/21/14 at 07:51am, Hannes Reinecke wrote:
+> > On 11/21/2014 06:43 AM, WANG Chao wrote:
+> > > Hi,
+> > > 
+> > > On 11/20/14 at 03:56pm, Thomas Renninger wrote:
+> > >> From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+> > >> 
+> > >> Some iSCSI initiator present firmware information in
+> > >> /sys/firmware/ibft or /sys/firmware/iscsi_bootX
+> > >> 
+> > >> Whenever we detect one of those directories we should assume
+> > >> that the iSCSI devices should be activated.
+> > >> 
+> > >> Also incorporates SUSE patches:
+> > >> 0049:
+> > >> 95iscsi: Use 'ip=ibft' for ibft autoconfiguration
+> > >> 
+> > >> For iBFT autoconfiguration we should be setting 'ip=ibft'
+> > >> instead of rd.neednet. This should instruct dracut to only
+> > >> enable the iBFT interfaces and leave the rest alone.
+> > > 
+> > > I think,
+> > > 
+> > > /sys/firmware/ibft is created for iBFT if detected.
+> > > /sys/firmware/iscsi_bootX is created for hardware iSCSI if detected.
 > > 
-> > Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-> > ---
+> > Nope.
 > > 
-> >  dracut.usage.asc | 6 +++---
-> >  1 file changed, 3 insertions(+), 3 deletions(-)
+> > ibft is created whenever an iBFT section (either in system ROM
+> > or via EFI) is detected.
+> > iscsi_boot is created for be2iscsi devices, which use an iBFT-like
+> > interface.
 > > 
-> > diff --git a/dracut.usage.asc b/dracut.usage.asc
-> > index 9e788c1..1a79638 100644
-> > --- a/dracut.usage.asc
-> > +++ b/dracut.usage.asc
-> > @@ -99,9 +99,9 @@ raid with encryption and LVM on top), as long as you
-> > specify the correct> 
-> >  filesystem LABEL or UUID on the kernel command line for your root device,
-> >  dracut will find it and boot from it.
-> > 
-> > -The kernel command line usually can be configured in
-> > _/boot/grub/grub.conf_ or -_/boot/grub2/grub.cfg_, if grub is your
-> > bootloader and it also can be edited in -the real boot process in the
-> > grub menu.
-> > +The kernel command line usually can be configured in
-> > _/boot/grub/grub.conf_, +for GRUB legacy, or _/boot/grub2/grub.cfg_, for
-> > GRUB2 if grub is your +bootloader and it also can be edited in the real
-> > boot process in the grub menu.
-> In case you are enhance the documentation, how about add case for uefi boot
+> > Both provide the same attributes.
+> 
+> Yes, they have same attributes.
 
-I am not aware of any UEFI specialities.
-This also sounds as if a seperate submit makes sense.
-It's also a non trivial task to get all these patches in line and submitted.
-In this case adjusting is unneeded overhead, please submit the changes
-you have in mind on top.
-If you think the patch is not worth it, leave it out.
+The same sysfs attributes?
 
-Thanks,
+> But IIRC iBFT is provided by ACPI or EFI and the other is provided by
+> HBA's firmware. Right?
 
-   Thomas
+But this should not matter.
+If the kernel differs both APIs and provides a unified sysfs interface,
+not differing in userspace again would be the right thing to do.
+
+     Thomas
+
+PS: I continue to collect missing patches tomorrow and do a big resend...
