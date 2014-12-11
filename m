@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 34/42] Enhance suse.conf and debug module example with SUSE-specific settings
-Date: Thu, 11 Dec 2014 15:46:25 +0100
-Message-ID: <1418309193-11208-35-git-send-email-trenn@suse.de>
+Subject: [PATCH 13/42] iscsi: iscsi.initiator and others can and must only show up once
+Date: Thu, 11 Dec 2014 15:46:04 +0100
+Message-ID: <1418309193-11208-14-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,60 +13,69 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
 
-SUSE is using specific settings for dracut, so add them
-to the suse.conf.example file.
-
-Add vi and find to the debug module add some help text to the suse.conf
-file when and how to use it.
+Make sure duplicates of iscsi.initiator vanish.
+Only get one rd.iscsi.* paramter value. If getargs is used and several
+parameters are parsed, one gets two values separated by whitespace in a
+variable which breaks later code and is not suppported.
 
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.conf.d/suse.conf.example   | 21 +++++++++++++++++++++
- modules.d/95debug/module-setup.sh |  3 +--
- 2 files changed, 22 insertions(+), 2 deletions(-)
+ modules.d/95iscsi/iscsiroot.sh    | 18 +++++++++---------
+ modules.d/95iscsi/module-setup.sh |  5 ++++-
+ 2 files changed, 13 insertions(+), 10 deletions(-)
 
-diff --git a/dracut.conf.d/suse.conf.example b/dracut.conf.d/suse.conf.example
-index 1e7f80e..37ffd72 100644
---- a/dracut.conf.d/suse.conf.example
-+++ b/dracut.conf.d/suse.conf.example
-@@ -1,3 +1,24 @@
-+# SUSE specifc dracut settings
-+#
-+# SUSE by default always builds a as small as possible initrd for performance
-+# and resource reasons.
-+# If you like to build a generic initrd which works on other platforms than
-+# on the one dracut/mkinitrd got called comment out below setting(s).
-+hostonly="yes"
-+hostonly_cmdline="yes"
-+
-+compress="xz -0 --check=crc32 --memlimit-compress=50%"
-+
- i18n_vars="/etc/sysconfig/language:RC_LANG-LANG,RC_LC_ALL-LC_ALL /etc/sysconfig/console:CONSOLE_UNICODEMAP-FONT_UNIMAP,CONSOLE_FONT-FONT,CONSOLE_SCREENMAP-FONT_MAP /etc/sysconfig/keyboard:KEYTABLE-KEYMAP"
- omit_drivers+=" i2o_scsi"
+diff --git a/modules.d/95iscsi/iscsiroot.sh b/modules.d/95iscsi/iscsiroot.sh
+index 7351427..5bfb017 100755
+--- a/modules.d/95iscsi/iscsiroot.sh
++++ b/modules.d/95iscsi/iscsiroot.sh
+@@ -81,23 +81,23 @@ handle_netroot()
+     local p
  
-+# Below adds additional tools to the initrd which are not urgently necessary to
-+# bring up the system, but help to debug problems.
-+# See /usr/lib/dracut/modules.d/95debug/module-setup.sh which additional tools
-+# are installed and add more if you need them. This specifically helps if you
-+# use:
-+# rd.break=[cmdline|pre-udev|pre-trigger|initqueue|pre-mount|
-+# mount|pre-pivot|cleanup]
-+# boot parameter or if you are forced to enter the dracut emergency shell.
-+
-+# add_dracutmodules+=debug
-diff --git a/modules.d/95debug/module-setup.sh b/modules.d/95debug/module-setup.sh
-index 625f7fb..5a9aaac 100755
---- a/modules.d/95debug/module-setup.sh
-+++ b/modules.d/95debug/module-setup.sh
-@@ -14,8 +14,7 @@ depends() {
- # called by dracut
- install() {
-     inst_multiple -o ps grep more cat rm strace free showmount \
--        ping netstat rpcinfo vi scp ping6 ssh \
-+        ping netstat rpcinfo vi scp ping6 ssh find vi \
-         fsck fsck.ext2 fsck.ext4 fsck.ext3 fsck.ext4dev fsck.vfat e2fsck
--
+     # override conf settings by command line options
+-    arg=$(getargs rd.iscsi.initiator -d iscsi_initiator=)
++    arg=$(getarg rd.iscsi.initiator -d iscsi_initiator=)
+     [ -n "$arg" ] && iscsi_initiator=$arg
+-    arg=$(getargs rd.iscsi.target.name -d iscsi_target_name=)
++    arg=$(getarg rd.iscsi.target.name -d iscsi_target_name=)
+     [ -n "$arg" ] && iscsi_target_name=$arg
+-    arg=$(getargs rd.iscsi.target.ip -d iscsi_target_ip)
++    arg=$(getarg rd.iscsi.target.ip -d iscsi_target_ip)
+     [ -n "$arg" ] && iscsi_target_ip=$arg
+-    arg=$(getargs rd.iscsi.target.port -d iscsi_target_port=)
++    arg=$(getarg rd.iscsi.target.port -d iscsi_target_port=)
+     [ -n "$arg" ] && iscsi_target_port=$arg
+-    arg=$(getargs rd.iscsi.target.group -d iscsi_target_group=)
++    arg=$(getarg rd.iscsi.target.group -d iscsi_target_group=)
+     [ -n "$arg" ] && iscsi_target_group=$arg
+-    arg=$(getargs rd.iscsi.username -d iscsi_username=)
++    arg=$(getarg rd.iscsi.username -d iscsi_username=)
+     [ -n "$arg" ] && iscsi_username=$arg
+-    arg=$(getargs rd.iscsi.password -d iscsi_password)
++    arg=$(getarg rd.iscsi.password -d iscsi_password)
+     [ -n "$arg" ] && iscsi_password=$arg
+-    arg=$(getargs rd.iscsi.in.username -d iscsi_in_username=)
++    arg=$(getarg rd.iscsi.in.username -d iscsi_in_username=)
+     [ -n "$arg" ] && iscsi_in_username=$arg
+-    arg=$(getargs rd.iscsi.in.password -d iscsi_in_password=)
++    arg=$(getarg rd.iscsi.in.password -d iscsi_in_password=)
+     [ -n "$arg" ] && iscsi_in_password=$arg
+     for p in $(getargs rd.iscsi.param -d iscsi_param); do
+ 	iscsi_param="$iscsi_param --param $p"
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index cd6cb4b..9975e59 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -123,7 +123,10 @@ install_iscsiroot() {
+                 iscsi_address="[$iscsi_address]"
+                 ;;
+         esac
+-        echo "rd.iscsi.initiator=${iscsi_initiator} netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
++        # Must be two separate lines, so that "sort | uniq" commands later
++        # can sort out rd.iscsi.initiator= duplicates
++        echo "rd.iscsi.initiator=${iscsi_initiator}"
++        echo "netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
+     fi
+     return 0
  }
- 
 -- 
 1.8.5.2
