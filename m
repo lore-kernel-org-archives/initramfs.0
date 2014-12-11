@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 40/42] Don't create lots of empty cmdline files for hostonly-cmdline case
-Date: Thu, 11 Dec 2014 15:46:31 +0100
-Message-ID: <1418309193-11208-41-git-send-email-trenn@suse.de>
+Subject: [PATCH 18/42] Generate fallback mount unit for root filesystem
+Date: Thu, 11 Dec 2014 15:46:09 +0100
+Message-ID: <1418309193-11208-19-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,93 +15,68 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.
 
 From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-This aligns other places piping cmdline() output to cmdline.d files
-with the earlier fix for 95rootfs-block.
+If kernel cmdline has no root= provided, *and* the initrd carries
+a default value, create a systemd mount unit to have it available
+in /sysroot
+
+References: bnc#855258
 
 Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/90crypt/module-setup.sh  | 4 ++--
- modules.d/90dmraid/module-setup.sh | 4 ++--
- modules.d/90lvm/module-setup.sh    | 4 ++--
- modules.d/90mdraid/module-setup.sh | 4 ++--
- modules.d/95resume/module-setup.sh | 4 ++--
- 5 files changed, 10 insertions(+), 10 deletions(-)
+ modules.d/98systemd/rootfs-generator.sh | 34 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
 
-diff --git a/modules.d/90crypt/module-setup.sh b/modules.d/90crypt/module-setup.sh
-index 37ae859..ea1e340 100755
---- a/modules.d/90crypt/module-setup.sh
-+++ b/modules.d/90crypt/module-setup.sh
-@@ -50,8 +50,8 @@ cmdline() {
- install() {
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline >> "${initdir}/etc/cmdline.d/90crypt.conf"
--        echo >> "${initdir}/etc/cmdline.d/90crypt.conf"
-+        local _cryptconf=$(cmdline)
-+        [[ $_cryptconf ]] && printf "%s\n" "$_cryptconf" >> "${initdir}/etc/cmdline.d/90crypt.conf"
+diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
+index 5b06137..f3c7d1f 100755
+--- a/modules.d/98systemd/rootfs-generator.sh
++++ b/modules.d/98systemd/rootfs-generator.sh
+@@ -35,6 +35,35 @@ generator_wait_for_dev()
      fi
+ }
  
-     inst_multiple cryptsetup rmdir readlink umount
-diff --git a/modules.d/90dmraid/module-setup.sh b/modules.d/90dmraid/module-setup.sh
-index 508598b..044e01f 100755
---- a/modules.d/90dmraid/module-setup.sh
-+++ b/modules.d/90dmraid/module-setup.sh
-@@ -64,8 +64,8 @@ install() {
-     local _i
++generator_mount_rootfs()
++{
++    local _type=$2
++    local _flags=$3
++    local _name
++
++    [ -z "$1" ] && return 0
++
++    _name=$(dev_unit_name "$1")
++    [ -d /run/systemd/generator ] || mkdir -p /run/systemd/generator
++    if ! [ -f /run/systemd/generator/sysroot.mount ]; then
++        {
++            echo "[Unit]"
++            echo "Before=initrd-root-fs.target"
++            echo "RequiresOverridable=systemd-fsck@${_name}.service"
++            echo "After=systemd-fsck@${_name}.service"
++            echo "[Mount]"
++            echo "Where=/sysroot"
++            echo "What=$1"
++            echo "Options=${_flags}"
++            echo "Type=${_type}"
++        } > /run/systemd/generator/sysroot.mount
++    fi
++    if ! [ -L /run/systemd/generator/initrd-root-fs.target.requires/sysroot.mount ]; then
++        [ -d /run/systemd/generator/initrd-root-fs.target.requires ] || mkdir -p /run/systemd/generator/initrd-root-fs.target.requires
++        ln -s ../sysroot.mount /run/systemd/generator/initrd-root-fs.target.requires/sysroot.mount
++    fi
++}
++
+ root=$(getarg root=)
+ case "$root" in
+     block:LABEL=*|LABEL=*)
+@@ -61,6 +90,9 @@ case "$root" in
+         rootok=1 ;;
+ esac
  
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline >> "${initdir}/etc/cmdline.d/90dmraid.conf"
--        echo >> "${initdir}/etc/cmdline.d/90dmraid.conf"
-+        local _raidconf=$(cmdline)
-+        [[ $_raidconf ]] && printf "%s\n" "$_raidconf" >> "${initdir}/etc/cmdline.d/90dmraid.conf"
-     fi
+-[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}" "$RDRETRY"
++if [ "${root%%:*}" = "block" ]; then
++   generator_wait_for_dev "${root#block:}" "$RDRETRY"
++   grep -q 'root=' /proc/cmdline || generator_mount_rootfs "${root#block:}" "$(getarg rootfstype=)" "$(getarg rootflags=)"
++fi
  
-     inst_multiple dmraid
-diff --git a/modules.d/90lvm/module-setup.sh b/modules.d/90lvm/module-setup.sh
-index 5515ac0..592a2e2 100755
---- a/modules.d/90lvm/module-setup.sh
-+++ b/modules.d/90lvm/module-setup.sh
-@@ -53,8 +53,8 @@ install() {
-     inst lvm
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline >> "${initdir}/etc/cmdline.d/90lvm.conf"
--        echo >> "${initdir}/etc/cmdline.d/90lvm.conf"
-+        local _lvmconf=$(cmdline)
-+        [[ $_lvmconf ]] && printf "%s\n" "$_lvmconf" >> "${initdir}/etc/cmdline.d/90lvm.conf"
-     fi
- 
-     inst_rules "$moddir/64-lvm.rules"
-diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module-setup.sh
-index ce3394a..747ea8a 100755
---- a/modules.d/90mdraid/module-setup.sh
-+++ b/modules.d/90mdraid/module-setup.sh
-@@ -71,8 +71,8 @@ install() {
-     inst $(command -v mdadm) /sbin/mdadm
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
--        echo  >> "${initdir}/etc/cmdline.d/90mdraid.conf"
-+        local _raidconf=$(cmdline)
-+        [[ $_raidconf ]] && printf "%s\n" "$_raidconf" >> "${initdir}/etc/cmdline.d/90mdraid.conf"
-     fi
- 
-     # <mdadm-3.3 udev rule
-diff --git a/modules.d/95resume/module-setup.sh b/modules.d/95resume/module-setup.sh
-index 1ddb6e4..dfd4350 100755
---- a/modules.d/95resume/module-setup.sh
-+++ b/modules.d/95resume/module-setup.sh
-@@ -29,8 +29,8 @@ install() {
-     local _bin
- 
-     if [[ $hostonly_cmdline == "yes" ]]; then
--        cmdline  >> "${initdir}/etc/cmdline.d/95resume.conf"
--        echo  >> "${initdir}/etc/cmdline.d/95resume.conf"
-+	local _resumeconf=$(cmdline)
-+	[[ $_resumeconf ]] && printf "%s\n" "$_resumeconf" >> "${initdir}/etc/cmdline.d/95resume.conf"
-     fi
- 
-     # Optional uswsusp support
+ exit 0
 -- 
 1.8.5.2
