@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 32/42] 95fcoe: skip VLAN devices in fcoe-up
-Date: Thu, 11 Dec 2014 15:46:23 +0100
-Message-ID: <1418309193-11208-33-git-send-email-trenn@suse.de>
+Subject: [PATCH 39/42] Also export root= boot param for hostonly-cmdline case.
+Date: Thu, 11 Dec 2014 15:46:30 +0100
+Message-ID: <1418309193-11208-40-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,40 +11,52 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-DCB & fipvlan can only be called on real devices, not VLAN
-ones. So skip any VLAN devices which might been added to the
-list of network interfaces.
+If there's a root fallback, at least attempt to have it falling
+back to the last root filesystem this system ran off of.
 
-References: bnc#878583
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95fcoe/fcoe-up.sh | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ modules.d/95rootfs-block/module-setup.sh | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/modules.d/95fcoe/fcoe-up.sh b/modules.d/95fcoe/fcoe-up.sh
-index b9d0411..7f6eb1b 100755
---- a/modules.d/95fcoe/fcoe-up.sh
-+++ b/modules.d/95fcoe/fcoe-up.sh
-@@ -16,6 +16,14 @@ type ip_to_var >/dev/null 2>&1 || . /lib/net-lib.sh
- netif=$1
- dcb=$2
+diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
+index c2f71bb..81de177 100755
+--- a/modules.d/95rootfs-block/module-setup.sh
++++ b/modules.d/95rootfs-block/module-setup.sh
+@@ -29,14 +29,18 @@ cmdline_journal() {
+     return 0
+ }
  
-+iflink=$(cat /sys/class/net/$netif/iflink)
-+ifindex=$(cat /sys/class/net/$netif/ifindex)
-+if [ "$iflink" != "$ifindex" ] ; then
-+    # Skip VLAN devices
-+    exit 0
-+fi
+-# called by dracut
+-cmdline() {
++cmdline_rootfs() {
+     local dev=/dev/block/$(find_root_block_device)
+     if [ -e $dev ]; then
+         printf " root=%s" "$(shorten_persistent_dev "$(get_persistent_dev "$dev")")"
+         printf " rootflags=%s" "$(find_mp_fsopts /)"
+         printf " rootfstype=%s" "$(find_mp_fstype /)"
+     fi
++}
 +
-+ip link set dev $netif up
- linkup "$netif"
++# called by dracut
++cmdline() {
++    cmdline_rootfs
+     cmdline_journal
+ }
  
- netdriver=$(readlink -f /sys/class/net/$netif/device/driver)
+@@ -45,6 +49,8 @@ install() {
+     if [[ $hostonly_cmdline == "yes" ]]; then
+         local _journaldev=$(cmdline_journal)
+         [[ $_journaldev ]] && printf "%s\n" "$_journaldev" >> "${initdir}/etc/cmdline.d/95root-journaldev.conf"
++        local _rootdev=$(cmdline_rootfs)
++        [[ $_rootdev ]] && printf "%s\n" "$_rootdev" >> "${initdir}/etc/cmdline.d/95root-dev.conf"
+     fi
+ 
+     inst_multiple umount
 -- 
 1.8.5.2
