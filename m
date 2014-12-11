@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 36/42] 99base: Add chown binary
-Date: Thu, 11 Dec 2014 15:46:27 +0100
-Message-ID: <1418309193-11208-37-git-send-email-trenn@suse.de>
+Subject: [PATCH 31/42] 95fcoe: Store current configuration in dracut cmdline
+Date: Thu, 11 Dec 2014 15:46:22 +0100
+Message-ID: <1418309193-11208-32-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,29 +15,94 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-nvidia driver needs this via modprobe script.
-Needs to do change the group after a device node got created.
-Add chown instead of chgrp which can also change the owner of a file.
+When running with --hostonly-cmdline we should be storing
+the current configuration in /etc/cmdline.d so that dracut
+will be configure the system automatically.
 
-Ask Stefand Dirsch <sndirsch-l3A5Bk7waGM@public.gmane.org> for details.
+References: bnc#877288
 
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/99base/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/95fcoe/module-setup.sh | 52 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
 
-diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
-index 7d30320..a1046af 100755
---- a/modules.d/99base/module-setup.sh
-+++ b/modules.d/99base/module-setup.sh
-@@ -15,7 +15,7 @@ depends() {
+diff --git a/modules.d/95fcoe/module-setup.sh b/modules.d/95fcoe/module-setup.sh
+index b67aa04..174745a 100755
+--- a/modules.d/95fcoe/module-setup.sh
++++ b/modules.d/95fcoe/module-setup.sh
+@@ -2,7 +2,16 @@
+ 
+ # called by dracut
+ check() {
++    [[ $hostonly ]] || [[ $mount_needs ]] && {
++        for c in /sys/bus/fcoe/devices/ctlr_* ; do
++            [ -L $c ] || continue
++            fcoe_ctlr=$c
++        done
++        [ -z "$fcoe_ctlr" ] && return 255
++    }
++
+     require_binaries dcbtool fipvlan lldpad ip readlink || return 1
++
+     return 0
+ }
+ 
+@@ -17,12 +26,55 @@ installkernel() {
+     instmods fcoe 8021q edd
+ }
+ 
++get_vlan_parent() {
++    local link=$1
++
++    [ -d $link ] || return
++    read iflink < $link/iflink
++    for if in /sys/class/net/* ; do
++	read idx < $if/ifindex
++	if [ $idx -eq $iflink ] ; then
++	    echo ${if##*/}
++	fi
++    done
++}
++
++# called by dracut
++cmdline() {
++
++    for c in /sys/bus/fcoe/devices/ctlr_* ; do
++        [ -L $c ] || continue
++        read enabled < $c/enabled
++        [ $enabled -eq 0 ] && continue
++        d=$(cd -P $c; echo $PWD)
++        i=${d%/*}
++        read mac < ${i}/address
++        s=$(dcbtool gc ${i##*/} dcb | sed -n 's/^DCB State:\t*\(.*\)/\1/p')
++        if [ -z "$s" ] ; then
++	    p=$(get_vlan_parent ${i})
++	    if [ "$p" ] ; then
++	        s=$(dcbtool gc ${p} dcb | sed -n 's/^DCB State:\t*\(.*\)/\1/p')
++	    fi
++        fi
++        if [ "$s" = "on" ] ; then
++	    dcb="dcb"
++        else
++	    dcb="nodcb"
++        fi
++        echo "fcoe=${mac}:${dcb}"
++    done
++}
++
+ # called by dracut
  install() {
-     local _d
+     inst_multiple ip dcbtool fipvlan lldpad readlink lldptool
  
--    inst_multiple mount mknod mkdir sleep chroot \
-+    inst_multiple mount mknod mkdir sleep chroot chown \
-         sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink setsid
-     inst $(command -v modprobe) /sbin/modprobe
+     mkdir -m 0755 -p "$initdir/var/lib/lldpad"
  
++    if [[ $hostonly_cmdline == "yes" ]] ; then
++        local _fcoeconf=$(cmdline)
++        [[ $_fcoeconf ]] && printf "%s\n" "$_fcoeconf" >> "${initdir}/etc/cmdline.d/95fcoe.conf"
++    fi
+     inst "$moddir/fcoe-up.sh" "/sbin/fcoe-up"
+     inst "$moddir/fcoe-edd.sh" "/sbin/fcoe-edd"
+     inst "$moddir/fcoe-genrules.sh" "/sbin/fcoe-genrules.sh"
 -- 
 1.8.5.2
