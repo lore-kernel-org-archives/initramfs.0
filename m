@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 25/42] dracut.sh: Fix UUID= fstab parsing in case --mount option is passed
-Date: Thu, 11 Dec 2014 15:46:16 +0100
-Message-ID: <1418309193-11208-26-git-send-email-trenn@suse.de>
+Subject: [PATCH 16/42] Print stored dracut commandline during initramfs build
+Date: Thu, 11 Dec 2014 15:46:07 +0100
+Message-ID: <1418309193-11208-17-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,51 +11,40 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-Dracut parses /etc/fstab when --mount is option is passed (e.g. kdump).
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-In host_devs variable the real block device must be stored, not UUID=
-There are other /etc/fstab syntax possibilities we now warn that they
-are not correctly parsed. This will be fixed by another patch
-when there is time to test this properly.
+When generating the initramfs we should be printing out the
+generated dracut commandline used for booting.
+This will simplify debugging.
 
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.sh | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
+ dracut.sh | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 diff --git a/dracut.sh b/dracut.sh
-index a4c7ce5..2eba19b 100755
+index a542f33..cda7955 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -1071,9 +1071,25 @@ declare -A host_fs_types
+@@ -1584,6 +1584,16 @@ if ! ( echo $PARMS_TO_STORE > $initdir/lib/dracut/build-parameter.txt ); then
+     exit 1
+ fi
  
- for line in "${fstab_lines[@]}"; do
-     set -- $line
-+    dev="$1"
-     #dev mp fs fsopts
--    push_host_devs "$1"
--    host_fs_types["$1"]="$3"
-+    case "$dev" in
-+        UUID=*)
-+            dev=$(blkid -l -t UUID=${dev#UUID=} -o device)
-+            ;;
-+        LABEL=*)
-+            dev=$(blkid -l -t LABEL=${dev#LABEL=} -o device)
-+            ;;
-+        PARTUUID=*)
-+            dev=$(blkid -l -t PARTUUID=${dev#PARTUUID=} -o device)
-+            ;;
-+        PARTLABEL=*)
-+            dev=$(blkid -l -t PARTLABEL=${dev#PARTLABEL=} -o device)
-+            ;;
-+    esac
-+    [ -z "$dev" ] && dwarn "Bad fstab entry $@" && continue
-+    push_host_devs "$dev"
-+    host_fs_types["$dev"]="$3"
- done
++if [[ $hostonly_cmdline ]] ; then
++    if [ -d $initdir/etc/cmdline.d ];then
++        dinfo "Stored kernel commandline:"
++        for conf in $initdir/etc/cmdline.d/*.conf ; do
++            dinfo "$(< $conf)"
++        done
++    else
++        dinfo "No dracut internal kernel commandline stored in initrd"
++    fi
++fi
+ rm -f -- "$outfile"
+ dinfo "*** Creating image file ***"
  
- for f in $add_fstab; do
 -- 
 1.8.5.2
