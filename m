@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 30/42] 95fcoe: update fcoe interface check
-Date: Thu, 11 Dec 2014 15:46:21 +0100
-Message-ID: <1418309193-11208-31-git-send-email-trenn@suse.de>
+Subject: [PATCH 35/42] 40network: add missing _arch variable declaration
+Date: Thu, 11 Dec 2014 15:46:26 +0100
+Message-ID: <1418309193-11208-36-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,36 +15,25 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-The 'create' sysfs entry has been removed for newer fcoe modules,
-so just check if the module directory exists.
+The module_setup.sh script was missing an '_arch' declaration,
+causing network not to be installed on s390.
 
-References: bnc#877288
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95fcoe/parse-fcoe.sh | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ modules.d/40network/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/modules.d/95fcoe/parse-fcoe.sh b/modules.d/95fcoe/parse-fcoe.sh
-index 59de56f..9604503 100755
---- a/modules.d/95fcoe/parse-fcoe.sh
-+++ b/modules.d/95fcoe/parse-fcoe.sh
-@@ -20,14 +20,11 @@
+diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
+index 55bee4c..f7e0a87 100755
+--- a/modules.d/40network/module-setup.sh
++++ b/modules.d/40network/module-setup.sh
+@@ -17,6 +17,7 @@ depends() {
+ # called by dracut
+ installkernel() {
+     # Include wired net drivers, excluding wireless
++    local _arch=$(uname -m)
  
- 
- # BRCM: Later, should check whether bnx2x is loaded first before loading bnx2fc so do not load bnx2fc when there are no Broadcom adapters
--[ -e /sys/module/fcoe/parameters/create ] || modprobe -a fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
-+[ -d /sys/module/fcoe ] || modprobe -a fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
- 
- modprobe bnx2fc >/dev/null 2>&1
- udevadm settle --timeout=30
- 
--# FCoE actually supported?
--[ -e /sys/module/fcoe/parameters/create ] || modprobe fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
--
- parse_fcoe_opts() {
-     local IFS=:
-     set $fcoe
+     net_module_filter() {
+         local _net_drivers='eth_type_trans|register_virtio_device|usbnet_open'
 -- 
 1.8.5.2
