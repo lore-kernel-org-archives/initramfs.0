@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 24/42] dracut.sh: Avoid duplicate devices in host_devs
-Date: Thu, 11 Dec 2014 15:46:15 +0100
-Message-ID: <1418309193-11208-25-git-send-email-trenn@suse.de>
+Subject: [PATCH 33/42] 95fcoe: start lldpad separately
+Date: Thu, 11 Dec 2014 15:46:24 +0100
+Message-ID: <1418309193-11208-34-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,93 +11,80 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+
+lldpad is a system-wide process, which must be started only once.
+So we should be separate it from fcoe-up, as it might be called
+several times.
+
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- dracut.sh | 26 ++++++++++++++++++--------
- 1 file changed, 18 insertions(+), 8 deletions(-)
+ modules.d/95fcoe/fcoe-up.sh      |  8 --------
+ modules.d/95fcoe/lldpad.sh       | 14 ++++++++++++++
+ modules.d/95fcoe/module-setup.sh |  1 +
+ 3 files changed, 15 insertions(+), 8 deletions(-)
+ create mode 100644 modules.d/95fcoe/lldpad.sh
 
-diff --git a/dracut.sh b/dracut.sh
-index 79f36b6..a4c7ce5 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -219,6 +219,16 @@ push() {
+diff --git a/modules.d/95fcoe/fcoe-up.sh b/modules.d/95fcoe/fcoe-up.sh
+index 7f6eb1b..43a0ad5 100755
+--- a/modules.d/95fcoe/fcoe-up.sh
++++ b/modules.d/95fcoe/fcoe-up.sh
+@@ -30,10 +30,6 @@ netdriver=$(readlink -f /sys/class/net/$netif/device/driver)
+ netdriver=${netdriver##*/}
+ 
+ if [ "$dcb" = "dcb" ]; then
+-    # Note lldpad will stay running after switchroot, the system initscripts
+-    # are to kill it and start a new lldpad to take over. Data is transfered
+-    # between the 2 using a shm segment
+-    lldpad -d
+     # wait for lldpad to be ready
+     i=0
+     while [ $i -lt 60 ]; do
+@@ -43,10 +39,6 @@ if [ "$dcb" = "dcb" ]; then
+         i=$(($i+1))
      done
+ 
+-    # on some systems lldpad needs some time
+-    # sleep until we find a better solution
+-    sleep 30
+-
+     while [ $i -lt 60 ]; do
+         dcbtool sc "$netif" dcb on && break
+         info "Retrying to turn dcb on"
+diff --git a/modules.d/95fcoe/lldpad.sh b/modules.d/95fcoe/lldpad.sh
+new file mode 100644
+index 0000000..d06a3bd
+--- /dev/null
++++ b/modules.d/95fcoe/lldpad.sh
+@@ -0,0 +1,14 @@
++#!/bin/bash
++
++# Note lldpad will stay running after switchroot, the system initscripts
++# are to kill it and start a new lldpad to take over. Data is transfered
++# between the 2 using a shm segment
++lldpad -d
++# wait for lldpad to be ready
++i=0
++while [ $i -lt 60 ]; do
++    lldptool -p && break
++    info "Waiting for lldpad to be ready"
++    sleep 1
++    i=$(($i+1))
++done
+diff --git a/modules.d/95fcoe/module-setup.sh b/modules.d/95fcoe/module-setup.sh
+index 174745a..9c67f17 100755
+--- a/modules.d/95fcoe/module-setup.sh
++++ b/modules.d/95fcoe/module-setup.sh
+@@ -78,6 +78,7 @@ install() {
+     inst "$moddir/fcoe-up.sh" "/sbin/fcoe-up"
+     inst "$moddir/fcoe-edd.sh" "/sbin/fcoe-edd"
+     inst "$moddir/fcoe-genrules.sh" "/sbin/fcoe-genrules.sh"
++    inst_hook pre-trigger 03 "$moddir/lldpad.sh"
+     inst_hook cmdline 99 "$moddir/parse-fcoe.sh"
+     dracut_need_initqueue
  }
- 
-+# Fills up host_devs stack variable and makes sure there are no duplicates
-+push_host_devs() {
-+    local _dev
-+    for _dev in ${host_devs[@]}; do
-+        [ "$_dev" = "$1" ] && return
-+    done
-+    push host_devs "$1"
-+}
-+
-+
- # function pop()
- # pops the last value from a stack
- # assigns value to second argument variable
-@@ -1062,25 +1072,25 @@ declare -A host_fs_types
- for line in "${fstab_lines[@]}"; do
-     set -- $line
-     #dev mp fs fsopts
--    push host_devs "$1"
-+    push_host_devs "$1"
-     host_fs_types["$1"]="$3"
- done
- 
- for f in $add_fstab; do
-     [[ -e $f ]] || continue
-     while read dev rest; do
--        push host_devs "$dev"
-+        push_host_devs "$dev"
-     done < "$f"
- done
- 
- for dev in $add_device; do
--    push host_devs "$dev"
-+    push_host_devs "$dev"
- done
- 
- if (( ${#add_device_l[@]} )); then
-     while pop add_device_l val; do
-         add_device+=" $val "
--        push host_devs "$val"
-+        push_host_devs "$val"
-     done
- fi
- 
-@@ -1109,9 +1119,9 @@ if [[ $hostonly ]]; then
-         _dev=$(find_block_device "$mp")
-         _bdev=$(readlink -f "/dev/block/$_dev")
-         [[ -b $_bdev ]] && _dev=$_bdev
--        push host_devs $_dev
-+        push_host_devs $_dev
-         [[ "$mp" == "/" ]] && root_dev="$_dev"
--        push host_devs "$_dev"
-+        push_host_devs "$_dev"
-     done
- 
-     if [[ -f /proc/swaps ]] && [[ -f /etc/fstab ]]; then
-@@ -1140,7 +1150,7 @@ if [[ $hostonly ]]; then
-                     done < /etc/crypttab
-                 fi
- 
--                push host_devs "$(readlink -f "$dev")"
-+                push_host_devs "$(readlink -f "$dev")"
-                 break
-             done < /etc/fstab
-         done < /proc/swaps
-@@ -1205,7 +1215,7 @@ for dev in "${!host_fs_types[@]}"; do
-     fi
-     if [[ $journaldev ]]; then
-         dev="$(readlink -f "$dev")"
--        push host_devs "$dev"
-+        push_host_devs "$dev"
-         _get_fs_type "$dev"
-         check_block_and_slaves_all _get_fs_type "$(get_maj_min "$dev")"
-     fi
 -- 
 1.8.5.2
