@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 18/42] Generate fallback mount unit for root filesystem
-Date: Thu, 11 Dec 2014 15:46:09 +0100
-Message-ID: <1418309193-11208-19-git-send-email-trenn@suse.de>
+Subject: [PATCH 38/42] Fix non-export of journal dev boot options.
+Date: Thu, 11 Dec 2014 15:46:29 +0100
+Message-ID: <1418309193-11208-39-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,68 +15,30 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.
 
 From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 
-If kernel cmdline has no root= provided, *and* the initrd carries
-a default value, create a systemd mount unit to have it available
-in /sysroot
-
-References: bnc#855258
+cmdline_journal does not contain linefeeds anymore, so read
+silently skipped it altogether.
 
 Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/98systemd/rootfs-generator.sh | 34 ++++++++++++++++++++++++++++++++-
- 1 file changed, 33 insertions(+), 1 deletion(-)
+ modules.d/95rootfs-block/module-setup.sh | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/98systemd/rootfs-generator.sh b/modules.d/98systemd/rootfs-generator.sh
-index 5b06137..f3c7d1f 100755
---- a/modules.d/98systemd/rootfs-generator.sh
-+++ b/modules.d/98systemd/rootfs-generator.sh
-@@ -35,6 +35,35 @@ generator_wait_for_dev()
+diff --git a/modules.d/95rootfs-block/module-setup.sh b/modules.d/95rootfs-block/module-setup.sh
+index 258b32f..c2f71bb 100755
+--- a/modules.d/95rootfs-block/module-setup.sh
++++ b/modules.d/95rootfs-block/module-setup.sh
+@@ -43,9 +43,8 @@ cmdline() {
+ # called by dracut
+ install() {
+     if [[ $hostonly_cmdline == "yes" ]]; then
+-        cmdline_journal | while read journaldev; do
+-            [[ $journaldev ]] && printf "%s\n" "$journaldev" >> "${initdir}/etc/cmdline.d/95root-journaldev.conf"
+-        done
++        local _journaldev=$(cmdline_journal)
++        [[ $_journaldev ]] && printf "%s\n" "$_journaldev" >> "${initdir}/etc/cmdline.d/95root-journaldev.conf"
      fi
- }
  
-+generator_mount_rootfs()
-+{
-+    local _type=$2
-+    local _flags=$3
-+    local _name
-+
-+    [ -z "$1" ] && return 0
-+
-+    _name=$(dev_unit_name "$1")
-+    [ -d /run/systemd/generator ] || mkdir -p /run/systemd/generator
-+    if ! [ -f /run/systemd/generator/sysroot.mount ]; then
-+        {
-+            echo "[Unit]"
-+            echo "Before=initrd-root-fs.target"
-+            echo "RequiresOverridable=systemd-fsck@${_name}.service"
-+            echo "After=systemd-fsck@${_name}.service"
-+            echo "[Mount]"
-+            echo "Where=/sysroot"
-+            echo "What=$1"
-+            echo "Options=${_flags}"
-+            echo "Type=${_type}"
-+        } > /run/systemd/generator/sysroot.mount
-+    fi
-+    if ! [ -L /run/systemd/generator/initrd-root-fs.target.requires/sysroot.mount ]; then
-+        [ -d /run/systemd/generator/initrd-root-fs.target.requires ] || mkdir -p /run/systemd/generator/initrd-root-fs.target.requires
-+        ln -s ../sysroot.mount /run/systemd/generator/initrd-root-fs.target.requires/sysroot.mount
-+    fi
-+}
-+
- root=$(getarg root=)
- case "$root" in
-     block:LABEL=*|LABEL=*)
-@@ -61,6 +90,9 @@ case "$root" in
-         rootok=1 ;;
- esac
- 
--[ "${root%%:*}" = "block" ] && generator_wait_for_dev "${root#block:}" "$RDRETRY"
-+if [ "${root%%:*}" = "block" ]; then
-+   generator_wait_for_dev "${root#block:}" "$RDRETRY"
-+   grep -q 'root=' /proc/cmdline || generator_mount_rootfs "${root#block:}" "$(getarg rootfstype=)" "$(getarg rootflags=)"
-+fi
- 
- exit 0
+     inst_multiple umount
 -- 
 1.8.5.2
