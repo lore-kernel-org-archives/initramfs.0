@@ -1,39 +1,43 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [RESEND] SUSE patches which should show up mainline
-Date: Thu, 11 Dec 2014 15:45:51 +0100
-Message-ID: <1418309193-11208-1-git-send-email-trenn@suse.de>
+Subject: [PATCH 07/42] 95iscsi: Install libgcc_s library
+Date: Thu, 11 Dec 2014 15:45:58 +0100
+Message-ID: <1418309193-11208-8-git-send-email-trenn@suse.de>
+References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-Hi,
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-Changes to last post:
-- Removed unnecessary IFS variable restoring
-- Removed inst_multiple sed and host from nfs module
-- Removed warpclock patch/module (according Chao Wang this is done by systemd
-  by copying /etc/{localtime,adjtime} to initramfs)
+iscsiuio is using pthread, which requires libgcc_s for
+pthread_cancel to work.
+Without this library iscsiuio will crash with SIGABRT.
 
-One cleanup for the future I have in mind:
-As udev rules are often moved around in timeline (just the number changes),
-it would be nice if systemd enforces that udev rules must be unique.
-That would mean this is forbidden:
-01-ruleXXX
-05-ruleXXX
-Then dracut could implement:
-inst_rule ruleXXX
-and it would work for all distros and versions.
-But this needs clarification with systemd people first.
+References: bnc#881692
 
-Would be great to see as many of these applied already.
-E.g. mkinitrd-suse: Update to sles12 SUSE state
-should not be a big deal to apply.
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+---
+ modules.d/95iscsi/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks a lot,
-
-       Thomas
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index 5d2a39b..3641fb8 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -106,6 +106,7 @@ cmdline() {
+ install() {
+     inst_multiple umount iscsistart hostname iscsi-iname
+     inst_multiple -o iscsiuio
++    inst_libdir_file 'libgcc_s.so*'
+     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
+     inst_hook cleanup 90 "$moddir/cleanup-iscsi.sh"
+     inst "$moddir/iscsiroot.sh" "/sbin/iscsiroot"
+-- 
+1.8.5.2
