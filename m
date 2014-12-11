@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 13/42] iscsi: iscsi.initiator and others can and must only show up once
-Date: Thu, 11 Dec 2014 15:46:04 +0100
-Message-ID: <1418309193-11208-14-git-send-email-trenn@suse.de>
+Subject: [PATCH 24/42] dracut.sh: Avoid duplicate devices in host_devs
+Date: Thu, 11 Dec 2014 15:46:15 +0100
+Message-ID: <1418309193-11208-25-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -13,69 +13,91 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
 
-Make sure duplicates of iscsi.initiator vanish.
-Only get one rd.iscsi.* paramter value. If getargs is used and several
-parameters are parsed, one gets two values separated by whitespace in a
-variable which breaks later code and is not suppported.
-
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95iscsi/iscsiroot.sh    | 18 +++++++++---------
- modules.d/95iscsi/module-setup.sh |  5 ++++-
- 2 files changed, 13 insertions(+), 10 deletions(-)
+ dracut.sh | 26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
 
-diff --git a/modules.d/95iscsi/iscsiroot.sh b/modules.d/95iscsi/iscsiroot.sh
-index 7351427..5bfb017 100755
---- a/modules.d/95iscsi/iscsiroot.sh
-+++ b/modules.d/95iscsi/iscsiroot.sh
-@@ -81,23 +81,23 @@ handle_netroot()
-     local p
- 
-     # override conf settings by command line options
--    arg=$(getargs rd.iscsi.initiator -d iscsi_initiator=)
-+    arg=$(getarg rd.iscsi.initiator -d iscsi_initiator=)
-     [ -n "$arg" ] && iscsi_initiator=$arg
--    arg=$(getargs rd.iscsi.target.name -d iscsi_target_name=)
-+    arg=$(getarg rd.iscsi.target.name -d iscsi_target_name=)
-     [ -n "$arg" ] && iscsi_target_name=$arg
--    arg=$(getargs rd.iscsi.target.ip -d iscsi_target_ip)
-+    arg=$(getarg rd.iscsi.target.ip -d iscsi_target_ip)
-     [ -n "$arg" ] && iscsi_target_ip=$arg
--    arg=$(getargs rd.iscsi.target.port -d iscsi_target_port=)
-+    arg=$(getarg rd.iscsi.target.port -d iscsi_target_port=)
-     [ -n "$arg" ] && iscsi_target_port=$arg
--    arg=$(getargs rd.iscsi.target.group -d iscsi_target_group=)
-+    arg=$(getarg rd.iscsi.target.group -d iscsi_target_group=)
-     [ -n "$arg" ] && iscsi_target_group=$arg
--    arg=$(getargs rd.iscsi.username -d iscsi_username=)
-+    arg=$(getarg rd.iscsi.username -d iscsi_username=)
-     [ -n "$arg" ] && iscsi_username=$arg
--    arg=$(getargs rd.iscsi.password -d iscsi_password)
-+    arg=$(getarg rd.iscsi.password -d iscsi_password)
-     [ -n "$arg" ] && iscsi_password=$arg
--    arg=$(getargs rd.iscsi.in.username -d iscsi_in_username=)
-+    arg=$(getarg rd.iscsi.in.username -d iscsi_in_username=)
-     [ -n "$arg" ] && iscsi_in_username=$arg
--    arg=$(getargs rd.iscsi.in.password -d iscsi_in_password=)
-+    arg=$(getarg rd.iscsi.in.password -d iscsi_in_password=)
-     [ -n "$arg" ] && iscsi_in_password=$arg
-     for p in $(getargs rd.iscsi.param -d iscsi_param); do
- 	iscsi_param="$iscsi_param --param $p"
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index cd6cb4b..9975e59 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -123,7 +123,10 @@ install_iscsiroot() {
-                 iscsi_address="[$iscsi_address]"
-                 ;;
-         esac
--        echo "rd.iscsi.initiator=${iscsi_initiator} netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
-+        # Must be two separate lines, so that "sort | uniq" commands later
-+        # can sort out rd.iscsi.initiator= duplicates
-+        echo "rd.iscsi.initiator=${iscsi_initiator}"
-+        echo "netroot=iscsi:${iscsi_address}::${iscsi_port}:${iscsi_lun}:${iscsi_targetname}"
-     fi
-     return 0
+diff --git a/dracut.sh b/dracut.sh
+index 79f36b6..a4c7ce5 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -219,6 +219,16 @@ push() {
+     done
  }
+ 
++# Fills up host_devs stack variable and makes sure there are no duplicates
++push_host_devs() {
++    local _dev
++    for _dev in ${host_devs[@]}; do
++        [ "$_dev" = "$1" ] && return
++    done
++    push host_devs "$1"
++}
++
++
+ # function pop()
+ # pops the last value from a stack
+ # assigns value to second argument variable
+@@ -1062,25 +1072,25 @@ declare -A host_fs_types
+ for line in "${fstab_lines[@]}"; do
+     set -- $line
+     #dev mp fs fsopts
+-    push host_devs "$1"
++    push_host_devs "$1"
+     host_fs_types["$1"]="$3"
+ done
+ 
+ for f in $add_fstab; do
+     [[ -e $f ]] || continue
+     while read dev rest; do
+-        push host_devs "$dev"
++        push_host_devs "$dev"
+     done < "$f"
+ done
+ 
+ for dev in $add_device; do
+-    push host_devs "$dev"
++    push_host_devs "$dev"
+ done
+ 
+ if (( ${#add_device_l[@]} )); then
+     while pop add_device_l val; do
+         add_device+=" $val "
+-        push host_devs "$val"
++        push_host_devs "$val"
+     done
+ fi
+ 
+@@ -1109,9 +1119,9 @@ if [[ $hostonly ]]; then
+         _dev=$(find_block_device "$mp")
+         _bdev=$(readlink -f "/dev/block/$_dev")
+         [[ -b $_bdev ]] && _dev=$_bdev
+-        push host_devs $_dev
++        push_host_devs $_dev
+         [[ "$mp" == "/" ]] && root_dev="$_dev"
+-        push host_devs "$_dev"
++        push_host_devs "$_dev"
+     done
+ 
+     if [[ -f /proc/swaps ]] && [[ -f /etc/fstab ]]; then
+@@ -1140,7 +1150,7 @@ if [[ $hostonly ]]; then
+                     done < /etc/crypttab
+                 fi
+ 
+-                push host_devs "$(readlink -f "$dev")"
++                push_host_devs "$(readlink -f "$dev")"
+                 break
+             done < /etc/fstab
+         done < /proc/swaps
+@@ -1205,7 +1215,7 @@ for dev in "${!host_fs_types[@]}"; do
+     fi
+     if [[ $journaldev ]]; then
+         dev="$(readlink -f "$dev")"
+-        push host_devs "$dev"
++        push_host_devs "$dev"
+         _get_fs_type "$dev"
+         check_block_and_slaves_all _get_fs_type "$(get_maj_min "$dev")"
+     fi
 -- 
 1.8.5.2
