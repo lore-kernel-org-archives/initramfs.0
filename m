@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 31/42] 95fcoe: Store current configuration in dracut cmdline
-Date: Thu, 11 Dec 2014 15:46:22 +0100
-Message-ID: <1418309193-11208-32-git-send-email-trenn@suse.de>
+Subject: [PATCH 28/42] 95iscsi: parse output from iscsiadm correctly
+Date: Thu, 11 Dec 2014 15:46:19 +0100
+Message-ID: <1418309193-11208-29-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -15,94 +15,44 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-When running with --hostonly-cmdline we should be storing
-the current configuration in /etc/cmdline.d so that dracut
-will be configure the system automatically.
+Due to some obsure reason the IFS parameter is not set correctly
+when evaluating get_ibft_mod(). So change the parsing to not rely
+on IFS altogether.
 
-References: bnc#877288
+References: bnc#886199
 
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95fcoe/module-setup.sh | 52 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 52 insertions(+)
+ modules.d/95iscsi/module-setup.sh | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/modules.d/95fcoe/module-setup.sh b/modules.d/95fcoe/module-setup.sh
-index b67aa04..174745a 100755
---- a/modules.d/95fcoe/module-setup.sh
-+++ b/modules.d/95fcoe/module-setup.sh
-@@ -2,7 +2,16 @@
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index 9975e59..f13119f 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -30,15 +30,16 @@ check() {
  
- # called by dracut
- check() {
-+    [[ $hostonly ]] || [[ $mount_needs ]] && {
-+        for c in /sys/bus/fcoe/devices/ctlr_* ; do
-+            [ -L $c ] || continue
-+            fcoe_ctlr=$c
-+        done
-+        [ -z "$fcoe_ctlr" ] && return 255
-+    }
-+
-     require_binaries dcbtool fipvlan lldpad ip readlink || return 1
-+
-     return 0
+ get_ibft_mod() {
+     local ibft_mac=$1
++    local iface_mac iface_mod
+     # Return the iSCSI offload module for a given MAC address
+-    iscsiadm -m iface | while read iface_name iface_desc ; do
+-        IFS=$','
+-        set -- $iface_desc
+-        if [ "$ibft_mac" = "$2" ] ; then
+-            echo $1
++    for iface_desc in $(iscsiadm -m iface | cut -f 2 -d ' '); do
++        iface_mod=${iface_desc%%,*}
++        iface_mac=${iface_desc#*,}
++        iface_mac=${iface_mac%%,*}
++        if [ "$ibft_mac" = "$iface_mac" ] ; then
++            echo $iface_mod
+             return 0
+         fi
+-        unset IFS
+     done
  }
  
-@@ -17,12 +26,55 @@ installkernel() {
-     instmods fcoe 8021q edd
- }
- 
-+get_vlan_parent() {
-+    local link=$1
-+
-+    [ -d $link ] || return
-+    read iflink < $link/iflink
-+    for if in /sys/class/net/* ; do
-+	read idx < $if/ifindex
-+	if [ $idx -eq $iflink ] ; then
-+	    echo ${if##*/}
-+	fi
-+    done
-+}
-+
-+# called by dracut
-+cmdline() {
-+
-+    for c in /sys/bus/fcoe/devices/ctlr_* ; do
-+        [ -L $c ] || continue
-+        read enabled < $c/enabled
-+        [ $enabled -eq 0 ] && continue
-+        d=$(cd -P $c; echo $PWD)
-+        i=${d%/*}
-+        read mac < ${i}/address
-+        s=$(dcbtool gc ${i##*/} dcb | sed -n 's/^DCB State:\t*\(.*\)/\1/p')
-+        if [ -z "$s" ] ; then
-+	    p=$(get_vlan_parent ${i})
-+	    if [ "$p" ] ; then
-+	        s=$(dcbtool gc ${p} dcb | sed -n 's/^DCB State:\t*\(.*\)/\1/p')
-+	    fi
-+        fi
-+        if [ "$s" = "on" ] ; then
-+	    dcb="dcb"
-+        else
-+	    dcb="nodcb"
-+        fi
-+        echo "fcoe=${mac}:${dcb}"
-+    done
-+}
-+
- # called by dracut
- install() {
-     inst_multiple ip dcbtool fipvlan lldpad readlink lldptool
- 
-     mkdir -m 0755 -p "$initdir/var/lib/lldpad"
- 
-+    if [[ $hostonly_cmdline == "yes" ]] ; then
-+        local _fcoeconf=$(cmdline)
-+        [[ $_fcoeconf ]] && printf "%s\n" "$_fcoeconf" >> "${initdir}/etc/cmdline.d/95fcoe.conf"
-+    fi
-     inst "$moddir/fcoe-up.sh" "/sbin/fcoe-up"
-     inst "$moddir/fcoe-edd.sh" "/sbin/fcoe-edd"
-     inst "$moddir/fcoe-genrules.sh" "/sbin/fcoe-genrules.sh"
 -- 
 1.8.5.2
