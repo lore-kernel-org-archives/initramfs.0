@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 06/42] 95iscsi: Autodetect iSCSI firmware
-Date: Thu, 11 Dec 2014 15:45:57 +0100
-Message-ID: <1418309193-11208-7-git-send-email-trenn@suse.de>
+Subject: [PATCH 08/42] 95iscsi: Set correct iscsi_started value for iSCSI firmware
+Date: Thu, 11 Dec 2014 15:45:59 +0100
+Message-ID: <1418309193-11208-9-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,90 +11,39 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, Pavel Wieczorkiewicz <pwieczorkiewicz-IBi9RG/b67k@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-Some iSCSI initiator present firmware information in
-/sys/firmware/ibft or /sys/firmware/iscsi_bootX
+When iSCSI firmware booting is selected we should not rely on
+'netroot' or 'iscsiroot' variables to be set.
 
-Whenever we detect one of those directories we should assume
-that the iSCSI devices should be activated.
+References: bnc#873448
 
-Also incorporates SUSE patches:
-0049:
-95iscsi: Use 'ip=ibft' for ibft autoconfiguration
-
-For iBFT autoconfiguration we should be setting 'ip=ibft'
-instead of rd.neednet. This should instruct dracut to only
-enable the iBFT interfaces and leave the rest alone.
-
-References: bnc#879038
-
-0054:
-95iscsi: update commandline printing
-
-dracut has a separate callout 'cmdline' which should be used
-for printing out the generated commandline.
-
-
-Signed-off-by: Pavel Wieczorkiewicz <pwieczorkiewicz-IBi9RG/b67k@public.gmane.org>
 Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95iscsi/module-setup.sh | 26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+ modules.d/95iscsi/parse-iscsiroot.sh | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index 8b42d3e..5d2a39b 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -28,6 +28,21 @@ check() {
-     return 0
- }
+diff --git a/modules.d/95iscsi/parse-iscsiroot.sh b/modules.d/95iscsi/parse-iscsiroot.sh
+index ca57668..85c3027 100755
+--- a/modules.d/95iscsi/parse-iscsiroot.sh
++++ b/modules.d/95iscsi/parse-iscsiroot.sh
+@@ -90,8 +90,12 @@ if [ -n "$netroot" ] && [ "$root" != "/dev/root" ] && [ "$root" != "dhcp" ]; the
+     fi
+ fi
  
-+install_ibft() {
-+    # When iBFT / iscsi_boot is detected:
-+    # - Use 'ip=ibft' to set up iBFT network interface
-+    # - specify firmware booting cmdline parameter
-+
-+    for d in /sys/firmware/* ; do
-+        if [ -d ${d}/initiator ] ; then
-+            if [ ${d##*/} = "ibft" ] ; then
-+                echo -n "ip=ibft "
-+            fi
-+            echo -n "rd.iscsi.firmware=1"
-+        fi
-+    done
-+}
-+
- # called by dracut
- depends() {
-     echo network rootfs-block
-@@ -37,6 +52,12 @@ depends() {
- installkernel() {
-     local _arch=$(uname -m)
+-netroot_enc=$(str_replace "$netroot" '/' '\2f')
+-echo "[ -f '/tmp/iscsistarted-$netroot_enc' ]" > $hookdir/initqueue/finished/iscsi_started.sh
++if [ -n "$iscsi_firmware" ] ; then
++    echo "[ -f '/tmp/iscsistarted-firmware' ]" > $hookdir/initqueue/finished/iscsi_started.sh
++else
++    netroot_enc=$(str_replace "$netroot" '/' '\2f')
++    echo "[ -f '/tmp/iscsistarted-$netroot_enc' ]" > $hookdir/initqueue/finished/iscsi_started.sh
++fi
  
-+    # Detect iBFT and perform mandatory steps
-+    if [[ $hostonly_cmdline == "yes" ]] ; then
-+        install_ibft > "${initdir}/etc/cmdline.d/95iscsi.conf"
-+        echo >> "${initdir}/etc/cmdline.d/95iscsi.conf"
-+    fi
-+
-     instmods bnx2i qla4xxx cxgb3i cxgb4i be2iscsi
-     hostonly="" instmods iscsi_tcp iscsi_ibft crc32c iscsi_boot_sysfs
-     iscsi_module_filter() {
-@@ -77,6 +98,11 @@ installkernel() {
- }
- 
- # called by dracut
-+cmdline() {
-+    install_ibft
-+}
-+
-+# called by dracut
- install() {
-     inst_multiple umount iscsistart hostname iscsi-iname
-     inst_multiple -o iscsiuio
+ # Done, all good!
+ rootok=1
 -- 
 1.8.5.2
