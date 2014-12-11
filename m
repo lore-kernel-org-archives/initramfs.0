@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 37/42] 90kernel-modules: install scsi_dh_alua
-Date: Thu, 11 Dec 2014 15:46:28 +0100
-Message-ID: <1418309193-11208-38-git-send-email-trenn@suse.de>
+Subject: [PATCH 42/42] dracut: nbd: Only complain of missing binary in hostonly mode if
+Date: Thu, 11 Dec 2014 15:46:33 +0100
+Message-ID: <1418309193-11208-43-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,32 +11,40 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+ rootfs is on nbd
 
-Install the missing scsi_dh_alua module, too.
+In not hostonly mode, require_binaries will still complain.
+If in hostonly mode and the module is explicitly added via -a nbd, then
+install() section will still complain later:
+dracut-install: ERROR: installing 'nbd-client'
 
-References: bnc#871617
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/90kernel-modules/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/95nbd/module-setup.sh | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-index 2fa263c..1a8fcff 100755
---- a/modules.d/90kernel-modules/module-setup.sh
-+++ b/modules.d/90kernel-modules/module-setup.sh
-@@ -41,7 +41,7 @@ installkernel() {
-             uhci-hcd \
-             xhci-hcd
+diff --git a/modules.d/95nbd/module-setup.sh b/modules.d/95nbd/module-setup.sh
+index 4f9e350..3cb6f49 100755
+--- a/modules.d/95nbd/module-setup.sh
++++ b/modules.d/95nbd/module-setup.sh
+@@ -3,8 +3,6 @@
+ # called by dracut
+ check() {
+     local _rootdev
+-    # If our prerequisites are not met, fail.
+-    require_binaries nbd-client || return 1
  
--        instmods yenta_socket scsi_dh_rdac scsi_dh_emc \
-+        instmods yenta_socket scsi_dh_rdac scsi_dh_emc scsi_dh_alua \
-             atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
-             hid-logitech-dj hid-microsoft hid-lcpower firewire-ohci \
-             pcmcia hid-hyperv hv-vmbus hyperv-keyboard
+     # if an nbd device is not somewhere in the chain of devices root is
+     # mounted on, fail the hostonly check.
+@@ -15,6 +13,7 @@ check() {
+         [[ -b /dev/block/$_rootdev ]] || return 1
+         check_block_and_slaves is_nbd "$_rootdev" || return 255
+     }
++    require_binaries nbd-client || return 1
+ 
+     return 0
+ }
 -- 
 1.8.5.2
