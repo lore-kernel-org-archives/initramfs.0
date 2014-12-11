@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 42/42] dracut: nbd: Only complain of missing binary in hostonly mode if
-Date: Thu, 11 Dec 2014 15:46:33 +0100
-Message-ID: <1418309193-11208-43-git-send-email-trenn@suse.de>
+Subject: [PATCH 30/42] 95fcoe: update fcoe interface check
+Date: Thu, 11 Dec 2014 15:46:21 +0100
+Message-ID: <1418309193-11208-31-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,40 +11,40 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
- rootfs is on nbd
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-In not hostonly mode, require_binaries will still complain.
-If in hostonly mode and the module is explicitly added via -a nbd, then
-install() section will still complain later:
-dracut-install: ERROR: installing 'nbd-client'
+The 'create' sysfs entry has been removed for newer fcoe modules,
+so just check if the module directory exists.
 
+References: bnc#877288
+
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/95nbd/module-setup.sh | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ modules.d/95fcoe/parse-fcoe.sh | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/modules.d/95nbd/module-setup.sh b/modules.d/95nbd/module-setup.sh
-index 4f9e350..3cb6f49 100755
---- a/modules.d/95nbd/module-setup.sh
-+++ b/modules.d/95nbd/module-setup.sh
-@@ -3,8 +3,6 @@
- # called by dracut
- check() {
-     local _rootdev
--    # If our prerequisites are not met, fail.
--    require_binaries nbd-client || return 1
+diff --git a/modules.d/95fcoe/parse-fcoe.sh b/modules.d/95fcoe/parse-fcoe.sh
+index 59de56f..9604503 100755
+--- a/modules.d/95fcoe/parse-fcoe.sh
++++ b/modules.d/95fcoe/parse-fcoe.sh
+@@ -20,14 +20,11 @@
  
-     # if an nbd device is not somewhere in the chain of devices root is
-     # mounted on, fail the hostonly check.
-@@ -15,6 +13,7 @@ check() {
-         [[ -b /dev/block/$_rootdev ]] || return 1
-         check_block_and_slaves is_nbd "$_rootdev" || return 255
-     }
-+    require_binaries nbd-client || return 1
  
-     return 0
- }
+ # BRCM: Later, should check whether bnx2x is loaded first before loading bnx2fc so do not load bnx2fc when there are no Broadcom adapters
+-[ -e /sys/module/fcoe/parameters/create ] || modprobe -a fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
++[ -d /sys/module/fcoe ] || modprobe -a fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
+ 
+ modprobe bnx2fc >/dev/null 2>&1
+ udevadm settle --timeout=30
+ 
+-# FCoE actually supported?
+-[ -e /sys/module/fcoe/parameters/create ] || modprobe fcoe || die "FCoE requested but kernel/initrd does not support FCoE"
+-
+ parse_fcoe_opts() {
+     local IFS=:
+     set $fcoe
 -- 
 1.8.5.2
