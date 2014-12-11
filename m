@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 17/42] Align dev_unit_name() with systemd's function.
-Date: Thu, 11 Dec 2014 15:46:08 +0100
-Message-ID: <1418309193-11208-18-git-send-email-trenn@suse.de>
+Subject: [PATCH 19/42] 99base: warn on invalid command for initqueue
+Date: Thu, 11 Dec 2014 15:46:10 +0100
+Message-ID: <1418309193-11208-20-git-send-email-trenn@suse.de>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
@@ -11,59 +11,35 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-From: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-Add more corner cases from systemd's
-unit_name_from_path_instance() C function.
+When 'initqueue' is called with an invalid command it'll generate
+invalid job scripts. This will lead to confusing error messages
+later on.
+So abort in these cases and print out a warning.
 
-Signed-off-by: Thorsten Behrens <tbehrens-IBi9RG/b67k@public.gmane.org>
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/99base/dracut-lib.sh | 24 ++++++++++++++++++------
- 1 file changed, 18 insertions(+), 6 deletions(-)
+ modules.d/99base/initqueue.sh | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index f7cffc4..5c1504f 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -866,18 +866,30 @@ wait_for_mount()
-     } >> "$hookdir/emergency/90-${_name}.sh"
- }
+diff --git a/modules.d/99base/initqueue.sh b/modules.d/99base/initqueue.sh
+index 4a07da3..193cc5c 100755
+--- a/modules.d/99base/initqueue.sh
++++ b/modules.d/99base/initqueue.sh
+@@ -42,6 +42,10 @@ exe=$1
+ shift
  
-+# get a systemd-compatible unit name from a path
-+# (mimicks unit_name_from_path_instance())
- dev_unit_name()
+ [ -x "$exe" ] || exe=$(command -v $exe)
++if [ -z "$exe" ] ; then
++    echo "Invalid command"
++    exit 1
++fi
+ 
  {
-+    local dev="$1"
-+
-     if command -v systemd-escape >/dev/null; then
--        systemd-escape -p  "$1"
-+        systemd-escape -p  "$dev"
-         return
-     fi
- 
--    _name="${1%%/}"
--    _name="${_name##/}"
--    _name="$(str_replace "$_name" '-' '\x2d')"
--    _name="$(str_replace "$_name" '/' '-')"
--    echo "$_name"
-+    if [ "$dev" = "/" -o -z "$dev" ]; then
-+        printf -- "-"
-+        exit 0
-+    fi
-+
-+    dev="${1%%/}"
-+    dev="${dev##/}"
-+    dev="$(str_replace "$dev" '\' '\x5c')"
-+    dev="$(str_replace "$dev" '-' '\x2d')"
-+    dev=${dev/#\./\\x2e}
-+    dev="$(str_replace "$dev" '/' '-')"
-+
-+    printf -- "%s" "$dev"
- }
- 
- # wait_for_dev <dev>
+     [ -n "$onetime" ] && echo '[ -e "$job" ] && rm -f -- "$job"'
 -- 
 1.8.5.2
