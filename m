@@ -1,59 +1,127 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 11/42] 95iscsi: More empty cmdline fixes
-Date: Thu, 11 Dec 2014 15:46:02 +0100
-Message-ID: <1418309193-11208-12-git-send-email-trenn@suse.de>
+From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 31/42] 95fcoe: Store current configuration in dracut
+ cmdline
+Date: Fri, 12 Dec 2014 11:02:01 +0800
+Message-ID: <20141212030201.GD1678@dhcp-16-116.nay.redhat.com>
 References: <1418309193-11208-1-git-send-email-trenn@suse.de>
+ <1418309193-11208-32-git-send-email-trenn@suse.de>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1418309193-11208-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1418309193-11208-32-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+On 12/11/14 at 03:46pm, Thomas Renninger wrote:
+> From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+> 
+> When running with --hostonly-cmdline we should be storing
+> the current configuration in /etc/cmdline.d so that dracut
+> will be configure the system automatically.
+> 
+> References: bnc#877288
+> 
+> Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+> Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+> ---
+>  modules.d/95fcoe/module-setup.sh | 52 ++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 52 insertions(+)
+> 
+> diff --git a/modules.d/95fcoe/module-setup.sh b/modules.d/95fcoe/module-setup.sh
+> index b67aa04..174745a 100755
+> --- a/modules.d/95fcoe/module-setup.sh
+> +++ b/modules.d/95fcoe/module-setup.sh
+> @@ -2,7 +2,16 @@
+>  
+>  # called by dracut
+>  check() {
+> +    [[ $hostonly ]] || [[ $mount_needs ]] && {
+> +        for c in /sys/bus/fcoe/devices/ctlr_* ; do
+> +            [ -L $c ] || continue
+> +            fcoe_ctlr=$c
+> +        done
+> +        [ -z "$fcoe_ctlr" ] && return 255
+> +    }
+> +
+>      require_binaries dcbtool fipvlan lldpad ip readlink || return 1
+> +
+>      return 0
+>  }
+>  
+> @@ -17,12 +26,55 @@ installkernel() {
+>      instmods fcoe 8021q edd
+>  }
+>  
+> +get_vlan_parent() {
+> +    local link=$1
+> +
+> +    [ -d $link ] || return
+> +    read iflink < $link/iflink
+> +    for if in /sys/class/net/* ; do
+> +	read idx < $if/ifindex
+> +	if [ $idx -eq $iflink ] ; then
+> +	    echo ${if##*/}
+> +	fi
+> +    done
+> +}
+> +
+> +# called by dracut
+> +cmdline() {
+> +
+> +    for c in /sys/bus/fcoe/devices/ctlr_* ; do
+> +        [ -L $c ] || continue
+> +        read enabled < $c/enabled
+> +        [ $enabled -eq 0 ] && continue
+> +        d=$(cd -P $c; echo $PWD)
+> +        i=${d%/*}
+> +        read mac < ${i}/address
+> +        s=$(dcbtool gc ${i##*/} dcb | sed -n 's/^DCB State:\t*\(.*\)/\1/p')
+> +        if [ -z "$s" ] ; then
+> +	    p=$(get_vlan_parent ${i})
+> +	    if [ "$p" ] ; then
+> +	        s=$(dcbtool gc ${p} dcb | sed -n 's/^DCB State:\t*\(.*\)/\1/p')
+> +	    fi
+> +        fi
+> +        if [ "$s" = "on" ] ; then
+> +	    dcb="dcb"
+> +        else
+> +	    dcb="nodcb"
+> +        fi
+> +        echo "fcoe=${mac}:${dcb}"
+> +    done
+> +}
 
-This fixes up some 95iscsi/module-setup.sh which might print out empty
-commandline files.
+Hi Thomas,
 
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
----
- modules.d/95iscsi/module-setup.sh | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+Why do you need to do this? Usually a module should do the work based on
+its functionality. According to your change, how does a user specify NIC
+or vlan they only want to bring up?
 
-diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
-index d30e64f..29bba82 100755
---- a/modules.d/95iscsi/module-setup.sh
-+++ b/modules.d/95iscsi/module-setup.sh
-@@ -76,12 +76,6 @@ depends() {
- installkernel() {
-     local _arch=$(uname -m)
- 
--    # Detect iBFT and perform mandatory steps
--    if [[ $hostonly_cmdline == "yes" ]] ; then
--        install_ibft > "${initdir}/etc/cmdline.d/95iscsi.conf"
--        echo >> "${initdir}/etc/cmdline.d/95iscsi.conf"
--    fi
--
-     instmods bnx2i qla4xxx cxgb3i cxgb4i be2iscsi
-     hostonly="" instmods iscsi_tcp iscsi_ibft crc32c iscsi_boot_sysfs
-     iscsi_module_filter() {
-@@ -131,6 +125,13 @@ install() {
-     inst_multiple umount iscsistart hostname iscsi-iname
-     inst_multiple -o iscsiuio
-     inst_libdir_file 'libgcc_s.so*'
-+
-+    # Detect iBFT and perform mandatory steps
-+    if [[ $hostonly_cmdline == "yes" ]] ; then
-+        local _ibftconf=$(install_ibft)
-+        [[ $_ibftconf ]] && printf "%s\n" "$_ibftconf" >> "${initdir}/etc/cmdline.d/95iscsi.conf"
-+    fi
-+
-     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
-     inst_hook cleanup 90 "$moddir/cleanup-iscsi.sh"
-     inst "$moddir/iscsiroot.sh" "/sbin/iscsiroot"
--- 
-1.8.5.2
+Thanks
+Baoquan
+
+> +
+>  # called by dracut
+>  install() {
+>      inst_multiple ip dcbtool fipvlan lldpad readlink lldptool
+>  
+>      mkdir -m 0755 -p "$initdir/var/lib/lldpad"
+>  
+> +    if [[ $hostonly_cmdline == "yes" ]] ; then
+> +        local _fcoeconf=$(cmdline)
+> +        [[ $_fcoeconf ]] && printf "%s\n" "$_fcoeconf" >> "${initdir}/etc/cmdline.d/95fcoe.conf"
+> +    fi
+>      inst "$moddir/fcoe-up.sh" "/sbin/fcoe-up"
+>      inst "$moddir/fcoe-edd.sh" "/sbin/fcoe-edd"
+>      inst "$moddir/fcoe-genrules.sh" "/sbin/fcoe-genrules.sh"
+> -- 
+> 1.8.5.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe initramfs" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
