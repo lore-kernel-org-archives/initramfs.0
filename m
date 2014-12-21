@@ -1,51 +1,54 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 41/42] 95rootfs-block: Correctly terminate commandline
- parameter
-Date: Wed, 17 Dec 2014 13:21:42 +0100
-Message-ID: <54917556.4060500@redhat.com>
-References: <1418309193-11208-1-git-send-email-trenn@suse.de> <1418309193-11208-42-git-send-email-trenn@suse.de> <54915E9C.2050306@redhat.com> <54916198.1060206@suse.de>
+From: Thomas Backlund <tmb-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] 90kernel-modules: update for xhci module split in kernel
+ 3.18
+Date: Sun, 21 Dec 2014 12:44:30 +0159
+Message-ID: <5496A4A7.6040609@mageia.org>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/mixed;
+ boundary="------------020004010105010909060900"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <54916198.1060206-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="windows-1252"
-To: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 17.12.2014 11:57, Hannes Reinecke wrote:
-> On 12/17/2014 11:44 AM, Harald Hoyer wrote:
->> I reverted this patch.
->>
->> $ ./dracut.sh -l --print-cmdline
->> root=3DUUID=3Dd5e53483-30bc-4119-8c0c-841d47a2f76brootflags=3Drw,noa=
-time,compress=3Dlzo,ssd,discard,space_cache,autodefrag,inode_cacherootf=
-stype=3Dbtrfs
->>
->> instead of:
->>
->> $ ./dracut.sh -l --print-cmdline
->>  root=3DUUID=3Dd5e53483-30bc-4119-8c0c-841d47a2f76b
->> rootflags=3Drw,noatime,compress=3Dlzo,ssd,discard,space_cache,autode=
-frag,inode_cache rootfstype=3Dbtrfs
->>
->> and also
->>
->> $ make testimage
->> =85
->>  *** Store current command line parameters ***
->> Stored kernel commandline:
->> root=3DUUID=3Dd5e53483-30bc-4119-8c0c-841d47a2f76brootflags=3Drw,noa=
-time,compress=3Dlzo,ssd,discard,space_cache,autodefrag,inode_cacherootf=
-stype=3Dbtrfs
->> =85
->>
-> Any specific reason for this?
-> Errors, failures?
+This is a multi-part message in MIME format.
+--------------020004010105010909060900
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: 7bit
 
-reread what I wrote above... The parameters are _not_ separated by whit=
-espace
-and I really don't know, what you wanted to accomplish with your patch.=
- Are
-newlines missing in your patch?
+
+--------------020004010105010909060900
+Content-Type: text/x-diff;
+ name="dracut-xhci-modules-kernel-3.18.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="dracut-xhci-modules-kernel-3.18.patch"
+
+
+As reported in https://bugs.mageia.org/show_bug.cgi?id=14799
+
+the xhci module got splitted up in upstream linux merged during
+3.18 release cycle:
+
+From 29e409f0f7613f9fd2235e41f0fa33e48e94544e Mon Sep 17 00:00:00 2001
+From: Andrew Bresticker <abrestic-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Date: Fri, 3 Oct 2014 11:35:29 +0300
+Subject: xhci: Allow xHCI drivers to be built as separate modules
+
+so we need to adjust 90kernel-modules accordingly.
+
+Signed-off-by: Thomas Backlund <tmb-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
+
+--- dracut/modules.d/90kernel-modules/module-setup.sh.orig
++++ dracut/modules.d/90kernel-modules/module-setup.sh
+@@ -41,7 +41,7 @@ installkernel() {
+             ehci-hcd ehci-pci ehci-platform \
+             ohci-hcd ohci-pci \
+             uhci-hcd \
+-            xhci-hcd
++            xhci-hcd xhci-pci xhci-plat-hcd
+ 
+         instmods yenta_socket scsi_dh_rdac scsi_dh_emc \
+             atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
+
+--------------020004010105010909060900--
