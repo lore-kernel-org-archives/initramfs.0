@@ -1,54 +1,50 @@
-From: Thomas Backlund <tmb-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH] 90kernel-modules: update for xhci module split in kernel
- 3.18
-Date: Sun, 21 Dec 2014 12:44:30 +0159
-Message-ID: <5496A4A7.6040609@mageia.org>
-Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------020004010105010909060900"
+From: Lubomir Rintel <lkundrak-NGH9Lh4a5iE@public.gmane.org>
+Subject: [PATCH] dracut-functions.sh: avoid tokenizing ldconfig output with 'read'
+Date: Tue, 23 Dec 2014 22:03:10 +0100
+Message-ID: <1419368590-2052-1-git-send-email-lkundrak@v3.sk>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Lubomir Rintel <lkundrak-NGH9Lh4a5iE@public.gmane.org>
 
-This is a multi-part message in MIME format.
---------------020004010105010909060900
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: 7bit
+The space does not separate the elements reliably, spaces can be
+embedded in parenthesized expressions too:
 
+  libgmpxx.so.4 (libc6, hwcap: 0x0000000004000000) => /lib/sse2/libgmpxx.so.4
+  libgmp.so.10 (libc6, hwcap: 0x0000000004000000) => /lib/sse2/libgmp.so.10
 
---------------020004010105010909060900
-Content-Type: text/x-diff;
- name="dracut-xhci-modules-kernel-3.18.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="dracut-xhci-modules-kernel-3.18.patch"
+This results in dracut creating '0x0000000004000000' and '=>'
+directories in the initramfs image.
+---
+ dracut-functions.sh | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
 
-
-As reported in https://bugs.mageia.org/show_bug.cgi?id=14799
-
-the xhci module got splitted up in upstream linux merged during
-3.18 release cycle:
-
-From 29e409f0f7613f9fd2235e41f0fa33e48e94544e Mon Sep 17 00:00:00 2001
-From: Andrew Bresticker <abrestic-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Date: Fri, 3 Oct 2014 11:35:29 +0300
-Subject: xhci: Allow xHCI drivers to be built as separate modules
-
-so we need to adjust 90kernel-modules accordingly.
-
-Signed-off-by: Thomas Backlund <tmb-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-
---- dracut/modules.d/90kernel-modules/module-setup.sh.orig
-+++ dracut/modules.d/90kernel-modules/module-setup.sh
-@@ -41,7 +41,7 @@ installkernel() {
-             ehci-hcd ehci-pci ehci-platform \
-             ohci-hcd ohci-pci \
-             uhci-hcd \
--            xhci-hcd
-+            xhci-hcd xhci-pci xhci-plat-hcd
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index 410960d..37ddca2 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -104,17 +104,7 @@ fi
  
-         instmods yenta_socket scsi_dh_rdac scsi_dh_emc \
-             atkbd i8042 usbhid hid-apple hid-sunplus hid-cherry hid-logitech \
-
---------------020004010105010909060900--
+ ldconfig_paths()
+ {
+-    local a i
+-    declare -A a
+-    for i in $(
+-        ldconfig -pN 2>/dev/null | grep -F '=>' | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | while read a b c d; do
+-            d=${d%/*}
+-            printf "%s\n" "$d";
+-        done
+-    ); do
+-        a["$i"]=1;
+-    done;
+-    printf "%s\n" ${!a[@]}
++    ldconfig -pN 2>/dev/null | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | sed -n 's,.* => \(.*\)/.*,\1,p' | sort | uniq
+ }
+ 
+ # Detect lib paths
+-- 
+2.1.0
