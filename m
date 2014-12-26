@@ -1,50 +1,56 @@
-From: Lubomir Rintel <lkundrak-NGH9Lh4a5iE@public.gmane.org>
-Subject: [PATCH] dracut-functions.sh: avoid tokenizing ldconfig output with 'read'
-Date: Tue, 23 Dec 2014 22:03:10 +0100
-Message-ID: <1419368590-2052-1-git-send-email-lkundrak@v3.sk>
+From: Alexander Lakhin <a.lahin-QLx1KmmFfsSQHXbzqtDRaA@public.gmane.org>
+Subject: Dracut is not processing last line of a kernel modules configuration
+ file
+Date: Fri, 26 Dec 2014 15:55:06 +0300
+Message-ID: <549D5AAA.8050408@ntcit-rosa.ru>
+Mime-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="------------020005040609060501010509"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Lubomir Rintel <lkundrak-NGH9Lh4a5iE@public.gmane.org>
 
-The space does not separate the elements reliably, spaces can be
-embedded in parenthesized expressions too:
+This is a multi-part message in MIME format.
+--------------020005040609060501010509
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-  libgmpxx.so.4 (libc6, hwcap: 0x0000000004000000) => /lib/sse2/libgmpxx.so.4
-  libgmp.so.10 (libc6, hwcap: 0x0000000004000000) => /lib/sse2/libgmp.so.10
+Hello,
 
-This results in dracut creating '0x0000000004000000' and '=>'
-directories in the initramfs image.
----
- dracut-functions.sh | 12 +-----------
- 1 file changed, 1 insertion(+), 11 deletions(-)
+I've found that dracut skips a kernel module if it's specified in 
+/etc/modules-load.d/<module>.conf in a single line without EOL.
+For example, when /etc/modules-load.d/krb5.conf contains the single line:
+rpcsec_gss_krb5
+(without end-of-line), I've got the error:
+systemd-modules-load[]: Failed to find module 'rpcsec_gss_krb5'
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 410960d..37ddca2 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -104,17 +104,7 @@ fi
- 
- ldconfig_paths()
- {
--    local a i
--    declare -A a
--    for i in $(
--        ldconfig -pN 2>/dev/null | grep -F '=>' | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | while read a b c d; do
--            d=${d%/*}
--            printf "%s\n" "$d";
--        done
--    ); do
--        a["$i"]=1;
--    done;
--    printf "%s\n" ${!a[@]}
-+    ldconfig -pN 2>/dev/null | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | sed -n 's,.* => \(.*\)/.*,\1,p' | sort | uniq
- }
- 
- # Detect lib paths
--- 
-2.1.0
+and lsinitrd shows no such module in the initrd image.
+
+Attached patch fixes the issue.
+
+Best regards,
+Alexander
+
+--------------020005040609060501010509
+Content-Type: text/x-patch;
+ name="dracut-037-process-last-line-of-mod.conf.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="dracut-037-process-last-line-of-mod.conf.patch"
+
+diff -ru dracut-037/modules.d/98systemd/module-setup.sh dracut-037.new/modules.d/98systemd/module-setup.sh
+--- dracut-037/modules.d/98systemd/module-setup.sh	2014-03-19 20:16:08.000000000 +0400
++++ dracut-037.new/modules.d/98systemd/module-setup.sh	2014-12-10 17:14:06.779593964 +0300
+@@ -132,7 +132,8 @@
+         local _line i
+         for i in "$1"/*.conf; do
+             [[ -f $i ]] || continue
+-            while read _line; do
++            EOF=false; until $EOF ; do
++                read _line || EOF=true
+                 case $_line in
+                     \#*)
+                         ;;
+
+--------------020005040609060501010509--
