@@ -1,236 +1,238 @@
-From: Mimi Zohar <zohar@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 2/9] initramfs: add extended attribute support
-Date: Wed,  7 Jan 2015 15:52:53 -0500
-Message-ID: <1420663980-20842-3-git-send-email-zohar@linux.vnet.ibm.com>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH 5/9] gen_init_cpio: include the file extended attributes
+Date: Wed,  7 Jan 2015 15:52:56 -0500
+Message-ID: <1420663980-20842-6-git-send-email-zohar@linux.vnet.ibm.com>
 References: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1420663980-20842-1-git-send-email-zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs <initramfs@vger.kernel.org>
-Cc: Mimi Zohar <zohar@linux.vnet.ibm.com>, Al Viro <viro@ZenIV.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-This patch writes out the extended attributes included in the cpio file.
-As the "security.ima" xattr needs to be written after the file data,
-this patch separates extracting and setting the xattrs by defining two
-new states "GotXattrs" and "SetXattrs".
+This patch reads the xattr(s), creating a buffer containing the
+number of xattrs, the xattr(s) name, data size, and data. This
+buffer size is included in the CPIO header.  The buffer is written
+out to the cpio file after the file name.
 
-Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
+This patch also defines the '-x' option to enable the inclusion
+of the xattrs.
+
+Signed-off-by: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- init/initramfs.c | 85 +++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 75 insertions(+), 10 deletions(-)
+ usr/gen_init_cpio.c | 107 ++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 100 insertions(+), 7 deletions(-)
 
-diff --git a/init/initramfs.c b/init/initramfs.c
-index 527703e..11ffd3e 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -52,6 +52,7 @@ static void __init error(char *x)
- /* link hash */
+diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
+index 0d9c6e8..08994d6 100644
+--- a/usr/gen_init_cpio.c
++++ b/usr/gen_init_cpio.c
+@@ -9,6 +9,7 @@
+ #include <errno.h>
+ #include <ctype.h>
+ #include <limits.h>
++#include <attr/xattr.h>
  
- #define N_ALIGN(len) ((((len) + 1) & ~3) + 2)
-+#define X_ALIGN(len) ((len + 3) & ~3)
+ /*
+  * Original work by Jeff Garzik
+@@ -36,6 +37,71 @@ struct file_handler {
+ 	int (*handler)(const char *line);
+ };
  
- static __initdata struct hash {
- 	int ino, minor, major;
-@@ -154,19 +155,20 @@ static __initdata time_t mtime;
- 
- static __initdata unsigned long ino, major, minor, nlink;
- static __initdata umode_t mode;
--static __initdata unsigned long body_len, name_len;
-+static __initdata unsigned long body_len, name_len, xattr_buflen;
- static __initdata uid_t uid;
- static __initdata gid_t gid;
- static __initdata unsigned rdev;
-+static __initdata int newcx;
- 
- static void __init parse_header(char *s)
- {
--	unsigned long parsed[12];
-+	unsigned long parsed[13];
- 	char buf[9];
- 	int i;
- 
- 	buf[8] = '\0';
--	for (i = 0, s += 6; i < 12; i++, s += 8) {
-+	for (i = 0; i < (!newcx ? 12 : 13); i++, s += 8) {
- 		memcpy(buf, s, 8);
- 		parsed[i] = simple_strtoul(buf, NULL, 16);
- 	}
-@@ -181,6 +183,7 @@ static void __init parse_header(char *s)
- 	minor = parsed[8];
- 	rdev = new_encode_dev(MKDEV(parsed[9], parsed[10]));
- 	name_len = parsed[11];
-+	xattr_buflen = newcx ? parsed[12] : 0;
- }
- 
- /* FSM */
-@@ -192,7 +195,9 @@ static __initdata enum state {
- 	GotHeader,
- 	SkipIt,
- 	GotName,
-+	GotXattrs,
- 	CopyFile,
-+	SetXattrs,
- 	GotSymlink,
- 	Reset
- } state, next_state;
-@@ -209,6 +214,8 @@ static inline void __init eat(unsigned n)
- }
- 
- static __initdata char *vcollected;
-+static __initdata char *ncollected;
-+static __initdata char *xcollected;
- static __initdata char *collected;
- static long remains __initdata;
- static __initdata char *collect;
-@@ -227,7 +234,7 @@ static void __init read_into(char *buf, unsigned size, enum state next)
- 	}
- }
- 
--static __initdata char *header_buf, *symlink_buf, *name_buf;
-+static __initdata char *header_buf, *symlink_buf, *name_buf, *xattr_buf;
- 
- static int __init do_start(void)
- {
-@@ -251,22 +258,26 @@ static int __init do_collect(void)
- 
- static int __init do_format(void)
- {
-+	newcx = 0;
- 	if (memcmp(collected, "070707", 6)==0) {
- 		error("incorrect cpio method used: use -H newc option");
- 		return 1;
- 	}
--	if (memcmp(collected, "070701", 6)) {
-+	if (memcmp(collected, "070703", 6) == 0)
-+		newcx = 1;
-+	else if (memcmp(collected, "070701", 6)) {
- 		error("no cpio magic");
- 		return 1;
- 	}
--	read_into(header_buf, 104, GotHeader);
-+	read_into(header_buf, !newcx ? 104: 112, GotHeader);
- 	return 0;
- }
- 
- static int __init do_header(void)
- {
- 	parse_header(collected);
--	next_header = this_header + N_ALIGN(name_len) + body_len;
-+	next_header = this_header + N_ALIGN(name_len) + X_ALIGN(xattr_buflen)
-+	    + body_len;
- 	next_header = (next_header + 3) & ~3;
- 	state = SkipIt;
- 	if (name_len <= 0 || name_len > PATH_MAX)
-@@ -328,8 +339,52 @@ static void __init clean_path(char *path, umode_t mode)
- 	}
- }
- 
--static __initdata int wfd;
-+static int __init do_xattrs(void)
-+{
-+	state = next_state;
-+	xcollected = kmalloc(xattr_buflen, GFP_KERNEL);
-+	if (!xcollected)
-+		panic("can't allocate xattr buffer");
-+	memcpy(xcollected, collected, xattr_buflen);
-+	return 0;
-+}
++#define MAX_XATTRNAMES_SIZE 500
++static char xattr_names[MAX_XATTRNAMES_SIZE];
++static char xattr_header[8];	/* number xattrs */
++static ssize_t xattr_nameslen;
++static unsigned int xattrs_buflen;
 +
-+static int __init do_setxattrs(void)
++static char xattr_buf[1000];
++static unsigned int get_xattrs(const char *name)
 +{
-+	char *xattr_name = NULL;
-+	int i, offset = 8, num_xattrs = 0;
-+	unsigned xattr_value_size;
-+	char *buf = xcollected;
++    	char xattr_num[9];
++    	char *xname, *buf, *bufend;
++	int xattrsize = 0, num_xattrs = 0;
 +
-+	state = SkipIt;
-+	next_state = Reset;
- 
-+	if (!newcx || xattr_buflen == 0 || !buf)
++	xattr_nameslen = listxattr(name, NULL, 0);
++	if (xattr_nameslen <= 0 || xattr_nameslen > MAX_XATTRNAMES_SIZE)
 +		return 0;
 +
-+	sscanf(buf, "%08X", &num_xattrs);
++	xattr_names[xattr_nameslen] = 0;
++	xattr_nameslen = listxattr(name, xattr_names, xattr_nameslen);
++	if (xattr_nameslen <= 0)
++		return 0;
 +
 +	/* xattr format: name value-len value */
-+	for (i = 0; i < num_xattrs; i++) {
-+		void *xattr_buf;
-+		int rc;
++	buf = xattr_buf + sizeof xattr_header;
++	bufend = xattr_buf + sizeof xattr_buf;
 +
-+		xattr_name = buf + offset;
-+		offset += (strlen(xattr_name) + 1);
-+		sscanf(buf + offset, "%08X", &xattr_value_size);
-+		xattr_buf = buf + offset + 8;
-+		rc = sys_setxattr(ncollected, xattr_name, xattr_buf,
-+				  xattr_value_size, 0);
-+		pr_debug("%s: %s size: %u (rc: %d)\n", ncollected, xattr_name,
-+			xattr_value_size, rc);
-+		offset += (8 + xattr_value_size);
++	for (xname = xattr_names; xname < (xattr_names + xattr_nameslen);
++		xname += strlen(xname) + 1) {
++		char sizebuf[9];
++		int offset;
++
++		/* skip security.evm as it is file system specific */
++		if (strcmp(xname, "security.evm") == 0)
++			continue;
++
++		offset = strlen(xname) + 1 + 8;
++		xattrsize = getxattr(name, xname, NULL, 0);
++		if (buf + offset + xattrsize > bufend) {
++			fprintf(stderr, "%s: xattrs too large \n", name);
++			return 0;
++		}
++
++		xattrsize = getxattr(name, xname, buf + offset,
++				     bufend - (buf + offset));
++		if (xattrsize <= 0)
++			continue;
++		
++		num_xattrs++;
++		fprintf(stderr, "%s: %s %x (%d)\n", name, xname, xattrsize,
++			num_xattrs);
++		strcpy(buf, xname);
++		buf += strlen(xname) + 1;
++		sprintf(sizebuf, "%08X", (int)xattrsize); 
++		memcpy(buf, sizebuf, 8);
++		buf += (8 + xattrsize);
 +	}
-+	kfree(ncollected);
-+	kfree(xcollected);
-+	return 0;
++
++	*buf = 0;
++	buf++;
++	sprintf(xattr_num, "%08X", num_xattrs);
++	memcpy(xattr_buf, xattr_num, 8);
++
++	return buf - xattr_buf;
 +}
 +
-+static __initdata int wfd;
- static int __init do_name(void)
+ static void push_string(const char *name)
  {
- 	state = SkipIt;
-@@ -370,6 +425,12 @@ static int __init do_name(void)
- 			do_utime(collected, mtime);
- 		}
+ 	unsigned int name_len = strlen(name) + 1;
+@@ -106,11 +172,24 @@ static void cpio_trailer(void)
  	}
+ }
+ 
++static void include_xattrs(void)
++{
++	if (!xattrs_buflen)
++		return;
++	
++	if (fwrite(xattr_buf, xattrs_buflen, 1, stdout) != 1)
++		fprintf(stderr, "writing xattrs failed\n");
++	offset += xattrs_buflen;
 +
-+	if (xattr_buflen > 0) {
-+		ncollected = kstrdup(collected, GFP_KERNEL);
-+		next_state = (state == SkipIt) ? SetXattrs : state;
-+		read_into(xattr_buf, X_ALIGN(xattr_buflen), GotXattrs);
-+	}
++	push_pad();
++}
++
+ static int cpio_mkslink(const char *name, const char *target,
+ 			 unsigned int mode, uid_t uid, gid_t gid)
+ {
+ 	char s[256];
+ 
++	xattrs_buflen = newcx ? get_xattrs(name) : 0;
+ 	if (name[0] == '/')
+ 		name++;
+ 	sprintf(s, newcx ? newcxfmt : newcfmt,
+@@ -127,13 +206,15 @@ static int cpio_mkslink(const char *name, const char *target,
+ 		0,			/* rmajor */
+ 		0,			/* rminor */
+ 		(unsigned)strlen(name) + 1,/* namesize */
+-		0,			/* xattrs-size */
++		xattrs_buflen,		/* xattrs-size */
+ 		0);			/* chksum */
+ 	push_hdr(s);
+ 	push_string(name);
+ 	push_pad();
+ 	push_string(target);
+ 	push_pad();
++	if (newcx)
++		include_xattrs();
  	return 0;
  }
  
-@@ -382,7 +443,7 @@ static int __init do_copy(void)
- 		do_utime(vcollected, mtime);
- 		kfree(vcollected);
- 		eat(body_len);
--		state = SkipIt;
-+		state = (newcx && xattr_buflen > 0)? SetXattrs : SkipIt;
- 		return 0;
- 	} else {
- 		if (xwrite(wfd, victim, count) != count)
-@@ -412,7 +473,9 @@ static __initdata int (*actions[])(void) = {
- 	[GotHeader]	= do_header,
- 	[SkipIt]	= do_skip,
- 	[GotName]	= do_name,
-+	[GotXattrs]	= do_xattrs,
- 	[CopyFile]	= do_copy,
-+	[SetXattrs]	= do_setxattrs,
- 	[GotSymlink]	= do_symlink,
- 	[Reset]		= do_reset,
- };
-@@ -461,9 +524,10 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 	const char *compress_name;
- 	static __initdata char msg_buf[64];
+@@ -160,6 +241,7 @@ static int cpio_mkgeneric(const char *name, unsigned int mode,
+ {
+ 	char s[256];
  
--	header_buf = kmalloc(110, GFP_KERNEL);
-+	header_buf = kmalloc(118, GFP_KERNEL);
- 	symlink_buf = kmalloc(PATH_MAX + N_ALIGN(PATH_MAX) + 1, GFP_KERNEL);
- 	name_buf = kmalloc(N_ALIGN(PATH_MAX), GFP_KERNEL);
-+	xattr_buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	xattrs_buflen = newcx ? get_xattrs(name) : 0;
+ 	if (name[0] == '/')
+ 		name++;
+ 	sprintf(s, newcx ? newcxfmt : newcfmt,
+@@ -176,10 +258,12 @@ static int cpio_mkgeneric(const char *name, unsigned int mode,
+ 		0,			/* rmajor */
+ 		0,			/* rminor */
+ 		(unsigned)strlen(name) + 1,/* namesize */
+-		0,			/* xattrs-size */
++		xattrs_buflen,		/* xattrs-size */
+ 		0);			/* chksum */
+ 	push_hdr(s);
+ 	push_rest(name);
++	if (newcx)
++		include_xattrs();
+ 	return 0;
+ }
  
- 	if (!header_buf || !symlink_buf || !name_buf)
- 		panic("can't allocate buffers");
-@@ -510,6 +574,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 		len -= my_inptr;
+@@ -339,9 +423,14 @@ static int cpio_mkfile(const char *name, const char *location,
  	}
- 	dir_utime();
-+	kfree(xattr_buf);
- 	kfree(name_buf);
- 	kfree(symlink_buf);
- 	kfree(header_buf);
+ 
+ 	size = 0;
++	xattrs_buflen = 0;
+ 	for (i = 1; i <= nlinks; i++) {
+ 		/* data goes on last link */
+-		if (i == nlinks) size = buf.st_size;
++		if (i == nlinks) {
++			size = buf.st_size;
++			if (newcx)
++				xattrs_buflen = get_xattrs(location);
++		}
+ 
+ 		if (name[0] == '/')
+ 			name++;
+@@ -360,12 +449,13 @@ static int cpio_mkfile(const char *name, const char *location,
+ 			0,			/* rmajor */
+ 			0,			/* rminor */
+ 			namesize,		/* namesize */
+-			0,			/* xattrs-size */
++			xattrs_buflen,		/* xattrs-size */
+ 			0);			/* chksum */
+ 		push_hdr(s);
+ 		push_string(name);
+ 		push_pad();
+-
++		if (newcx)
++			include_xattrs();
+ 		if (size) {
+ 			if (fwrite(filebuf, size, 1, stdout) != 1) {
+ 				fprintf(stderr, "writing filebuf failed\n");
+@@ -458,7 +548,7 @@ static int cpio_mkfile_line(const char *line)
+ static void usage(const char *prog)
+ {
+ 	fprintf(stderr, "Usage:\n"
+-		"\t%s [-t <timestamp>] <cpio_list>\n"
++		"\t%s [-t <timestamp>] [-x] <cpio_list>\n"
+ 		"\n"
+ 		"<cpio_list> is a file containing newline separated entries that\n"
+ 		"describe the files to be included in the initramfs archive:\n"
+@@ -535,7 +625,7 @@ int main (int argc, char *argv[])
+ 
+ 	default_mtime = time(NULL);
+ 	while (1) {
+-		int opt = getopt(argc, argv, "t:h");
++		int opt = getopt(argc, argv, "t:h:x");
+ 		char *invalid;
+ 
+ 		if (opt == -1)
+@@ -550,6 +640,9 @@ int main (int argc, char *argv[])
+ 				exit(1);
+ 			}
+ 			break;
++		case 'x':
++			newcx = 1;
++			break;
+ 		case 'h':
+ 		case '?':
+ 			usage(argv[0]);
 -- 
 1.8.1.4
-
