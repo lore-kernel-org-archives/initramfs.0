@@ -1,90 +1,76 @@
-From: Mimi Zohar <zohar@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 3/9] gen_init_cpio: replace inline format string with common variable
-Date: Wed,  7 Jan 2015 15:52:54 -0500
-Message-ID: <1420663980-20842-4-git-send-email-zohar@linux.vnet.ibm.com>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH 1/9] initramfs: separate reading cpio method from header
+Date: Wed,  7 Jan 2015 15:52:52 -0500
+Message-ID: <1420663980-20842-2-git-send-email-zohar@linux.vnet.ibm.com>
 References: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1420663980-20842-1-git-send-email-zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: initramfs <initramfs@vger.kernel.org>
-Cc: Mimi Zohar <zohar@linux.vnet.ibm.com>, Al Viro <viro@ZenIV.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-The same printf format string is used in a number of places.  This
-patch replaces the inline format string with a single common variable
-called newcformat.
+In preparation for adding xattr support, read the CPIO method separately
+from the rest of the header.
 
-Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Signed-off-by: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- usr/gen_init_cpio.c | 18 ++++++++----------
- 1 file changed, 8 insertions(+), 10 deletions(-)
+ init/initramfs.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
-index 225ad24..ee35361 100644
---- a/usr/gen_init_cpio.c
-+++ b/usr/gen_init_cpio.c
-@@ -20,6 +20,9 @@
- #define xstr(s) #s
- #define str(s) xstr(s)
+diff --git a/init/initramfs.c b/init/initramfs.c
+index bece48c..527703e 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -187,6 +187,7 @@ static void __init parse_header(char *s)
  
-+static char *newcfmt = "%s%08X%08X%08lX%08lX%08X%08lX"
-+			"%08X%08X%08X%08X%08X%08X%08X";
+ static __initdata enum state {
+ 	Start,
++	GotFormat,
+ 	Collect,
+ 	GotHeader,
+ 	SkipIt,
+@@ -230,7 +231,7 @@ static __initdata char *header_buf, *symlink_buf, *name_buf;
+ 
+ static int __init do_start(void)
+ {
+-	read_into(header_buf, 110, GotHeader);
++	read_into(header_buf, 6, GotFormat);
+ 	return 0;
+ }
+ 
+@@ -248,7 +249,7 @@ static int __init do_collect(void)
+ 	return 0;
+ }
+ 
+-static int __init do_header(void)
++static int __init do_format(void)
+ {
+ 	if (memcmp(collected, "070707", 6)==0) {
+ 		error("incorrect cpio method used: use -H newc option");
+@@ -258,6 +259,12 @@ static int __init do_header(void)
+ 		error("no cpio magic");
+ 		return 1;
+ 	}
++	read_into(header_buf, 104, GotHeader);
++	return 0;
++}
 +
- static unsigned int offset;
- static unsigned int ino = 721;
- static time_t default_mtime;
-@@ -74,8 +77,7 @@ static void cpio_trailer(void)
- 	char s[256];
- 	const char name[] = "TRAILER!!!";
++static int __init do_header(void)
++{
+ 	parse_header(collected);
+ 	next_header = this_header + N_ALIGN(name_len) + body_len;
+ 	next_header = (next_header + 3) & ~3;
+@@ -400,6 +407,7 @@ static int __init do_symlink(void)
  
--	sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
-+	sprintf(s, newcfmt,
- 		"070701",		/* magic */
- 		0,			/* ino */
- 		0,			/* mode */
-@@ -106,8 +108,7 @@ static int cpio_mkslink(const char *name, const char *target,
- 
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
-+	sprintf(s, newcfmt,
- 		"070701",		/* magic */
- 		ino++,			/* ino */
- 		S_IFLNK | mode,		/* mode */
-@@ -155,8 +156,7 @@ static int cpio_mkgeneric(const char *name, unsigned int mode,
- 
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
-+	sprintf(s, newcfmt,
- 		"070701",		/* magic */
- 		ino++,			/* ino */
- 		mode,			/* mode */
-@@ -249,8 +249,7 @@ static int cpio_mknod(const char *name, unsigned int mode,
- 
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
-+	sprintf(s, newcfmt,
- 		"070701",		/* magic */
- 		ino++,			/* ino */
- 		mode,			/* mode */
-@@ -339,8 +338,7 @@ static int cpio_mkfile(const char *name, const char *location,
- 		if (name[0] == '/')
- 			name++;
- 		namesize = strlen(name) + 1;
--		sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--		       "%08lX%08X%08X%08X%08X%08X%08X",
-+		sprintf(s, newcfmt,
- 			"070701",		/* magic */
- 			ino,			/* ino */
- 			mode,			/* mode */
+ static __initdata int (*actions[])(void) = {
+ 	[Start]		= do_start,
++	[GotFormat]	= do_format,
+ 	[Collect]	= do_collect,
+ 	[GotHeader]	= do_header,
+ 	[SkipIt]	= do_skip,
 -- 
 1.8.1.4
