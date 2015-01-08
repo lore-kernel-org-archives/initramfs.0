@@ -1,79 +1,69 @@
-From: =?UTF-8?B?Q3Jpc3RpYW4gUm9kcsOtZ3Vleg==?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [systemd-devel] Second (erroneous) check of rootfs?
-Date: Wed, 07 Jan 2015 23:23:27 -0300
-Message-ID: <54ADEA1F.3080908@opensuse.org>
-References: <54ADD119.2050906@yandex.ru> <20150108004352.GA22800@gardel-login> <54ADD98D.9080608@opensuse.org> <54ADE3A1.6060107@yandex.ru>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Subject: Re: Second (erroneous) check of rootfs?
+Date: Thu, 8 Jan 2015 09:18:10 +0300
+Message-ID: <20150108091810.500d510f@opensuse.site>
+References: <54ADD119.2050906@yandex.ru> <20150108004352.GA22800@gardel-login>
+ <54ADD98D.9080608@opensuse.org> <54ADE3A1.6060107@yandex.ru>
+ <54ADEA1F.3080908@opensuse.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------020303090303060008010305"
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=cristianrodriguez.net; s=google;
-        h=sender:message-id:date:from:user-agent:mime-version:to:subject
-         :references:in-reply-to:content-type;
-        bh=tPwTqDlTLzFwE4+2HxccG0YzGCGGUM8VOv7sBM2gohY=;
-        b=JSbfxqu8qzRLAiwe5SR0zTAGV9as6phQdpmX70ij0BNPAfw0aI9KmCJeRnUR/MEjUQ
-         Q/Fkl5mDjQEKOW46GDklktkUW2svlir+Ofo96D63rYCT7EcDsx7UwRDDzQFjKJOjKNp0
-         y1lG1GzWruARkmMVjFbqVCUBkJL8FTSS2RmlQ=
-In-Reply-To: <54ADE3A1.6060107-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-To: Nikolai Zhubr <n-a-zhubr-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org>, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <systemd-devel-bounces@lists.freedesktop.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+ h=date:from:to:cc:subject:message-id:in-reply-to:references
+ :mime-version:content-type:content-transfer-encoding;
+ bh=ScAnKMwYwquBYgY17AGaNzYlsHP3HLmIH6KSsSO+VYE=;
+ b=PPJTK4pKD3aN0tVgfMalLKJIMTQ72zyHqLS/MCnjS/kUu2KyaDmI8B7D52Fw2biKYm
+ 5mCHpp3PWRmAiAImqyeQQp1zPbkFFyghPsyKc1SgilwspJoSC9SPlBB4LZtmcwW5M5hs
+ GqybF0P3lbQDjRcgRy0+ppcBs2zvEYgb6neXeY/VoA5bNVKFWrlTzaAIbOSB2nHPUmv9
+ QJv/rz7ZBmBpv96NEg5oy3HmViMxuBumu1P/7ir8QFrXMio5Kp1eDXKW8B2QTMLVEKsH
+ ChJcww4aHvDHJaFLmT8PgnFsUxzCX6qJfA86E23XHcmI6S2YgYGsXkfZcrROdFpTh3F6
+ FY7g==
+In-Reply-To: <54ADEA1F.3080908@opensuse.org>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
+ <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+ <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Errors-To: systemd-devel-bounces@lists.freedesktop.org
+Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
+To: Cristian =?UTF-8?B?Um9kcsOtZ3Vleg==?= <crrodriguez@opensuse.org>
+Cc: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, systemd-devel@lists.freedesktop.org
 
-This is a multi-part message in MIME format.
---------------020303090303060008010305
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-Content-Transfer-Encoding: 8bit
-
-El 07/01/15 a las 22:55, Nikolai Zhubr escribió:
-> 08.01.2015 4:12, Cristian Rodríguez:
->> El 07/01/15 a las 21:43, Lennart Poettering escribió:
->>
->>> Maybe suse forgot to include this service file in the initrd or so?
->>
->> Correct. It appears to be a bug in the dracut package. I wonder why ..
->
-> Ok. So should I file a report to opensuse bugtracker? I have no idea if
-> the issue is suse-specific actually... Although I know that dracut is
-> very new for suse, that might explain it...
-
-Hrmm.. looking at the dracut upstream sources.. this service is not 
-included in the required file list. so it is an upstream problem.
-
-Attached is a patch to fix the problem.
-
-
-
---------------020303090303060008010305
-Content-Type: text/x-patch;
- name="0001-98systemd-Include-systemd-root-fsck.service-too.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename*0="0001-98systemd-Include-systemd-root-fsck.service-too.patch"
-
-From 81b8f407d84cb60e9d4df0e2f68b4bd3850448f5 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
-Date: Wed, 7 Jan 2015 23:22:00 -0300
-Subject: [PATCH] 98systemd: Include systemd-root-fsck.service too
-
----
- modules.d/98systemd/module-setup.sh | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
-index 51ea288..a28df30 100755
---- a/modules.d/98systemd/module-setup.sh
-+++ b/modules.d/98systemd/module-setup.sh
-@@ -91,6 +91,7 @@ install() {
-         $systemdsystemunitdir/systemd-reboot.service \
-         $systemdsystemunitdir/systemd-kexec.service \
-         $systemdsystemunitdir/systemd-fsck@.service \
-+        $systemdsystemunitdir/systemd-fsck-root.service \
-         $systemdsystemunitdir/systemd-udevd.service \
-         $systemdsystemunitdir/systemd-udev-trigger.service \
-         $systemdsystemunitdir/systemd-udev-settle.service \
--- 
-2.2.1
-
-
---------------020303090303060008010305--
+0JIgV2VkLCAwNyBKYW4gMjAxNSAyMzoyMzoyNyAtMDMwMApDcmlzdGlhbiBSb2Ryw61ndWV6IDxj
+cnJvZHJpZ3VlekBvcGVuc3VzZS5vcmc+INC/0LjRiNC10YI6Cgo+IEVsIDA3LzAxLzE1IGEgbGFz
+IDIyOjU1LCBOaWtvbGFpIFpodWJyIGVzY3JpYmnDszoKPiA+IDA4LjAxLjIwMTUgNDoxMiwgQ3Jp
+c3RpYW4gUm9kcsOtZ3VlejoKPiA+PiBFbCAwNy8wMS8xNSBhIGxhcyAyMTo0MywgTGVubmFydCBQ
+b2V0dGVyaW5nIGVzY3JpYmnDszoKPiA+Pgo+ID4+PiBNYXliZSBzdXNlIGZvcmdvdCB0byBpbmNs
+dWRlIHRoaXMgc2VydmljZSBmaWxlIGluIHRoZSBpbml0cmQgb3Igc28/Cj4gPj4KPiA+PiBDb3Jy
+ZWN0LiBJdCBhcHBlYXJzIHRvIGJlIGEgYnVnIGluIHRoZSBkcmFjdXQgcGFja2FnZS4gSSB3b25k
+ZXIgd2h5IC4uCj4gPgo+ID4gT2suIFNvIHNob3VsZCBJIGZpbGUgYSByZXBvcnQgdG8gb3BlbnN1
+c2UgYnVndHJhY2tlcj8gSSBoYXZlIG5vIGlkZWEgaWYKPiA+IHRoZSBpc3N1ZSBpcyBzdXNlLXNw
+ZWNpZmljIGFjdHVhbGx5Li4uIEFsdGhvdWdoIEkga25vdyB0aGF0IGRyYWN1dCBpcwo+ID4gdmVy
+eSBuZXcgZm9yIHN1c2UsIHRoYXQgbWlnaHQgZXhwbGFpbiBpdC4uLgo+IAo+IEhybW0uLiBsb29r
+aW5nIGF0IHRoZSBkcmFjdXQgdXBzdHJlYW0gc291cmNlcy4uIHRoaXMgc2VydmljZSBpcyBub3Qg
+Cj4gaW5jbHVkZWQgaW4gdGhlIHJlcXVpcmVkIGZpbGUgbGlzdC4gc28gaXQgaXMgYW4gdXBzdHJl
+YW0gcHJvYmxlbS4KPiAKPiBBdHRhY2hlZCBpcyBhIHBhdGNoIHRvIGZpeCB0aGUgcHJvYmxlbS4K
+PiAKPiAKCkFyZSB5b3Ugc3VyZT8gV2hlcmUgdGhpcyBzZXJ2aWNlIGlzIGNhbGxlZCBpbiBpbml0
+cmQgdGhlbj8gTm90ZSB0aGF0CmZzY2sgZm9yIHJvb3QgKmRpZCogcnVuLiBkcmFjdXQgcnVucyBn
+ZW5lcmF0b3IgZm9yIHJvb3QgaW4KOThzeXN0ZW1kL3Jvb3Rmcy1nZW5lcmF0b3Iuc2ggd2hpY2gg
+ZG9lcwoKICAgICAgICAgICAgZWNobyAiUmVxdWlyZXNPdmVycmlkYWJsZT1zeXN0ZW1kLWZzY2tA
+JHtfbmFtZX0uc2VydmljZSIKICAgICAgICAgICAgZWNobyAiQWZ0ZXI9c3lzdGVtZC1mc2NrQCR7
+X25hbWV9LnNlcnZpY2UiCgpBbmQgaW5pdHJkIGNhbm5vdCB1c2Ugc3lzdGVtZC1mc2NrLXJvb3Qu
+c2VydmljZSBiZWNhdXNlIHRoaXMgc2VydmljZQphc3N1bWVzIGN1cnJlbnQgcm9vdCBpcyAiLyIg
+d2hpY2ggaXMgb2YgY291cnNlIHdyb25nIGluIGluaXRyZC4gCgpTbyBvcHRpb25zIGFyZQoKYSkg
+c29tZWhvdyBkeW5hbWljYWxseSBkaXNhYmxlIHN5c3RlbWQtZnNjay1yb290LnNlcnZpY2UgZnJv
+bSB3aXRoaW4KaW5pdHJkIApiKSBwcmV0ZW5kIHN5c3RlbWQtZnNjay1yb290LnNlcnZpY2UgZGlk
+IHJ1bi4gV2hpY2ggcHJvYmFibHkgaXMgdGhlCnNhbWUgYXMgaXQgbWVhbnMgb3ZlcnJpZGluZyBz
+ZXJ2aWNlIGRlZmluaXRpb24KYykgYWxsb3cgcGFzc2luZyByZWFsIHJvb3QgZGV2aWNlIHRvIHN5
+c3RlbWQtZnNjay1yb290LnNlcnZpY2UuIFZlcnkKdWdseSBoYWNrIGlzCgpbU2VydmljZV0KRXhl
+Y1N0YXJ0PUByb290bGliZXhlY2RpckAvc3lzdGVtZC1mc2NrICRfX1JFQUxfUk9PVF9ERVZJQ0Vf
+XwoKd2hlcmUgX19SRUFMX1JPT1RfREVWSUNFX18gaXMgYWRkZWQgYnkgZHJvcC1pbiBpbiBpbml0
+cmQsIGJ5CnJvb3Rmcy1nZW5lcmF0b3Iuc2gKCltTZXJ2aWNlXQpFbnZpcm9ubWVudD1fX1JFQUxf
+Uk9PVF9ERVZJQ0VfXz0ke19uYW1lfSIKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18Kc3lzdGVtZC1kZXZlbCBtYWlsaW5nIGxpc3QKc3lzdGVtZC1kZXZlbEBs
+aXN0cy5mcmVlZGVza3RvcC5vcmcKaHR0cDovL2xpc3RzLmZyZWVkZXNrdG9wLm9yZy9tYWlsbWFu
+L2xpc3RpbmZvL3N5c3RlbWQtZGV2ZWwK
