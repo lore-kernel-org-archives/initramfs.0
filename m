@@ -1,69 +1,72 @@
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Subject: Re: Second (erroneous) check of rootfs?
-Date: Thu, 8 Jan 2015 09:18:10 +0300
-Message-ID: <20150108091810.500d510f@opensuse.site>
-References: <54ADD119.2050906@yandex.ru> <20150108004352.GA22800@gardel-login>
- <54ADD98D.9080608@opensuse.org> <54ADE3A1.6060107@yandex.ru>
- <54ADEA1F.3080908@opensuse.org>
+From: Josh Boyer <jwboyer@fedoraproject.org>
+Subject: Re: [RFC][PATCH 8/9] ima: include tmpfs in ima_appraise_tcb policy
+Date: Thu, 8 Jan 2015 08:53:46 -0500
+Message-ID: <CA+5PVA7QiaLpiH+7oWQ5Uu8Z30mPczou89_9ga1CnW6c+_cQWQ@mail.gmail.com>
+References: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>
+	<1420663980-20842-9-git-send-email-zohar@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <systemd-devel-bounces@lists.freedesktop.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
- h=date:from:to:cc:subject:message-id:in-reply-to:references
- :mime-version:content-type:content-transfer-encoding;
- bh=ScAnKMwYwquBYgY17AGaNzYlsHP3HLmIH6KSsSO+VYE=;
- b=PPJTK4pKD3aN0tVgfMalLKJIMTQ72zyHqLS/MCnjS/kUu2KyaDmI8B7D52Fw2biKYm
- 5mCHpp3PWRmAiAImqyeQQp1zPbkFFyghPsyKc1SgilwspJoSC9SPlBB4LZtmcwW5M5hs
- GqybF0P3lbQDjRcgRy0+ppcBs2zvEYgb6neXeY/VoA5bNVKFWrlTzaAIbOSB2nHPUmv9
- QJv/rz7ZBmBpv96NEg5oy3HmViMxuBumu1P/7ir8QFrXMio5Kp1eDXKW8B2QTMLVEKsH
- ChJcww4aHvDHJaFLmT8PgnFsUxzCX6qJfA86E23XHcmI6S2YgYGsXkfZcrROdFpTh3F6
- FY7g==
-In-Reply-To: <54ADEA1F.3080908@opensuse.org>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
- <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <http://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
- <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Errors-To: systemd-devel-bounces@lists.freedesktop.org
-Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
-To: Cristian =?UTF-8?B?Um9kcsOtZ3Vleg==?= <crrodriguez@opensuse.org>
-Cc: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, systemd-devel@lists.freedesktop.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:sender:in-reply-to:references:date:message-id:subject
+         :from:to:cc:content-type;
+        bh=GmE7mdgmcBxHwU1f/eAJ7L2snzzfgJIG4SJMUtjuF0I=;
+        b=lMwzlSgykX9vVtUrPeEiza6uPAl+jSpXi7lQCOkIB/GEBfLOMkZUtRUG3jK3tbi0J4
+         lHh1PqbdqVx5eYpVGOXSXoQLK1NMlWsKbq0Udg60kWIw83vcvmDxHSZfZJn+lugWQ2Ut
+         xw2wARJ6LG96wF3nyFFzj9dE1l3Rl4aN/KIj/owOCYievXqz4yun2+K/G2yKis5jKI+3
+         Cmtc12pjcZP4VSwbClDgEBcz68tPEdVJfJ5BQT010yLq6zbYnyfWeIQ+SQj5nWCKI3Ht
+         XdZtul9HJIEuBT5uKS26OnX9HbPz+6dxFOr3p97lmIEnpiCG7SoKnRaiZmg6BYcv8o/K
+         vocw==
+In-Reply-To: <1420663980-20842-9-git-send-email-zohar@linux.vnet.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Cc: initramfs <initramfs@vger.kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
 
-0JIgV2VkLCAwNyBKYW4gMjAxNSAyMzoyMzoyNyAtMDMwMApDcmlzdGlhbiBSb2Ryw61ndWV6IDxj
-cnJvZHJpZ3VlekBvcGVuc3VzZS5vcmc+INC/0LjRiNC10YI6Cgo+IEVsIDA3LzAxLzE1IGEgbGFz
-IDIyOjU1LCBOaWtvbGFpIFpodWJyIGVzY3JpYmnDszoKPiA+IDA4LjAxLjIwMTUgNDoxMiwgQ3Jp
-c3RpYW4gUm9kcsOtZ3VlejoKPiA+PiBFbCAwNy8wMS8xNSBhIGxhcyAyMTo0MywgTGVubmFydCBQ
-b2V0dGVyaW5nIGVzY3JpYmnDszoKPiA+Pgo+ID4+PiBNYXliZSBzdXNlIGZvcmdvdCB0byBpbmNs
-dWRlIHRoaXMgc2VydmljZSBmaWxlIGluIHRoZSBpbml0cmQgb3Igc28/Cj4gPj4KPiA+PiBDb3Jy
-ZWN0LiBJdCBhcHBlYXJzIHRvIGJlIGEgYnVnIGluIHRoZSBkcmFjdXQgcGFja2FnZS4gSSB3b25k
-ZXIgd2h5IC4uCj4gPgo+ID4gT2suIFNvIHNob3VsZCBJIGZpbGUgYSByZXBvcnQgdG8gb3BlbnN1
-c2UgYnVndHJhY2tlcj8gSSBoYXZlIG5vIGlkZWEgaWYKPiA+IHRoZSBpc3N1ZSBpcyBzdXNlLXNw
-ZWNpZmljIGFjdHVhbGx5Li4uIEFsdGhvdWdoIEkga25vdyB0aGF0IGRyYWN1dCBpcwo+ID4gdmVy
-eSBuZXcgZm9yIHN1c2UsIHRoYXQgbWlnaHQgZXhwbGFpbiBpdC4uLgo+IAo+IEhybW0uLiBsb29r
-aW5nIGF0IHRoZSBkcmFjdXQgdXBzdHJlYW0gc291cmNlcy4uIHRoaXMgc2VydmljZSBpcyBub3Qg
-Cj4gaW5jbHVkZWQgaW4gdGhlIHJlcXVpcmVkIGZpbGUgbGlzdC4gc28gaXQgaXMgYW4gdXBzdHJl
-YW0gcHJvYmxlbS4KPiAKPiBBdHRhY2hlZCBpcyBhIHBhdGNoIHRvIGZpeCB0aGUgcHJvYmxlbS4K
-PiAKPiAKCkFyZSB5b3Ugc3VyZT8gV2hlcmUgdGhpcyBzZXJ2aWNlIGlzIGNhbGxlZCBpbiBpbml0
-cmQgdGhlbj8gTm90ZSB0aGF0CmZzY2sgZm9yIHJvb3QgKmRpZCogcnVuLiBkcmFjdXQgcnVucyBn
-ZW5lcmF0b3IgZm9yIHJvb3QgaW4KOThzeXN0ZW1kL3Jvb3Rmcy1nZW5lcmF0b3Iuc2ggd2hpY2gg
-ZG9lcwoKICAgICAgICAgICAgZWNobyAiUmVxdWlyZXNPdmVycmlkYWJsZT1zeXN0ZW1kLWZzY2tA
-JHtfbmFtZX0uc2VydmljZSIKICAgICAgICAgICAgZWNobyAiQWZ0ZXI9c3lzdGVtZC1mc2NrQCR7
-X25hbWV9LnNlcnZpY2UiCgpBbmQgaW5pdHJkIGNhbm5vdCB1c2Ugc3lzdGVtZC1mc2NrLXJvb3Qu
-c2VydmljZSBiZWNhdXNlIHRoaXMgc2VydmljZQphc3N1bWVzIGN1cnJlbnQgcm9vdCBpcyAiLyIg
-d2hpY2ggaXMgb2YgY291cnNlIHdyb25nIGluIGluaXRyZC4gCgpTbyBvcHRpb25zIGFyZQoKYSkg
-c29tZWhvdyBkeW5hbWljYWxseSBkaXNhYmxlIHN5c3RlbWQtZnNjay1yb290LnNlcnZpY2UgZnJv
-bSB3aXRoaW4KaW5pdHJkIApiKSBwcmV0ZW5kIHN5c3RlbWQtZnNjay1yb290LnNlcnZpY2UgZGlk
-IHJ1bi4gV2hpY2ggcHJvYmFibHkgaXMgdGhlCnNhbWUgYXMgaXQgbWVhbnMgb3ZlcnJpZGluZyBz
-ZXJ2aWNlIGRlZmluaXRpb24KYykgYWxsb3cgcGFzc2luZyByZWFsIHJvb3QgZGV2aWNlIHRvIHN5
-c3RlbWQtZnNjay1yb290LnNlcnZpY2UuIFZlcnkKdWdseSBoYWNrIGlzCgpbU2VydmljZV0KRXhl
-Y1N0YXJ0PUByb290bGliZXhlY2RpckAvc3lzdGVtZC1mc2NrICRfX1JFQUxfUk9PVF9ERVZJQ0Vf
-XwoKd2hlcmUgX19SRUFMX1JPT1RfREVWSUNFX18gaXMgYWRkZWQgYnkgZHJvcC1pbiBpbiBpbml0
-cmQsIGJ5CnJvb3Rmcy1nZW5lcmF0b3Iuc2gKCltTZXJ2aWNlXQpFbnZpcm9ubWVudD1fX1JFQUxf
-Uk9PVF9ERVZJQ0VfXz0ke19uYW1lfSIKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX18Kc3lzdGVtZC1kZXZlbCBtYWlsaW5nIGxpc3QKc3lzdGVtZC1kZXZlbEBs
-aXN0cy5mcmVlZGVza3RvcC5vcmcKaHR0cDovL2xpc3RzLmZyZWVkZXNrdG9wLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL3N5c3RlbWQtZGV2ZWwK
+On Wed, Jan 7, 2015 at 3:52 PM, Mimi Zohar <zohar@linux.vnet.ibm.com> wrote:
+> Now that the rootfs includes extended attributes, don't
+> automatically exclude tmpfs file systems from being appraised.
+>
+> Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
+> ---
+>  security/integrity/evm/evm_main.c   | 1 +
+>  security/integrity/ima/ima_policy.c | 2 ++
+>  2 files changed, 3 insertions(+)
+>
+> diff --git a/security/integrity/evm/evm_main.c b/security/integrity/evm/evm_main.c
+> index 9c71af7..e942e63 100644
+> --- a/security/integrity/evm/evm_main.c
+> +++ b/security/integrity/evm/evm_main.c
+> @@ -19,6 +19,7 @@
+>  #include <linux/module.h>
+>  #include <linux/crypto.h>
+>  #include <linux/audit.h>
+> +#include <linux/magic.h>
+>  #include <linux/xattr.h>
+>  #include <linux/integrity.h>
+>  #include <linux/evm.h>
+> diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+> index d1eefb9..7267eac 100644
+> --- a/security/integrity/ima/ima_policy.c
+> +++ b/security/integrity/ima/ima_policy.c
+> @@ -93,7 +93,9 @@ static struct ima_rule_entry default_appraise_rules[] = {
+>         {.action = DONT_APPRAISE, .fsmagic = PROC_SUPER_MAGIC, .flags = IMA_FSMAGIC},
+>         {.action = DONT_APPRAISE, .fsmagic = SYSFS_MAGIC, .flags = IMA_FSMAGIC},
+>         {.action = DONT_APPRAISE, .fsmagic = DEBUGFS_MAGIC, .flags = IMA_FSMAGIC},
+> +#ifndef CONFIG_IMA_LOAD_X509
+>         {.action = DONT_APPRAISE, .fsmagic = TMPFS_MAGIC, .flags = IMA_FSMAGIC},
+> +#endif
+
+The commit log makes it sound like tmpfs should be appraised
+unconditionally, but you only have it being appraised if IMA_LOAD_X509
+is set.  Which is correct (and why isn't it based on whether
+CONFIG_IMA_APPRAISE is set)?
+
+Also, what happens if someone creates an initramfs that doesn't
+include xattrs and has this option set?
+
+Slightly confusing.
+
+josh
