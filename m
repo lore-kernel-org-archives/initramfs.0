@@ -1,54 +1,87 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut-functions.sh: avoid tokenizing ldconfig output
- with 'read'
-Date: Thu, 08 Jan 2015 16:36:18 +0100
-Message-ID: <54AEA3F2.2030102@redhat.com>
-References: <1419368590-2052-1-git-send-email-lkundrak@v3.sk>
+From: Rob Landley <rob@landley.net>
+Subject: Re: [RFC][PATCH 6/9] gen_initramfs_list.sh: include xattrs
+Date: Thu, 08 Jan 2015 12:19:30 -0600
+Message-ID: <54AECA32.6000304@landley.net>
+References: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>	 <1420663980-20842-7-git-send-email-zohar@linux.vnet.ibm.com>	 <CA+5PVA77x2W9LyHMq1jSW3HKqNgFPz-gPVOH0QtEmmMBwzOx_Q@mail.gmail.com> <1420729994.6338.52.camel@dhcp-9-2-203-236.watson.ibm.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1419368590-2052-1-git-send-email-lkundrak-NGH9Lh4a5iE@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <1420729994.6338.52.camel@dhcp-9-2-203-236.watson.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Lubomir Rintel <lkundrak-NGH9Lh4a5iE@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Mimi Zohar <zohar@linux.vnet.ibm.com>, Josh Boyer <jwboyer@fedoraproject.org>
+Cc: initramfs <initramfs@vger.kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Fionnuala Gunter <fin@linux.vnet.ibm.com>
 
-On 23.12.2014 22:03, Lubomir Rintel wrote:
-> The space does not separate the elements reliably, spaces can be
-> embedded in parenthesized expressions too:
+On 01/08/2015 09:13 AM, Mimi Zohar wrote:
+> On Thu, 2015-01-08 at 09:01 -0500, Josh Boyer wrote: 
+>> On Wed, Jan 7, 2015 at 3:52 PM, Mimi Zohar <zohar@linux.vnet.ibm.com> wrote:
+>> That's pretty awkward.  I think it highlights the major downside of
+>> this approach in that from a standard distro point of view this
+>> functionality isn't likely to be used.  Do you foresee this feature as
+>> something that should be widely used, or something that would be used
+>> more in custom, locked-down machines?
 > 
->   libgmpxx.so.4 (libc6, hwcap: 0x0000000004000000) => /lib/sse2/libgmpxx.so.4
->   libgmp.so.10 (libc6, hwcap: 0x0000000004000000) => /lib/sse2/libgmp.so.10
-> 
-> This results in dracut creating '0x0000000004000000' and '=>'
-> directories in the initramfs image.
-> ---
->  dracut-functions.sh | 12 +-----------
->  1 file changed, 1 insertion(+), 11 deletions(-)
-> 
-> diff --git a/dracut-functions.sh b/dracut-functions.sh
-> index 410960d..37ddca2 100755
-> --- a/dracut-functions.sh
-> +++ b/dracut-functions.sh
-> @@ -104,17 +104,7 @@ fi
->  
->  ldconfig_paths()
->  {
-> -    local a i
-> -    declare -A a
-> -    for i in $(
-> -        ldconfig -pN 2>/dev/null | grep -F '=>' | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | while read a b c d; do
-> -            d=${d%/*}
-> -            printf "%s\n" "$d";
-> -        done
-> -    ); do
-> -        a["$i"]=1;
-> -    done;
-> -    printf "%s\n" ${!a[@]}
-> +    ldconfig -pN 2>/dev/null | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | sed -n 's,.* => \(.*\)/.*,\1,p' | sort | uniq
->  }
->  
->  # Detect lib paths
-> 
+> Before distros can start enabling these features, software packages need
+> to come with file signatures.  Fin Gunter posted (and shortly will
+> re-post) patches to include file signatures in RPM patches.
 
-Thanks! pushed
+My personal lack of caring about Red Hat's bureaucratic "signing
+binaries in triplicate" is probably large enough to be seen from space
+(obviously no vendor code has ever contained an exploit that could be
+used to run arbitrary code in ring 0, and this totally won't be used for
+vendor lock-in, but I remain unconvinced because I'm funny that way)...
+
+But I am curious about how you propose to encode xattrs into the cpio
+format. (Which Al Viro chose because it's _simple_. There isn't really a
+controlling spec since Posix decided to deprecated it in 2001 and  yank
+it from SUSv3 onwards. LSB extended several header fields to 8 hex
+digits instead of 6, but they still have 32 bit timestamps which seems a
+bit short-sighted. If you're going to define a new rev with a new magic
+number, there are a couple other things you might wanna fix...)
+
+I ask because I maintain a new from-scratch cpio implementation
+(http://landley.net/hg/toybox/file/1571/toys/posix/cpio.c), so I'd
+presumably have to add your format extensions to this. Is there any sort
+of documentation on them?
+
+The toybox config Android is using has this cpio implementation enabled
+(see
+https://android.googlesource.com/platform/external/toybox/+/9250c95a8c47/Android.mk)
+so I'd rather like to get this sort of detail right...
+
+> Including file signatures in RPM packages (and similarly in other
+> software package formats) is the direction we, the linux community, IMHO
+> should be moving.  How long this will take is entirely up to the
+> distros.
+
+Glued down to a trusted platform module such that obviously nobody can
+possibly exploit such a system, from
+https://www.youtube.com/watch?v=4loZGYqaZ7I to
+https://trmm.net/Thunderstrike_31c3
+
+I see this as way, way more about vendor lock-in than security.
+
+>> I can understand not wanting to redefine the newc format in userspace
+>> cpio, but if you want this to be easier to use then perhaps working
+>> with dracut upstream to make it support this out of the box would be a
+>> good idea.
+> 
+> Anyone using dracut/systemd is currently not using tmpfs, as specifying
+> "root=" on the boot command line reverts to using ramfs.  Rob Landley
+> suggested userspace apps use "ROOT=" instead.
+> (http://sourceforge.net/p/linux-ima/mailman/message/33189705/)
+
+I'm working on a documentation update, but the old docs I wrote have
+gone a bit stale in a number of places so I'm not done yet...
+
+> This patch set was posted as an RFC.  Assuming this solution for
+> including xattrs in the rootfs is acceptable, I'll post the
+> dracut/systemd changes.
+
+(I'm not particularly interested in systemd either, but good luck with
+that...)
+
+> Mimi
+
+Rob
