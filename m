@@ -1,62 +1,60 @@
-From: Mimi Zohar <zohar@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 6/9] gen_initramfs_list.sh: include xattrs
-Date: Thu, 08 Jan 2015 17:08:51 -0500
-Message-ID: <1420754931.6338.95.camel@dhcp-9-2-203-236.watson.ibm.com>
-References: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com>
-	 <1420663980-20842-7-git-send-email-zohar@linux.vnet.ibm.com>
-	 <CA+5PVA77x2W9LyHMq1jSW3HKqNgFPz-gPVOH0QtEmmMBwzOx_Q@mail.gmail.com>
-	 <1420729994.6338.52.camel@dhcp-9-2-203-236.watson.ibm.com>
-	 <54AECA32.6000304@landley.net>
+From: Miroslav Shaltev <shaltev-ng3u6l8Qjkg@public.gmane.org>
+Subject: dmraid - possible boot fail due to mdraid rules?
+Date: Fri, 9 Jan 2015 13:50:54 +0100
+Message-ID: <20150109135054.66bac1f1@pulsar.localdomain>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <54AECA32.6000304@landley.net>
-Sender: linux-kernel-owner@vger.kernel.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Rob Landley <rob@landley.net>
-Cc: Josh Boyer <jwboyer@fedoraproject.org>, initramfs <initramfs@vger.kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Fionnuala Gunter <fin@linux.vnet.ibm.com>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, 2015-01-08 at 12:19 -0600, Rob Landley wrote:
-> 
-> But I am curious about how you propose to encode xattrs into the cpio
-> format. (Which Al Viro chose because it's _simple_. There isn't really
-> a
-> controlling spec since Posix decided to deprecated it in 2001 and
-> yank
-> it from SUSv3 onwards. LSB extended several header fields to 8 hex
-> digits instead of 6, but they still have 32 bit timestamps which seems
-> a
-> bit short-sighted. If you're going to define a new rev with a new
-> magic
-> number, there are a couple other things you might wanna fix...)
+Dear all,
 
-Sounds like a good opportunity to make the other changes as well.  We
-can include the other changes in this patch set.  Is this (initramfs)
-the right mailing list for this discussion?  Do other people need to be
-included?
+i have a question regarding the dmraid module.
 
-> I ask because I maintain a new from-scratch cpio implementation
-> (http://landley.net/hg/toybox/file/1571/toys/posix/cpio.c), so I'd
-> presumably have to add your format extensions to this. Is there any
-> sort
-> of documentation on them?
-> 
-> The toybox config Android is using has this cpio implementation
-> enabled
-> (see
-> https://android.googlesource.com/platform/external/toybox/+/9250c95a8c47/Android.mk)
-> so I'd rather like to get this sort of detail right...
+On a centos 7 system (but i am afraid the problem is distro independent)
 
-The xattr section, which follows the file name, is of the format:
-<number of xattrs> { <xattr name> <xattr data size> <xattr data> } for
-each xattr, terminated with a NULL byte and padded to a 4 byte boundary.
+kernel: 3.10.0-123.13.2.el7.x86_64
+dracut: dracut-033-161.el7.x86_64
+storage: dmraid 1 with lvm on top
 
-The header contains an additional field, before the checksum, containing
-the xattr section length, including the NULL byte, but without the
-padding.
+with a root on a dmraid device, some mdraid udev rules get pulled into
+the initramfs.
 
-Note that gen_init_cpio does not include "security.evm" as it is file
-system dependent.
+The output of dracut -M 
 
-Mimi
+bash i18n network ifcfg drm plymouth dm dmraid kernel-modules lvm
+resume rootfs-block terminfo udev-rules biosdevname systemd usrmount
+base fs-lib shutdown
+
+gives no hint about that. However 
+
+grep -r "64-md-raid.rules"  dracut/modules.d/*
+
+dracut/modules.d/90dmraid/module-setup.sh: inst_rules 64-md-raid.rules 
+
+dracut/modules.d/90mdraid/module-setup.sh: inst_rules 64-md-raid.rules
+
+Due to the mdraid rules, the actual dmraid device cannot be activated,
+as a result the /dev/mapper links are pointing to wrong devices and the
+boot fails.
+
+Commenting out the line in dracut/modules.d/90dmraid/module-setup.sh
+allows me to create bootable initramfs images.
+
+Could it be, that the line in dracut/modules.d/90dmraid/module-setup.sh
+was introduced just by a mistake or should i fill a bug report?
+
+Cheers,
+miroslav
+
+-- 
+Dr. Miroslav Shaltev
+- Systemadministration -
+Forschungszentrum L3S
+Appelstrasse 9a
+30167 Hannover
+Fax:    +49 (0)511 762 - 17779
+E-Mail: shaltev-ng3u6l8Qjkg@public.gmane.org
