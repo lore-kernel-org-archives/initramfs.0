@@ -1,36 +1,20 @@
-From: Andrei Borzenkov <arvidjaar@gmail.com>
+From: Nikolai Zhubr <n-a-zhubr@yandex.ru>
 Subject: Re: Second (erroneous) check of rootfs?
-Date: Sun, 11 Jan 2015 15:54:27 +0300
-Message-ID: <20150111155427.69f1cc3f@opensuse.site>
-References: <54ADD119.2050906@yandex.ru> <20150108004352.GA22800@gardel-login>
- <54ADD98D.9080608@opensuse.org> <54ADE3A1.6060107@yandex.ru>
- <54ADEA1F.3080908@opensuse.org>
- <20150108091810.500d510f@opensuse.site>
- <54AEA37D.8040008@gmail.com> <20150108155548.GA23263@gardel-login>
- <54AEAC69.9050801@gmail.com>
- <20150108203046.6cb52b01@opensuse.site>
- <54AEE948.4060308@gmail.com> <54AFA59C.2040301@yandex.ru>
- <CAPWNY8X2X=V2u46fLgvARDbiFws9VkgJVevpFs54FdnsgGcNVg@mail.gmail.com>
- <CAJCQCtTpHAozdGuNXP2bSfB=+ooVLPHa0Bd0BjqU6J7eT2Wn1A@mail.gmail.com>
- <54B12E5C.2060408@yandex.ru>
- <20150111100908.75945b61@opensuse.site>
- <54B253D6.9040306@yandex.ru>
- <20150111141125.2d2c1f38@opensuse.site> <54B26B1E.30900@yandex.ru>
+Date: Sun, 11 Jan 2015 17:07:24 +0300
+Message-ID: <54B2839C.8050204@yandex.ru>
+References: <54ADD119.2050906@yandex.ru>	<20150108004352.GA22800@gardel-login>	<54ADD98D.9080608@opensuse.org>	<54ADE3A1.6060107@yandex.ru>	<54ADEA1F.3080908@opensuse.org>	<20150108091810.500d510f@opensuse.site>	<54AEA37D.8040008@gmail.com>	<20150108155548.GA23263@gardel-login>	<54AEAC69.9050801@gmail.com>	<20150108203046.6cb52b01@opensuse.site>	<54AEE948.4060308@gmail.com>	<54AFA59C.2040301@yandex.ru>	<CAPWNY8X2X=V2u46fLgvARDbiFws9VkgJVevpFs54FdnsgGcNVg@mail.gmail.com>	<CAJCQCtTpHAozdGuNXP2bSfB=+ooVLPHa0Bd0BjqU6J7eT2Wn1A@mail.gmail.com>	<54B12E5C.2060408@yandex.ru>	<20150111100908.75945b61@opensuse.site>	<54B253D6.9040306@yandex.ru>	<20150111141125.2d2c1f38@opensuse.site>	<54B26B1E.30900@yandex.ru>
+ <20150111155427.69f1cc3f@opensuse.site>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
 Return-path: <systemd-devel-bounces@lists.freedesktop.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
- h=date:from:to:cc:subject:message-id:in-reply-to:references
- :mime-version:content-type:content-transfer-encoding;
- bh=bL7qYh4t3NrZW4vTntb4awJzq7DpOTAUD9w8dFobQo8=;
- b=IKB1BYPVCv0y8wfYdHT4ckpBJtNg4CNlCzejqtUAEZdqm40KDnnmW7pqzKTwSgpXGt
- H+CNagXRpZqhLWG7TiRHF/eSyzjSqHTHaCtWvwJXLf0CAlDKIgDyWpQth6s1VcZPrbZt
- BlUqjUfpL/VPvMYQPSZhDzCWUBdh1+afqOapAS4DHIYn4lswWMiHkfXbZ0xJejsEfdTp
- g6IDZToM6gOkyHOfcviAFZHLx/NoH/b6CeXmnuebT3cdibKQWyURDlLn2YTYyYHOFBxL
- wUetVzeta471mvG9sSoKQrzhdLgOJ8XlUhpn7gZu+Fuiq14L/uPn4FGftGDAU11afGwR
- aepA==
-In-Reply-To: <54B26B1E.30900@yandex.ru>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail;
+ t=1420984526; bh=sUNSWe6Lm4Anj2PNoJIDLF1hUd7L8BDd+8bbnBCImlE=;
+ h=Message-ID:Date:From:User-Agent:MIME-Version:To:CC:Subject:
+ References:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+ b=MHsy5TTWpBVkR+Cw37QS1u+0VOIA/c+P2iqqJyTeHYZSB/Fuv9CJSsKNudFQYQRPB
+ IK2dn4dPt/kkO4/id6L+pzaUacR/F1pzm81MrBLNH3lThFZiLRyPWwFGUNtM35rRCp
+ /pi/7SirxgsptBnETA51jsD+wqrHVp+hAdNfln20=
+In-Reply-To: <20150111155427.69f1cc3f@opensuse.site>
 List-Id: <initramfs.vger.kernel.org>
 List-Unsubscribe: <http://lists.freedesktop.org/mailman/options/systemd-devel>, 
  <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
@@ -41,39 +25,34 @@ List-Subscribe: <http://lists.freedesktop.org/mailman/listinfo/systemd-devel>,
  <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
 Errors-To: systemd-devel-bounces@lists.freedesktop.org
 Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
-To: Nikolai Zhubr <n-a-zhubr@yandex.ru>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Andrei Borzenkov <arvidjaar@gmail.com>
 Cc: initramfs@vger.kernel.org, systemd-devel@lists.freedesktop.org
 
-0JIgU3VuLCAxMSBKYW4gMjAxNSAxNToyMjo1NCArMDMwMApOaWtvbGFpIFpodWJyIDxuLWEtemh1
-YnJAeWFuZGV4LnJ1PiDQv9C40YjQtdGCOgoKPiBIaSwKPiAxMS4wMS4yMDE1IDE0OjExLCBBbmRy
-ZWkgQm9yemVua292Ogo+IFsuLi5dCj4gPiBCeSBhZGRpbmcgYWxsIG5lZWRlZCBvcHRpb25zIHRv
-IHJvb3RmbGFncz0iLi4uIiAobW9kaWZ5Cj4gPiBHUlVCX0NNRExJTkVfTElOVVhfREVGQVVMVCBh
-bmQgcG9zc2libHkgR1JVQl9DTURMSU5FX0xJTlVYX1JFQ09WRVJZCj4gPiBpbiAvZXRjL2RlZmF1
-bHQvZ3J1YjsgeW91IGNhbiB1c2UgeWFzdCBmb3IgaXQpLgo+IAo+IEFoLCBpbmRlZWQuCj4gQWx0
-aG91Z2ggaXQgZmVlbHMgYSBiaXQgdWdseSBiZWNhdXNlIHRoZSBjb25zaXN0ZW5jeSBiZXR3ZWVu
-IGZzdGFiIGFuZCAKPiBHUlVCX0NNRExJTkVfKiB3aWxsIGhhdmUgdG8gYmUgdmVyaWZpZWQgbWFu
-dWFsbHkgZm9yZXZlciB0aGVuLgo+IAoKSXQncyBubyBtb3JlIHVnbHkgdGhhbiB1c2luZyBwcml2
-YXRlbHkgcGF0Y2hlZCBkaXN0cmlidXRpb24gcGFja2FnZS4gSQpkaWQgbm90IHN1Z2dlc3QgaXQg
-YXMgbG9uZyB0ZXJtIGdlbmVyaWMgc29sdXRpb24uCgo+ID4gT3RoZXJ3aXNlIGl0IGlzIGZ1bmN0
-aW9uYWwgZ2FwIGJldHdlZW4gbm9uLXN5c3RlbWQgYW5kIHN5c3RlbWQKPiA+IGVuYWJsZWQgZHJh
-Y3V0LiBXaXRob3V0IHN5c3RlbWQgZHJhY3V0IHdpbGwgYWN0dWFsbHkgbW91bnQgcm9vdAo+ID4g
-cmVhZC1vbmx5LCB0aGVuIGZldGNoIG1vdW50IG9wdGlvbnMgZnJvbSByZWFsIHJvb3QgL2V0Yy9m
-c3RhYiBhbmQgdGhlbgo+ID4gcmVtb3VudCByZWFsIHJvb3QgcmVhZC13cml0ZSB1c2luZyBjb3Jy
-ZWN0IG9wdGlvbnMuIFRoaXMgYWxsIGdvdCBsb3N0Cj4gPiB3aGVuIGNvbnZlcnRpbmcgdG8gc3lz
-dGVtZC4KPiAKPiBIbW0sIGNhbiBub3QgZmluZCBhbnkgZHJhY3V0LXNwZWNpZmljIG1haWxpbmcg
-bGlzdCB0byBhc2suIEFwcGFyZW50bHkgCj4gdGhlcmUgaXMgbm9uZSA6KAoKVGhlcmUgaXM7IHlv
-dSBrZWVwIHJlbW92aW5nIGl0IGZyb20gQ2MuCgo+IEFueXdheSwgZ2VuZXJhbGx5LCB3aHkgbm90
-IHBhY2sgYSByZWFsIGZzdGFiIGZyb20gdGhlIGhvc3QgaW50byBpbml0cmQgCj4gdGhlbj8gT3Ig
-YXQgbGVhc3Qgb25lIGxpbmUgKCIvIikgZnJvbSBpdD8gU29tZXRoaW5nIHByb2hpYml0cyB0aGlz
-Pwo+IAoKRHJhY3V0IGRvZXMgcGFjayAvZXRjL2ZzdGFiIGluIGluaXRyZCBpZiBydW4gaW4gaG9z
-dC1zcGVjaWZpYyBtb2RlLApidXQgcmlnaHQgbm93IHN5c3RlbWQtZnN0YWItZ2VuZXJhdG9yIHdp
-bGwgbmV2ZXIgcGFyc2UgL2V0Yy9mc3RhYgpmb3IgL3N5c3Jvb3QgbW91bnRzLiBQcmUtc3lzdGVt
-ZCBkcmFjdXQgd291bGQgYWN0dWFsbHkgbWVyZ2Ugb3B0aW9ucwpmcm9tIHJvb3RmcyAvZXRjL2Zz
-dGFiIGFuZCByb290ZmxhZ3MuCgpFdmVuIGlmIHlvdSBhZGQgYWRkaXRpb25hbCBwYXJzaW5nIG9m
-IGluLWluaXRyZCAvZXRjL2ZzdGFiLCBpdCBzdGlsbAptZWFucyB5b3UgbmVlZCB0byByZWdlbmVy
-YXRlIGluaXRyZCBldmVyeSB0aW1lIHlvdSBjaGFuZ2UgL2V0Yy9mc3RhYiBzbwp5b3Ugc3RpbGwg
-aGF2ZSB0aGUgc2FtZSBwcm9ibGVtIGFzIHdoZW4gZXhwbGljaXRseSBhZGRpbmcgcm9vdGZsYWdz
-IC0Ka2VlcGluZyBib3RoIGluIHN5bmMgOikgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCnN5c3RlbWQtZGV2ZWwgbWFpbGluZyBsaXN0CnN5c3RlbWQtZGV2
-ZWxAbGlzdHMuZnJlZWRlc2t0b3Aub3JnCmh0dHA6Ly9saXN0cy5mcmVlZGVza3RvcC5vcmcvbWFp
-bG1hbi9saXN0aW5mby9zeXN0ZW1kLWRldmVsCg==
+SGksCjExLjAxLjIwMTUgMTU6NTQsIEFuZHJlaSBCb3J6ZW5rb3Y6Cj4gSXQncyBubyBtb3JlIHVn
+bHkgdGhhbiB1c2luZyBwcml2YXRlbHkgcGF0Y2hlZCBkaXN0cmlidXRpb24gcGFja2FnZS4gSQo+
+IGRpZCBub3Qgc3VnZ2VzdCBpdCBhcyBsb25nIHRlcm0gZ2VuZXJpYyBzb2x1dGlvbi4KClllcywg
+YWJzb2x1dGVseS4gVGhlcmVmb3JlIEknbSByZWFkaW5nIGFsbCB0aGUgYW5zd2VycyB0byBmaW5k
+IGEgCnJlYXNvbmFibGUgd29ya2Fyb3VuZCBhbmQgYXZvaWQgd2hhdGV2ZXIgdWdseSBwYXRjaGlu
+Zy4KCj4+PiBPdGhlcndpc2UgaXQgaXMgZnVuY3Rpb25hbCBnYXAgYmV0d2VlbiBub24tc3lzdGVt
+ZCBhbmQgc3lzdGVtZAo+Pj4gZW5hYmxlZCBkcmFjdXQuIFdpdGhvdXQgc3lzdGVtZCBkcmFjdXQg
+d2lsbCBhY3R1YWxseSBtb3VudCByb290Cj4+PiByZWFkLW9ubHksIHRoZW4gZmV0Y2ggbW91bnQg
+b3B0aW9ucyBmcm9tIHJlYWwgcm9vdCAvZXRjL2ZzdGFiIGFuZCB0aGVuCj4+PiByZW1vdW50IHJl
+YWwgcm9vdCByZWFkLXdyaXRlIHVzaW5nIGNvcnJlY3Qgb3B0aW9ucy4gVGhpcyBhbGwgZ290IGxv
+c3QKPj4+IHdoZW4gY29udmVydGluZyB0byBzeXN0ZW1kLgo+Pgo+PiBIbW0sIGNhbiBub3QgZmlu
+ZCBhbnkgZHJhY3V0LXNwZWNpZmljIG1haWxpbmcgbGlzdCB0byBhc2suIEFwcGFyZW50bHkKPj4g
+dGhlcmUgaXMgbm9uZSA6KAo+Cj4gVGhlcmUgaXM7IHlvdSBrZWVwIHJlbW92aW5nIGl0IGZyb20g
+Q2MuCgpPaC4gU29ycnkhIDooCgpbLi4uXQo+IEV2ZW4gaWYgeW91IGFkZCBhZGRpdGlvbmFsIHBh
+cnNpbmcgb2YgaW4taW5pdHJkIC9ldGMvZnN0YWIsIGl0IHN0aWxsCj4gbWVhbnMgeW91IG5lZWQg
+dG8gcmVnZW5lcmF0ZSBpbml0cmQgZXZlcnkgdGltZSB5b3UgY2hhbmdlIC9ldGMvZnN0YWIgc28K
+PiB5b3Ugc3RpbGwgaGF2ZSB0aGUgc2FtZSBwcm9ibGVtIGFzIHdoZW4gZXhwbGljaXRseSBhZGRp
+bmcgcm9vdGZsYWdzIC0KPiBrZWVwaW5nIGJvdGggaW4gc3luYyA6KQoKV2VsbCwgZG9pbmcgIm1r
+aW5pdHJkIiBpcyBub3QgYSBwcm9ibGVtPyBJdCBoYXMgdG8gYmUgcmVydW4gaW4gY2FzZSBvZiAK
+c29tZSBvdGhlciBjaGFuZ2VzIHRvby4gQW5kIFlhc3QgYW55d2F5IGhhcyB0byBrbm93IHdoZW4g
+aXQgaXMgbmVjZXNzYXJ5IAp0byBydW4gbWtpbml0cmQgaW4gb3JkZXIgdG8gYXBwbHkgY2hhbmdl
+cyBJJ2Qgc3VwcG9zZT8gKEknbSB0cnlpbmcgdG8gCmNoZWNrIHRoaXMgbm93OyBJIHRoaW5rIEkg
+cmVjYWxsIFlhc3QgdXNlZCB0byBiZSBxdWl0ZSBzbWFydCBhYm91dCBpdCkKCgpUaGFuayB5b3Us
+Ck5pa29sYWkKPgo+CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXwpzeXN0ZW1kLWRldmVsIG1haWxpbmcgbGlzdApzeXN0ZW1kLWRldmVsQGxpc3RzLmZyZWVk
+ZXNrdG9wLm9yZwpodHRwOi8vbGlzdHMuZnJlZWRlc2t0b3Aub3JnL21haWxtYW4vbGlzdGluZm8v
+c3lzdGVtZC1kZXZlbAo=
