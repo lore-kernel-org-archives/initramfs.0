@@ -1,60 +1,67 @@
-From: Miroslav Shaltev <shaltev-ng3u6l8Qjkg@public.gmane.org>
-Subject: dmraid - possible boot fail due to mdraid rules?
-Date: Fri, 9 Jan 2015 13:50:54 +0100
-Message-ID: <20150109135054.66bac1f1@pulsar.localdomain>
+From: Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [systemd-devel] Second (erroneous) check of rootfs?
+Date: Sun, 11 Jan 2015 14:11:25 +0300
+Message-ID: <20150111141125.2d2c1f38@opensuse.site>
+References: <54ADD119.2050906@yandex.ru>
+	<20150108004352.GA22800@gardel-login>
+	<54ADD98D.9080608@opensuse.org>
+	<54ADE3A1.6060107@yandex.ru>
+	<54ADEA1F.3080908@opensuse.org>
+	<20150108091810.500d510f@opensuse.site>
+	<54AEA37D.8040008@gmail.com>
+	<20150108155548.GA23263@gardel-login>
+	<54AEAC69.9050801@gmail.com>
+	<20150108203046.6cb52b01@opensuse.site>
+	<54AEE948.4060308@gmail.com>
+	<54AFA59C.2040301@yandex.ru>
+	<CAPWNY8X2X=V2u46fLgvARDbiFws9VkgJVevpFs54FdnsgGcNVg@mail.gmail.com>
+	<CAJCQCtTpHAozdGuNXP2bSfB=+ooVLPHa0Bd0BjqU6J7eT2Wn1A@mail.gmail.com>
+	<54B12E5C.2060408@yandex.ru>
+	<20150111100908.75945b61@opensuse.site>
+	<54B253D6.9040306@yandex.ru>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=date:from:to:cc:subject:message-id:in-reply-to:references
+         :mime-version:content-type:content-transfer-encoding;
+        bh=rrq6cju1zoIQ+knlxkbm5JOVmxfekGBpMkszQMbhgwA=;
+        b=Ujjcn4IwKq1Wa3mI0WXHK0cItOLqjzKtMjKiiWfQuYC19+1lht6eJkZ+s4X9FjvH8q
+         OosXLt0a/SzBdUwziTj9+AwKOAPaaBrkVvziaUa+NGmsmJJ/gRia9/rbDKIY0Xkd9KvB
+         hgRPNbDdo96TdapT1/sbS9i/NZRj4J+oDltU527sdD7ouqrml4lEQifKn612uR/trpxw
+         RR9hsYvBY3z2fkvoqLKbUOS6uPI5+ocwmOEBQt7Ji8mYDAYhIhCdIUZy8QXRRoAKRLbi
+         IZoVI6jesJOefzCb9SVmJl2GLSD/Mg317IF403oLiIKbPlLIqMUSYFyiWfQR3DhGyRjN
+         RsDw==
+In-Reply-To: <54B253D6.9040306-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+To: Nikolai Zhubr <n-a-zhubr-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org
 
-Dear all,
+=D0=92 Sun, 11 Jan 2015 13:43:34 +0300
+Nikolai Zhubr <n-a-zhubr-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org> =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
 
-i have a question regarding the dmraid module.
+> >
+> > Uh. Why not simply mount rootfs rw in initrd then?
+>=20
+> I'm not against generally. But it'd mean that this first mount is=20
+> actually a real mount, the fs will start up in full. Then I'd suppose=
+ it=20
+> is definitely a must to supply all necessary mount options (from fsta=
+b)=20
+> at this stage already. I don't easily see how to do this currently, a=
+t=20
+> least on my opensuse system.
+>=20
 
-On a centos 7 system (but i am afraid the problem is distro independent)
+By adding all needed options to rootflags=3D"..." (modify
+GRUB_CMDLINE_LINUX_DEFAULT and possibly GRUB_CMDLINE_LINUX_RECOVERY
+in /etc/default/grub; you can use yast for it).
 
-kernel: 3.10.0-123.13.2.el7.x86_64
-dracut: dracut-033-161.el7.x86_64
-storage: dmraid 1 with lvm on top
-
-with a root on a dmraid device, some mdraid udev rules get pulled into
-the initramfs.
-
-The output of dracut -M 
-
-bash i18n network ifcfg drm plymouth dm dmraid kernel-modules lvm
-resume rootfs-block terminfo udev-rules biosdevname systemd usrmount
-base fs-lib shutdown
-
-gives no hint about that. However 
-
-grep -r "64-md-raid.rules"  dracut/modules.d/*
-
-dracut/modules.d/90dmraid/module-setup.sh: inst_rules 64-md-raid.rules 
-
-dracut/modules.d/90mdraid/module-setup.sh: inst_rules 64-md-raid.rules
-
-Due to the mdraid rules, the actual dmraid device cannot be activated,
-as a result the /dev/mapper links are pointing to wrong devices and the
-boot fails.
-
-Commenting out the line in dracut/modules.d/90dmraid/module-setup.sh
-allows me to create bootable initramfs images.
-
-Could it be, that the line in dracut/modules.d/90dmraid/module-setup.sh
-was introduced just by a mistake or should i fill a bug report?
-
-Cheers,
-miroslav
-
--- 
-Dr. Miroslav Shaltev
-- Systemadministration -
-Forschungszentrum L3S
-Appelstrasse 9a
-30167 Hannover
-Fax:    +49 (0)511 762 - 17779
-E-Mail: shaltev-ng3u6l8Qjkg@public.gmane.org
+Otherwise it is functional gap between non-systemd and systemd
+enabled dracut. Without systemd dracut will actually mount root
+read-only, then fetch mount options from real root /etc/fstab and then
+remount real root read-write using correct options. This all got lost
+when converting to systemd.
