@@ -1,34 +1,41 @@
-From: Paul Moore <pmoore@redhat.com>
-Subject: Re: [RFC][PATCH 6/9] gen_initramfs_list.sh: include xattrs
-Date: Wed, 14 Jan 2015 14:36:46 -0500
-Message-ID: <1584934.WkKQGAFadF@sifl>
-References: <1420663980-20842-1-git-send-email-zohar@linux.vnet.ibm.com> <54B5913C.5050109@landley.net> <1421205803.2119.110.camel@dhcp-9-2-203-236.watson.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7Bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <1421205803.2119.110.camel@dhcp-9-2-203-236.watson.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
+From: Daniel Drake <drake-6IF/jdPJHihWk0Htik3J/w@public.gmane.org>
+Subject: [PATCH] kernel-modules: increase SDHCI driver inclusion
+Date: Thu, 15 Jan 2015 11:27:47 -0600
+Message-ID: <1421342867-6104-1-git-send-email-drake@endlessm.com>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Mimi Zohar <zohar@linux.vnet.ibm.com>
-Cc: Rob Landley <rob@landley.net>, Josh Boyer <jwboyer@fedoraproject.org>, initramfs <initramfs@vger.kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Fionnuala Gunter <fin@linux.vnet.ibm.com>, "casey.schaufler" <casey.schaufler@intel.com>, selinux@tycho.nsa.gov
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 
-On Tuesday, January 13, 2015 10:23:23 PM Mimi Zohar wrote:
-> I would assume only 'security.evm' is not portable as it attempts to
-> tightly bind the file metadata to the file data.  Casey?  Paul?
+The sdhci-pci module is currently not being included in the initramfs,
+even though other sdhci modules are. This breaks boot on systems that
+rely on this driver to access the root filesystem.
 
-[NOTE: Added the SELinux mailing list to the CC line.]
+Instead of looking for modules that use sdhci_pltfm_init, look for
+sdhci_add_host. I checked 3.18 kernel sources, and this change
+does not remove any of the previously-matched SDHCI drivers.
+It should result in the addition of sdhci-pci, sdhci-s3c, sdhci-spear
+and sdhci-acpi.
+---
+ modules.d/90kernel-modules/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The SELinux xattr should be portable assuming the security label's semantics 
-remain constant across the different security policies.  If the label is 
-completely unknown SELinux should handle it correctly, it will be treated as 
-unlabeled until a module is loaded which defines the label.
-
-Although, this is just for initramfs, yes?  If so, I'm not sure this matters 
-that much from a practical point of view; Stephen or someone else from the 
-SELinux list may have some thoughts on this.
-
+diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
+index 5e292b0..a7b0853 100755
+--- a/modules.d/90kernel-modules/module-setup.sh
++++ b/modules.d/90kernel-modules/module-setup.sh
+@@ -4,7 +4,7 @@
+ installkernel() {
+     if [[ -z $drivers ]]; then
+         block_module_filter() {
+-            local _blockfuncs='ahci_platform_get_resources|ata_scsi_ioctl|scsi_add_host|blk_cleanup_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device|usb_stor_disconnect|mmc_add_host|sdhci_pltfm_init'
++            local _blockfuncs='ahci_platform_get_resources|ata_scsi_ioctl|scsi_add_host|blk_cleanup_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device|usb_stor_disconnect|mmc_add_host|sdhci_add_host'
+             # subfunctions inherit following FDs
+             local _merge=8 _side2=9
+             function bmf1() {
 -- 
-paul moore
-security @ redhat
-
+2.1.0
