@@ -1,7 +1,7 @@
 From: Mimi Zohar <zohar@linux.vnet.ibm.com>
-Subject: [PATCH v1 06/11] gen_init_cpio: define new CPIO format to support xattrs
-Date: Tue, 20 Jan 2015 14:12:55 -0500
-Message-ID: <1421781180-24425-7-git-send-email-zohar@linux.vnet.ibm.com>
+Subject: [PATCH v1 01/11] initramfs: separate reading cpio method from header
+Date: Tue, 20 Jan 2015 14:12:50 -0500
+Message-ID: <1421781180-24425-2-git-send-email-zohar@linux.vnet.ibm.com>
 References: <1421781180-24425-1-git-send-email-zohar@linux.vnet.ibm.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
 In-Reply-To: <1421781180-24425-1-git-send-email-zohar@linux.vnet.ibm.com>
@@ -13,145 +13,64 @@ Content-Transfer-Encoding: 7bit
 To: initramfs <initramfs@vger.kernel.org>
 Cc: Mimi Zohar <zohar@linux.vnet.ibm.com>, Al Viro <viro@ZenIV.linux.org.uk>, linux-ima-devel@lists.sourceforge.net, linux-security-module <linux-security-module@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
 
-This patch defines a new CPIO method 070703 for including xattrs.
-The new format extends the existing NEWC header to include the
-buffer size containing the number of xattrs, the xattr(s) name,
-data size, and data.
+In preparation for adding xattr support, read the CPIO method
+separately from the rest of the header.
 
 Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
 ---
- usr/gen_init_cpio.c | 35 ++++++++++++++++++++++-------------
- 1 file changed, 22 insertions(+), 13 deletions(-)
+ init/initramfs.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
-index ee35361..0d9c6e8 100644
---- a/usr/gen_init_cpio.c
-+++ b/usr/gen_init_cpio.c
-@@ -21,7 +21,11 @@
- #define str(s) xstr(s)
+diff --git a/init/initramfs.c b/init/initramfs.c
+index ad1bd77..bb51b5b 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -187,6 +187,7 @@ static void __init parse_header(char *s)
  
- static char *newcfmt = "%s%08X%08X%08lX%08lX%08X%08lX"
--			"%08X%08X%08X%08X%08X%08X%08X";
-+			"%08X%08X%08X%08X%08X%08X%15$08X";
-+static char *newcxfmt = "%s%08X%08X%08lX%08lX%08X%08lX"
-+			"%08X%08X%08X%08X%08X%08X%08X%08X";
-+
-+static int newcx;
+ static __initdata enum state {
+ 	Start,
++	GotFormat,
+ 	Collect,
+ 	GotHeader,
+ 	SkipIt,
+@@ -230,7 +231,7 @@ static __initdata char *header_buf, *symlink_buf, *name_buf;
  
- static unsigned int offset;
- static unsigned int ino = 721;
-@@ -58,7 +62,7 @@ static void push_rest(const char *name)
- 	putchar(0);
- 	offset += name_len;
- 
--	tmp_ofs = name_len + 110;
-+	tmp_ofs = name_len + (newcx ? 118 : 110);
- 	while (tmp_ofs & 3) {
- 		putchar(0);
- 		offset++;
-@@ -69,7 +73,7 @@ static void push_rest(const char *name)
- static void push_hdr(const char *s)
+ static int __init do_start(void)
  {
- 	fputs(s, stdout);
--	offset += 110;
-+	offset += newcx ? 118 : 110;
+-	read_into(header_buf, 110, GotHeader);
++	read_into(header_buf, 6, GotFormat);
+ 	return 0;
  }
  
- static void cpio_trailer(void)
-@@ -77,8 +81,8 @@ static void cpio_trailer(void)
- 	char s[256];
- 	const char name[] = "TRAILER!!!";
+@@ -248,7 +249,7 @@ static int __init do_collect(void)
+ 	return 0;
+ }
  
--	sprintf(s, newcfmt,
--		"070701",		/* magic */
-+	sprintf(s, newcx ? newcxfmt : newcfmt,
-+		newcx ? "070703": "070701",/* magic */
- 		0,			/* ino */
- 		0,			/* mode */
- 		(long) 0,		/* uid */
-@@ -91,6 +95,7 @@ static void cpio_trailer(void)
- 		0,			/* rmajor */
- 		0,			/* rminor */
- 		(unsigned)strlen(name)+1, /* namesize */
-+		0,			/* xattrs-size */
- 		0);			/* chksum */
- 	push_hdr(s);
- 	push_rest(name);
-@@ -108,8 +113,8 @@ static int cpio_mkslink(const char *name, const char *target,
+-static int __init do_header(void)
++static int __init do_format(void)
+ {
+ 	if (memcmp(collected, "070707", 6)==0) {
+ 		error("incorrect cpio method used: use -H newc option");
+@@ -258,6 +259,12 @@ static int __init do_header(void)
+ 		error("no cpio magic");
+ 		return 1;
+ 	}
++	read_into(header_buf, 104, GotHeader);
++	return 0;
++}
++
++static int __init do_header(void)
++{
+ 	parse_header(collected);
+ 	next_header = this_header + N_ALIGN(name_len) + body_len;
+ 	next_header = (next_header + 3) & ~3;
+@@ -400,6 +407,7 @@ static int __init do_symlink(void)
  
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s, newcfmt,
--		"070701",		/* magic */
-+	sprintf(s, newcx ? newcxfmt : newcfmt,
-+		newcx ? "070703": "070701",/* magic */
- 		ino++,			/* ino */
- 		S_IFLNK | mode,		/* mode */
- 		(long) uid,		/* uid */
-@@ -122,6 +127,7 @@ static int cpio_mkslink(const char *name, const char *target,
- 		0,			/* rmajor */
- 		0,			/* rminor */
- 		(unsigned)strlen(name) + 1,/* namesize */
-+		0,			/* xattrs-size */
- 		0);			/* chksum */
- 	push_hdr(s);
- 	push_string(name);
-@@ -156,8 +162,8 @@ static int cpio_mkgeneric(const char *name, unsigned int mode,
- 
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s, newcfmt,
--		"070701",		/* magic */
-+	sprintf(s, newcx ? newcxfmt : newcfmt,
-+		newcx ? "070703": "070701",/* magic */
- 		ino++,			/* ino */
- 		mode,			/* mode */
- 		(long) uid,		/* uid */
-@@ -170,6 +176,7 @@ static int cpio_mkgeneric(const char *name, unsigned int mode,
- 		0,			/* rmajor */
- 		0,			/* rminor */
- 		(unsigned)strlen(name) + 1,/* namesize */
-+		0,			/* xattrs-size */
- 		0);			/* chksum */
- 	push_hdr(s);
- 	push_rest(name);
-@@ -249,8 +256,8 @@ static int cpio_mknod(const char *name, unsigned int mode,
- 
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s, newcfmt,
--		"070701",		/* magic */
-+	sprintf(s, newcx ? newcxfmt : newcfmt,
-+		newcx ? "070703": "070701",/* magic */
- 		ino++,			/* ino */
- 		mode,			/* mode */
- 		(long) uid,		/* uid */
-@@ -263,6 +270,7 @@ static int cpio_mknod(const char *name, unsigned int mode,
- 		maj,			/* rmajor */
- 		min,			/* rminor */
- 		(unsigned)strlen(name) + 1,/* namesize */
-+		0,			/* xattrs-size */
- 		0);			/* chksum */
- 	push_hdr(s);
- 	push_rest(name);
-@@ -338,8 +346,8 @@ static int cpio_mkfile(const char *name, const char *location,
- 		if (name[0] == '/')
- 			name++;
- 		namesize = strlen(name) + 1;
--		sprintf(s, newcfmt,
--			"070701",		/* magic */
-+		sprintf(s, newcx ? newcxfmt : newcfmt,
-+			newcx ? "070703": "070701",/* magic */
- 			ino,			/* ino */
- 			mode,			/* mode */
- 			(long) uid,		/* uid */
-@@ -352,6 +360,7 @@ static int cpio_mkfile(const char *name, const char *location,
- 			0,			/* rmajor */
- 			0,			/* rminor */
- 			namesize,		/* namesize */
-+			0,			/* xattrs-size */
- 			0);			/* chksum */
- 		push_hdr(s);
- 		push_string(name);
+ static __initdata int (*actions[])(void) = {
+ 	[Start]		= do_start,
++	[GotFormat]	= do_format,
+ 	[Collect]	= do_collect,
+ 	[GotHeader]	= do_header,
+ 	[SkipIt]	= do_skip,
 -- 
 1.8.1.4
