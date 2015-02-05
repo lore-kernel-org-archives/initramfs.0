@@ -1,65 +1,53 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 041
-Date: Sat, 31 Jan 2015 13:00:12 +0100
-Message-ID: <54CCC3CC.8050409@redhat.com>
+From: Artem Sidorenko <artem-Doy5ofz6/I90ubjbjo6WXg@public.gmane.org>
+Subject: PR crypt-ssh
+Date: Thu, 05 Feb 2015 23:41:00 +0100
+Message-ID: <54D3F17C.7040204@2realities.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Here comes a new dracut version. Thanks to all who have contributed to this
-release.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-The tarball can be found here:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/
-        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
+Hi all,
 
-Git:
-        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
+I created a PR [1] with a module crypt-ssh. The intention is to enable
+unlocking of luks full encrypted systems via dropbear ssh in the initramf=
+s.
 
-Git Web:
-        http://git.kernel.org/?p=boot/dracut/dracut.git
+This module is a separate rpm package because of dropbear and openssh
+dependencies. (Dropbear is coming from EPEL on RHEL/CentOS).
 
-Git Web RSS Feed:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+May you please take a look and give me feedback?
 
-Project Page:
-        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+[1] - https://github.com/haraldh/dracut/pull/39
 
-Project Wiki:
-        http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+Thx,
+Artem
 
 
-dracut-041
-==========
-- fixed the shutdown loop
-- fixed gzip compression for versions, which do not have --rsyncable
-- fixed ifcfg generation for persistent interface names
-- multipath:
-  * new option to turn off multipath "rd.multipath=0" completly
-  * preload scsi dh modules
-  * start multipathd via systemd service
-- do not fail, if user pressed ESC during media check
-- fixed systemd-journal by symlinking /var/log to /run/initramfs/log
-- initrd-release moved to /usr/lib
-- lots of iSCSI fixes
-- new "rd.timeout" to specify the systemd JobTimeoutSec for devices
-- if $initrd/etc/cmdline.d/* has a "root=" and the kernel cmdline does not,
-  generate a mount unit for it
-- increased the initqueue timeout for non systemd initramfs to 180s
-- $initrd/etc/cmdline.d/ hostonly files are now generated for NFS
-- make use of systemd-hibernate-resume, if available
-- fixed ldconfig parsing for hwcap output
-- network: add support for comma separated autoconf options like ip=eth0:auto6,dhcp
-- new parameter "rd.live.overlay.size" to specify the overlay for live images
-- changed the test suite for the new sfdisk syntax
-- added cache tools for dm-cache setups
+--s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQEcBAEBAgAGBQJU0/F8AAoJEA3ywnEJRU9tPY0H/25AISsnZr436sUz42w+1mbJ
+ygWSkrb+Ri5eUdhL1+uWYgJ8lLxNma4YqZRAMiN1CFgCYtNBcjBAqw7pS1C9eCCb
+g8Nqj2h0jB8PHWbUleRXR4vkFcqM+gFvW1z8U6hy3dN2AGm44ew5vnONNwEJQ6uG
+lXzi0Wc6xp6+CFdUuTyJTdH6lGCVVsCQtl71SEpE3Wp+qYfaYGp1l59utqw/cr/x
+hODtuWDkvHLvLapcvy9UUA+0FcXVoknC4ax42MlFL1N0/uOP3fvsQgefmJNssRXH
+LXyYGEVjce7mQqttXS2jOCSzwVCECroD1d6PEcMHrfibPmzqtgBpT9k6I+/cyO8=
+=mFgt
+-----END PGP SIGNATURE-----
+
+--s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2--
