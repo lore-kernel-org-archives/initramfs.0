@@ -1,53 +1,40 @@
-From: Artem Sidorenko <artem-Doy5ofz6/I90ubjbjo6WXg@public.gmane.org>
-Subject: PR crypt-ssh
-Date: Thu, 05 Feb 2015 23:41:00 +0100
-Message-ID: <54D3F17C.7040204@2realities.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2"
+From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+Subject: [PATCH] systemd: include systemd-random-seed.service
+Date: Tue, 10 Feb 2015 02:26:47 -0300
+Message-ID: <1423546007-1385-1-git-send-email-crrodriguez@opensuse.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=cristianrodriguez.net; s=google;
+        h=sender:from:to:cc:subject:date:message-id;
+        bh=zkRhjZN86cHMq4upTpolh5CLZhwBnbM4AZmJupQelWk=;
+        b=WJdOPv1v0u+rU7e3vGkAbvsJ2Caqbx45WWD3S9JLC9mU+SQd5LdLf943+zvoMIxrKC
+         dzNBb88C+IT4sUgTpkebWV6zYL+r2XfPr8kf3+EEY1P1WGT8KfhRENOBoAPerO46hyPX
+         6zsUu6KgEZPc7tHJGZ+AH6JX+nOqieuN7zsRU=
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+In current systemd releases there is no random-seed-load service
+only systemd-random-seed.service
+---
+ modules.d/98systemd/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-Hi all,
-
-I created a PR [1] with a module crypt-ssh. The intention is to enable
-unlocking of luks full encrypted systems via dropbear ssh in the initramf=
-s.
-
-This module is a separate rpm package because of dropbear and openssh
-dependencies. (Dropbear is coming from EPEL on RHEL/CentOS).
-
-May you please take a look and give me feedback?
-
-[1] - https://github.com/haraldh/dracut/pull/39
-
-Thx,
-Artem
-
-
---s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAEBAgAGBQJU0/F8AAoJEA3ywnEJRU9tPY0H/25AISsnZr436sUz42w+1mbJ
-ygWSkrb+Ri5eUdhL1+uWYgJ8lLxNma4YqZRAMiN1CFgCYtNBcjBAqw7pS1C9eCCb
-g8Nqj2h0jB8PHWbUleRXR4vkFcqM+gFvW1z8U6hy3dN2AGm44ew5vnONNwEJQ6uG
-lXzi0Wc6xp6+CFdUuTyJTdH6lGCVVsCQtl71SEpE3Wp+qYfaYGp1l59utqw/cr/x
-hODtuWDkvHLvLapcvy9UUA+0FcXVoknC4ax42MlFL1N0/uOP3fvsQgefmJNssRXH
-LXyYGEVjce7mQqttXS2jOCSzwVCECroD1d6PEcMHrfibPmzqtgBpT9k6I+/cyO8=
-=mFgt
------END PGP SIGNATURE-----
-
---s6xUlGx0x1jE0JCV4SoKsg9T1oS44Adu2--
+diff --git a/modules.d/98systemd/module-setup.sh b/modules.d/98systemd/module-setup.sh
+index a28df30..1410055 100755
+--- a/modules.d/98systemd/module-setup.sh
++++ b/modules.d/98systemd/module-setup.sh
+@@ -99,6 +99,7 @@ install() {
+         $systemdsystemunitdir/systemd-journald.service \
+         $systemdsystemunitdir/systemd-vconsole-setup.service \
+         $systemdsystemunitdir/systemd-random-seed-load.service \
++        $systemdsystemunitdir/systemd-random-seed.service \
+         $systemdsystemunitdir/systemd-sysctl.service \
+         \
+         $systemdsystemunitdir/sysinit.target.wants/systemd-modules-load.service \
+-- 
+2.2.2
