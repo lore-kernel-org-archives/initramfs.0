@@ -1,7 +1,7 @@
 From: Jan Synacek <jsynacek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/3] doc: fix typo
-Date: Wed, 25 Feb 2015 13:16:44 +0100
-Message-ID: <1424866606-12545-2-git-send-email-jsynacek@redhat.com>
+Subject: [PATCH 3/3] doc: fix formatting
+Date: Wed, 25 Feb 2015 13:16:46 +0100
+Message-ID: <1424866606-12545-4-git-send-email-jsynacek@redhat.com>
 References: <1424866606-12545-1-git-send-email-jsynacek@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1424866606-12545-1-git-send-email-jsynacek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -14,21 +14,21 @@ To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jsynacek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
 ---
- dracut.modules.7.asc | 2 +-
+ dracut.8.asc | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/dracut.modules.7.asc b/dracut.modules.7.asc
-index e94670f..dbdf66e 100644
---- a/dracut.modules.7.asc
-+++ b/dracut.modules.7.asc
-@@ -19,7 +19,7 @@ you can replace init with your own version of _99base_, this is not encouraged.
- Instead you should use, if possible, the hooks of dracut. All hooks, and the
- point of time in which they are executed, are described in <<stages>>.
+diff --git a/dracut.8.asc b/dracut.8.asc
+index 9aecbfb..9bc166a 100644
+--- a/dracut.8.asc
++++ b/dracut.8.asc
+@@ -462,7 +462,7 @@ will not be able to boot.
+     Regenerate all initramfs images at the default location with the kernel
+     versions found on the system. Additional parameters are passed through.
  
--The main script, which creates the initramfs is dracut itsself. It parses all
-+The main script, which creates the initramfs is dracut itself. It parses all
- arguments and sets up the directory, in which everything is installed. It then
- executes all check, install, installkernel scripts found in the modules, which
- are to be processed. After everything is installed, the install directory is
+-**--loginstall _<DIR>_::
++**--loginstall _<DIR>_**::
+     Log all files installed from the host to _<DIR>_.
+ 
+ FILES
 -- 
 2.1.0
