@@ -1,67 +1,66 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 3/4] 40network: always start netroot in ifup.sh
-Date: Mon, 23 Mar 2015 17:12:17 +0100
-Message-ID: <1427127138-12932-4-git-send-email-trenn@suse.de>
-References: <1427127138-12932-1-git-send-email-trenn@suse.de>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] Take into account lib64 dirs when detecting version, modules and params
+Date: Tue, 24 Mar 2015 14:13:14 +0100
+Message-ID: <1427202794-18834-1-git-send-email-aidecoe@aidecoe.name>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1427127138-12932-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-l3A5Bk7waGM@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
 
-From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-
-It's totally irrelevant how the network is configured when
-trying to setup netroot. It only matters if it could be
-configured at all.
-So change the logic the check for correct network setup
-and then start netroot.
-
-References: bnc#881235
-
-Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
-Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 ---
- modules.d/40network/ifup.sh | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ lsinitrd.sh | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
-index de518b6..9af5474 100755
---- a/modules.d/40network/ifup.sh
-+++ b/modules.d/40network/ifup.sh
-@@ -338,21 +338,15 @@ for p in $(getargs ip=); do
-         esac
-     done
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index 4f12c2c..dda0b74 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -108,6 +108,12 @@ if ! [[ -f "$image" ]]; then
+     exit 1
+ fi
  
--    > /tmp/net.${netif}.up
-+    if [ $? -eq 0 ]; then
-+        > /tmp/net.${netif}.up
++dracutlibdirs() {
++    for d in lib64/dracut lib/dracut usr/lib64/dracut usr/lib/dracut; do
++        echo "$d/$1"
++    done
++}
++
+ extract_files()
+ {
+     (( ${#filenames[@]} == 1 )) && nofileinfo=1
+@@ -124,7 +130,8 @@ extract_files()
+ list_modules()
+ {
+     echo "dracut modules:"
+-    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/modules.txt' 'usr/lib/dracut/modules.txt' 2>/dev/null
++    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
++        $(dracutlibdirs modules.txt) 2>/dev/null
+     ((ret+=$?))
+ }
  
--    case $autoconf in
--        dhcp|on|any|dhcp6)
--            ;;
--        *)
--            if [ $? -eq 0 ]; then
--                setup_net $netif
--                source_hook initqueue/online $netif
--                if [ -z "$manualup" ]; then
--                    /sbin/netroot $netif
--                fi
--            fi
--            ;;
--    esac
-+        setup_net $netif
-+        source_hook initqueue/online $netif
-+        if [ -z "$manualup" ]; then
-+            /sbin/netroot $netif
-+        fi
-+    fi
- 
-     exit 0
- done
+@@ -217,7 +224,8 @@ ret=0
+ if (( ${#filenames[@]} > 0 )); then
+     extract_files
+ else
+-    version=$($CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/dracut-*' 'usr/lib/dracut/dracut-*' 2>/dev/null)
++    version=$($CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
++        $(dracutlibdirs 'dracut-*') 2>/dev/null)
+     ((ret+=$?))
+     echo "Version: $version"
+     echo
+@@ -226,7 +234,8 @@ else
+         echo "========================================================================"
+     else
+         echo -n "Arguments: "
+-        $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- 'lib/dracut/build-parameter.txt' 'usr/lib/dracut/build-parameter.txt' 2>/dev/null
++        $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
++            $(dracutlibdirs build-parameter.txt) 2>/dev/null
+         echo
+         list_modules
+         list_files
 -- 
-2.1.4
+2.3.3
