@@ -1,49 +1,41 @@
-From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
-Subject: [PATCH 2/2] Mount /dev, /dev/shm and /run noexec
-Date: Wed, 25 Mar 2015 08:19:20 +0100
-Message-ID: <1427267960-6509-1-git-send-email-aidecoe@aidecoe.name>
+From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Subject: [PATCH 0/4] dracut: fix various issues with newly degraded md arrays
+Date: Thu, 26 Mar 2015 15:41:44 +1100
+Message-ID: <20150326043938.10121.34223.stgit@notabene.brown>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Nikoli <nikoli-0UDz38MK/Mo@public.gmane.org>
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Nikoli <nikoli-0UDz38MK/Mo@public.gmane.org>
+When an md array is newly degraded at boot it will not be assembled
+until mdraid_start.sh is run.
+There are a few problem with the timeout handling that causes this
+not to work properly in all circumstances.
+These patches fix the bug I had reported.
+
+Thanks,
+NeilBrown
+
 
 ---
- modules.d/99base/init.sh | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index 918dea5..d1bdbb6 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -38,7 +38,7 @@ RD_DEBUG=""
- setdebug
- 
- if ! ismounted /dev; then
--    mount -t devtmpfs -o mode=0755,nosuid,strictatime devtmpfs /dev >/dev/null
-+    mount -t devtmpfs -o mode=0755,noexec,nosuid,strictatime devtmpfs /dev >/dev/null
- fi
- 
- if ! ismounted /dev; then
-@@ -59,12 +59,12 @@ fi
- 
- if ! ismounted /dev/shm; then
-     mkdir -m 0755 /dev/shm
--    mount -t tmpfs -o mode=1777,nosuid,nodev,strictatime tmpfs /dev/shm >/dev/null
-+    mount -t tmpfs -o mode=1777,noexec,nosuid,nodev,strictatime tmpfs /dev/shm >/dev/null
- fi
- 
- if ! ismounted /run; then
-     mkdir -m 0755 /newrun
--    mount -t tmpfs -o mode=0755,nosuid,nodev,strictatime tmpfs /newrun >/dev/null
-+    mount -t tmpfs -o mode=0755,noexec,nosuid,nodev,strictatime tmpfs /newrun >/dev/null
-     cp -a /run/* /newrun >/dev/null 2>&1
-     mount --move /newrun /run
-     rm -fr -- /newrun
--- 
-2.3.3
+NeilBrown (4):
+      mdraid/mdraid_start.sh: tell mainloop if we make progress.
+      systemd/dracut-iniqueue - continue waiting if any timeout script makes progress
+      dracut-systemd/rootfs-generator.sh: always create generated files.
+      crypt/parse-crypt.sh: hide encrypted devices from systemd timeout warnings.
+
+
+ modules.d/90crypt/parse-crypt.sh               |    4 ++
+ modules.d/90mdraid/mdraid_start.sh             |    1 
+ modules.d/98dracut-systemd/dracut-initqueue.sh |    1 
+ modules.d/98dracut-systemd/rootfs-generator.sh |   15 ++++---
+ modules.d/99base/dracut-lib.sh                 |   53 +++++++++++++++---------
+ 5 files changed, 48 insertions(+), 26 deletions(-)
+
+--
+Signature
