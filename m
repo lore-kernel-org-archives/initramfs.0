@@ -1,41 +1,41 @@
 From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
-Subject: [PATCH 0/4] dracut: fix various issues with newly degraded md arrays
-Date: Thu, 26 Mar 2015 15:41:44 +1100
-Message-ID: <20150326043938.10121.34223.stgit@notabene.brown>
+Subject: [PATCH 1/4] mdraid/mdraid_start.sh: tell mainloop if we make
+ progress.
+Date: Thu, 26 Mar 2015 15:41:46 +1100
+Message-ID: <20150326044145.10121.41272.stgit@notabene.brown>
+References: <20150326043938.10121.34223.stgit@notabene.brown>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20150326043938.10121.34223.stgit-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-When an md array is newly degraded at boot it will not be assembled
-until mdraid_start.sh is run.
-There are a few problem with the timeout handling that causes this
-not to work properly in all circumstances.
-These patches fix the bug I had reported.
+mdraid_start is a number of scripts which run after a timeout.
+If it makes progress, it should tell the main loop so that it
+knows that it is worth waiting a bit longer.
 
-Thanks,
-NeilBrown
+So in that case, create the initqueue/work file which the main loop
+checks for.
 
-
+Signed-off-by: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
 ---
+ modules.d/90mdraid/mdraid_start.sh |    1 +
+ 1 file changed, 1 insertion(+)
 
-NeilBrown (4):
-      mdraid/mdraid_start.sh: tell mainloop if we make progress.
-      systemd/dracut-iniqueue - continue waiting if any timeout script makes progress
-      dracut-systemd/rootfs-generator.sh: always create generated files.
-      crypt/parse-crypt.sh: hide encrypted devices from systemd timeout warnings.
+diff --git a/modules.d/90mdraid/mdraid_start.sh b/modules.d/90mdraid/mdraid_start.sh
+index 761e64f312d3..400ab5dc46c7 100755
+--- a/modules.d/90mdraid/mdraid_start.sh
++++ b/modules.d/90mdraid/mdraid_start.sh
+@@ -27,6 +27,7 @@ _md_force_run() {
+ 
+         _path_d="${_path_s%/*}/degraded"
+         [ ! -r "$_path_d" ] && continue
++        > $hookdir/initqueue/work
+     done
+ }
+ 
 
-
- modules.d/90crypt/parse-crypt.sh               |    4 ++
- modules.d/90mdraid/mdraid_start.sh             |    1 
- modules.d/98dracut-systemd/dracut-initqueue.sh |    1 
- modules.d/98dracut-systemd/rootfs-generator.sh |   15 ++++---
- modules.d/99base/dracut-lib.sh                 |   53 +++++++++++++++---------
- 5 files changed, 48 insertions(+), 26 deletions(-)
-
---
-Signature
