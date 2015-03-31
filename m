@@ -1,47 +1,68 @@
-From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: hostonly driver/modules specifics
-Date: Tue, 31 Mar 2015 15:18:30 +0100
-Message-ID: <CALeDE9MSONADNxkow4QYNZBXZfv5vgAOOSHD_7t-Cbc5TQq2Hw@mail.gmail.com>
+From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH 4/4] crypt/parse-crypt.sh: hide encrypted devices from
+ systemd timeout warnings.
+Date: Wed, 1 Apr 2015 06:59:01 +1100
+Message-ID: <20150401065901.6274a650@notabene.brown>
 Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/XiDgR1AYVG0zmmgiDPZTpBR"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=89IGNu4stX8WP3QZcaBgVPNGstMZZsyTJXfiiI0DWlM=;
-        b=TGEXpItRDF8peXtuczaPYKXM11MQrB1xNhNslMItTTA56Y5iHeSHPFlQ8tnGfjr2vK
-         1MUVQyz2mPYjZLaGFg9bhYQvMnWmdPbLa2/90zt8eoH0t4bR4HAejEXIuv/nBSSkYvFh
-         m5LKoovjS18rVqGRjR89ftZKTbVDN4RybwbOSdYznQfzO6puO/qnimbWhFE6LZwiA2+P
-         mktxSYJFOf9Mjre+a7pnARvYYMxfNarIrMDARy0Bs1M3DwA62u3dGgiKrvDAWTbI1tW3
-         PaA+PgoCygTg8GKW7SIQ23MGs0kTw6wY9yRDwh3baDFn0IDOYeh1oyhn2FshlZ4YXW2E
-         E4xw==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-IBi9RG/b67k@public.gmane.org
 
-Hi All,
+--Sig_/XiDgR1AYVG0zmmgiDPZTpBR
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I spent some time digging through dracut repo and google looking for
-this answer but never managed to get to the bottom of it.
 
-When doing a host specific initrd a bunch of modules (input, display,
-storage, network) and their deps/firmware for core boot are pulled in.
-While I see how this works for generic (and have even sent patches)
-I'm unsure and can't seem how this is defined for a host specific
-initrd.
+[I was alerted that you had replied to the list, but not to me.
+ I'm not on the list..]
 
-I see some functions that delve down to work out the storage side of
-things but nothing generic for say network/input/display and how you
-might possibly extend that. I've got a couple of possible use cases
-where I'd like to have a play to extend this (eg usb device mode for
-virtual serial/net over usb-g) and while I have bits of it working I
-spent a bunch of time last night going down a rabbit hole for host
-specific initrd and didn't really come out the other end much more
-enlightened so was hoping someone could point me in the right
-direction for where the definitions for "ensure this type of host
-specific infra module is included in the initrd if there is one
-available" are hidden (likely in plain view).
+> >=20
+> > +    while read _dev _uuid ; do=20
+> > +        set_systemd_timeout_for_dev $_dev
+> > +    done
+>=20
+> missing redirector from /etc/crypttab I guess
 
-Cheers,
-Peter
+Sorry about that.  The missing redirector is actually from=20
+   /usr/lib/dracut/modules.d/90crypt/block_uuid.map
+but that looks like an openSUSE specific thing...
+
+https://build.opensuse.org/package/view_file/openSUSE:13.2/dracut/0144-90cr=
+ypt-Fixed-crypttab_contains-to-also-work-with-de.patch?expand=3D1
+
+It should just use /etc/crypttab, but then the "read" needs to change
+
+ while read _mapper _dev _rest; do
+    set_systemd_timeout_for_dev $_dev
+ done < /etc/crypttab
+
+Thanks,
+NeilBrown
+
+--Sig_/XiDgR1AYVG0zmmgiDPZTpBR
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIVAwUBVRr8hTnsnt1WYoG5AQI6dA/8DUv3JWRQOr2F+3BgfcUIGymfsC1s8GWR
+tQkeVlWvpXSqNK6coK6gu686hKbzUHrSo6yM7agxWfunM1vqXrv8CzDPtPu3Y/Qn
+LgBijEBsZQ83sq+EbO4TZB0Chcchqfyl3lyrjLESEzKTFDTAohieriZmzxFyp8Qc
+x2xWok8xLd9ys6cEeNs4KffplUfcqF41PWm3sLo+ua3NmrAFhRAbrjaldV9psDNC
+b7IcEfKOxNeybkBjmMkH2eykOwELm0SvuYPxTKVo9ODSo7O5jHeE4JS56U7iVK/L
+K8X6URtbypHZQv6QPe1mPShq2jiFidhsoh3T6nkIjJBTkbaXHFtO2vJd8KO34vFR
+SsCdV//Li4pDoOF30kn6UpMEbihtjW0a+mA1tfF+yFPLaKzPOTnJS0eyPMwfcSze
+rM8IXqr4K4V/ZS4qVtCfjFKiaKoh81+vGt2fWxnr4HHvsQDuUTzIRXg109LktOM0
+GVw8GNMlv5+RffC2XlLrIceasz+NEyIbc0/FIcYUN09ga5i6yIOS/wdn2dGI9YHY
++xWWXYNkynT0MhjzdkCXIBNf3X7dFSAIZ2WJzsMoOdY4cWFx4C+EGkjTjEvZiGg1
+wjvBua9ZxJliLUmqhx0SQy243kvk8YN/bmePw0VWYInmKVAxeSjT0ZiNngSiv1wp
+NGduzLodWUM=
+=1jsv
+-----END PGP SIGNATURE-----
+
+--Sig_/XiDgR1AYVG0zmmgiDPZTpBR--
