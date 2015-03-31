@@ -1,68 +1,175 @@
 From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 4/4] crypt/parse-crypt.sh: hide encrypted devices from
+Subject: [PATCH 4/4 - V2] crypt/parse-crypt.sh: hide encrypted devices from
  systemd timeout warnings.
-Date: Wed, 1 Apr 2015 06:59:01 +1100
-Message-ID: <20150401065901.6274a650@notabene.brown>
+Date: Wed, 1 Apr 2015 08:57:41 +1100
+Message-ID: <20150401085741.4aea1463@notabene.brown>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/XiDgR1AYVG0zmmgiDPZTpBR"; protocol="application/pgp-signature"
+ boundary="Sig_/3oduO2HVYiu+34jHkvJPPvl"; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trenn-IBi9RG/b67k@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---Sig_/XiDgR1AYVG0zmmgiDPZTpBR
+--Sig_/3oduO2HVYiu+34jHkvJPPvl
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
 
-[I was alerted that you had replied to the list, but not to me.
- I'm not on the list..]
 
-> >=20
-> > +    while read _dev _uuid ; do=20
-> > +        set_systemd_timeout_for_dev $_dev
-> > +    done
->=20
-> missing redirector from /etc/crypttab I guess
+When systemd's crypttab generator parsed crypttab, it tells
+systemd about several devices which may not appear until later
+in the boot sequence, and which are not needed while dract is running.
 
-Sorry about that.  The missing redirector is actually from=20
-   /usr/lib/dracut/modules.d/90crypt/block_uuid.map
-but that looks like an openSUSE specific thing...
+This can particularly happen when an md array is encrypted,
+and the array is newly degraded so that it doesn't appear until
+dracut runs mdraid_start.sh.
 
-https://build.opensuse.org/package/view_file/openSUSE:13.2/dracut/0144-90cr=
-ypt-Fixed-crypttab_contains-to-also-work-with-de.patch?expand=3D1
+This can result in systemd printing warning messages which are
+inappropriate.
 
-It should just use /etc/crypttab, but then the "read" needs to change
+So tell systemd that the timeout for each of these is zero.
 
- while read _mapper _dev _rest; do
-    set_systemd_timeout_for_dev $_dev
- done < /etc/crypttab
+This is involves splitting some functionality out of wait_for_dev()
 
-Thanks,
+That function does two things:
+ - creates 'finished' hooks so that dracut will wait for the device,
+   and
+ - sets the systemd timeout for the device to zero, so systemd doesn't
+   wait.
+
+We only want the second of these for most encrypted devices.
+So split that out into a new function set_systemd_timeout_for_dev(),
+and call it from parse-crypt.sh
+
+Signed-off-by: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+
+--
+This version fixes the missing redirect from /etc/crypttab
 NeilBrown
 
---Sig_/XiDgR1AYVG0zmmgiDPZTpBR
+
+diff --git a/modules.d/90crypt/parse-crypt.sh b/modules.d/90crypt/parse-cry=
+pt.sh
+index 94ad1f63ae6f..87e674a849a0 100755
+--- a/modules.d/90crypt/parse-crypt.sh
++++ b/modules.d/90crypt/parse-crypt.sh
+@@ -14,6 +14,10 @@ else
+     LUKS=3D$(getargs rd.luks.uuid -d rd_LUKS_UUID)
+     tout=3D$(getarg rd.luks.key.tout)
+=20
++    while read _mapper _dev _rest ; do
++        set_systemd_timeout_for_dev $_dev
++    done < /etc/crypttab
++
+     if [ -n "$LUKS" ]; then
+         for luksid in $LUKS; do
+=20
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 259e2057b67e..c8ff3c1a32d1 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -895,12 +895,10 @@ dev_unit_name()
+     printf -- "%s" "$dev"
+ }
+=20
+-# wait_for_dev <dev>
+-#
+-# Installs a initqueue-finished script,
+-# which will cause the main loop only to exit,
+-# if the device <dev> is recognized by the system.
+-wait_for_dev()
++# set_systemd_timeout_for_dev <dev>
++# Set 'rd.timeout' as the systemd timeout for <dev>
++
++set_systemd_timeout_for_dev()
+ {
+     local _name
+     local _needreload
+@@ -915,19 +913,6 @@ wait_for_dev()
+     _timeout=3D$(getarg rd.timeout)
+     _timeout=3D${_timeout:-0}
+=20
+-    _name=3D"$(str_replace "$1" '/' '\x2f')"
+-
+-    type mark_hostonly >/dev/null 2>&1 && mark_hostonly "$hookdir/initqueu=
+e/finished/devexists-${_name}.sh"
+-
+-    [ -e "${PREFIX}$hookdir/initqueue/finished/devexists-${_name}.sh" ] &&=
+ return 0
+-
+-    printf '[ -e "%s" ]\n' $1 \
+-        >> "${PREFIX}$hookdir/initqueue/finished/devexists-${_name}.sh"
+-    {
+-        printf '[ -e "%s" ] || ' $1
+-        printf 'warn "\"%s\" does not exist"\n' $1
+-    } >> "${PREFIX}$hookdir/emergency/80-${_name}.sh"
+-
+     if [ -n "$DRACUT_SYSTEMD" ]; then
+         _name=3D$(dev_unit_name "$1")
+         if ! [ -L ${PREFIX}/etc/systemd/system/initrd.target.wants/${_name=
+}.device ]; then
+@@ -952,6 +937,36 @@ wait_for_dev()
+         fi
+     fi
+ }
++# wait_for_dev <dev>
++#
++# Installs a initqueue-finished script,
++# which will cause the main loop only to exit,
++# if the device <dev> is recognized by the system.
++wait_for_dev()
++{
++    local _name
++    local _noreload
++
++    if [ "$1" =3D "-n" ]; then
++        _noreload=3D-n
++        shift
++    fi
++
++    _name=3D"$(str_replace "$1" '/' '\x2f')"
++
++    type mark_hostonly >/dev/null 2>&1 && mark_hostonly "$hookdir/initqueu=
+e/finished/devexists-${_name}.sh"
++
++    [ -e "${PREFIX}$hookdir/initqueue/finished/devexists-${_name}.sh" ] &&=
+ return 0
++
++    printf '[ -e "%s" ]\n' $1 \
++        >> "${PREFIX}$hookdir/initqueue/finished/devexists-${_name}.sh"
++    {
++        printf '[ -e "%s" ] || ' $1
++        printf 'warn "\"%s\" does not exist"\n' $1
++    } >> "${PREFIX}$hookdir/emergency/80-${_name}.sh"
++
++    set_systemd_timeout_for_dev $_noreload $1
++}
+=20
+ cancel_wait_for_dev()
+ {
+
+--Sig_/3oduO2HVYiu+34jHkvJPPvl
 Content-Type: application/pgp-signature
 Content-Description: OpenPGP digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQIVAwUBVRr8hTnsnt1WYoG5AQI6dA/8DUv3JWRQOr2F+3BgfcUIGymfsC1s8GWR
-tQkeVlWvpXSqNK6coK6gu686hKbzUHrSo6yM7agxWfunM1vqXrv8CzDPtPu3Y/Qn
-LgBijEBsZQ83sq+EbO4TZB0Chcchqfyl3lyrjLESEzKTFDTAohieriZmzxFyp8Qc
-x2xWok8xLd9ys6cEeNs4KffplUfcqF41PWm3sLo+ua3NmrAFhRAbrjaldV9psDNC
-b7IcEfKOxNeybkBjmMkH2eykOwELm0SvuYPxTKVo9ODSo7O5jHeE4JS56U7iVK/L
-K8X6URtbypHZQv6QPe1mPShq2jiFidhsoh3T6nkIjJBTkbaXHFtO2vJd8KO34vFR
-SsCdV//Li4pDoOF30kn6UpMEbihtjW0a+mA1tfF+yFPLaKzPOTnJS0eyPMwfcSze
-rM8IXqr4K4V/ZS4qVtCfjFKiaKoh81+vGt2fWxnr4HHvsQDuUTzIRXg109LktOM0
-GVw8GNMlv5+RffC2XlLrIceasz+NEyIbc0/FIcYUN09ga5i6yIOS/wdn2dGI9YHY
-+xWWXYNkynT0MhjzdkCXIBNf3X7dFSAIZ2WJzsMoOdY4cWFx4C+EGkjTjEvZiGg1
-wjvBua9ZxJliLUmqhx0SQy243kvk8YN/bmePw0VWYInmKVAxeSjT0ZiNngSiv1wp
-NGduzLodWUM=
-=1jsv
+iQIVAwUBVRsYVTnsnt1WYoG5AQL0pxAAjwajkjDYdAZo6t5Wp3p/OHRB8U7zur/7
+V8RlrRqttftfAqg/swYRCKZEyjYxnmazQzfPRJTGGkGs2JNBOA9oI+uFxp5m66w7
+O9XfR3BeK0D/uDkkL5/Pq/OfCBAUsNKNzyhtsgrTG/t9XqRj8obOspf8nvCL6iiH
+SO0kfIg55udzisfm3+wWnx/1RJ7ae2f0WvB2K9ct7U/ba5NR7Sj/TUfu3n7SnsYf
+y5JT0j4r0ZZSbPsgoUws7zXA/cdDOS5obXlp648JWOMNMrY8CWQB4dLjuWakWArz
+YujyRvqbFtcQAgNk7xibLY0MQctGBEsIXpjEQ+njjCt8jTuUGCDuQnncBNqzYaWG
+hURhZtiQzYfHgkRVAewoBYNNZmatphUxJuAYmxBiijYs0baI8ztNagJ6H3STGlgt
+jrISMUfKOg6lV8HGNuGEYYMw2MSgDf8J6U2GbEficXZcKApxYtt/G/IdOCIx8v6s
+ksh63BzNDVBeASthVwaWEg4s3vz3704GjITynn67owoMdHjMYiUQRItftD5hd1TA
+yuZPCVuGaQ89ZFeqbsEaHYkJZu4ZXQs9QY7EnmTNHPU/fSd2Vn/G3QxsRqv3Lv9P
+NETrM9q5xZrgPKd0c8Wua0pLUz3YSXmkMuVJTygHgYS5QAFw15rbdPjmWsR3IYDn
+P3tHJszWZIk=
+=+GdD
 -----END PGP SIGNATURE-----
 
---Sig_/XiDgR1AYVG0zmmgiDPZTpBR--
+--Sig_/3oduO2HVYiu+34jHkvJPPvl--
