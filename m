@@ -1,59 +1,94 @@
-From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: initramfs-tools 0.120 release
-Date: Mon, 13 Apr 2015 01:22:48 +0100
-Message-ID: <1428884568.29665.59.camel@decadent.org.uk>
+From: Martin Whitaker <mailing-list-3eMjGWAP0YmXMog9sF/ZqQnefFxSTc/J@public.gmane.org>
+Subject: [PATCH] Allow boot to continue if swap devices are not detected.
+Date: Mon, 13 Apr 2015 23:21:33 +0100
+Message-ID: <552C416D.7070603@martin-whitaker.me.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-C9l5cUpuHRMO4GQvZeHz"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+In hostonly mode, any swap devices found in the fstab when the initrd
+is generated are added to the $host_devs list. If these devices are
+not detected on boot, dracut drops to the emergency shell and won't
+continue the boot. This patch creates a timeout job for each swap
+device that removes the corresponding finished job from the initqueue,
+thus allowing boot to continue. This gives the user a chance to
+still boot a system if the UUIDs have changed (e.g. because they've
+installed another system that's reformatted the swap partition).
 
---=-C9l5cUpuHRMO4GQvZeHz
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-This is a minor update, improving the way we report the results of fsck
-and documenting more of the fall-out from mounting /usr.
-
-Ben Hutchings (6):
-      Add '.log' to fsck log output file, and document its existence
-      Remove old comment about running shell on failure of fsck
-      Create stamp files to tell the real init system fsck was successful
-      NEWS: Improve wording of the entry about mdadm's INITRDSTART setting
-      NEWS: Add entries about other ways of mounting /usr that won't work
-      Releasing version 0.120.
-
-Ben.
-
---=20
-Ben Hutchings
-Everything should be made as simple as possible, but not simpler.
-                                                           - Albert Einstei=
-n
-
---=-C9l5cUpuHRMO4GQvZeHz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIVAwUAVSsMWOe/yOyVhhEJAQrJ6BAAurHZENhW9FZwZVEBzqPvk2tX1Yw5KRAz
-MBp5xQqXuA3G5q96Txm6dkTXHCGXrezGWLKorTXhe5s/v5yQt67mV9XdeBRc4Pi2
-j1ZccYuZWsifGebJDQG26zRZThYWkHMm4FmL8A2FOVeKwSuIkF3UVQ20hZjl2r5P
-kFvJ1uVhJiMvKxiLDQ3P5/NHp4Pkno/Vp65DxVjSr4JNOWukRjW96zMcG9WvoBv4
-AC9EKrHsLBM8FHnWFK9d/CQDMGCOVx2RbMkELM8Rjn4vmR4tYChfF4PJXuOQsRxx
-IZ8bf2BQ0v2pPBmP7U9qsP8ksGMcVEreAWlHJxP98f/yc8JdY/dIY3rYb1NTIzrv
-X9Q7jfd/ffLypzoiLTfQ5HPuWpScTx7/K2qpahbNVz8nd3SV1Rjc/Ot8EQ92Qg5Y
-MtneJXw2KJrjgwZFV5oY692ByukCHJGYKHtSrqExXIXDIR6mZL5AzRncR+JNZ9qm
-SzGGm+OcP+aB1uzj4y7vmgVAGwjyaHec9Uamd4jWEHlKyL74ZVrh53pN7g4u5pig
-O/beCDd2GTBYDPAhz2k2IF7IveXNz9ZZfg+tgDHcZubKCZaIjMjb/QMMPyvO2oKh
-5auzyGD1b58LhPOJOIBd1ukW8VyJvIKifOA1T5b4kq1PbEaFOFv0iA9oHwZ5b1lz
-g07E0fCjH+0=
-=VgQk
------END PGP SIGNATURE-----
-
---=-C9l5cUpuHRMO4GQvZeHz--
+diff --git a/dracut.sh b/dracut.sh
+index ab84221..2d43d1b 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1223,7 +1223,9 @@ if [[ $hostonly ]]; then
+                      done < /etc/crypttab
+                  fi
+  -                push_host_devs "$(readlink -f "$dev")"
++                _dev=$(readlink -f "$dev")
++                push_host_devs $_dev
++                push swap_devs $_dev
+                  break
+              done < /etc/fstab
+          done < /proc/swaps
+@@ -1334,7 +1336,7 @@ export initdir dracutbasedir \
+      omit_drivers mdadmconf lvmconf root_dev \
+      use_fstab fstab_lines libdirs fscks nofscks ro_mnt \
+      stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
+-    debug host_fs_types host_devs sshkey add_fstab \
++    debug host_fs_types host_devs swap_devs sshkey add_fstab \
+      DRACUT_VERSION udevdir prefix filesystems drivers \
+      systemdutildir systemdsystemunitdir systemdsystemconfdir \
+      host_modalias host_modules hostonly_cmdline loginstall \
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 259e205..4f19ade 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -953,6 +953,22 @@ wait_for_dev()
+      fi
+  }
+  +timeout_wait_for_dev()
++{
++    local _name
++    _name="$(str_replace "$1" '/' '\x2f')"
++
++    type mark_hostonly >/dev/null 2>&1 && mark_hostonly 
+"$hookdir/initqueue/timeout/devexists-${_name}.sh"
++
++    [ -e "${PREFIX}$hookdir/initqueue/timeout/devexists-${_name}.sh" ] && 
+return 0
++
++    {
++        printf 'warn "Cancelling wait for %s. Device not found."\n' $1
++        printf 'cancel_wait_for_dev %s\n' $1
++        printf 'rm -f -- "$job"\n'
++    } >> "${PREFIX}$hookdir/initqueue/timeout/devexists-${_name}.sh"
++}
++
+  cancel_wait_for_dev()
+  {
+      local _name
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index fd65cdf..3b891b7 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -110,6 +110,15 @@ install() {
+                          *) ;;
+                      esac
+                  done
++                for _dev in ${swap_devs[@]}; do
++                    [[ "$_dev" == "$root_dev" ]] && continue
++                    _pdev=$(get_persistent_dev $_dev)
++
++                    case "$_pdev" in
++                        /dev/?*) timeout_wait_for_dev $_pdev;;
++                        *) ;;
++                    esac
++                done
+              )
+          fi
+      fi
+-- 
+2.3.2
