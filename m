@@ -1,149 +1,90 @@
-From: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH] Allow boot to continue if swap devices are not detected.
-Date: Tue, 14 Apr 2015 13:47:17 +0200
-Message-ID: <18560805.YVb7gpfJOx@skinner>
-References: <552C416D.7070603@martin-whitaker.me.uk>
+From: Andrew Udvare <audvare-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Correct /etc/crypttab; root in linear multi-disk encrypted linear LVM
+ volume group not detected properly
+Date: Tue, 14 Apr 2015 18:05:41 -0700
+Message-ID: <CAJfjkGq0kHGYi74qTWo6s7RDjgya9n+7oXRp9EJGKQ+GX+VNfQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <552C416D.7070603-3eMjGWAP0YmXMog9sF/ZqQnefFxSTc/J@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:from:date:message-id:subject:to:content-type;
+        bh=4+bj+Yo6vvImDmWJOevrnhVgAWOuesltgVIFU+/4v9s=;
+        b=bNiVHfPiQF5LJDjVatC6/A3NbwPMoazIuPHWbSt2K8ByhiHaoxTVkR30hW1c3GX8nt
+         mKHX8PdRBQtohpv1smWc0JVvvH2MmaAPzq2c4/l2+tHFh5EwVKC+P7ClAqIopM1fVrUw
+         K6Gx4oXrjbErR91WQbi873lmpxHdLt9h+1HyCLYP+cVHFh+XbFhWOZeiG3sCXMBRFmpv
+         Ju33r2OoChpQytYUZjFGKYY2H85C4XkNG1A9VGUZAnXCtQUhTCgQpSE8HsrddvXKSc5r
+         tCgq9aeL9WNp6qIi2wNtPixlXEXkDXo3IgtcskxbEAZmGTasZ1P915KfX4bsDdMtwakt
+         cY/Q==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Martin Whitaker <mailing-list-3eMjGWAP0YmXMog9sF/ZqQnefFxSTc/J@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi,
+I had some trouble using Dracut version 041 to generate a proper image
+that would use an external device that contained my key with
+/etc/crypttab, regardless of how crypttab states to authenticate (none
+(password), or file path). First I noticed that /etc/crypttab can have
+quotes for the first field but the crypt module would not parse that
+properly so I had to remove them. It would create a device
+/dev/disk/by-uuid/"UUID in quotes". No big deal but this is not
+documented.
 
-thanks a lot for bringing this up!
-I also think swap handling in initrd needs some enhancements, but it's
-tricky to get this perfectly right for all use cases.
+My disk layout is 2 disks linear with LVM, with a part of the VG being
+root. Because the image's /etc/crypttab was not being generated
+properly, I could never get past the early stage boot and would always
+end in the emergency console. Luckily you can still boot from that.
 
-1) Suspend to Disk
-Afaik the timeout mostly exists for suspend to disk which needs the swap
-device avail for resuming.
+I carefully watched the debug output from Dracut and saw there was a
+comparison to get 'only what is needed' for /etc/crypttab in the
+image. The problem is that this does not take into account that a
+volume group can comprise of 2 disks, each of which are individually
+encrypted, and that LVM cannot initialise the volume group without
+both being decrypted at boot time. That would mean in the image.
 
-2) Low memory platforms?
-There may be some low memory platforms which need swap that early, but
-in general I expect it's not that bad to have no swap that early.
-Or systems not doing a change-rooting into another rootfs, but continue
-to run in initrd?
-Still it's probably not bad in this case if it takes a while.
+I commented out lines 76, 77, and 80 in
+/usr/lib/dracut/modules.d/90crypt/module-setup.sh:
 
-3) Swap over network
-swap may take some time to show up.
+  66     if [[ $hostonly ]] && [[ -f /etc/crypttab ]]; then
+  67         # filter /etc/crypttab for the devices we need
+  68         while read _mapper _dev _rest; do
+  69             [[ $_mapper = \#* ]] && continue
+  70             [[ $_dev ]] || continue
+  71
+  72             [[ $_dev == UUID=* ]] && \
+  73                 _dev="/dev/disk/by-uuid/${_dev#UUID=}"
+  74
+  75             for _hdev in "${!host_fs_types[@]}"; do
+  76                 #[[ ${host_fs_types[$_hdev]} == "crypto_LUKS" ]]
+|| continue
+  77                 #if [[ $_hdev -ef $_dev ]] || [[
+/dev/block/$_hdev -ef $_dev ]]; then
+  78                     echo "$_mapper $_dev $_rest"
+  79                     break
+  80                 #fi
+  81             done
+  82         done < /etc/crypttab > $initdir/etc/crypttab
 
-4)
-S390(x) may re-generate swap device more often and must not mount swap
-via UUID (or not at all in initrd?).
+This was the only way I could get both disks to be in the image's
+/etc/crypttab without major modifications. What is the proper way to
+do this? I obviously do not want to be modifying things installed by
+my package manager as the changes will be lost on upgrades.
 
-5)
-Probably more...?
+I have reported my findings and partial solution to 'Boot with a
+device with the key plugged in + LUKS + root in LVM VG' here:
+https://forums.gentoo.org/viewtopic-p-7732674.html#7732674
 
+Also, unless you know systemd really well, what is unclear is that a
+proper /etc/crypttab is *required* for the generator as part of
+systemd. http://www.freedesktop.org/software/systemd/man/systemd-cryptsetup-generator.html
+When you boot and you start to get to 'Failed to issue method call:
+Unit systemd-cryptsetup@luks\x2d...service failed to load: No such
+file or directory.'-type messages, it is not clear what the exact
+cause is. Is it possible dracut-initqueue could report this as a
+possible suspect?
 
-So you're approach makes things better, but when we are at it, it should
-be more fine tunable imo.
+This was all very confusing in many ways, especially if something is
+systemd-specific (and not OpenRC or another init) then there is not a
+lot of documentation. So I hope I save someone a lot of time.
 
-Whatabout a kernel param like:
-rd.swap=<timeout>
-
-Not passing anything could behave like your approach: timeout after xy.
-Long enough that typically all scenarios (over network,...) should still
-work.
-
-0 or -1 would disable to wait for swap alltogether.
-
-Would be nice if this variable can be configured via kernel commandline,
-dracut option --swap=<timeout> and /etc/dracut.conf.d/XX-myconf.conf
-variable to be most flexible (A tool which touched swap could set it
-for one reboot in /etc/dracut.conf.d/, ...)
-
-Just some ideas. I suggest to wait the one or other day for more.
-If there is no big interest it would be nice if you could take at least the
-one or other idea from above which should not be that hard to add and go for 
-it...
-
-      Thomas
-
-
-On Monday, April 13, 2015 11:21:33 PM Martin Whitaker wrote:
-> In hostonly mode, any swap devices found in the fstab when the initrd
-> is generated are added to the $host_devs list. If these devices are
-> not detected on boot, dracut drops to the emergency shell and won't
-> continue the boot. This patch creates a timeout job for each swap
-> device that removes the corresponding finished job from the initqueue,
-> thus allowing boot to continue. This gives the user a chance to
-> still boot a system if the UUIDs have changed (e.g. because they've
-> installed another system that's reformatted the swap partition).
-> 
-> diff --git a/dracut.sh b/dracut.sh
-> index ab84221..2d43d1b 100755
-> --- a/dracut.sh
-> +++ b/dracut.sh
-> @@ -1223,7 +1223,9 @@ if [[ $hostonly ]]; then
->                       done < /etc/crypttab
->                   fi
->   -                push_host_devs "$(readlink -f "$dev")"
-> +                _dev=$(readlink -f "$dev")
-> +                push_host_devs $_dev
-> +                push swap_devs $_dev
->                   break
->               done < /etc/fstab
->           done < /proc/swaps
-> @@ -1334,7 +1336,7 @@ export initdir dracutbasedir \
->       omit_drivers mdadmconf lvmconf root_dev \
->       use_fstab fstab_lines libdirs fscks nofscks ro_mnt \
->       stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
-> -    debug host_fs_types host_devs sshkey add_fstab \
-> +    debug host_fs_types host_devs swap_devs sshkey add_fstab \
->       DRACUT_VERSION udevdir prefix filesystems drivers \
->       systemdutildir systemdsystemunitdir systemdsystemconfdir \
->       host_modalias host_modules hostonly_cmdline loginstall \
-> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-> index 259e205..4f19ade 100755
-> --- a/modules.d/99base/dracut-lib.sh
-> +++ b/modules.d/99base/dracut-lib.sh
-> @@ -953,6 +953,22 @@ wait_for_dev()
->       fi
->   }
->   +timeout_wait_for_dev()
-> +{
-> +    local _name
-> +    _name="$(str_replace "$1" '/' '\x2f')"
-> +
-> +    type mark_hostonly >/dev/null 2>&1 && mark_hostonly
-> "$hookdir/initqueue/timeout/devexists-${_name}.sh"
-> +
-> +    [ -e "${PREFIX}$hookdir/initqueue/timeout/devexists-${_name}.sh" ] &&
-> return 0
-> +
-> +    {
-> +        printf 'warn "Cancelling wait for %s. Device not found."\n' $1
-> +        printf 'cancel_wait_for_dev %s\n' $1
-> +        printf 'rm -f -- "$job"\n'
-> +    } >> "${PREFIX}$hookdir/initqueue/timeout/devexists-${_name}.sh"
-> +}
-> +
->   cancel_wait_for_dev()
->   {
->       local _name
-> diff --git a/modules.d/99base/module-setup.sh
-> b/modules.d/99base/module-setup.sh index fd65cdf..3b891b7 100755
-> --- a/modules.d/99base/module-setup.sh
-> +++ b/modules.d/99base/module-setup.sh
-> @@ -110,6 +110,15 @@ install() {
->                           *) ;;
->                       esac
->                   done
-> +                for _dev in ${swap_devs[@]}; do
-> +                    [[ "$_dev" == "$root_dev" ]] && continue
-> +                    _pdev=$(get_persistent_dev $_dev)
-> +
-> +                    case "$_pdev" in
-> +                        /dev/?*) timeout_wait_for_dev $_pdev;;
-> +                        *) ;;
-> +                    esac
-> +                done
->               )
->           fi
->       fi
+Andrew
