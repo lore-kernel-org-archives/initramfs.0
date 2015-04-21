@@ -1,90 +1,63 @@
-From: Andrew Udvare <audvare-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Correct /etc/crypttab; root in linear multi-disk encrypted linear LVM
- volume group not detected properly
-Date: Tue, 14 Apr 2015 18:05:41 -0700
-Message-ID: <CAJfjkGq0kHGYi74qTWo6s7RDjgya9n+7oXRp9EJGKQ+GX+VNfQ@mail.gmail.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] dracut-systemd: ensure grep is installed as needed by
+ rootfs-generator
+Date: Tue, 21 Apr 2015 16:38:06 +0200
+Message-ID: <553660CE.7090509@redhat.com>
+References: <20150409140840.0bb6d59d@notabene.brown>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:from:date:message-id:subject:to:content-type;
-        bh=4+bj+Yo6vvImDmWJOevrnhVgAWOuesltgVIFU+/4v9s=;
-        b=bNiVHfPiQF5LJDjVatC6/A3NbwPMoazIuPHWbSt2K8ByhiHaoxTVkR30hW1c3GX8nt
-         mKHX8PdRBQtohpv1smWc0JVvvH2MmaAPzq2c4/l2+tHFh5EwVKC+P7ClAqIopM1fVrUw
-         K6Gx4oXrjbErR91WQbi873lmpxHdLt9h+1HyCLYP+cVHFh+XbFhWOZeiG3sCXMBRFmpv
-         Ju33r2OoChpQytYUZjFGKYY2H85C4XkNG1A9VGUZAnXCtQUhTCgQpSE8HsrddvXKSc5r
-         tCgq9aeL9WNp6qIi2wNtPixlXEXkDXo3IgtcskxbEAZmGTasZ1P915KfX4bsDdMtwakt
-         cY/Q==
+In-Reply-To: <20150409140840.0bb6d59d-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-I had some trouble using Dracut version 041 to generate a proper image
-that would use an external device that contained my key with
-/etc/crypttab, regardless of how crypttab states to authenticate (none
-(password), or file path). First I noticed that /etc/crypttab can have
-quotes for the first field but the crypt module would not parse that
-properly so I had to remove them. It would create a device
-/dev/disk/by-uuid/"UUID in quotes". No big deal but this is not
-documented.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
 
-My disk layout is 2 disks linear with LVM, with a part of the VG being
-root. Because the image's /etc/crypttab was not being generated
-properly, I could never get past the early stage boot and would always
-end in the emergency console. Luckily you can still boot from that.
+On 09.04.2015 06:08, NeilBrown wrote:
+> 
+> 
+> rootfs-generator uses 'grep', but it is not installed in the initramfs by 
+> default. So explicitly install it when installing rootfs-generator.sh
+> 
+> Signed-off-by: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+> 
+> diff --git a/modules.d/98dracut-systemd/module-setup.sh 
+> b/modules.d/98dracut-systemd/module-setup.sh index 
+> d9175573c777..780b39a2b4a1 100755 --- 
+> a/modules.d/98dracut-systemd/module-setup.sh +++ 
+> b/modules.d/98dracut-systemd/module-setup.sh @@ -41,6 +41,7 @@ install() {
+> inst_script "$moddir/dracut-mount.sh" /bin/dracut-mount inst_script 
+> "$moddir/dracut-pre-pivot.sh" /bin/dracut-pre-pivot
+> 
+> +    inst_multiple grep inst_script "$moddir/rootfs-generator.sh" 
+> $systemdutildir/system-generators/dracut-rootfs-generator
+> 
+> for i in \
+> 
 
-I carefully watched the debug output from Dracut and saw there was a
-comparison to get 'only what is needed' for /etc/crypttab in the
-image. The problem is that this does not take into account that a
-volume group can comprise of 2 disks, each of which are individually
-encrypted, and that LVM cannot initialise the volume group without
-both being decrypted at boot time. That would mean in the image.
+I removed the usage of "grep" from  rootfs-generator.sh for this simple case
+of finding a string in a small file.
 
-I commented out lines 76, 77, and 80 in
-/usr/lib/dracut/modules.d/90crypt/module-setup.sh:
+<http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/?id=d3d52b20e9374a6553c7a6cbe9ff0a9e08df10f9>
 
-  66     if [[ $hostonly ]] && [[ -f /etc/crypttab ]]; then
-  67         # filter /etc/crypttab for the devices we need
-  68         while read _mapper _dev _rest; do
-  69             [[ $_mapper = \#* ]] && continue
-  70             [[ $_dev ]] || continue
-  71
-  72             [[ $_dev == UUID=* ]] && \
-  73                 _dev="/dev/disk/by-uuid/${_dev#UUID=}"
-  74
-  75             for _hdev in "${!host_fs_types[@]}"; do
-  76                 #[[ ${host_fs_types[$_hdev]} == "crypto_LUKS" ]]
-|| continue
-  77                 #if [[ $_hdev -ef $_dev ]] || [[
-/dev/block/$_hdev -ef $_dev ]]; then
-  78                     echo "$_mapper $_dev $_rest"
-  79                     break
-  80                 #fi
-  81             done
-  82         done < /etc/crypttab > $initdir/etc/crypttab
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-This was the only way I could get both disks to be in the image's
-/etc/crypttab without major modifications. What is the proper way to
-do this? I obviously do not want to be modifying things installed by
-my package manager as the changes will be lost on upgrades.
-
-I have reported my findings and partial solution to 'Boot with a
-device with the key plugged in + LUKS + root in LVM VG' here:
-https://forums.gentoo.org/viewtopic-p-7732674.html#7732674
-
-Also, unless you know systemd really well, what is unclear is that a
-proper /etc/crypttab is *required* for the generator as part of
-systemd. http://www.freedesktop.org/software/systemd/man/systemd-cryptsetup-generator.html
-When you boot and you start to get to 'Failed to issue method call:
-Unit systemd-cryptsetup@luks\x2d...service failed to load: No such
-file or directory.'-type messages, it is not clear what the exact
-cause is. Is it possible dracut-initqueue could report this as a
-possible suspect?
-
-This was all very confusing in many ways, especially if something is
-systemd-specific (and not OpenRC or another init) then there is not a
-lot of documentation. So I hope I save someone a lot of time.
-
-Andrew
+iQIcBAEBCAAGBQJVNmDKAAoJEANOs3ABTfJwBKkQAJw1LBHJmY9K/7bOYcO5e/ay
+KPFignkvBBkimRewfPViKP1kRBW5Vj678sSQLEWrdXf21XUPnu4y1i6Elz0R7qzq
+efXs0MsuI13WVXi8nuQ4UPeqvNicMkA8QWfbuQEO0isoTRjs00lz56G9noKbAAJV
+vO1tu1TmroKp2IsaUkZTC6AzvYs2aS0kEfk45F6L09jsi0BXztLCF3ud4xpsw0LR
+LTBGEkH4MzluDPxxZijGHGTXuuB1o73/t8L83qTtoi7xLnq6RimBdt+XTNW7khv3
+q2X3wVyBzO2yW3H5aOMgU2UqfnVgzE0VXljUqUiLi34jIBkO17HPqKM+J25d2WL+
+Sz2p3tRbwmxPEmTZurxDiJN9f0A/vV0xldAF0Gbbjm8tEUSLhD2GDjCiLgaSyjtb
+KGEiQK5ZYtcE1u7Jxa0r8QuPeulJuM6CPx7xvAbyVWATJ97+LjvGfmAC78Xq3bXx
+ftHPWy8v9WsVv4REhza6bAuRexF20Gs59t/Kg7O/Rmp2ZXp9ElMwlhjmos/BmZCr
+q8oNyPfNo7/YUkI2tV+raKXuzhwZKWwp2E2soaUr3E9u0ZGaorS4Fwv3VmFNe/rK
+KAxVSJJ4hQDKEGL+k/vEW/3olnxkNT77aB4xIgX+mhDkMhayGfo5/tyrTHoUrihN
+Bwg8TjLCoW/dO7XOCIFq
+=iT9u
+-----END PGP SIGNATURE-----
