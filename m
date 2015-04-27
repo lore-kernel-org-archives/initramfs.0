@@ -1,7 +1,7 @@
 From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/4] Revert securitfs change
-Date: Mon, 27 Apr 2015 18:24:14 -0400
-Message-ID: <1430173454-3665-4-git-send-email-zohar@linux.vnet.ibm.com>
+Subject: [PATCH 3/4] Define new script to load keys on the IMA keyring
+Date: Mon, 27 Apr 2015 18:24:13 -0400
+Message-ID: <1430173454-3665-3-git-send-email-zohar@linux.vnet.ibm.com>
 References: <1430173454-3665-1-git-send-email-zohar@linux.vnet.ibm.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1430173454-3665-1-git-send-email-zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
@@ -13,24 +13,95 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Commit 5e60145 use findmnt with "--source" or "--target" broke
-mounting securityfs.  This patch reverts only the securityfs
-portion of the patch.
+This patch supports loading keys either on the _ima keyring or, as of
+Linux 3.17, on the trusted .ima keyring.  Only certificates signed by
+a key on the system keyring can be loaded onto the trusted .ima keyring.
 ---
- modules.d/96securityfs/securityfs.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules.d/98integrity/ima-keys-load.sh | 62 ++++++++++++++++++++++++++++++++++
+ modules.d/98integrity/module-setup.sh  |  2 ++
+ 2 files changed, 64 insertions(+)
+ create mode 100755 modules.d/98integrity/ima-keys-load.sh
 
-diff --git a/modules.d/96securityfs/securityfs.sh b/modules.d/96securityfs/securityfs.sh
-index 8ccb151..8e57571 100755
---- a/modules.d/96securityfs/securityfs.sh
-+++ b/modules.d/96securityfs/securityfs.sh
-@@ -3,6 +3,6 @@
- SECURITYFSDIR="/sys/kernel/security"
- export SECURITYFSDIR
+diff --git a/modules.d/98integrity/ima-keys-load.sh b/modules.d/98integrity/ima-keys-load.sh
+new file mode 100755
+index 0000000..659b722
+--- /dev/null
++++ b/modules.d/98integrity/ima-keys-load.sh
+@@ -0,0 +1,62 @@
++#!/bin/sh
++
++SECURITYFSDIR="/sys/kernel/security"
++IMASECDIR="${SECURITYFSDIR}/ima"
++IMACONFIG="${NEWROOT}/etc/sysconfig/ima"
++
++load_x509_keys()
++{
++    KEYRING_ID=$1
++
++    # override the default configuration
++    if [ -f "${IMACONFIG}" ]; then
++        . ${IMACONFIG}
++    fi
++
++    if [ -z "${IMAKEYDIR}" ]; then
++        IMAKEYSDIR="/etc/keys/ima"
++    fi
++
++    PUBKEY_LIST=`ls ${NEWROOT}${IMAKEYSDIR}/*`
++    for PUBKEY in ${PUBKEY_LIST}; do
++        # check for public key's existence
++        if [ ! -f "${PUBKEY}" ]; then
++            if [ "${RD_DEBUG}" = "yes" ]; then
++                info "integrity: IMA x509 cert file not found: ${PUBKEY}"
++            fi
++            continue
++        fi
++
++        X509ID=$(evmctl import ${PUBKEY} ${KEYRING_ID})
++        if [ $? -ne 0 ]; then
++            info "integrity: IMA x509 cert not loaded on keyring: ${PUBKEY}"
++        fi 
++    done
++
++    if [ "${RD_DEBUG}" = "yes" ]; then
++        keyctl show  ${KEYRING_ID}
++    fi
++    return 0
++}
++
++# check kernel support for IMA
++if [ ! -e "${IMASECDIR}" ]; then
++    if [ "${RD_DEBUG}" = "yes" ]; then
++        info "integrity: IMA kernel support is disabled"
++    fi
++    return 0
++fi
++
++# get the IMA keyring id
++line=$(keyctl describe %keyring:.ima)
++if [ $? -eq 0 ]; then
++    _ima_id=${line%%:*}
++else
++    _ima_id=`keyctl search @u keyring _ima`
++    if [ -z "${_ima_id}" ]; then
++        _ima_id=`keyctl newring _ima @u`
++    fi
++fi
++
++# load the IMA public key(s)
++load_x509_keys ${_ima_id}
+diff --git a/modules.d/98integrity/module-setup.sh b/modules.d/98integrity/module-setup.sh
+index 2d4d2ed..34b33cd 100755
+--- a/modules.d/98integrity/module-setup.sh
++++ b/modules.d/98integrity/module-setup.sh
+@@ -13,6 +13,8 @@ depends() {
  
--if ! findmnt --target "${SECURITYFSDIR}" >/dev/null 2>&1; then
-+if ! findmnt "${SECURITYFSDIR}" >/dev/null 2>&1; then
-    mount -t securityfs -o nosuid,noexec,nodev securityfs ${SECURITYFSDIR} >/dev/null 2>&1
- fi
+ # called by dracut
+ install() {
++    dracut_install evmctl keyctl ls
+     inst_hook pre-pivot 61 "$moddir/evm-enable.sh"
++    inst_hook pre-pivot 61 "$moddir/ima-keys-load.sh"
+     inst_hook pre-pivot 62 "$moddir/ima-policy-load.sh"
+ }
 -- 
 2.1.0
