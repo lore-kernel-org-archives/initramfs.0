@@ -1,50 +1,149 @@
-From: olivier.lahaye1-GANU6spQydw@public.gmane.org
-Subject: dracut module writing howto/doc?
-Date: Wed, 29 Apr 2015 10:44:53 +0200 (CEST)
-Message-ID: <168899060.1173304576.1430297093239.JavaMail.root@spooler6-g27.priv.proxad.net>
-References: <868592098.1173300648.1430297012192.JavaMail.root@spooler6-g27.priv.proxad.net>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 3/4] Define new script to load keys on the IMA keyring
+ (update)
+Date: Wed, 29 Apr 2015 11:05:25 -0400
+Message-ID: <1430319925.2218.18.camel@linux.vnet.ibm.com>
+References: <1430173454-3665-1-git-send-email-zohar@linux.vnet.ibm.com>
+	 <1430173454-3665-3-git-send-email-zohar@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <868592098.1173300648.1430297012192.JavaMail.root-NPLbsSYf/7dsFmKuirFwRhh1pbbyJDp15NbjCUgZEJk@public.gmane.org>
+In-Reply-To: <1430173454-3665-3-git-send-email-zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Hi, 
+This patch supports loading keys either on the _ima keyring or, as of
+Linux 3.17, on the trusted .ima keyring.  Only certificates signed by
+a key on the system keyring can be loaded onto the trusted .ima keyring.
 
-I'm looking forward how to write a dracut module named 98systemimager. Despite my googling, I was unable to find somting enought sofisticated that would help me. 
-Right now, The following stuff is working: 
+Changelog:
+- Update 98integrity/README
+---
+ modules.d/98integrity/README           | 28 +++++++++++++++
+ modules.d/98integrity/ima-keys-load.sh | 62 ++++++++++++++++++++++++++++++++++
+ modules.d/98integrity/module-setup.sh  |  2 ++
+ 3 files changed, 92 insertions(+)
+ create mode 100755 modules.d/98integrity/ima-keys-load.sh
 
-dracut --force \ 
-    --install " $(FOUND_INITRD_BINARIES) " \ 
-    --filesystems "ext2 ext3 ext4 xfs jfs hfs reiserfs nfs" \ 
-    --include $ ( INITRD_BUILD_DIR ) / \ 
-    --no-hostonly --no-hostonly-cmdline \ 
-    --add network \ 
-    --add syslog \ 
-    --add debug \ 
-    --omit usrmount \ 
-    $(INITRD_DIR)/initrd.img $(KVER) 
-
-What I want is: 
-
-dracut --force --add systemimager $(INITRD_DIR)/initrd.img $(KVER) 
-
-I've started writing module-init.sh with basic skeleton 
-So in other works I'd like to create a dracut module that would do the following stuffs: 
-    - Depends on network and syslog (already ok)
-    - disable usrmount module: is it possible to do that? 
-    - enable --filesystems "ext2 ext3 ext4 xfs jfs hfs reiserfs nfs" so kernel modules (if not in kernel) and fs utils (mount, ...) are automatically included. 
-    - include a full subtree: should I use (cd $ ( INITRD_BUILD_DIR ); tar cpf -)|(cd $initrdtemp; tar xpf -) ? 
-    - enable by default --no-hostonly --no-hostonly-cmdline so most drivers are put into the initramfs. 
-
-Aside that, I'm trying to understand the differences between the dracut hooks and native .services files. Currently, I'm using my own .services files to start network. If I replace this file with a hook (starting dhclient), would it work on centos6 that lacks systemd? 
-
-Thanks a lot for any tips, infos or docs that would help me fullfill this need. 
-
-Best regards. 
-
+diff --git a/modules.d/98integrity/README b/modules.d/98integrity/README
+index d74e063..2c7857b 100644
+--- a/modules.d/98integrity/README
++++ b/modules.d/98integrity/README
+@@ -38,3 +38,31 @@ line.
+ ------------- '/etc/sysconfig/ima' (with the default value) -------------
+ IMAPOLICY="/etc/sysconfig/ima-policy"
+ -------------------------------------------------------------------------
++
++
++# Information on loading distro, third party or local keys on the trusted IMA keyring
++
++# Loading distro, third party or local keys on the trusted IMA keyring requires
++# creating a local certificate authority(local-CA), installing the local-CA's
++# public key on the system-keyring and signing the certificates with the local-CA
++# key.
++#
++# Many directions for creating a mini certificate authority exist on the web
++# (eg. openssl, yubikey). (Reminder: safely storing the private key offline is
++# really important, especially in the case of the local-CA's private key.) The
++# local-CA's public key can be loaded onto the system keyring either by building
++# the key into the kernel or, on Fedora, storing it in the UEFI/Mok keyring. (As
++# of writing, the patches for loading the UEFI/Mok keys on the system-keyring
++# have not been upstreamed.)
++#
++# To view the system keyring: keyctl show %keyring:.system_keyring
++#
++# Most on-line directions for signing certificates requires creating a Certificate
++# Signing Request (CSR).  Creating such a request requires access to the private
++# key, which would not be available when signing distro or 3rd party certificates.
++# Openssl provides the "-ss_cert" option for directly signing certificates.
++
++# 98integrity/ima-keys-load.sh script loads the signed certificates stored 
++# in the $IMAKEYSDIR onto the trusted IMA keyring.  The default $IMAKEYSDIR
++# directory is /etc/keys/ima, but can be specified in the /etc/sysconfig/ima
++# policy.
+diff --git a/modules.d/98integrity/ima-keys-load.sh b/modules.d/98integrity/ima-keys-load.sh
+new file mode 100755
+index 0000000..659b722
+--- /dev/null
++++ b/modules.d/98integrity/ima-keys-load.sh
+@@ -0,0 +1,62 @@
++#!/bin/sh
++
++SECURITYFSDIR="/sys/kernel/security"
++IMASECDIR="${SECURITYFSDIR}/ima"
++IMACONFIG="${NEWROOT}/etc/sysconfig/ima"
++
++load_x509_keys()
++{
++    KEYRING_ID=$1
++
++    # override the default configuration
++    if [ -f "${IMACONFIG}" ]; then
++        . ${IMACONFIG}
++    fi
++
++    if [ -z "${IMAKEYDIR}" ]; then
++        IMAKEYSDIR="/etc/keys/ima"
++    fi
++
++    PUBKEY_LIST=`ls ${NEWROOT}${IMAKEYSDIR}/*`
++    for PUBKEY in ${PUBKEY_LIST}; do
++        # check for public key's existence
++        if [ ! -f "${PUBKEY}" ]; then
++            if [ "${RD_DEBUG}" = "yes" ]; then
++                info "integrity: IMA x509 cert file not found: ${PUBKEY}"
++            fi
++            continue
++        fi
++
++        X509ID=$(evmctl import ${PUBKEY} ${KEYRING_ID})
++        if [ $? -ne 0 ]; then
++            info "integrity: IMA x509 cert not loaded on keyring: ${PUBKEY}"
++        fi 
++    done
++
++    if [ "${RD_DEBUG}" = "yes" ]; then
++        keyctl show  ${KEYRING_ID}
++    fi
++    return 0
++}
++
++# check kernel support for IMA
++if [ ! -e "${IMASECDIR}" ]; then
++    if [ "${RD_DEBUG}" = "yes" ]; then
++        info "integrity: IMA kernel support is disabled"
++    fi
++    return 0
++fi
++
++# get the IMA keyring id
++line=$(keyctl describe %keyring:.ima)
++if [ $? -eq 0 ]; then
++    _ima_id=${line%%:*}
++else
++    _ima_id=`keyctl search @u keyring _ima`
++    if [ -z "${_ima_id}" ]; then
++        _ima_id=`keyctl newring _ima @u`
++    fi
++fi
++
++# load the IMA public key(s)
++load_x509_keys ${_ima_id}
+diff --git a/modules.d/98integrity/module-setup.sh b/modules.d/98integrity/module-setup.sh
+index 2d4d2ed..34b33cd 100755
+--- a/modules.d/98integrity/module-setup.sh
++++ b/modules.d/98integrity/module-setup.sh
+@@ -13,6 +13,8 @@ depends() {
+ 
+ # called by dracut
+ install() {
++    dracut_install evmctl keyctl ls
+     inst_hook pre-pivot 61 "$moddir/evm-enable.sh"
++    inst_hook pre-pivot 61 "$moddir/ima-keys-load.sh"
+     inst_hook pre-pivot 62 "$moddir/ima-policy-load.sh"
+ }
 -- 
-   Olivier LAHAYE
+2.1.0
