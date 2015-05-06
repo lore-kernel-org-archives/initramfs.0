@@ -1,149 +1,36 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 3/4] Define new script to load keys on the IMA keyring
- (update)
-Date: Wed, 29 Apr 2015 11:05:25 -0400
-Message-ID: <1430319925.2218.18.camel@linux.vnet.ibm.com>
-References: <1430173454-3665-1-git-send-email-zohar@linux.vnet.ibm.com>
-	 <1430173454-3665-3-git-send-email-zohar@linux.vnet.ibm.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Fix typo in rd.live.overlay.size setting
+Date: Wed, 06 May 2015 12:19:11 +0200
+Message-ID: <5549EA9F.9070606@redhat.com>
+References: <1429871586-25877-1-git-send-email-rvykydal@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1430173454-3665-3-git-send-email-zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1429871586-25877-1-git-send-email-rvykydal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Radek Vykydal <rvykydal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This patch supports loading keys either on the _ima keyring or, as of
-Linux 3.17, on the trusted .ima keyring.  Only certificates signed by
-a key on the system keyring can be loaded onto the trusted .ima keyring.
+On 24.04.2015 12:33, Radek Vykydal wrote:
+> ---
+>  modules.d/90dmsquash-live/dmsquash-live-root.sh | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> index b632f6a..0e7e42e 100755
+> --- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> +++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+> @@ -27,7 +27,7 @@ getargbool 0 rd.live.overlay.reset -d -y reset_overlay && reset_overlay="yes"
+>  getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay && readonly_overlay="--readonly" || readonly_overlay=""
+>  overlay=$(getarg rd.live.overlay -d overlay)
+>  getargbool 0 rd.writable.fsimg -d -y writable_fsimg && writable_fsimg="yes"
+> -overlay_size=$(getarg rd.live.overlay.size=)
+> +overlay_size=$(getarg rd.live.overlay.size)
+>  [ -z "$overlay_size" ] && overlay_size=512
+>  
+>  getargbool 0 rd.live.overlay.thin && thin_snapshot="yes"
+> 
 
-Changelog:
-- Update 98integrity/README
----
- modules.d/98integrity/README           | 28 +++++++++++++++
- modules.d/98integrity/ima-keys-load.sh | 62 ++++++++++++++++++++++++++++++++++
- modules.d/98integrity/module-setup.sh  |  2 ++
- 3 files changed, 92 insertions(+)
- create mode 100755 modules.d/98integrity/ima-keys-load.sh
-
-diff --git a/modules.d/98integrity/README b/modules.d/98integrity/README
-index d74e063..2c7857b 100644
---- a/modules.d/98integrity/README
-+++ b/modules.d/98integrity/README
-@@ -38,3 +38,31 @@ line.
- ------------- '/etc/sysconfig/ima' (with the default value) -------------
- IMAPOLICY="/etc/sysconfig/ima-policy"
- -------------------------------------------------------------------------
-+
-+
-+# Information on loading distro, third party or local keys on the trusted IMA keyring
-+
-+# Loading distro, third party or local keys on the trusted IMA keyring requires
-+# creating a local certificate authority(local-CA), installing the local-CA's
-+# public key on the system-keyring and signing the certificates with the local-CA
-+# key.
-+#
-+# Many directions for creating a mini certificate authority exist on the web
-+# (eg. openssl, yubikey). (Reminder: safely storing the private key offline is
-+# really important, especially in the case of the local-CA's private key.) The
-+# local-CA's public key can be loaded onto the system keyring either by building
-+# the key into the kernel or, on Fedora, storing it in the UEFI/Mok keyring. (As
-+# of writing, the patches for loading the UEFI/Mok keys on the system-keyring
-+# have not been upstreamed.)
-+#
-+# To view the system keyring: keyctl show %keyring:.system_keyring
-+#
-+# Most on-line directions for signing certificates requires creating a Certificate
-+# Signing Request (CSR).  Creating such a request requires access to the private
-+# key, which would not be available when signing distro or 3rd party certificates.
-+# Openssl provides the "-ss_cert" option for directly signing certificates.
-+
-+# 98integrity/ima-keys-load.sh script loads the signed certificates stored 
-+# in the $IMAKEYSDIR onto the trusted IMA keyring.  The default $IMAKEYSDIR
-+# directory is /etc/keys/ima, but can be specified in the /etc/sysconfig/ima
-+# policy.
-diff --git a/modules.d/98integrity/ima-keys-load.sh b/modules.d/98integrity/ima-keys-load.sh
-new file mode 100755
-index 0000000..659b722
---- /dev/null
-+++ b/modules.d/98integrity/ima-keys-load.sh
-@@ -0,0 +1,62 @@
-+#!/bin/sh
-+
-+SECURITYFSDIR="/sys/kernel/security"
-+IMASECDIR="${SECURITYFSDIR}/ima"
-+IMACONFIG="${NEWROOT}/etc/sysconfig/ima"
-+
-+load_x509_keys()
-+{
-+    KEYRING_ID=$1
-+
-+    # override the default configuration
-+    if [ -f "${IMACONFIG}" ]; then
-+        . ${IMACONFIG}
-+    fi
-+
-+    if [ -z "${IMAKEYDIR}" ]; then
-+        IMAKEYSDIR="/etc/keys/ima"
-+    fi
-+
-+    PUBKEY_LIST=`ls ${NEWROOT}${IMAKEYSDIR}/*`
-+    for PUBKEY in ${PUBKEY_LIST}; do
-+        # check for public key's existence
-+        if [ ! -f "${PUBKEY}" ]; then
-+            if [ "${RD_DEBUG}" = "yes" ]; then
-+                info "integrity: IMA x509 cert file not found: ${PUBKEY}"
-+            fi
-+            continue
-+        fi
-+
-+        X509ID=$(evmctl import ${PUBKEY} ${KEYRING_ID})
-+        if [ $? -ne 0 ]; then
-+            info "integrity: IMA x509 cert not loaded on keyring: ${PUBKEY}"
-+        fi 
-+    done
-+
-+    if [ "${RD_DEBUG}" = "yes" ]; then
-+        keyctl show  ${KEYRING_ID}
-+    fi
-+    return 0
-+}
-+
-+# check kernel support for IMA
-+if [ ! -e "${IMASECDIR}" ]; then
-+    if [ "${RD_DEBUG}" = "yes" ]; then
-+        info "integrity: IMA kernel support is disabled"
-+    fi
-+    return 0
-+fi
-+
-+# get the IMA keyring id
-+line=$(keyctl describe %keyring:.ima)
-+if [ $? -eq 0 ]; then
-+    _ima_id=${line%%:*}
-+else
-+    _ima_id=`keyctl search @u keyring _ima`
-+    if [ -z "${_ima_id}" ]; then
-+        _ima_id=`keyctl newring _ima @u`
-+    fi
-+fi
-+
-+# load the IMA public key(s)
-+load_x509_keys ${_ima_id}
-diff --git a/modules.d/98integrity/module-setup.sh b/modules.d/98integrity/module-setup.sh
-index 2d4d2ed..34b33cd 100755
---- a/modules.d/98integrity/module-setup.sh
-+++ b/modules.d/98integrity/module-setup.sh
-@@ -13,6 +13,8 @@ depends() {
- 
- # called by dracut
- install() {
-+    dracut_install evmctl keyctl ls
-     inst_hook pre-pivot 61 "$moddir/evm-enable.sh"
-+    inst_hook pre-pivot 61 "$moddir/ima-keys-load.sh"
-     inst_hook pre-pivot 62 "$moddir/ima-policy-load.sh"
- }
--- 
-2.1.0
+It's not really a "typo" because it matches fine and is used in lot of other
+locations.
