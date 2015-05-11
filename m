@@ -1,36 +1,47 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Fix typo in rd.live.overlay.size setting
-Date: Wed, 06 May 2015 12:19:11 +0200
-Message-ID: <5549EA9F.9070606@redhat.com>
-References: <1429871586-25877-1-git-send-email-rvykydal@redhat.com>
+From: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Change the fs_passno of nfs to "0"
+Date: Mon, 11 May 2015 05:30:02 -0400 (EDT)
+Message-ID: <1214773375.11522755.1431336602566.JavaMail.zimbra@redhat.com>
+References: <1640086230.11520038.1431336300230.JavaMail.zimbra@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1429871586-25877-1-git-send-email-rvykydal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1640086230.11520038.1431336300230.JavaMail.zimbra-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Radek Vykydal <rvykydal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On 24.04.2015 12:33, Radek Vykydal wrote:
-> ---
->  modules.d/90dmsquash-live/dmsquash-live-root.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> index b632f6a..0e7e42e 100755
-> --- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> +++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-> @@ -27,7 +27,7 @@ getargbool 0 rd.live.overlay.reset -d -y reset_overlay && reset_overlay="yes"
->  getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay && readonly_overlay="--readonly" || readonly_overlay=""
->  overlay=$(getarg rd.live.overlay -d overlay)
->  getargbool 0 rd.writable.fsimg -d -y writable_fsimg && writable_fsimg="yes"
-> -overlay_size=$(getarg rd.live.overlay.size=)
-> +overlay_size=$(getarg rd.live.overlay.size)
->  [ -z "$overlay_size" ] && overlay_size=512
->  
->  getargbool 0 rd.live.overlay.thin && thin_snapshot="yes"
-> 
+Change the fs_passno of nfs to "0"
+    
+Set fs_passno, the sixth variable of fstab to "0" when the device is nfs.
+    
+In the fstab,the sixth variable fs_passno stands for that the device need check
+ed or not,and dracut set it to "2".But if it is nfs,there's no fsck for nfs uti
+lity, e.g fsck.nfs like other file system. Whatever fs_passno 0 or 2 are passed
+, no fsck is executed at all for nfs mount.So it should be "0" when the device i
+s nfs.So when the third variable of fstab contains "nfs", the sixth variable fs_
+passno should be set to "0".The third variable stands for the type of the filesy
+stem.
 
-It's not really a "typo" because it matches fine and is used in lot of other
-locations.
+
+Signed-off-by: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+diff --git a/dracut.sh b/dracut.sh
+index ab84221..a7a124c 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1517,7 +1517,13 @@ if [[ $kernel_only != yes ]]; then
+         line=($line)
+         [ -z "${line[3]}" ] && line[3]="defaults"
+         [ -z "${line[4]}" ] && line[4]="0"
+-        [ -z "${line[5]}" ] && line[5]="2"
++        [ -z "${line[5]}" ] && {
++        if strstr "${line[2]}" "nfs";then
++                line[5]="0"
++        else    line[5]="2"
++        fi
++        }
++
+         echo "${line[@]}" >> "${initdir}/etc/fstab"
+     done
