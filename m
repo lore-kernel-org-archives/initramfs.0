@@ -1,7 +1,7 @@
 From: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/2] base: Don't wait for swap devices in host-only mode.
-Date: Fri, 15 May 2015 14:53:40 +0100
-Message-ID: <1431698021-16626-2-git-send-email-colin@mageia.org>
+Subject: [PATCH 2/2] resume: Ensure we actually wait for the /dev/resume 'device'
+Date: Fri, 15 May 2015 14:53:41 +0100
+Message-ID: <1431698021-16626-3-git-send-email-colin@mageia.org>
 References: <1431698021-16626-1-git-send-email-colin@mageia.org>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1431698021-16626-1-git-send-email-colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
@@ -13,73 +13,36 @@ Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Colin Guthrie <colin-odJJhXpcy38dnm+yROfE0A@public.gmane.org>
 
-The only reason we add swap devices to host-only mode (added in
-dd5875499ece9dbc90e10eafd0073ee15d0c86a4) is to allow us to process
-resume= arguments passed on the kernel command line when the swap
-partition lives on something slightly more complex than a normal
-partion (e.g. in an LVM or RAID setup).
+Although various bits are in place to cancel waiting for the /dev/resume
+device (actually a symlink), we don't actually ever wait for it.
 
-By adding the device to host_devs, the necessary LVM and RAID hooks
-are added and thus the underlying storage will be initialised OK, and
-the 95resume module handles the waiting for the device (via udev rules
-creating the /dev/resume symlink).
-
-So ultimately, we do not need to hard-code the waiting for the swap
-devices into the initramfs at build time as the waiting part can be
-dynamic.
-
-This makes things more resiliant to swap partitions disappearing and
-being reformatted etc.
-
-Inspired by a patch by Martin Whitaker on Mageia bug:
-https://bugs.mageia.org/show_bug.cgi?id=12305
+Also as the udev rule may create the symlink, silence any errors from
+our manual ln -s call from the settled job.
 ---
- dracut.sh                        | 6 ++++--
- modules.d/99base/module-setup.sh | 8 ++++++++
- 2 files changed, 12 insertions(+), 2 deletions(-)
+ modules.d/95resume/parse-resume.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/dracut.sh b/dracut.sh
-index 6215b36..ec48015 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -1223,7 +1223,9 @@ if [[ $hostonly ]]; then
-                     done < /etc/crypttab
-                 fi
+diff --git a/modules.d/95resume/parse-resume.sh b/modules.d/95resume/parse-resume.sh
+index 9296429..3b97e51 100755
+--- a/modules.d/95resume/parse-resume.sh
++++ b/modules.d/95resume/parse-resume.sh
+@@ -37,6 +37,8 @@ esac
  
--                push_host_devs "$(readlink -f "$dev")"
-+                _dev="$(readlink -f "$dev")"
-+                push_host_devs "$_dev"
-+                push swap_devs "$_dev"
-                 break
-             done < /etc/fstab
-         done < /proc/swaps
-@@ -1334,7 +1336,7 @@ export initdir dracutbasedir \
-     omit_drivers mdadmconf lvmconf root_dev \
-     use_fstab fstab_lines libdirs fscks nofscks ro_mnt \
-     stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
--    debug host_fs_types host_devs sshkey add_fstab \
-+    debug host_fs_types host_devs swap_devs sshkey add_fstab \
-     DRACUT_VERSION udevdir prefix filesystems drivers \
-     systemdutildir systemdsystemunitdir systemdsystemconfdir \
-     host_modalias host_modules hostonly_cmdline loginstall \
-diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
-index fd65cdf..bbc68ba 100755
---- a/modules.d/99base/module-setup.sh
-+++ b/modules.d/99base/module-setup.sh
-@@ -103,6 +103,14 @@ install() {
- 
-                 for _dev in ${host_devs[@]}; do
-                     [[ "$_dev" == "$root_dev" ]] && continue
+ if ! getarg noresume; then
+     if [ -n "$resume" ]; then
++        wait_for_dev /dev/resume
 +
-+                    # We only actually wait for real devs - swap is only needed
-+                    # for resume and udev rules generated when parsing resume=
-+                    # argument take care of the waiting for us
-+                    for _dev2 in ${swap_devs[@]}; do
-+                      [[ "$_dev" == "$_dev2" ]] && continue 2
-+                    done
-+
-                     _pdev=$(get_persistent_dev $_dev)
+         {
+             printf "KERNEL==\"%s\", ACTION==\"add|change\", SYMLINK+=\"resume\"\n" \
+                 ${resume#/dev/};
+@@ -65,7 +67,7 @@ if ! getarg noresume; then
+             printf -- '%s\n' ' RUN+="/sbin/initqueue --finished --unique --name 00resume echo %M:%m  > /sys/power/resume"'
+         } >> /etc/udev/rules.d/99-resume.rules
  
-                     case "$_pdev" in
+-        printf '[ -e "%s" ] && { ln -s "%s" /dev/resume; rm -f -- "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
++        printf '[ -e "%s" ] && { ln -s "%s" /dev/resume 2> /dev/null; rm -f -- "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
+             "$resume" "$resume" "$hookdir" >> $hookdir/initqueue/settled/resume.sh
+ 
+         {
 -- 
 2.3.2
