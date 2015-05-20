@@ -1,18 +1,28 @@
-From: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Change the fs_passno of nfs to 0
-Date: Wed, 20 May 2015 17:25:34 +0800
-Message-ID: <20150520092534.GC7959@dhcp-128-28.nay.redhat.com>
-References: <1432025842-25347-1-git-send-email-cfan@redhat.com>
+Date: Wed, 20 May 2015 05:44:43 -0400 (EDT)
+Message-ID: <834147643.1779220.1432115083557.JavaMail.zimbra@redhat.com>
+References: <1432025842-25347-1-git-send-email-cfan@redhat.com> <20150520092534.GC7959@dhcp-128-28.nay.redhat.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1432025842-25347-1-git-send-email-cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20150520092534.GC7959-0VdLhd/A9PlfpSRLqpFUpR/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Baoquan He <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+
+OK, thank you for your comment, I will update my patch according to your email.
+Thanks,
+Chao Fan
+
+----- Original Message -----
+From: "Baoquan He" <bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Chao Fan" <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Sent: Wednesday, May 20, 2015 5:25:34 PM
+Subject: Re: [PATCH] Change the fs_passno of nfs to 0
 
 On 05/19/15 at 04:57pm, Chao Fan wrote:
 > Set fs_passno, the sixth variable of fstab to "0" when the device is nfs.
@@ -80,3 +90,7 @@ Baoquan
 > To unsubscribe from this list: send the line "unsubscribe initramfs" in
 > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe initramfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
