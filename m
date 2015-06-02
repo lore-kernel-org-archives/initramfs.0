@@ -1,76 +1,44 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] 40network: always start netroot in ifup.sh
-Date: Tue, 02 Jun 2015 12:24:27 +0200
-Message-ID: <556D845B.1020808@redhat.com>
-References: <1427127138-12932-1-git-send-email-trenn@suse.de> <1427127138-12932-4-git-send-email-trenn@suse.de>
+Subject: Re: [PATCH 1/4] Correct paths for openSUSE
+Date: Tue, 02 Jun 2015 12:25:14 +0200
+Message-ID: <556D848A.5070308@redhat.com>
+References: <1427127138-12932-1-git-send-email-trenn@suse.de> <1427127138-12932-2-git-send-email-trenn@suse.de>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1427127138-12932-4-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <1427127138-12932-2-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christian Rodrigues <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
 On 23.03.2015 17:12, Thomas Renninger wrote:
-> From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+> From: Christian Rodrigues <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 > 
-> It's totally irrelevant how the network is configured when
-> trying to setup netroot. It only matters if it could be
-> configured at all.
-> So change the logic the check for correct network setup
-> and then start netroot.
+> openSUSE has things stored in different places, so fixup the
+> paths here.
 > 
-> References: bnc#881235
-> 
+> Signed-off-by: Christian Rodrigues <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 > Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 > Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 > ---
->  modules.d/40network/ifup.sh | 22 ++++++++--------------
->  1 file changed, 8 insertions(+), 14 deletions(-)
+>  dracut.sh | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
-> index de518b6..9af5474 100755
-> --- a/modules.d/40network/ifup.sh
-> +++ b/modules.d/40network/ifup.sh
-> @@ -338,21 +338,15 @@ for p in $(getargs ip=); do
->          esac
->      done
->  
-> -    > /tmp/net.${netif}.up
-> +    if [ $? -eq 0 ]; then
-> +        > /tmp/net.${netif}.up
->  
-> -    case $autoconf in
-> -        dhcp|on|any|dhcp6)
-> -            ;;
-> -        *)
-> -            if [ $? -eq 0 ]; then
-> -                setup_net $netif
-> -                source_hook initqueue/online $netif
-> -                if [ -z "$manualup" ]; then
-> -                    /sbin/netroot $netif
-> -                fi
-> -            fi
-> -            ;;
-> -    esac
-> +        setup_net $netif
-> +        source_hook initqueue/online $netif
-> +        if [ -z "$manualup" ]; then
-> +            /sbin/netroot $netif
-> +        fi
-> +    fi
->  
->      exit 0
->  done
+> diff --git a/dracut.sh b/dracut.sh
+> index 17bf8f2..1aa7d31 100755
+> --- a/dracut.sh
+> +++ b/dracut.sh
+> @@ -809,7 +809,7 @@ stdloglvl=$((stdloglvl + verbosity_mod_l))
+>  [[ $mdadmconf_l ]] && mdadmconf=$mdadmconf_l
+>  [[ $lvmconf_l ]] && lvmconf=$lvmconf_l
+>  [[ $dracutbasedir ]] || dracutbasedir=/usr/lib/dracut
+> -[[ $fw_dir ]] || fw_dir="/lib/firmware/updates /lib/firmware"
+> +[[ $fw_dir ]] || fw_dir="/lib/firmware/updates /lib/firmware /lib/firmware/$kernel"
+>  [[ $tmpdir_l ]] && tmpdir="$tmpdir_l"
+>  [[ $tmpdir ]] || tmpdir=/var/tmp
+>  [[ $INITRD_COMPRESS ]] && compress=$INITRD_COMPRESS
 > 
 
-Well, for dhcp, the dhclient-script.sh adds an initqueue script
-setup_net_$netif.sh, which does:
-
-. /lib/net-lib.sh
-setup_net $netif
-source_hook initqueue/online $netif
-/sbin/netroot $netif
-
+pushed, thanks
