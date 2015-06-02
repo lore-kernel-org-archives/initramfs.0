@@ -1,80 +1,49 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Portability fixes
-Date: Tue, 02 Jun 2015 12:25:41 +0200
-Message-ID: <556D84A5.4080507@redhat.com>
-References: <1433236712-31133-1-git-send-email-aidecoe@aidecoe.name>
+Subject: Re: [PATCH V3] Change the fs_passno of nfs to 0
+Date: Tue, 02 Jun 2015 12:25:56 +0200
+Message-ID: <556D84B4.1050809@redhat.com>
+References: <1432116434-18050-1-git-send-email-cfan@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1433236712-31133-1-git-send-email-aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+In-Reply-To: <1432116434-18050-1-git-send-email-cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: =?UTF-8?B?QW1hZGV1c3ogxbtvxYJub3dza2k=?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: xtraeme <xtraeme-Dz/b8W81T9G0sumixwIyNQ@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 pushed, thanks
 
-On 02.06.2015 11:18, Amadeusz =C5=BBo=C5=82nowski wrote:
-> From: xtraeme <xtraeme-Dz/b8W81T9G0sumixwIyNQ@public.gmane.org>
->=20
-> - Use uid_t not __uid_t.
-> - Define _GNU_SOURCE for cpu_set_t and others.
-> - Include string.h for strncmp().
-> - Detect musl's ldd error message.
+On 20.05.2015 12:07, Chao Fan wrote:
+> There is a bug that kdump-initrd contains entry requesting nfs dump
+> filesystem to get filesystemchecked. And there is an erro message said
+> that nfs need be checked. But there's no fsck for nfs utility, e.g
+> fsck.nfs like other file system. Whatever fs_passno 0 or 2 are passed,
+> no fsck is executed at all for nfs mount.But in dracut, set it to be 2
+> always, so the erro message appear and it should be set to 0.
+> 
+> In the fstab,the sixth variable fs_passno stands for that the device need
+> checked or not,and dracut set it to "2".To fix this issue, it should
+> be "0" when the device is nfs.The third variable stands for the type of
+> the filesystem and we can use it to judge whether the device is nfs.
+> So when the third variable of fstab contains "nfs", the sixth variable
+> fs_passno should be set to "0".
+> 
+> Signed-off-by: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > ---
->  install/dracut-install.c | 7 ++++++-
->  install/util.h           | 3 +++
->  2 files changed, 9 insertions(+), 1 deletion(-)
->=20
-> diff --git a/install/dracut-install.c b/install/dracut-install.c
-> index 201f181..0ff5c49 100644
-> --- a/install/dracut-install.c
-> +++ b/install/dracut-install.c
-> @@ -222,7 +222,7 @@ static int cp(const char *src, const char *dst)
->                  if (ret =3D=3D 0) {
->                          struct timeval tv[2];
->                          if (fchown(dest_desc, sb.st_uid, sb.st_gid) =
-!=3D 0)
-> -                                if(fchown(dest_desc, (__uid_t) - 1, =
-sb.st_gid) !=3D 0)
-> +                                if(fchown(dest_desc, (uid_t) - 1, sb=
-=2Est_gid) !=3D 0)
->                                      log_error("Failed to chown %s: %=
-m", dst);
->                          tv[0].tv_sec =3D sb.st_atime;
->                          tv[0].tv_usec =3D 0;
-> @@ -388,6 +388,11 @@ static int resolve_deps(const char *src)
->                          break;
->                  }
-> =20
-> +		/* musl ldd */
-> +		if (strstr(buf, "Not a valid dynamic program"))
-> +			break;
-> +
-> +		/* glibc */
->                  if (strstr(buf, "not a dynamic executable"))
->                          break;
-> =20
-> diff --git a/install/util.h b/install/util.h
-> index cc7b988..2ad3254 100644
-> --- a/install/util.h
-> +++ b/install/util.h
-> @@ -20,6 +20,8 @@
->    along with systemd; If not, see <http://www.gnu.org/licenses/>.
->  ***/
-> =20
-> +#define _GNU_SOURCE
-> +
->  #include <inttypes.h>
->  #include <time.h>
->  #include <sys/time.h>
-> @@ -27,6 +29,7 @@
->  #include <stdbool.h>
->  #include <stdlib.h>
->  #include <stdio.h>
-> +#include <string.h>
->  #include <signal.h>
->  #include <sched.h>
->  #include <limits.h>
->=20
+>  dracut.sh | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/dracut.sh b/dracut.sh
+> index 6215b36..2d1860f 100755
+> --- a/dracut.sh
+> +++ b/dracut.sh
+> @@ -1518,6 +1518,7 @@ if [[ $kernel_only != yes ]]; then
+>          [ -z "${line[3]}" ] && line[3]="defaults"
+>          [ -z "${line[4]}" ] && line[4]="0"
+>          [ -z "${line[5]}" ] && line[5]="2"
+> +        strstr "${line[2]}" "nfs" && line[5]="0"
+>          echo "${line[@]}" >> "${initdir}/etc/fstab"
+>      done
+>  
+> 
