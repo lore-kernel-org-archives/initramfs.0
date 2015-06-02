@@ -1,45 +1,72 @@
-From: Bruno Wolff III <bruno@wolff.to>
-Subject: Re: Update FC22 - doesn't find root fs and doesn't boot
-Date: Sun, 31 May 2015 13:08:58 -0500
-Message-ID: <20150531180858.GA27097@wolff.to>
-References: <CAA91j0UysOKJG6LpuvCdrh3jcRMdj9+=XaD-R+Shw7WFZSvbUw@mail.gmail.com>
-	<5565B7BF.4010604@redhat.com> <5565BAEA.6080202@wiesinger.com>
-	<5565BBF8.1050509@redhat.com> <5565C0AC.2070106@wiesinger.com>
-	<5565C182.30709@redhat.com> <5565C4E7.6010301@wiesinger.com>
-	<5565C654.3000101@redhat.com> <556707B5.4000707@wiesinger.com>
-	<556ABD81.9010501@gmail.com>
-Reply-To: For testing and quality assurance of Fedora releases
-	<test@lists.fedoraproject.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: base64
-Return-path: <test-bounces@lists.fedoraproject.org>
-Content-Disposition: inline
-In-Reply-To: <556ABD81.9010501@gmail.com>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://admin.fedoraproject.org/mailman/options/test>,
-	<mailto:test-request@lists.fedoraproject.org?subject=unsubscribe>
-List-Archive: <http://lists.fedoraproject.org/pipermail/test/>
-List-Post: <mailto:test@lists.fedoraproject.org>
-List-Help: <mailto:test-request@lists.fedoraproject.org?subject=help>
-List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/test>,
-	<mailto:test-request@lists.fedoraproject.org?subject=subscribe>
-Sender: test-bounces@lists.fedoraproject.org
-Errors-To: test-bounces@lists.fedoraproject.org
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: poma <pomidorabelisima@gmail.com>
-Cc: Gerhard Wiesinger <lists@wiesinger.com>, Andrei Borzenkov <arvidjaar@gmail.com>, initramfs <initramfs@vger.kernel.org>, Harald Hoyer <harald@redhat.com>, For testing and quality assurance of Fedora releases <test@lists.fedoraproject.org>
+From: =?UTF-8?q?Amadeusz=20=C5=BBo=C5=82nowski?= <aidecoe-2qtfh70TtYba5EbDDlwbIw@public.gmane.org>
+Subject: [PATCH] Portability fixes
+Date: Tue,  2 Jun 2015 11:18:32 +0200
+Message-ID: <1433236712-31133-1-git-send-email-aidecoe@aidecoe.name>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: xtraeme <xtraeme-Dz/b8W81T9G0sumixwIyNQ@public.gmane.org>
 
-PkFuZCBhbHJlYWR5IHdlIGhhdmUgZm91Z2h0IGZvciB0aGlzIHVzZXIncyBzaWRlIHNpbXBsaWZp
-Y2F0aW9uLCBidXQgaXQgc2VlbXMgZGV2ZWxvcGVycyBhcmUgdmVyeSBwZXJzaXN0ZW50IHdoZW4g
-dGhleSBkbyBub3QgbmVlZCB0byBiZS4KCkluIHRoZSBwYXN0IGNoYW5nZXMgd2l0aCB0aGlzIGVm
-ZmVjdCB3ZXJlIHJldmVydGVkLiBUaGlzIHRpbWUgdGhleSB3ZXJlIG5vdC4gClRoaXMgZ2VuZXJh
-bGx5IGp1c3QgYWZmZWN0cyBwZW9wbGUgdXBncmFkaW5nLCBhcyBhbmFjb25kYSBoYXMgYmVlbiBh
-ZGRpbmcgCnRoZSBuZWVkZWQgc3R1ZmYgb24gdGhlIGtlcm5lbCBjb21tYW5kIGxpbmUgZm9yIGEg
-d2hpbGUgbm93LgoKWW91IGNhbiBhbHNvIGhvc3Rvbmx5X2NtZGxpbmU9eWVzIHRvIHRoZSBkcmFj
-dXQgY29uZmlnIG9yIHNldCBob3N0b25seT1ubyAKaWYgeW91IGFyZSB3aWxsaW5nIHRvIGhhdmUg
-YSBsYXJnZXIgaW5pdHJhbWZzIGZpbGUuIFRoZSBsYXR0ZXIgd2lsbCBhbHNvIGhlbHAgCmlmIHlv
-dSBzd2l0Y2ggb3V0IGhhcmR3YXJlLgoKSSBhbSBub3Qgc3VyZSB3aHkgaG9zdG9ubHlfY21kbGlu
-ZT15ZXMgaXMgbm90IHRoZSBkZWZhdWx0IHdoZW4gaG9zdG9ubHk9eWVzLiAKVGhhdCB3b3VsZCBz
-ZWVtIHRvIGJlIGEgYmV0dGVyIGRlZmF1bHQuCi0tIAp0ZXN0IG1haWxpbmcgbGlzdAp0ZXN0QGxp
-c3RzLmZlZG9yYXByb2plY3Qub3JnClRvIHVuc3Vic2NyaWJlOgpodHRwczovL2FkbWluLmZlZG9y
-YXByb2plY3Qub3JnL21haWxtYW4vbGlzdGluZm8vdGVzdA==
+From: xtraeme <xtraeme-Dz/b8W81T9G0sumixwIyNQ@public.gmane.org>
+
+- Use uid_t not __uid_t.
+- Define _GNU_SOURCE for cpu_set_t and others.
+- Include string.h for strncmp().
+- Detect musl's ldd error message.
+---
+ install/dracut-install.c | 7 ++++++-
+ install/util.h           | 3 +++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/install/dracut-install.c b/install/dracut-install.c
+index 201f181..0ff5c49 100644
+--- a/install/dracut-install.c
++++ b/install/dracut-install.c
+@@ -222,7 +222,7 @@ static int cp(const char *src, const char *dst)
+                 if (ret == 0) {
+                         struct timeval tv[2];
+                         if (fchown(dest_desc, sb.st_uid, sb.st_gid) != 0)
+-                                if(fchown(dest_desc, (__uid_t) - 1, sb.st_gid) != 0)
++                                if(fchown(dest_desc, (uid_t) - 1, sb.st_gid) != 0)
+                                     log_error("Failed to chown %s: %m", dst);
+                         tv[0].tv_sec = sb.st_atime;
+                         tv[0].tv_usec = 0;
+@@ -388,6 +388,11 @@ static int resolve_deps(const char *src)
+                         break;
+                 }
+ 
++		/* musl ldd */
++		if (strstr(buf, "Not a valid dynamic program"))
++			break;
++
++		/* glibc */
+                 if (strstr(buf, "not a dynamic executable"))
+                         break;
+ 
+diff --git a/install/util.h b/install/util.h
+index cc7b988..2ad3254 100644
+--- a/install/util.h
++++ b/install/util.h
+@@ -20,6 +20,8 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ ***/
+ 
++#define _GNU_SOURCE
++
+ #include <inttypes.h>
+ #include <time.h>
+ #include <sys/time.h>
+@@ -27,6 +29,7 @@
+ #include <stdbool.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <string.h>
+ #include <signal.h>
+ #include <sched.h>
+ #include <limits.h>
+-- 
+2.4.1
