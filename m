@@ -1,54 +1,30 @@
-From: Pawel Wieczorkiewicz <pwieczorkiewicz-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 2/4] 40network: Fix race condition when wait for
- networks
-Date: Tue, 2 Jun 2015 12:50:16 +0200
-Message-ID: <20150602125016.654a912e@linux-kf5h>
-References: <1427127138-12932-1-git-send-email-trenn@suse.de>
-	<1427127138-12932-3-git-send-email-trenn@suse.de>
-	<556D823E.1090104@redhat.com>
+From: "Gerd v. Egidy" <lists-6VzpN07DMvo@public.gmane.org>
+Subject: Re: [PATCH] Add support for ethernet point-to-point connections configured via DHCP
+Date: Wed, 03 Jun 2015 09:35:31 +0200
+Message-ID: <1561514.UqVy5huTaY@thunder>
+References: <13711492.8HAMuGhYIN@thunder>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <556D823E.1090104-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <13711492.8HAMuGhYIN@thunder>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, 02 Jun 2015 12:15:26 +0200
-Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+Hi Harald,
 
-> > +            echo "[ -f /tmp/net.*.did-setup ]"
-> > >$hookdir/initqueue/finished/wait-network.sh
->=20
-> err, if multiple networks are up, [ -f /tmp/net.*.did-setup ] is not
-> correct shell syntax.
->=20
-> $ [ -e /dev/* ] && echo OK
-> bash: [: too many arguments
->=20
+thank you for merging my patch into master.
 
-Can this condition really occur?
-Shouldn't we be done with the wait-network initqueue job condition just
-after 1st network is setup (the '*' here just means whatever interface
-is up, not multiple interfaces)?
+Could you also merge it into the RHEL-7 branch so it will be released with 7.2 
+or 7.3? Or do you prefer if I open a bug in Bugzilla for that?
 
-AFAIR each network ifup request is a separate initqueue job and the
-condition is evaluated between jobs switches. So first
-created /tmp/net.*.did-setup, whatever interface it has, makes this
-condition be satisfied.
+It fixes a regression from RHEL 6 which could be network-installed with a dhcp 
+configured point-to-point connection.
 
-This way or another, it can be improved to the longer and more
-demanding multifiles variant (for file in /tmp/net.*.did-setup loop or
-set -- /tmp/net.*.did-setup and $# > 0 evaluation).
+Thank you.
 
---=20
-Best Regards,
-Pawel Wieczorkiewicz <pwieczorkiewicz-l3A5Bk7waGM@public.gmane.org>, Linux System Developer
+Kind regards,
 
-SUSE Linux GmbH, GF: Felix Imend=C3=B6rffer, Jane Smithard, Dilip Upman=
-yu,
-Graham Norton, HRB 21284 (AG N=C3=BCrnberg) Maxfeldstra=C3=9Fe 5 / 9040=
-9
-N=C3=BCrnberg / Germany / Phone: +49-911-740 53 - 613
+Gerd
