@@ -1,63 +1,73 @@
-From: poma <pomidorabelisima-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Update FC22 - doesn't find root fs and doesn't boot
-Date: Mon, 15 Jun 2015 12:37:32 +0200
-Message-ID: <557EAAEC.2000301@gmail.com>
-References: <CAA91j0UysOKJG6LpuvCdrh3jcRMdj9+=XaD-R+Shw7WFZSvbUw@mail.gmail.com> <5565B7BF.4010604@redhat.com> <5565BAEA.6080202@wiesinger.com> <5565BBF8.1050509@redhat.com> <5565C0AC.2070106@wiesinger.com> <5565C182.30709@redhat.com> <5565C4E7.6010301@wiesinger.com> <5565C654.3000101@redhat.com> <556707B5.4000707@wiesinger.com> <556ABD81.9010501@gmail.com> <20150531180858.GA27097@wolff.to> <55794FA1.3070107@gmail.com> <557E9DF5.2070809@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [ANNOUNCE] dracut 042 and 043
+Date: Mon, 15 Jun 2015 15:30:35 +0200
+Message-ID: <557ED37B.9060904@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=message-id:date:from:user-agent:mime-version:to:cc:subject
-         :references:in-reply-to:content-type:content-transfer-encoding;
-        bh=iFBwbsYTVcDgKwXbhOmN1JDrxG3mkq9FjnsyJJPFHy8=;
-        b=uALKnRVJP+gvhq3HNe+d5wTaGK+VwAzPxa/fybX0rkMjOEIzShAYFqge0AqqfJINJ4
-         +3bJoNVVFiJL6KQ7UfaOuLtX3ZV64EwRLFGxkwabvIYRKFMTWJ6yPdQ9JoyNRxyY9fPy
-         khF7098f+O+TDsUtcMNTPTNFKH1DeTsSfDqGdT5wuUoC4zHs+P/cYUgl3zayC+0qG8Hg
-         j+P5o+z4Cp8zHnKrh6ByULE3aOBLk8l/oxG8O8dd7m0ptp99zQtCN+AzYeM0WMRBZC3y
-         XvnQ38XnkyGxbyA98paW6BJU+eU1mwPo0fJBLN2T5QMk8OXeCsgFmvVkLC1ocd+pdBOR
-         tYTQ==
-In-Reply-To: <557E9DF5.2070809-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Bruno Wolff III <bruno-bdMChIhFSYk@public.gmane.org>
-Cc: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>, Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, For testing and quality assurance of Fedora releases <test-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 15.06.2015 11:42, Harald Hoyer wrote:
-> On 11.06.2015 11:06, poma wrote:
->> On 31.05.2015 20:08, Bruno Wolff III wrote:
->>>> And already we have fought for this user's side simplification, but it seems developers are very persistent when they do not need to be.
->>>
->>> In the past changes with this effect were reverted. This time they were not. 
->>> This generally just affects people upgrading, as anaconda has been adding 
->>> the needed stuff on the kernel command line for a while now.
->>>
->>> You can also hostonly_cmdline=yes to the dracut config or set hostonly=no 
->>> if you are willing to have a larger initramfs file. The latter will also help 
->>> if you switch out hardware.
->>>
->>> I am not sure why hostonly_cmdline=yes is not the default when hostonly=yes. 
->>> That would seem to be a better default.
->>>
->>
->>
->> dracut.conf.d/fedora.conf.example
->> +hostonly_cmdline="no"
->>
->> http://pkgs.fedoraproject.org/cgit/dracut.git/commit/0001-fedora.conf-do-not-store-cmdline-in-image-by-default.patch?id=43a1228
->> http://git.kernel.org/cgit/boot/dracut/dracut.git/commit/dracut.conf.d/fedora.conf.example?id=38e2177
->>
->> no explanation why this was done
-> 
-> 
-> Basically it's because compiled in arguments are hard to override and people
-> could not boot after they changed disk configuration.
-> 
-> I guess, s.th. like "rd.cmdline=clean rd.auto" or "rd.helpIwanttobootnow" is
-> the better solution.
-> 
+Here comes a new dracut version. Thanks to all who have contributed to this
+release.
 
+The tarball can be found here:
+        http://www.kernel.org/pub/linux/utils/boot/dracut/
+        ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
 
-rd.OhLordwontyoubuymeaMercedesBenzMyfriendsalldrivePorschesImustmakeamends
+Git:
+        git://git.kernel.org/pub/scm/boot/dracut/dracut.git
+        http://git.kernel.org/pub/scm/boot/dracut/dracut.git
+        https://git.kernel.org/pub/scm/boot/dracut/dracut.git
 
+Git Web:
+        http://git.kernel.org/?p=boot/dracut/dracut.git
+
+Git Web RSS Feed:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
+
+Project Page:
+        http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
+
+Project Wiki:
+        http://dracut.wiki.kernel.org
+
+The ChangeLog can be found here:
+        http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
+
+dracut-043
+==========
+- add missing dmsquash-generator
+
+dracut-042
+==========
+- fixed dmsetup shutdown
+- new kernel command line option "rd.live.overlay.thin"
+    This option changes the underlying mechanism for the overlay in the
+    dmsquash module.
+    Instead of a plain dm snapshot a dm thin snapshot is used. The advantage
+    of the thin snapshot is, that the TRIM command is recognized, which
+    means that at runtime, only the occupied blocks will be claimed from
+    memory, and freed blocks will really be freed in ram.
+- dmsquash: Add squashfs support to rd.live.fsimg
+    Previously rd.live.fsimg only supported filesystems residing in
+    (compressed) archives.
+    Now rd.live.fsimg can also be used when a squashfs image is used.
+    This is achieved by extracting the rootfs image from the squashfs and
+    then continue with the default routines for rd.live.fsimg.
+- lvm: add support for LVM system id
+- split up the systemd dracut module
+    Basic systemd functionality is in 00systemd now.
+    Switching root and the initrd.target is in 00systemd-initrd.
+    Dracut additions to the systemd initrd are in 98dracut-systemd.
+- support for creating a UEFI boot executable via argument "--uefi"
+    With an EFI stub, the kernel, the initramfs and a kernel cmdline can be
+    glued together to a single UEFI executable, which can be booted by a
+    UEFI BIOS.
+- network: split out kernel-network-modules, now in 90kernel-network-modules
+- support for ethernet point-to-point connections configured via DHCP
+- kernel-modules: install all HID drivers
+- dracut.pc pkg-config file
+- mount /dev, /dev/shm and /run noexec
