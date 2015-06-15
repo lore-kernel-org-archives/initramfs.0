@@ -1,36 +1,43 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] dracut-lib.sh: typo fix
-Date: Mon, 15 Jun 2015 11:32:33 +0200
-Message-ID: <557E9BB1.8050702@redhat.com>
-References: <1434358579-11674-1-git-send-email-lzhong@suse.com>
+From: Ross Lagerwall <ross.lagerwall-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Require all interfaces to be up before using iscsistart
+ -b
+Date: Mon, 15 Jun 2015 10:34:23 +0100
+Message-ID: <557E9C1F.4060102@citrix.com>
+References: <1431592211-5652-1-git-send-email-ross.lagerwall@citrix.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1434358579-11674-1-git-send-email-lzhong-IBi9RG/b67k@public.gmane.org>
+In-Reply-To: <1431592211-5652-1-git-send-email-ross.lagerwall-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Lidong Zhong <lzhong-IBi9RG/b67k@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 15.06.2015 10:56, Lidong Zhong wrote:
-> Signed-off-by: Lidong Zhong <lzhong-IBi9RG/b67k@public.gmane.org>
+ping!
+
+On 05/14/2015 09:30 AM, Ross Lagerwall wrote:
+> If multiple targets are specified in the ibft, iscsistart will log into
+> all of them, possibly using multiple interfaces. Since iscsistart is run
+> indirectly from ifup, require that all interfaces are up before actually
+> logging into the targets.
 > ---
->  modules.d/99base/dracut-lib.sh | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-> index 6498f9d..08110cc 100755
-> --- a/modules.d/99base/dracut-lib.sh
-> +++ b/modules.d/99base/dracut-lib.sh
-> @@ -313,7 +313,7 @@ getargs() {
->      _args="$@"
->      set --
->      for _i in $_args; do
-> -        if [ "$i" = "-d" ]; then
-> +        if [ "$_i" = "-d" ]; then
->              _deprecated=1
->              continue
->          fi
-> 
-
-merged, thanks!
+>   modules.d/95iscsi/iscsiroot.sh |    5 +++++
+>   1 file changed, 5 insertions(+)
+>
+> diff --git a/modules.d/95iscsi/iscsiroot.sh b/modules.d/95iscsi/iscsiroot.sh
+> index 1de6fb7..b9e99cb 100755
+> --- a/modules.d/95iscsi/iscsiroot.sh
+> +++ b/modules.d/95iscsi/iscsiroot.sh
+> @@ -45,6 +45,11 @@ fi
+>
+>   handle_firmware()
+>   {
+> +    # iscsistart -b may use multiple interfaces so only run when
+> +    # all are ready.
+> +    type all_ifaces_up >/dev/null 2>&1 || . /lib/net-lib.sh
+> +    all_ifaces_up || return 1
+> +
+>       if ! [ -e /tmp/iscsistarted-firmware ]; then
+>           if ! iscsistart -f; then
+>               warn "iscistart: Could not get list of targets from firmware."
+>
