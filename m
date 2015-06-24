@@ -1,107 +1,49 @@
-From: Ross Lagerwall <ross.lagerwall-Sxgqhf6Nn4DQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Require all interfaces to be up before using iscsistart
- -b
-Date: Mon, 15 Jun 2015 15:25:57 +0100
-Message-ID: <557EE075.7080908@citrix.com>
-References: <1431592211-5652-1-git-send-email-ross.lagerwall@citrix.com>
- <557E9C1F.4060102@citrix.com> <557EA026.7090509@redhat.com>
- <557EA096.4070802@redhat.com>
+From: Nicolai Stange <nicstange-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] modules: base: include wc utility
+Date: Wed, 24 Jun 2015 17:17:00 +0200
+Message-ID: <87h9pxjfv7.fsf@gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <557EA096.4070802-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:subject:date:message-id:user-agent:mime-version
+         :content-type;
+        bh=TYFrVclslrNsD8DvoxX4DzmllqgNRGJXeDD0TxPApyY=;
+        b=LtuQHV1Rw8z5+SOyNHHjD1dXXEb3hJP8Gq9uuIMj5osE4qAt1odr8bFcJnm0VPtetu
+         9losWnvqac/1ntyyWvDC8Trhi57APy/K/4QO0UGBEABbygiwQmHqs6gsK1wN3ObRwaG7
+         tSlOAjkeFFVIliaQeI0Hk1JcrUj71A06kAdL5xeBlaIz9F2cfZW9rH1oJQUOujKoKgKz
+         EjA3gffH3jArJpYfXCkbyAHArEWI1DcdJnymusRZ5+4JTThi6y8z31qy6bkT4nol5fcc
+         OqefUgo+pdAHAPrFp7TguEwPVU/8i/TgZBe6d/iDK77qtCN/UFPNz2vcCe6TV7ENTZX0
+         w2eA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 06/15/2015 10:53 AM, Harald Hoyer wrote:
-> On 15.06.2015 11:51, Harald Hoyer wrote:
->> On 15.06.2015 11:34, Ross Lagerwall wrote:
->>> ping!
->>>
->>> On 05/14/2015 09:30 AM, Ross Lagerwall wrote:
->>>> If multiple targets are specified in the ibft, iscsistart will log into
->>>> all of them, possibly using multiple interfaces. Since iscsistart is run
->>>> indirectly from ifup, require that all interfaces are up before actually
->>>> logging into the targets.
->>>> ---
->>>>    modules.d/95iscsi/iscsiroot.sh |    5 +++++
->>>>    1 file changed, 5 insertions(+)
->>>>
->>>> diff --git a/modules.d/95iscsi/iscsiroot.sh b/modules.d/95iscsi/iscsiroot.sh
->>>> index 1de6fb7..b9e99cb 100755
->>>> --- a/modules.d/95iscsi/iscsiroot.sh
->>>> +++ b/modules.d/95iscsi/iscsiroot.sh
->>>> @@ -45,6 +45,11 @@ fi
->>>>
->>>>    handle_firmware()
->>>>    {
->>>> +    # iscsistart -b may use multiple interfaces so only run when
->>>> +    # all are ready.
->>>> +    type all_ifaces_up >/dev/null 2>&1 || . /lib/net-lib.sh
->>>> +    all_ifaces_up || return 1
->>>> +
->>>>        if ! [ -e /tmp/iscsistarted-firmware ]; then
->>>>            if ! iscsistart -f; then
->>>>                warn "iscistart: Could not get list of targets from firmware."
->>>>
->>
->>
->> I would love to do that, but users want to have "iscsistart -b" executed
->> regardless of faulty network configuration of interfaces, which are not part of
->> the critical path for root mounting.
->>
->> So, if you add a "iscsistart -b" in the timeout hook (which is removed, if once
->> succeeded in the normal path), then I guess it will be fine for all.
+Commit cfa365a32d47 ("lvm: Don't activate LVs with activationskip set")
+introduces a usage of the wc utility.
 
-That already effectively happens in the existing dracut code due to this 
-line:
-initqueue --onetime --timeout "/sbin/iscsiroot dummy '$netroot' '$NEWROOT'"
+Make it available in the initramfs through the base module.
 
-But the problem is that when multiple NICs are specified in the ibft, 
-"iscsistart -b" hangs for something like 15 minutes trying to use an 
-interface that isn't up so so letting it fallback to the timeout hook 
-doesn't really work for me.
+Signed-off-by: Nicolai Stange <nicstange-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ modules.d/99base/module-setup.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-What about adding the following oneliner to the above patch (untested)?
-
-8<-------------------------
-
-diff --git a/modules.d/95iscsi/parse-iscsiroot.sh 
-b/modules.d/95iscsi/parse-iscsiroot.sh
-index 52f7a97..f1bd25f 100755
---- a/modules.d/95iscsi/parse-iscsiroot.sh
-+++ b/modules.d/95iscsi/parse-iscsiroot.sh
-@@ -62,7 +62,7 @@ if [ -n "$iscsi_firmware" ] ; then
-      [ -z "$netroot" ] && netroot=iscsi:
-      modprobe -b -q iscsi_boot_sysfs 2>/dev/null
-      modprobe -b -q iscsi_ibft
--    initqueue --onetime --timeout /sbin/iscsiroot dummy "$netroot" 
-"$NEWROOT"
-+    initqueue --onetime --finished /sbin/iscsiroot dummy "$netroot" 
-"$NEWROOT"
-  fi
-
-  # If it's not iscsi we don't continue
-
-8<-------------------------
-
-So if you have a faulty NIC configuration, you still end up running 
-iscsistart -b eventually.
-And if you've already run iscsistart -b (e.g. in the usual case), then 
-the "/tmp/iscsistarted-firmware" flag will prevent you from running it 
-again.
-
->>
->
-> Oh, and ideally I want to see systemd units for iscsistart, or move to iscsid
-> completely.
->
-> And iscsid/iscistart would just handle all netlink events.
->
-
-Of course :-)
-
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index bbc68ba..5b89028 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -16,7 +16,8 @@ install() {
+     local _d
+ 
+     inst_multiple mount mknod mkdir sleep chroot chown \
+-        sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink setsid
++        sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink setsid \
++        wc
+     inst $(command -v modprobe) /sbin/modprobe
+ 
+     inst_multiple -o findmnt less kmod
 -- 
-Ross Lagerwall
+2.4.4
