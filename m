@@ -1,70 +1,57 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] dracut-functions.sh: move early mkdir code to dracut.sh
-Date: Thu, 25 Jun 2015 10:08:02 +0800
-Message-ID: <20150625020802.GA20085@dhcp-128-31.nay.redhat.com>
+From: Nicolai Stange <nicstange-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] modules: lvm: fix activationskip check
+Date: Thu, 25 Jun 2015 14:56:54 +0200
+Message-ID: <87zj3ot089.fsf@gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:subject:date:message-id:user-agent:mime-version
+         :content-type;
+        bh=eh7pN6ARpuw7NXvjtHxkpXIFQdoDdNjuAg2XBTwNKSw=;
+        b=S2Sc8t+y2mEiqsUFqq9ku7xf1LbVAeuQNPmEFu9scoH0gIk/qzGZQUSaUshUVF6hj3
+         CVZS/zmpvWEOXJTqr7/Ln2gSOD0H3CK/SCC1M1gF7Az7DAZWAqJLdOOr9xAdc1hbrW1D
+         Sc/Cj+B6yEk25ly/13pDFUftpF3FYlZIGAgqHMpGI7zPmOeCePsp97H4+cVuMUrQSeeZ
+         kyOhaMoPqrN/4NyY3YV3H33Bt5XDC8rFjeJD3Pt5nkcAdxp/Jys0EezZA3FojhVgJ0tQ
+         D41J/eQXxpzoNENNG8paXwiTTqeCclr4tXEtp38cmMn6ThMGI+m9rkOBWZRy0i+BNgFz
+         +qnQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Move early mkdir code to dracut.sh so that dracut-fuctions.sh can
-be used by other components.
+Fix boot breakage due to the activationskip check introduced in
+cfa365a32d47 ("lvm: Don't activate LVs with activationskip set").
 
-For example Fedora kdump mkdumprd uses several functions which were
-copied from dracut-functions.sh, with this patch applied dracut-functions.sh
-contains only functions so that we can remove the duplicate code in kdump.
+In 'man 8 lvs', it is stated that LVs with activationskip set, will have
+a "k" flag in their lvs attribute listing.
 
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+The current implementation excludes LVs which do not have the "k"
+flag set. This leads to the activation of LVs with the activationskip
+set and the exclusion of LVs with no activationskip set: the check's
+logic is inverted.
+
+Fix this issue by skipping those LVs that have the "k" flag in their
+attributes.
+
+Signed-off-by: Nicolai Stange <nicstange-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- dracut-functions.sh |   11 -----------
- dracut.sh           |   11 +++++++++++
- 2 files changed, 11 insertions(+), 11 deletions(-)
+ modules.d/90lvm/lvm_scan.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: dracut/dracut-functions.sh
-===================================================================
---- dracut.orig/dracut-functions.sh
-+++ dracut/dracut-functions.sh
-@@ -19,17 +19,6 @@
- #
- export LC_MESSAGES=C
- 
--if [[ $DRACUT_KERNEL_LAZY ]] && ! [[ $DRACUT_KERNEL_LAZY_HASHDIR ]]; then
--    if ! [[ -d "$initdir/.kernelmodseen" ]]; then
--        mkdir -p "$initdir/.kernelmodseen"
--    fi
--    DRACUT_KERNEL_LAZY_HASHDIR="$initdir/.kernelmodseen"
--fi
--
--if [[ $initdir ]] && ! [[ -d $initdir ]]; then
--    mkdir -p "$initdir"
--fi
--
- # Generic substring function.  If $2 is in $1, return 0.
- strstr() { [[ $1 = *"$2"* ]]; }
- # Generic glob matching function. If glob pattern $2 matches anywhere in $1, OK
-Index: dracut/dracut.sh
-===================================================================
---- dracut.orig/dracut.sh
-+++ dracut/dracut.sh
-@@ -917,6 +917,17 @@ if [[ -f $dracutbasedir/dracut-version.s
-     . $dracutbasedir/dracut-version.sh
- fi
- 
-+if [[ $DRACUT_KERNEL_LAZY ]] && ! [[ $DRACUT_KERNEL_LAZY_HASHDIR ]]; then
-+    if ! [[ -d "$initdir/.kernelmodseen" ]]; then
-+        mkdir -p "$initdir/.kernelmodseen"
-+    fi
-+    DRACUT_KERNEL_LAZY_HASHDIR="$initdir/.kernelmodseen"
-+fi
-+
-+if [[ $initdir ]] && ! [[ -d $initdir ]]; then
-+    mkdir -p "$initdir"
-+fi
-+
- if [[ -f $dracutbasedir/dracut-functions.sh ]]; then
-     . $dracutbasedir/dracut-functions.sh
- else
+diff --git a/modules.d/90lvm/lvm_scan.sh b/modules.d/90lvm/lvm_scan.sh
+index ce46e14..ba7d738 100755
+--- a/modules.d/90lvm/lvm_scan.sh
++++ b/modules.d/90lvm/lvm_scan.sh
+@@ -106,7 +106,7 @@ if [ -n "$LVS" ] ; then
+     info "Scanning devices $lvmdevs for LVM logical volumes $LVS"
+     lvm lvscan --ignorelockingfailure 2>&1 | vinfo
+     for LV in $LVS; do
+-        if [ "x$(lvm lvs --noheadings --select "lv_attr =~ k" $LV | wc -l)" = "x0" ]; then
++        if [ "x$(lvm lvs --noheadings --select "lv_attr =~ k" $LV | wc -l)" != "x0" ]; then
+             info "Skipping activation of '$LV' because activationskip is set."
+             continue
+         fi
+-- 
+2.4.4
