@@ -1,39 +1,18 @@
-From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
-Subject: [PATCH] systemd: if kdbus is available, include the kernel module
-Date: Wed,  1 Jul 2015 20:15:13 -0300
-Message-ID: <1435792513-2222-1-git-send-email-crrodriguez@opensuse.org>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=cristianrodriguez.net; s=google;
-        h=sender:from:to:cc:subject:date:message-id;
-        bh=ECf2IiYDLsyd3FvrAYaYoippvKqdyyTO7dZCclLLHGA=;
-        b=BmxC/xo92kYkA2PcqKfSF2XiToWvFuxu5ugAyHP5GhiyMjCDqaXfIVsTYPhw8yWuFb
-         iNQHbqoedW5i43cDie+uIz9V0o1E0woyPKuVBHMqxSxBAUanq/evAhxVwuqnS8EdR7Iq
-         T46GMscvCm8vetL+B1pLhU/8UlWgOJyDeI0TE=
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH] systemd: if kdbus is available, include the kernel module
+Date: Thu, 02 Jul 2015 00:02:51 -0000
+Message-ID: <20150702000251.32415.95571.githubbot@luna367.server4you.de>
+References: <1435792513-2222-1-git-send-email-crrodriguez@opensuse.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1435792513-2222-1-git-send-email-crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 
----
- modules.d/00systemd/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Patchset imported to github.
+Pull request:
+<https://github.com/haraldh/dracut/compare/master...dracut-mailing-devs:1435792513-2222-1-git-send-email-crrodriguez%40opensuse.org>
 
-diff --git a/modules.d/00systemd/module-setup.sh b/modules.d/00systemd/module-setup.sh
-index ece81bb..553427a 100755
---- a/modules.d/00systemd/module-setup.sh
-+++ b/modules.d/00systemd/module-setup.sh
-@@ -19,7 +19,7 @@ depends() {
- 
- installkernel() {
-     hostonly='' instmods autofs4 ipv6
--    instmods -s efivarfs
-+    instmods -s efivarfs kdbus
- }
- 
- # called by dracut
--- 
-2.4.3
