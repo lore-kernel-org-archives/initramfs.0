@@ -1,105 +1,53 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] 90multipath: add hostonly multipath.conf in case hostonly
- mode
-Date: Mon, 6 Jul 2015 12:03:37 +0200
-Message-ID: <559A5279.9010101@redhat.com>
-References: <20150706073126.GC22559@dhcp-128-51.nay.redhat.com>
+From: poma <pomidorabelisima-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Fix for CD/DVD media check
+Date: Mon, 6 Jul 2015 15:16:54 +0200
+Message-ID: <559A7FC6.1000608@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20150706073126.GC22559-0VdLhd/A9Pldm++G7ovJGB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=to:cc:from:subject:message-id:date:user-agent:mime-version
+         :content-type:content-transfer-encoding;
+        bh=I7h2RUxW3atxExQAVt/RasQB08E3mpFmyi8jvTpt4dg=;
+        b=jtqjk2sLd90Ky2j9D4VLMgSZazlooUKppbFI6u7meIN8SJrnADwOLQTarodH0nSy5F
+         B1zUFsqk+OmJw/AR/W1XRoiiN9fjEP6cW9H2313oqeNRkJb7voGdGY9H6+v4ne/3DF2S
+         wUcupvZ9RsyrFh3KZURSBFbiaJaKziDaUNbt7c4y0zfRfNLCGtLSebMAAjCtxt2fnYKZ
+         CoVUiVM6j0/LLCXNsJGk5jZDVynE/WJBxdmNFA+BqPXMjCwdsNaEPZ4gn0ZI4eeUZHhP
+         DCjj+XJk2IPKsnOtHBX6Jbw9vPfDH6DO3bbnbBeSitX0f67KJ5H2pkMWk93DaTDkvE2f
+         RSfQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: bmarzins-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 06.07.2015 09:31, Dave Young wrote:
-> For large machine, suppose there's a lot of multipath devices, multipath layer
-> will use a lot of memory. For kdump kernel memory is very limited thus it causes
-> oom. To avoid oom, we only add necessary multipath devices in kdump kernel
-> multipath.conf.
-> 
-> This is done by use mpathconf --allow, a new option which is like whitelist.
-> 
-> Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  modules.d/90multipath/module-setup.sh | 42 ++++++++++++++++++++++++++++-------
->  1 file changed, 34 insertions(+), 8 deletions(-)
-> 
-> diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
-> index 29643d4..321f13e 100755
-> --- a/modules.d/90multipath/module-setup.sh
-> +++ b/modules.d/90multipath/module-setup.sh
-> @@ -1,18 +1,28 @@
->  #!/bin/bash
->  
-> +is_mpath() {
-> +    local _dev=$1
-> +    [ -e /sys/dev/block/$_dev/dm/uuid ] || return 1
-> +    [[ $(cat /sys/dev/block/$_dev/dm/uuid) =~ mpath- ]] && return 0
-> +    return 1
-> +}
-> +
-> +majmin_to_mpath_dev() {
-> +    local _dev
-> +    for i in `ls -1 /dev/mapper/mpath*`; do
-> +        dev=$(get_maj_min $i)
-> +        if [ "$dev" = "$1" ]; then
-> +            echo $i
-> +            return
-> +        fi
-> +    done
-> +}
->  # called by dracut
->  check() {
->      local _rootdev
->      # if there's no multipath binary, no go.
->      require_binaries multipath || return 1
->  
-> -    is_mpath() {
-> -        local _dev=$1
-> -        [ -e /sys/dev/block/$_dev/dm/uuid ] || return 1
-> -        [[ $(cat /sys/dev/block/$_dev/dm/uuid) =~ mpath- ]] && return 0
-> -        return 1
-> -    }
-> -
->      [[ $hostonly ]] || [[ $mount_needs ]] && {
->          for_each_host_dev_and_slaves is_mpath || return 255
->      }
-> @@ -79,7 +89,18 @@ installkernel() {
->  
->  # called by dracut
->  install() {
-> -    local _f
-> +    local _f _allow
-> +    add_hostonly_mpath_conf() {
-> +        is_mpath $1 && {
-> +            local _dev
-> +
-> +            _dev=$(majmin_to_mpath_dev $1)
-> +            [ -z "$_dev" ] && return
-> +            strstr "$_allow" "$_dev" && return
-> +            _allow="$_allow --allow $_dev"
-> +        }
-> +    }
-> +
->      inst_multiple -o  \
->          dmsetup \
->          kpartx \
-> @@ -93,6 +114,11 @@ install() {
->          /etc/multipath.conf \
->          /etc/multipath/*
->  
-> +    [[ $hostonly ]] && {
-> +        for_each_host_dev_and_slaves_all add_hostonly_mpath_conf
 
-don't we have to just check all $host_devs if it is a /dev/mapper/mpath* ??
+Fix for "CD/DVD media check" i.e. checkisomd5@.service
 
-> +        [ -n "$_allow" ] && mpathconf $_allow --outfile ${initdir}/etc/multipath.conf
-> +    }
-> +
->      inst $(command -v partx) /sbin/partx
->  
->      inst_libdir_file "libmultipath*" "multipath/*"
-> 
+"the issue is systemd related. absolute paths for systemd unit templates shouldn't start anymore by - (/). (they should be the ouptut of systemd-escape -p ${PATH}). in practice one just has to cut 1st char."
+AntonioMeireles
+https://github.com/pires/kubernetes-vagrant-coreos-cluster/issues/123
+
+"rd.live.check - [FAILED] Failed to start checkisomd5@-dev-sr0.service"
+https://bugzilla.redhat.com/show_bug.cgi?id=1239226
+
+---
+ modules.d/90dmsquash-live/dmsquash-live-root.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+index a0a9ab9..9159a92 100755
+--- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
++++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+@@ -41,7 +41,7 @@ getarg rd.live.check -d check || check=""
+ if [ -n "$check" ]; then
+     type plymouth >/dev/null 2>&1 && plymouth --hide-splash
+     if [ -n "$DRACUT_SYSTEMD" ]; then
+-        p=$(str_replace "$livedev" "-" '\x2d')
++        p=$(str_replace "${livedev#*/}" "-" '\x2d')
+         systemctl start checkisomd5@${p}.service
+     else
+         checkisomd5 --verbose $livedev
+-- 
+2.4.5
