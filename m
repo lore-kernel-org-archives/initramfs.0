@@ -1,42 +1,63 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] modules: base: include wc utility
-Date: Tue, 7 Jul 2015 13:17:25 +0200
-Message-ID: <559BB545.2020005@redhat.com>
-References: <87h9pxjfv7.fsf@gmail.com>
+Subject: Re: [PATCH] Use udev rules to create dmraid /dev/mapper/ devices
+Date: Tue, 7 Jul 2015 13:41:41 +0200
+Message-ID: <559BBAF5.5000501@redhat.com>
+References: <1435330557-17685-9-git-send-email-trenn@suse.de>
+ <1435599415-10187-1-git-send-email-trenn@suse.de>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <87h9pxjfv7.fsf-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1435599415-10187-1-git-send-email-trenn-l3A5Bk7waGM@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Nicolai Stange <nicstange-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hannes Reinecke <hare-IBi9RG/b67k@public.gmane.org>, Heinz Mauelshagen <heinzm-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 24.06.2015 17:17, Nicolai Stange wrote:
-> Commit cfa365a32d47 ("lvm: Don't activate LVs with activationskip set")
-> introduces a usage of the wc utility.
+On 29.06.2015 19:36, Thomas Renninger wrote:
+> From: Hannes Reinecke <hare-IBi9RG/b67k@public.gmane.org>
 > 
-> Make it available in the initramfs through the base module.
+> https://bugzilla.opensuse.org/show_bug.cgi?id=905746
 > 
-> Signed-off-by: Nicolai Stange <nicstange-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Version 2: Remove 64-md-raid.rules
+> 
+> Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
 > ---
->  modules.d/99base/module-setup.sh | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+>  modules.d/90dmraid/dmraid.sh       | 2 --
+>  modules.d/90dmraid/module-setup.sh | 2 ++
+>  2 files changed, 2 insertions(+), 2 deletions(-)
 > 
-> diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
-> index bbc68ba..5b89028 100755
-> --- a/modules.d/99base/module-setup.sh
-> +++ b/modules.d/99base/module-setup.sh
-> @@ -16,7 +16,8 @@ install() {
->      local _d
+> diff --git a/modules.d/90dmraid/dmraid.sh b/modules.d/90dmraid/dmraid.sh
+> index 3dcff38..cc4390f 100755
+> --- a/modules.d/90dmraid/dmraid.sh
+> +++ b/modules.d/90dmraid/dmraid.sh
+> @@ -26,8 +26,6 @@ if [ -n "$DM_RAIDS" ] || getargbool 0 rd.auto; then
+>                  if [ "${s##$r}" != "$s" ]; then
+>                      info "Activating $s"
+>                      dmraid -ay -i -p --rm_partitions "$s" 2>&1 | vinfo
+> -                    [ -e "/dev/mapper/$s" ] && kpartx -a "/dev/mapper/$s" 2>&1 | vinfo
+> -                    udevsettle
+>                  fi
+>              done
+>          done
+> diff --git a/modules.d/90dmraid/module-setup.sh b/modules.d/90dmraid/module-setup.sh
+> index e8de5f5..797a58e 100755
+> --- a/modules.d/90dmraid/module-setup.sh
+> +++ b/modules.d/90dmraid/module-setup.sh
+> @@ -74,6 +74,8 @@ install() {
 >  
->      inst_multiple mount mknod mkdir sleep chroot chown \
-> -        sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink setsid
-> +        sed ls flock cp mv dmesg rm ln rmmod mkfifo umount readlink setsid \
-> +        wc
->      inst $(command -v modprobe) /sbin/modprobe
+>      inst "$moddir/dmraid.sh" /sbin/dmraid_scan
 >  
->      inst_multiple -o findmnt less kmod
+> +    inst_rules 66-kpartx.rules 67-kpartx-compat.rules
+> +
+>      inst_libdir_file "libdmraid-events*.so*"
+>  
+>      inst_rules "$moddir/61-dmraid-imsm.rules"
 > 
 
-fixed by reverting the lvm patch :)
+Fedora does not have 66-kpartx.rules nor 67-kpartx-compat.rules ...
+
+Heinz, do we need the kpartx part still?
+
+I reverted to kpartx, because "dmraid" adds a "p" as a seperator by default for
+the partitions and this breaks existing installations.
