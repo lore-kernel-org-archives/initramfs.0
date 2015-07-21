@@ -1,36 +1,41 @@
-From: "Ali H. Caliskan" <ali.h.caliskan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: systemd-fstab-generator overwrites sysroot.mount created by dmsquash-generator.
-Date: Sat, 18 Jul 2015 15:27:28 +0200
-Message-ID: <CAFO=TmWCtM6-GabdH9GrLExBR4EH9=U+9zFDucQkBhdhAvND7g@mail.gmail.com>
-Mime-Version: 1.0
+From: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] remove the incomplete .img file
+Date: Tue, 21 Jul 2015 17:18:42 +0800
+Message-ID: <1437470322-992-1-git-send-email-cfan@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=JjP39zxB6CT5sLtqvxfA6Bkgx0dnD9NXXALITzN2iCc=;
-        b=mpIkSh56fgWtuPllydOK1nnJZPkXRYvzFLAoJtCgid3kjN1dmV3gUrk4JdIhPOa8uu
-         VhjeAGJduiL8LHOhPLhA8lAYUJkY6npsFUS2DaBPTWkMlWQpDhX/l593brE532DQbF8v
-         lYs0GDta/3dz6UVDi9UFfTDX4n9f2zMWI8fw7kSP0nhdD0BTHhhPv1i7/n40ofcLPboW
-         LtITdXI/4fkCB5VgDOtZqlVxtbCyHTSBfzxyooLZm0CVW5uR6/j51HmXFbeydobHe2ni
-         kW/gAf9OeqCIuYkqg3TV1jKrsXORjnzxrJ/iH5ZahyyxFaYzA5O5CZnIusKAMWkXMsIf
-         DNLQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-dracut-dmsquash-generator creates $GENERATOR_DIR/sysroot.mount and
-dracut-rootfs-generator doesn't touch it but systemd-fstab-generator
-does overwrite the sysroot.mount file which causes error like "Timed
-out waiting for device dev-mapper-live\x2drw.device." I don't know if
-it can be resolved by dracut or if systemd should skip writing
-sysroot.mount if it already exists.
+If the directory where the .img file is saved has no enough space, or in
+other wrong conditions, dracut will get an incomplete file xxx.img. But
+sometimes this .img file will be loaded when rebooting the system. And then
+some bugs will happen because this .img file is wrong.
 
-I'm able to boot with rd.live.image by letting
-dracut-dmsquash-generator create sysroot.mount.new and then tell
-dracut-rootfs-generator to sysmlink sysroot.mount.new to
-initrd-root-fs.target.requires/sysroot.mount. Also I had to remove "if
-[ -z "$DRACUT_SYSTEMD" ]; then" condition from the
-dmsquash-live-root.sh in order to mount LiveOS/rootfs.img into
-/sysroot directory.
+So I think dracut should remove the incomplete file because this .img file
+with problems was made by dracut. And then the wrong file will not be loaded
+anymore.
+
+Signed-off-by: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/dracut.sh b/dracut.sh
+index ee0a039..122ae0c 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1651,6 +1651,7 @@ if ! (
+             | $compress >> "$outfile"
+     ); then
+     dfatal "dracut: creation of $outfile failed"
++	rm -f $outfile
+     exit 1
+ fi
+ dinfo "*** Creating initrd image file '$outfile' done ***"
+-- 
+2.1.0
