@@ -1,44 +1,50 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] remove the incomplete .img file
-Date: Wed, 2 Sep 2015 13:23:18 +0200
-Message-ID: <55E6DC26.4080506@redhat.com>
-References: <1437470322-992-1-git-send-email-cfan@redhat.com>
+From: Giuseppe Scrivano <gscrivan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut --reproducible by default
+Date: Wed, 02 Sep 2015 14:11:23 +0200
+Message-ID: <87vbbtyqac.fsf@foo.bar.baz>
+References: <87a8tnvhs0.fsf@foo.bar.baz> <87vbc3fpd5.fsf@foo.bar.baz>
+	<55E6CC75.5080206@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1437470322-992-1-git-send-email-cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <55E6CC75.5080206-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Harald Hoyer's message of "Wed, 2
+	Sep 2015 12:16:21 +0200")
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 21.07.2015 11:18, Chao Fan wrote:
-> If the directory where the .img file is saved has no enough space, or in
-> other wrong conditions, dracut will get an incomplete file xxx.img. But
-> sometimes this .img file will be loaded when rebooting the system. And then
-> some bugs will happen because this .img file is wrong.
-> 
-> So I think dracut should remove the incomplete file because this .img file
-> with problems was made by dracut. And then the wrong file will not be loaded
-> anymore.
-> 
-> Signed-off-by: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  dracut.sh | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/dracut.sh b/dracut.sh
-> index ee0a039..122ae0c 100755
-> --- a/dracut.sh
-> +++ b/dracut.sh
-> @@ -1651,6 +1651,7 @@ if ! (
->              | $compress >> "$outfile"
->      ); then
->      dfatal "dracut: creation of $outfile failed"
-> +	rm -f $outfile
->      exit 1
->  fi
->  dinfo "*** Creating initrd image file '$outfile' done ***"
-> 
+Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
-Thanks! Merged, despite the <tab>.
+> On 25.08.2015 15:51, Giuseppe Scrivano wrote:
+>> ping?
+>> 
+>> Giuseppe Scrivano <gscrivan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>>> Hi,
+>>>
+>>> We are currently considering to feed Dracut with --reproducible in the
+>>> rpm-ostree[1] project when creating a new OStree[2] tree image.  In this
+>>> way there won't be need to store an additional file when the new initrd
+>>> file matches an older one.  Everything works very well (except the
+>>> additional step of providing a patched GNU cpio for now).
+>>>
+>>> Reproducible images seem to make a lot of sense, also for users that
+>>> don't know about the --reproducible option.  Is there any reason why
+>>> this is not done by default?
+>>>
+>>> Thanks,
+>>> Giuseppe
+>>>
+>>> 1) https://github.com/projectatomic/rpm-ostree
+>>> 2) https://github.com/GNOME/ostree/
+>
+> No significant reason, except the penalty of the extra step, which fixes all
+> the timestamps.
+
+do you think it makes sense to make --reproducible the default, or do
+you expect Dracut users, rpm-ostree in this case, to explicitly use it?
+
+Thanks,
+Giuseppe
