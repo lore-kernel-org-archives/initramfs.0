@@ -1,107 +1,44 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: systemd-fstab-generator overwrites sysroot.mount created by
- dmsquash-generator.
-Date: Wed, 2 Sep 2015 13:20:52 +0200
-Message-ID: <55E6DB94.8060205@redhat.com>
-References: <CAFO=TmWCtM6-GabdH9GrLExBR4EH9=U+9zFDucQkBhdhAvND7g@mail.gmail.com>
+Subject: Re: [PATCH] remove the incomplete .img file
+Date: Wed, 2 Sep 2015 13:23:18 +0200
+Message-ID: <55E6DC26.4080506@redhat.com>
+References: <1437470322-992-1-git-send-email-cfan@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAFO=TmWCtM6-GabdH9GrLExBR4EH9=U+9zFDucQkBhdhAvND7g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1437470322-992-1-git-send-email-cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: "Ali H. Caliskan" <ali.h.caliskan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 18.07.2015 15:27, Ali H. Caliskan wrote:
-> dracut-dmsquash-generator creates $GENERATOR_DIR/sysroot.mount and
-> dracut-rootfs-generator doesn't touch it but systemd-fstab-generator
-> does overwrite the sysroot.mount file which causes error like "Timed
-> out waiting for device dev-mapper-live\x2drw.device." I don't know if
-> it can be resolved by dracut or if systemd should skip writing
-> sysroot.mount if it already exists.
+On 21.07.2015 11:18, Chao Fan wrote:
+> If the directory where the .img file is saved has no enough space, or in
+> other wrong conditions, dracut will get an incomplete file xxx.img. But
+> sometimes this .img file will be loaded when rebooting the system. And then
+> some bugs will happen because this .img file is wrong.
 > 
-> I'm able to boot with rd.live.image by letting
-> dracut-dmsquash-generator create sysroot.mount.new and then tell
-> dracut-rootfs-generator to sysmlink sysroot.mount.new to
-> initrd-root-fs.target.requires/sysroot.mount. Also I had to remove "if
-> [ -z "$DRACUT_SYSTEMD" ]; then" condition from the
-> dmsquash-live-root.sh in order to mount LiveOS/rootfs.img into
-> /sysroot directory.
+> So I think dracut should remove the incomplete file because this .img file
+> with problems was made by dracut. And then the wrong file will not be loaded
+> anymore.
+> 
+> Signed-off-by: Chao Fan <cfan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  dracut.sh | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/dracut.sh b/dracut.sh
+> index ee0a039..122ae0c 100755
+> --- a/dracut.sh
+> +++ b/dracut.sh
+> @@ -1651,6 +1651,7 @@ if ! (
+>              | $compress >> "$outfile"
+>      ); then
+>      dfatal "dracut: creation of $outfile failed"
+> +	rm -f $outfile
+>      exit 1
+>  fi
+>  dinfo "*** Creating initrd image file '$outfile' done ***"
+> 
 
-
-Hmm,
-
-according to the man page systemd.generator:
-
-SYNOPSIS
-       /path/to/generator normal-dir early-dir late-dir
-
-
-        1. normal-dir
-
-           argv[1] may be used to override unit files in /usr, but not those in
-/etc. This means that unit files placed in this directory take precedence
-           over vendor unit configuration but not over native
-user/administrator unit configuration.
-
-        2. early-dir
-
-           argv[2] may be used to override unit files in /usr and in /etc. This
-means that unit files placed in this directory take precedence over all
-           configuration, both vendor and user/administrator.
-
-        3. late-dir
-
-           argv[3] may be used to extend the unit file tree without overriding
-any other unit files. Any native configuration files supplied by the
-           vendor or user/administrator take precedence over the generated ones
-placed in this directory.
-
-
-systemd-fstab-generator uses argv[1], so this is normal-dir
-<https://github.com/systemd/systemd/blob/master/src/fstab-generator/fstab-generator.c#L653>
-
-dmsquash-generator.sh uses argv[2], so this is early-dir
-<https://github.com/haraldh/dracut/blob/master/modules.d/90dmsquash-live/dmsquash-generator.sh#L53>
-
-
-If I run test/TEST-16-DMSQUASH and rd.break before switch-root, I can see
-
-switch_root:/run/systemd# find generator.early/
-generator.early/
-generator.early/dev-mapper-live\x2drw.device.d
-generator.early/dev-mapper-live\x2drw.device.d/timeout.conf
-generator.early/sysroot.mount
-switch_root:/run/systemd# find generator
-generator
-generator/initrd-root-fs.target.requires
-generator/initrd-root-fs.target.requires/sysroot.mount
-generator/sysroot.mount
-
-
-# systemctl show sysroot.mount |grep Path
-FragmentPath=/run/systemd/generator.early/sysroot.mount
-
-# cat generator.early/sysroot.mount
-[Unit]
-Before=initrd-root-fs.target
-[Mount]
-Where=/sysroot
-What=/dev/mapper/live-rw
-
-# cat generator/sysroot.mount
-# Automatically generated by systemd-fstab-generator
-
-[Unit]
-SourcePath=/proc/cmdline
-Documentation=man:fstab(5) man:systemd-fstab-generator(8)
-Before=initrd-root-fs.target
-
-[Mount]
-What=live:CDLABEL=LiveCD
-Where=/sysroot
-Options=rw
-
-
-So, works as expected. The question is, why is your system different?
+Thanks! Merged, despite the <tab>.
