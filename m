@@ -1,223 +1,39 @@
-From: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [patch 6/6] [PATCH 4/5] Revert "Let user specify the action after fail"
-Date: Mon, 31 Aug 2015 10:43:20 +0800
-Message-ID: <20150831024414.091149164@redhat.com>
-References: <20150831024314.798498962@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: dracut --reproducible by default
+Date: Wed, 2 Sep 2015 12:16:21 +0200
+Message-ID: <55E6CC75.5080206@redhat.com>
+References: <87a8tnvhs0.fsf@foo.bar.baz> <87vbc3fpd5.fsf@foo.bar.baz>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline; filename=0006-Let-user-specify-the-action-after-fail.patch
+In-Reply-To: <87vbc3fpd5.fsf-QWOdrvsUieXjVZl2hYKjvQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Giuseppe Scrivano <gscrivan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This reverts commit 9d787df19674937e8c07bd295b5d282a63829209
+On 25.08.2015 15:51, Giuseppe Scrivano wrote:
+> ping?
+> 
+> Giuseppe Scrivano <gscrivan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+>> Hi,
+>>
+>> We are currently considering to feed Dracut with --reproducible in the
+>> rpm-ostree[1] project when creating a new OStree[2] tree image.  In this
+>> way there won't be need to store an additional file when the new initrd
+>> file matches an older one.  Everything works very well (except the
+>> additional step of providing a patched GNU cpio for now).
+>>
+>> Reproducible images seem to make a lot of sense, also for users that
+>> don't know about the --reproducible option.  Is there any reason why
+>> this is not done by default?
+>>
+>> Thanks,
+>> Giuseppe
+>>
+>> 1) https://github.com/projectatomic/rpm-ostree
+>> 2) https://github.com/GNOME/ostree/
 
-action_on_fail is useless thus remove the commits for it one by one.
-
-Signed-off-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.cmdline.7.asc                               |  4 ----
- modules.d/95rootfs-block/mount-root.sh             |  2 +-
- modules.d/98dracut-systemd/dracut-initqueue.sh     |  2 +-
- modules.d/98dracut-systemd/dracut-mount.sh         |  2 +-
- modules.d/98selinux/selinux-loadpolicy.sh          |  6 ++++--
- modules.d/98usrmount/mount-usr.sh                  |  4 ++--
- modules.d/99base/dracut-lib.sh                     | 22 ----------------------
- modules.d/99base/init.sh                           | 12 ++++++------
- 9 files changed, 15 insertions(+), 40 deletions(-)
-
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index 2e368ad..8c7e965 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -159,10 +159,6 @@ Misc
-    specify the controlling terminal for the console.
-    This is useful, if you have multiple "console=" arguments.
- 
--**action_on_fail=**_{shell|continue}_::
--   Specify the action after failure. By default it's emergency_shell.
--   'continue' means: ignore the current failure and go ahead.
--
- [[dracutkerneldebug]]
- Debug
- ~~~~~
-diff --git a/modules.d/95rootfs-block/mount-root.sh b/modules.d/95rootfs-block/mount-root.sh
-index 7e9c5bb..924393b 100755
---- a/modules.d/95rootfs-block/mount-root.sh
-+++ b/modules.d/95rootfs-block/mount-root.sh
-@@ -66,7 +66,7 @@ mount_root() {
-                 warn "*** Warning -- the system did not shut down cleanly. "
-                 warn "*** Dropping you to a shell; the system will continue"
-                 warn "*** when you leave the shell."
--                action_on_fail
-+                emergency_shell
-             fi
-             fsckoptions="$AUTOFSCK_OPT $fsckoptions"
-         fi
-diff --git a/modules.d/98dracut-systemd/dracut-initqueue.sh b/modules.d/98dracut-systemd/dracut-initqueue.sh
-index 881f639..3ddc236 100755
---- a/modules.d/98dracut-systemd/dracut-initqueue.sh
-+++ b/modules.d/98dracut-systemd/dracut-initqueue.sh
-@@ -68,7 +68,7 @@ while :; do
-     main_loop=$(($main_loop+1))
-     if [ $main_loop -gt $RDRETRY ]; then
-         if ! [ -f /sysroot/etc/fstab ] || ! [ -e /sysroot/sbin/init ] ; then
--            action_on_fail "Could not boot." && break
-+            emergency_shell "Could not boot."
-         fi
-         warn "Not all disks have been found."
-         warn "You might want to regenerate your initramfs."
-diff --git a/modules.d/98dracut-systemd/dracut-mount.sh b/modules.d/98dracut-systemd/dracut-mount.sh
-index 11ba7bc..c4febfe 100755
---- a/modules.d/98dracut-systemd/dracut-mount.sh
-+++ b/modules.d/98dracut-systemd/dracut-mount.sh
-@@ -29,7 +29,7 @@ while :; do
-     done
- 
-     i=$(($i+1))
--    [ $i -gt 20 ] && action_on_fail "Can't mount root filesystem" && break
-+    [ $i -gt 20 ] && emergency_shell "Can't mount root filesystem"
- done
- 
- export -p > /dracut-state.sh
-diff --git a/modules.d/98selinux/selinux-loadpolicy.sh b/modules.d/98selinux/selinux-loadpolicy.sh
-index d0ac834..ca81a38 100755
---- a/modules.d/98selinux/selinux-loadpolicy.sh
-+++ b/modules.d/98selinux/selinux-loadpolicy.sh
-@@ -54,14 +54,16 @@ rd_load_policy()
-         if [ $ret -eq 3 -o $permissive -eq 0 ]; then
-             warn "Machine in enforcing mode."
-             warn "Not continuing"
--            action_on_fail -n selinux || exit 1
-+            emergency_shell -n selinux
-+            exit 1
-         fi
-         return 0
-     elif [ $permissive -eq 0 -a "$SELINUX" != "disabled" ]; then
-         warn "Machine in enforcing mode and cannot execute load_policy."
-         warn "To disable selinux, add selinux=0 to the kernel command line."
-         warn "Not continuing"
--        action_on_fail -n selinux || exit 1
-+        emergency_shell -n selinux
-+        exit 1
-     fi
- }
- 
-diff --git a/modules.d/98usrmount/mount-usr.sh b/modules.d/98usrmount/mount-usr.sh
-index d1a629c..1699604 100755
---- a/modules.d/98usrmount/mount-usr.sh
-+++ b/modules.d/98usrmount/mount-usr.sh
-@@ -40,7 +40,7 @@ fsck_usr()
-             warn "*** Warning -- the system did not shut down cleanly. "
-             warn "*** Dropping you to a shell; the system will continue"
-             warn "*** when you leave the shell."
--            action_on_fail
-+            emergency_shell
-         fi
-         _fsckoptions="$AUTOFSCK_OPT $_fsckoptions"
-     fi
-@@ -103,7 +103,7 @@ mount_usr()
-             warn "Mounting /usr to $NEWROOT/usr failed"
-             warn "*** Dropping you to a shell; the system will continue"
-             warn "*** when you leave the shell."
--            action_on_fail
-+            emergency_shell
-         fi
-     fi
- }
-diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
-index c119018..3cfc1a3 100755
---- a/modules.d/99base/dracut-lib.sh
-+++ b/modules.d/99base/dracut-lib.sh
-@@ -1143,28 +1143,6 @@ emergency_shell()
-     fi
- }
- 
--action_on_fail()
--{
--    local _action=$(getarg action_on_fail=)
--    case "$_action" in
--        continue)
--            [ "$1" = "-n" ] && shift 2
--            [ "$1" = "--shutdown" ] && shift 2
--            warn "$*"
--            warn "Not dropping to emergency shell, because 'action_on_fail=continue' was set on the kernel command line."
--            return 0
--            ;;
--        shell)
--            emergency_shell $@
--            return 1
--            ;;
--        *)
--            emergency_shell $@
--            return 1
--            ;;
--    esac
--}
--
- # Retain the values of these variables but ensure that they are unexported
- # This is a POSIX-compliant equivalent of bash's "export -n"
- export_n()
-diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
-index a59e8ea..e2e4029 100755
---- a/modules.d/99base/init.sh
-+++ b/modules.d/99base/init.sh
-@@ -85,7 +85,7 @@ if command -v kmod >/dev/null 2>/dev/null; then
-         done
- fi
- 
--trap "action_on_fail Signal caught!" 0
-+trap "emergency_shell Signal caught!" 0
- 
- export UDEVVERSION=$(udevadm --version)
- if [ $UDEVVERSION -gt 166 ]; then
-@@ -214,7 +214,7 @@ while :; do
- 
-     main_loop=$(($main_loop+1))
-     [ $main_loop -gt $RDRETRY ] \
--        && { flock -s 9 ; action_on_fail "Could not boot." && break; } 9>/.console_lock
-+        && { flock -s 9 ; emergency_shell "Could not boot."; } 9>/.console_lock
- done
- unset job
- unset queuetriggered
-@@ -249,7 +249,7 @@ while :; do
- 
-     _i_mount=$(($_i_mount+1))
-     [ $_i_mount -gt 20 ] \
--        && { flock -s 9 ; action_on_fail "Can't mount root filesystem" && break; } 9>/.console_lock
-+        && { flock -s 9 ; emergency_shell "Can't mount root filesystem"; } 9>/.console_lock
- done
- 
- {
-@@ -283,7 +283,7 @@ done
- [ "$INIT" ] || {
-     echo "Cannot find init!"
-     echo "Please check to make sure you passed a valid root filesystem!"
--    action_on_fail
-+    emergency_shell
- }
- 
- if [ $UDEVVERSION -lt 168 ]; then
-@@ -387,13 +387,13 @@ if [ -f /etc/capsdrop ]; then
- 	warn "Command:"
- 	warn capsh --drop=$CAPS_INIT_DROP -- -c exec switch_root "$NEWROOT" "$INIT" $initargs
- 	warn "failed."
--	action_on_fail
-+	emergency_shell
-     }
- else
-     unset RD_DEBUG
-     exec $SWITCH_ROOT "$NEWROOT" "$INIT" $initargs || {
- 	warn "Something went very badly wrong in the initramfs.  Please "
- 	warn "file a bug against dracut."
--	action_on_fail
-+	emergency_shell
-     }
- fi
--- 
-1.8.3.1
-
-
+No significant reason, except the penalty of the extra step, which fixes all
+the timestamps.
