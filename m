@@ -1,78 +1,44 @@
-From: Fabian <fvogt-IBi9RG/b67k@public.gmane.org>
-Subject: [PATCH] dracut.sh: Support --mount with just mountpoint as parameter
-Date: Fri, 11 Sep 2015 13:35:57 +0200
-Message-ID: <1602461.PPk7fxS36o@linux-lm3i>
+From: Alex <mysqlstudent-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Can't mount USB within initramfs
+Date: Sun, 13 Sep 2015 14:50:44 -0400
+Message-ID: <CAB1R3shGMbuAh8HKSFq086VegXo7vLh=f7EH-49wjoBd_p69BQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7Bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=HPJQCNfr2YkALZDqB3wJIvA1dzrTsuNjtPGP6IM8djA=;
+        b=Nm9k2lACMt1oWN5oqai9NjWKruALahouDRdY/8i6u71V5egE/EyJHcDeNcnuCSu6ea
+         t9r6XFlMRvBmW8GaRWrnVg8iZaY181H4hIFgJUYIsc2PdZG4AE5JsubVA5Q3lXC7mIQf
+         kOeDX6+rGKOXPoi1wXknjEcVQqXLN5ByUWpMCmqTyqYTqxmmiFAHh6jvni7ml787AsVe
+         I6IXePsTSYz7e6TrCtHHBl09yE2lsrvY7p9WOtARoEpCdR1Aj2Y+XZxuUciL+xxm+XV7
+         3YVe0uBjJIwQ2cWlpYPSY4/UBLrQih9U0KUIE90XpKYAzNo1JwBBI6NThCUT3iuu4/E5
+         CbEw==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Right now the --mount parameter of dracut expects a rather long fstab-like 
-line. This makes it possible to invoke dracut with e.g. --mount /boot.
+Hi,
 
----
- dracut.8.asc |  4 ++++
- dracut.sh    | 16 +++++++++++++++-
- 2 files changed, 19 insertions(+), 1 deletion(-)
+I have a fedora22 system with dracut-041-10 and initramfs created with
+it fails at "reached target basic system". I enabled some debugging,
+and it appears to just loop, unable to mount a root, until I get a
+dracut shell.
 
-diff --git a/dracut.8.asc b/dracut.8.asc
-index 7a7ef9d..eeb3dd9 100644
---- a/dracut.8.asc
-+++ b/dracut.8.asc
-@@ -338,6 +338,10 @@ provide a valid _/etc/fstab_.
-     The default _<dump frequency>_ is "0".
-     the default _<fsck order>_ is "2".
- 
-+**--mount** "_<mountpoint>_"::
-+    Like above, but _<device>_, _<filesystem type>_ and _<filesystem 
-options>_
-+    are determined by looking at the current mounts.
-+
- **--add-device** _<device>_ ::
-     Bring up _<device>_ in initramfs, _<device>_ should be the device name.
-     This can be useful in hostonly mode for resume support when your swap is 
-on
-diff --git a/dracut.sh b/dracut.sh
-index f7d31a4..c41cbe3 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -160,6 +160,8 @@ Creates initial ramdisk images for preloading modules
-   --mount "[DEV] [MP] [FSTYPE] [FSOPTS]"
-                         Mount device [DEV] on mountpoint [MP] with filesystem
-                         [FSTYPE] and options [FSOPTS] in the initramfs
-+  --mount "[MP]"	Same as above, but [DEV], [FSTYPE] and [FSOPTS] are
-+			determined by looking at the current mounts.
-   --add-device "[DEV]"  Bring up [DEV] in initramfs
-   -i, --include [SOURCE] [TARGET]
-                         Include the files in the SOURCE directory into the
-@@ -1460,9 +1462,21 @@ if [[ $kernel_only != yes ]]; then
- 
-     for line in "${fstab_lines[@]}"; do
-         line=($line)
--        [ -z "${line[3]}" ] && line[3]="defaults"
-+
-+        if [ -z "${line[1]}" ]; then
-+            # Determine device and mount options from current system
-+            mountpoint -q "${line[0]}" || derror "${line[0]} is not a mount 
-point!"
-+            line=($(findmnt --raw -n --target "${line[0]}" --
-output=source,target,fstype,options))
-+            dinfo "Line for ${line[1]}: ${line[@]}"
-+        else
-+            # Use default options
-+            [ -z "${line[3]}" ] && line[3]="defaults"
-+        fi
-+
-+        # Default options for freq and passno
-         [ -z "${line[4]}" ] && line[4]="0"
-         [ -z "${line[5]}" ] && line[5]="2"
-+
-         strstr "${line[2]}" "nfs" && line[5]="0"
-         echo "${line[@]}" >> "${initdir}/etc/fstab"
-     done
--- 
-2.5.1
+It's created an sosreport, but I'm unable to mount a USB stick to copy
+it. It displays info about the device when it's inserted, but no
+device name is assigned to it. Is this a problem with how the
+initramfs was created, a bug, or am I doing something wrong?
 
+The only modules in /usr/lib/modules/drivers are gpu drivers,
+i2c/algos, and raid1 and raid456. The system has a RAID1 and a RAID5
+partition, but the kernel modules aren't loaded (have to load them
+manually), but then no devices are shown in /proc/mdstat there either.
+
+Is filesystem support compiled into the kernel or must that be added
+to the initramfs manually?
+
+Thanks,
+Alex
