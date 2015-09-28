@@ -1,44 +1,48 @@
-From: Alex <mysqlstudent-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Can't mount USB within initramfs
-Date: Sun, 13 Sep 2015 14:50:44 -0400
-Message-ID: <CAB1R3shGMbuAh8HKSFq086VegXo7vLh=f7EH-49wjoBd_p69BQ@mail.gmail.com>
-Mime-Version: 1.0
+From: Zhiguo Deng <bjzgdeng-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH] Conceal ftp user passwd in rdsosreport
+Date: Mon, 28 Sep 2015 09:20:30 +0200
+Message-ID: <1443424830-6198-1-git-send-email-bjzgdeng@linux.vnet.ibm.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=HPJQCNfr2YkALZDqB3wJIvA1dzrTsuNjtPGP6IM8djA=;
-        b=Nm9k2lACMt1oWN5oqai9NjWKruALahouDRdY/8i6u71V5egE/EyJHcDeNcnuCSu6ea
-         t9r6XFlMRvBmW8GaRWrnVg8iZaY181H4hIFgJUYIsc2PdZG4AE5JsubVA5Q3lXC7mIQf
-         kOeDX6+rGKOXPoi1wXknjEcVQqXLN5ByUWpMCmqTyqYTqxmmiFAHh6jvni7ml787AsVe
-         I6IXePsTSYz7e6TrCtHHBl09yE2lsrvY7p9WOtARoEpCdR1Aj2Y+XZxuUciL+xxm+XV7
-         3YVe0uBjJIwQ2cWlpYPSY4/UBLrQih9U0KUIE90XpKYAzNo1JwBBI6NThCUT3iuu4/E5
-         CbEw==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Zhiguo Deng <bjzgdeng-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Hi,
+When using authenticated FTP, the password contained in the kernel command line.
+This causes it to end up in the generated /run/initramfs/rdsosreport.txt
 
-I have a fedora22 system with dracut-041-10 and initramfs created with
-it fails at "reached target basic system". I enabled some debugging,
-and it appears to just loop, unable to mount a root, until I get a
-dracut shell.
+Signed-off-by: Zhiguo Deng <bjzgdeng-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ modules.d/99base/rdsosreport.sh | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-It's created an sosreport, but I'm unable to mount a USB stick to copy
-it. It displays info about the device when it's inserted, but no
-device name is assigned to it. Is this a problem with how the
-initramfs was created, a bug, or am I doing something wrong?
-
-The only modules in /usr/lib/modules/drivers are gpu drivers,
-i2c/algos, and raid1 and raid456. The system has a RAID1 and a RAID5
-partition, but the kernel modules aren't loaded (have to load them
-manually), but then no devices are shown in /proc/mdstat there either.
-
-Is filesystem support compiled into the kernel or must that be added
-to the initramfs manually?
-
-Thanks,
-Alex
+diff --git a/modules.d/99base/rdsosreport.sh b/modules.d/99base/rdsosreport.sh
+index 3e2ac87..4b8afb7 100755
+--- a/modules.d/99base/rdsosreport.sh
++++ b/modules.d/99base/rdsosreport.sh
+@@ -10,7 +10,7 @@ set -x
+ 
+ cat /lib/dracut/dracut-*
+ 
+-cat /proc/cmdline
++cat /proc/cmdline | sed -e 's/\(ftp:\/\/.*\):.*@/\1:*******@/'
+ 
+ [ -f /etc/cmdline ] && cat /etc/cmdline
+ 
+@@ -47,9 +47,9 @@ cat /proc/mdstat
+ command -v ip >/dev/null 2>/dev/null && ip addr
+ 
+ if command -v journalctl >/dev/null 2>/dev/null; then
+-    journalctl -ab --no-pager -o short-monotonic
++    journalctl -ab --no-pager -o short-monotonic | sed -e 's/\(ftp:\/\/.*\):.*@/\1:*******@/'
+ else
+-    dmesg
++    dmesg | sed -e 's/\(ftp:\/\/.*\):.*@/\1:*******@/'
+     [ -f /run/initramfs/init.log ] && cat /run/initramfs/init.log
+ fi
+ 
+-- 
+1.9.1
