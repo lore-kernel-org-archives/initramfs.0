@@ -1,42 +1,47 @@
 From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Can't mount USB within initramfs
-Date: Tue, 29 Sep 2015 16:04:02 +0800
-Message-ID: <20150929080402.GC30623@dhcp-129-73.nay.redhat.com>
-References: <CAB1R3shGMbuAh8HKSFq086VegXo7vLh=f7EH-49wjoBd_p69BQ@mail.gmail.com>
+Subject: Re: [patch 0/6] Revert action_on_fail patches
+Date: Tue, 29 Sep 2015 16:11:50 +0800
+Message-ID: <20150929081150.GD30623@dhcp-129-73.nay.redhat.com>
+References: <20150831024314.798498962@redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAB1R3shGMbuAh8HKSFq086VegXo7vLh=f7EH-49wjoBd_p69BQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20150831024314.798498962-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alex <mysqlstudent-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On 09/13/15 at 02:50pm, Alex wrote:
+On 08/31/15 at 10:43am, Dave Young wrote:
 > Hi,
 > 
-> I have a fedora22 system with dracut-041-10 and initramfs created with
-> it fails at "reached target basic system". I enabled some debugging,
-> and it appears to just loop, unable to mount a root, until I get a
-> dracut shell.
+> action_on_fail was introduced originally for kdump error handling.
+> Before the patches, dracut will drop into emergency shell for many
+> failure cases, but kdump does not care about some of failures as
+> long as vmcore can be saved successfully. Thus action_on_fail was
+> introduced to fall to kdump service in case early failure in dracut.
 > 
-> It's created an sosreport, but I'm unable to mount a USB stick to copy
-> it. It displays info about the device when it's inserted, but no
-> device name is assigned to it. Is this a problem with how the
-> initramfs was created, a bug, or am I doing something wrong?
+> But later with new systemd services, there are cases that kdump
+> script can never be called in case early dracut failure because of
+> systemd service dependency issues.
 > 
-> The only modules in /usr/lib/modules/drivers are gpu drivers,
-> i2c/algos, and raid1 and raid456. The system has a RAID1 and a RAID5
-> partition, but the kernel modules aren't loaded (have to load them
-> manually), but then no devices are shown in /proc/mdstat there either.
+> Thus there was below post which create a new kdump error handler
+> systemd service:
+> https://lists.stg.fedoraproject.org/archives/list/kexec-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org/thread/3EN63K2NDC6C545M5Z434VCHWDR3BCHD/
 > 
-> Is filesystem support compiled into the kernel or must that be added
-> to the initramfs manually?
+> Now this action_on_fail interface was useless, nobody use it and
+> it is broken with systemd sometimes. So I send this series to revert
+> them one by one.
+> 
 
-You can try add them manually like below, assume you are using vfat filesystem..
---add-drivers "usb_storage vfat"
+Harald, ping
+
+Since the code is useless, IMHO it is odd to keep them and it will
+cause trouble in the future for further fixes and improvements.
+
+What do you think?
 
 Thanks
 Dave
