@@ -1,47 +1,22 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 0/6] Revert action_on_fail patches
-Date: Tue, 29 Sep 2015 16:11:50 +0800
-Message-ID: <20150929081150.GD30623@dhcp-129-73.nay.redhat.com>
-References: <20150831024314.798498962@redhat.com>
+From: Akos Ovari <ovari.akos-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Minimal initramfs Modification
+Date: Thu, 1 Oct 2015 10:56:22 +0000 (UTC)
+Message-ID: <loom.20151001T125053-733@post.gmane.org>
+References: <CAAZEOjsyDkv0ai9a96Jg0M7tX5hAKUXMgHW7NiAugf7Sf_xnEw@mail.gmail.com> <55B151B0.5020100@gmail.com> <CAAZEOjsavzT1GsBMENe9AbHYDUhrhbS5OWaZ4tpuqe7383GO3A@mail.gmail.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20150831024314.798498962-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On 08/31/15 at 10:43am, Dave Young wrote:
-> Hi,
-> 
-> action_on_fail was introduced originally for kdump error handling.
-> Before the patches, dracut will drop into emergency shell for many
-> failure cases, but kdump does not care about some of failures as
-> long as vmcore can be saved successfully. Thus action_on_fail was
-> introduced to fall to kdump service in case early failure in dracut.
-> 
-> But later with new systemd services, there are cases that kdump
-> script can never be called in case early dracut failure because of
-> systemd service dependency issues.
-> 
-> Thus there was below post which create a new kdump error handler
-> systemd service:
-> https://lists.stg.fedoraproject.org/archives/list/kexec-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org/thread/3EN63K2NDC6C545M5Z434VCHWDR3BCHD/
-> 
-> Now this action_on_fail interface was useless, nobody use it and
-> it is broken with systemd sometimes. So I send this series to revert
-> them one by one.
-> 
+Hi Rick,
 
-Harald, ping
+You can extract initramfs on RHEL7/CentOS7 with this:
 
-Since the code is useless, IMHO it is odd to keep them and it will
-cause trouble in the future for further fixes and improvements.
+/usr/lib/dracut/skipcpio initramfs-3.10.0-123.el7.x86_64.img |zcat| cpio -id 
+--no-absolute-filenames
 
-What do you think?
-
-Thanks
-Dave
+Bye
+Akos
