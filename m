@@ -1,80 +1,103 @@
-From: Felix Miata <mrmazda-ihVZJaRskl1bRRN4PJnoQQ@public.gmane.org>
-Subject: kernel/initrd loading delays
-Date: Mon, 12 Oct 2015 12:29:19 -0400
-Message-ID: <561BDFDF.1030303@earthlink.net>
+From: Neil Brown <neilb-IBi9RG/b67k@public.gmane.org>
+Subject: Re: dracut is too "clever" at identifying modules to exclude.
+Date: Tue, 13 Oct 2015 07:30:37 +1100
+Message-ID: <87vbabzv6a.fsf@notabene.neil.brown.name>
+References: <20150409140840.0bb6d59d@notabene.brown> <87r3l023ha.fsf@notabene.neil.brown.name> <561BD1E9.5010007@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha256; protocol="application/pgp-signature"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <561BD1E9.5010007-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, trenn-IBi9RG/b67k@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On more and more installations since most distros have replaced mkinitrd with
-dracut, on selecting a bootloader menu choice the "root
-(hd0,...filesystemtype..[Linux-bzImage, setup, ... initrd /boot/initrd"
-message stays on screen 40 seconds or more before the time-stamped boot
-messages begin scrolling the screen. IIRC, these delays first began appearing
-last January or February, and appear on multiple machines. All kernel and
-initrd images are on smallish EXT3 or EXT4 (mostly the latter) filesystems
-using 1024 blocksize on BIOS logical partitions on rotating rust (IIRC, all
-with native 512b sector size, manufactured in 2011 or earlier). All
-installations are configured with static IP. All have Plymouth either not
-installed, or are booted with noplymouth included on kernel cmdline.
+--=-=-=
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-e.g, on my fastest system, host msi85, a 3.0 GHz dual core Haswell, total
-time from boot stanza select on BIOS host msi85 to Rawhide 4.3.0-0.rc3.git4.1
-(dracut initramfs.img 11,326,223) multi-user.target shell prompt ready is
-about 80 seconds following that 40 second delay, with last time stamp showing
-36.844484.
+Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
-Same msi85 system booting LMDE 2 3.16.0-4 (non-dracut? initrd.img 27,362,964;
-initramfs-tools 0.120) delays start of boot messages nearly 80 seconds,
-reaching DM greeter ready nearly 140 seconds after stanza selection.
+> On 12.10.2015 05:02, Neil Brown wrote:
+>>=20
+>> If I have booted a kernel with md/raid built in (no modules) and
+>> I use dracut to build the initramfs for a different kernel which
+>> has the md code compiled as separate modules, then it does not include
+>> the required md modules in the initramfs.
+>>=20
+>> As a particular instance this happen when the root filesystem is on
+>> RAID0.  The 'raid0.ko' module is not included and boot fails.
+>>=20
+>> https://bugzilla.opensuse.org/show_bug.cgi?id=3D935993
+>>=20
+>> This only happens when 'host-only' is selected (which is the default for
+>> openSUSE).
+>>=20
+>> the modules.d/90mdraid/module-setup.sh code calls
+>>=20
+>>     instmods =3Ddrivers/md
+>>=20
+>> instmods calls
+>>    module_is_host_only "raid0"
+>> and this incorrectly fails.
+>>=20
+>> If raid0.ko didn't have any alias this would succeed, but it does.
+>>=20
+>> $ modinfo -F alias raid0
+>> md-level-0
+>> md-raid0
+>> md-personality-2
+>
+> Huh? Is the module not loaded?
 
-Same system booting openSUSE Leap 42.1 4.1.8 (dracut initrd 8,082,360)
-exhibits no perceptible delay, reaching multi-user.target shell prompt in
-under 47 seconds from boot stanza selection.
+No, because the running kernel has "md/raid built in (no modules)".
 
-Same system booting openSUSE 13.2 3.16.7 (dracut initrd 5,351,996) delays
-start of boot messages about 40 seconds, reaching multi-user.target bash
-prompt about 90 seconds after stanza selection.
+Thanks,
+NeilBrown
 
-Same system booting Mageia 5 4.1.8 (dracut initrd.img 9,391,664) exhibits no
-delay, reaching multi-user.target bash prompt in about 45 seconds.
+>
+>>=20
+>> However these aliases don't appear in any modalias file in /sys/devices,
+>> in /proc/crypto, or in /proc/modules.
+>>=20
+>> Maybe you could parse /proc/mdstat..
+>>=20
+>> if [ -f /proc/mdstat ]; then
+>>   while read _d _c _a _m _x; do
+>>    if [ "$_c" =3D ':' -a "$_a" =3D 'active' ]; then
+>>       host_modalias["md-$_m"]=3D1
+>>    fi
+>>   done < /proc/mdstat
+>> fi
+>>=20
+>> but it all seems rather fragile.  There are probably other modules that
+>> might miss out accidentally. dm?
+>>=20
+>> Do we really need the host_modalias stuff?
+>>=20
+>> Thanks,
+>> NeilBrown
+>>=20
 
-Same system booting Wheezy 3.2.0 (non-dracut initrd.img 10,537,321) exhibits
-no delay, reaching DM greeter in less than about 45 seconds.
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
 
-Same system booting openSUSE 13.1 3.12.44 (non-dracut initrd 7,679,390)
-exhibits no delay, reaching multi-user.target bash prompt in less than 45
-seconds.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-Same system booting Fedora 23 4.2.2 (dracut initramfs.img 11,255,214) reaches
-multi-user.target shell prompt in about 75 seconds after unknown
-kernel/initrd delay (puts display into sleep mode until boot messages appear).
-
-Same system booting openSUSE Tumbleweed 4.2.1 (dracut initrd 8,970,760)
-exhibits no delay, reaching multi-user.target bash prompt in less than 45
-seconds.
-
-Same system booting (second, on sda28, vs. other on sda23) openSUSE
-Tumbleweed 4.2.1 (dracut initrd 8,965,124) exhibits ~40 second delay,
-reaching multi-user.target bash prompt in about 100 seconds.
-
-Same system booting Kubuntu 14.10 3.16.0 (non-dracut initrd 20,550,608)
-exhibits no initial (linux/initrd) delay, reaching KDM greeter in about 90
-seconds.
-
-Same system booting Fedora 22 4.1.8 (dracut initrd 10,788,392) exhibits no
-delay, reaching multi-user.target bash prompt in less than 50 seconds.
-
-
-Any ideas what could cause these delays, or how to eliminate them?
--- 
-"The wise are known for their understanding, and pleasant
-words are persuasive." Proverbs 16:21 (New Living Translation)
-
- Team OS/2 ** Reg. Linux User #211409 ** a11y rocks!
-
-Felix Miata  ***  http://fm.no-ip.com/
+iQIcBAEBCAAGBQJWHBhtAAoJEDnsnt1WYoG5dZsP/3i+jIG5EGAbXPr3zHlIbBqB
+ELL3XiVD5jizoB4Dt0r1SawkpWLIpBy9gVJfC2yZl+gQpbk6QzdAwQzZMQYRScFp
+e3IYZp09zJmPbJOJCvmWFUlVJhrft/zTyl4nkcr5DY7b+//CS+BrEVlRJQ4ihlDS
+KxsmUdP0QU9AXuipDUZpHxCsgtNHzxVxup0wZk+0B0k6LuJLB6S4utXBkGxLV9pj
+sbiw6N8Vx0u/btlnVDapQ86FTtQ5IW66rtUhQQ+urVi422sqVY5a5rrsPcmkQcZW
+swX4mqXVUvH3NGMCGLTnIG7C/kxkgtRng+gv2jA9+Hx44xSQ0fLL3zmOB9/Ijoov
+VcBDJ/jn+9NJSEELS4FFohUuVhXqJ2gVg5ydwx3tjpLBcBW76+QI/n+tv3vs8o/h
+b5cYi27mKYsKtQrngBlyssuVyk92+k+zsob8Grqsqg/ZKzJ7YRJUUTNiDKpGNqWQ
+FgFbG3RHv8pfuqD7qEbkGohTQ/RLRVDaL4FVFSctVuiwIxuu0AAp3wCE/ZmokA4Z
+MhYwIjfp7FjTHaZatny6u5s5KHrI18QvK4iXbxp6al40Tn3XSj9a1oZN8M1rWQKj
+zH2+paYPx5pwBTGLcL+pU0FQRQza2Cgzb22p7qSTfafNEbowBk/z+Jm+JkUPt4Mm
+yO4/Ql3nd/XAFHsOlSlf
+=3X06
+-----END PGP SIGNATURE-----
+--=-=-=--
