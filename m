@@ -1,73 +1,125 @@
-From: Sean MacLennan <afore.sean-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: dmsetup or cryptsetup hangs in the initrd
-Date: Sun, 18 Oct 2015 11:42:00 -0400
-Message-ID: <CA+HWzfefj=0TZTbYrPNq7SC500XobOqr2tJMBbKpOmpohp+Hbg@mail.gmail.com>
+From: "Ali H. Caliskan" <ali.h.caliskan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: systemd-fstab-generator overwrites sysroot.mount created by dmsquash-generator.
+Date: Sun, 25 Oct 2015 13:54:30 +0100
+Message-ID: <CAFO=TmVa3hScSS26iCSSEGmwNZR5grvrCzAdD_enekmnUXLs2A@mail.gmail.com>
+References: <CAFO=TmWCtM6-GabdH9GrLExBR4EH9=U+9zFDucQkBhdhAvND7g@mail.gmail.com>
+	<55E6DB94.8060205@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=001a113553a89c74dc052262de5a
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=FzDp09Fm2V8ByUnmhO4dt7oRmaGIGPauyvJDUdsbrnk=;
-        b=QdzCYBMw0JhixJlt0OFm/bXbdfRsIAQ4+rJT/QcprKzRGPAVYd7EtfW+t+X555j0Fj
-         c+vuOuO8sQFKhXZ8jZjQ8xeY1SkO1bxu5wHlaqA/hEbfEE7JmrWkdPRSRySIxEK/a8uR
-         tTZ6qSGxfGkSWij2i6tEQR3fxk2N+o56dJUBXX77nNxa+BOp5eyI84ZfsSK8MukFRK5g
-         sCjEBQ8Y9g7E+KYmteuJSTZbIlrACXGAk+KYMoCB7g4vaDwsquJCqHfewcejI7ImqWu6
-         CdOnD3ZrCJmUWidYfdYpQDhWfkPEt0DFJQPDat7xr3v202Z6RMj01uRkQ60EVpMXKJB6
-         7b8Q==
+        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+         :content-type;
+        bh=gEvhP6izjrrGQpb57GdG+xmKkfGXMITMgfb0Y/phKaw=;
+        b=YQE3agwjqQ4rm8LqKb5kKrTgoyvi9v/5SeoJf57ZVKAQC+v9wY5p40MnLpkAQPBcU8
+         vn4kN9f02a/184dxeuAwuJ453kaAz7iImiiocilcqNokU4feG2S781eboAMU81VFXMaq
+         tSXN4luZpCV1mBj08EJuOL3pbP++6eWhv0q7DY4vW/H+/EDM8Y+pO025xkVc0UZzLyUj
+         NyH+PI14pXPWZt76oGGljqHGXx5EyHfR1tRn4u3/b59SqiUIzsqyCOaOfi7T9OYPQI4t
+         rpwclVChHmeDA6ri0rE3gqkx4a2EhRdXSYMRfn4xfW0hDHiJaPZVjuhtQbFtI8lDCVMx
+         ZfVw==
+In-Reply-To: <55E6DB94.8060205-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
---001a113553a89c74dc052262de5a
-Content-Type: text/plain; charset=UTF-8
+I just wanted to say that my system is now working as expected as
+well. I tested the latest release(043) successfully booting live
+image. I have no idea what update fixed the issues I had before with
+dracut.
 
-In RedHat 7 I am trying to setup a partition with dmsetup. I have attached
-a tarball that includes three files:
 
-* go.sh is a simple script to install everything
-* install is the dracut module install
-* 95dmcrypt.sh is the file I want to run at boot time
-
-I can send the files individually if that is better. All the files are
-short.
-
-Obviously, this has all been stripped down to make it as simple as
-possible. Sorry for the hard coding. If you want to test it, you need to
-provide a /dev/sdb1 partition that is at least 2G. If you comment out the
-`exit 0' in go.sh it will setup the partition for you.
-
-Note that if 95dmcrypt.sh has either the dmsetup or the 2 cryptsetup lines
-commented in, it will hang the machine.
-
-I am hoping I have just put something in the wrong place. pre-mount is
-where we previously ran the script from.
-
-Cheers,
-    Sean
-
---001a113553a89c74dc052262de5a
-Content-Type: application/x-gzip; name="dmtest.tar.gz"
-Content-Disposition: attachment; filename="dmtest.tar.gz"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_ifwolaqc0
-
-H4sIAKxmIVYAA+1WXW/bNhTNM3/FjWI02wpZkmM7zYJsCJpt2EMWwOlb28WSSFmCRdIgqcyGk/++
-K0q25TRbgWIpNoznRSTvh65InqM7k32dH7wsQsTp6ah5jod7TzuOTg6iwTgKB+MwHOF6FEajkwMI
-X7gui0qbWAEc6Jj/rd/n7P9RHB0GSSECnYPPCLn6dXIRVFoFZZEEVMVpZQIuaVUy3afB2ZlmaaXY
-PSeEz2mhwF9AD2MIKQRuY1lCP9iMems0PG4NZyPKU7VaGLxuGxsxsko3s03gnCnBSpLm+F54vXze
-SliaS/CaCvv9vkeaIfgZIUfwVnLOhAGTFxokLhsJlWYQUHYfaJpEhC0LAyHWncF78JOtBfwYDrsL
-EXw8xzxMEEA0r72O54WYQVbgtqy0YRyk2AV41nMRK8Mo+HqXms/LOGElcE2l/munehEWquCxWsEg
-HL7RMIzOhifhSRPE55kG38Ay050PygryReff7us/fKv2UXN8/IT3Hf5HIxw3/B+Nx6gFyP/64fj/
-FdDyP4l1Tsj1zZVVgJr9Le2DaSVizsBXU4JModBrnOAjPDzAumXET5PJzeT7rY0XWiNDDr1zsESL
-zgHZjhljSr/5Ftb2HpcyjZEMkl5MbZJeBA9gFNzBhx+nHQ/MeTHNCrF7tW8r8noY259LDwY/WB6I
-qiybQCxUoB3dvf068R1CGshkJSgWp5iplKiLa6MydFkXojAobo+9NSZ4rDO8etW6Wr+NpPlXtqJn
-QjpacUkpTHF3ma259p965JE8r4udTF0FzqWc62ChmM+xcOPVEnd7eQ24m0BZUs1qjVtUhuhaTAo4
-1sHvtyYWNFb0xlr63wX7CxcoXKWcvU6l0LJkwTF8sEV3K9j8BxqNo+2zLcrfltPXTN0XKfOaj4JA
-1xeKco07ttifdR0SPN05HtuTadfF7ks3zW6B2MPqB0mlV4lcNmdkQ3drzcVuJpvbBzHTovALYfAv
-0i6V6o/NcFZW7C5n5YKpbUBSzp8s2TLoNiaLBm94tU23NHozpBy3iHZmNvLLhPqF0L1/L/WOz+h/
-OBps9f80Gp6i/kfDaOj0/2tg2/+1PVUvBFUJgeqNbRUh75/0Ql0x/U12mp5W6cNaTO1/wpp4vEDe
-PB/W2PYCyb52pIrFhoG+5+D7BonI4Dism6EBNgpQFoLhye2KC49RGH++mVxfvru7nPxye+H5ac13
-HxnpL8q4EONh3WuNogH4Oeg8xpFHjmxZfIW9LYo8/oM+EZ+2jl4nty1q131t945Kwf5V/HZwcHBw
-cHBwcHBwcHBwcHBwcHBwcHBwcHD4f+FPMI4A1wAoAAA=
---001a113553a89c74dc052262de5a--
+On Wed, Sep 2, 2015 at 1:20 PM, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On 18.07.2015 15:27, Ali H. Caliskan wrote:
+>> dracut-dmsquash-generator creates $GENERATOR_DIR/sysroot.mount and
+>> dracut-rootfs-generator doesn't touch it but systemd-fstab-generator
+>> does overwrite the sysroot.mount file which causes error like "Timed
+>> out waiting for device dev-mapper-live\x2drw.device." I don't know if
+>> it can be resolved by dracut or if systemd should skip writing
+>> sysroot.mount if it already exists.
+>>
+>> I'm able to boot with rd.live.image by letting
+>> dracut-dmsquash-generator create sysroot.mount.new and then tell
+>> dracut-rootfs-generator to sysmlink sysroot.mount.new to
+>> initrd-root-fs.target.requires/sysroot.mount. Also I had to remove "if
+>> [ -z "$DRACUT_SYSTEMD" ]; then" condition from the
+>> dmsquash-live-root.sh in order to mount LiveOS/rootfs.img into
+>> /sysroot directory.
+>
+>
+> Hmm,
+>
+> according to the man page systemd.generator:
+>
+> SYNOPSIS
+>        /path/to/generator normal-dir early-dir late-dir
+>
+>
+>         1. normal-dir
+>
+>            argv[1] may be used to override unit files in /usr, but not those in
+> /etc. This means that unit files placed in this directory take precedence
+>            over vendor unit configuration but not over native
+> user/administrator unit configuration.
+>
+>         2. early-dir
+>
+>            argv[2] may be used to override unit files in /usr and in /etc. This
+> means that unit files placed in this directory take precedence over all
+>            configuration, both vendor and user/administrator.
+>
+>         3. late-dir
+>
+>            argv[3] may be used to extend the unit file tree without overriding
+> any other unit files. Any native configuration files supplied by the
+>            vendor or user/administrator take precedence over the generated ones
+> placed in this directory.
+>
+>
+> systemd-fstab-generator uses argv[1], so this is normal-dir
+> <https://github.com/systemd/systemd/blob/master/src/fstab-generator/fstab-generator.c#L653>
+>
+> dmsquash-generator.sh uses argv[2], so this is early-dir
+> <https://github.com/haraldh/dracut/blob/master/modules.d/90dmsquash-live/dmsquash-generator.sh#L53>
+>
+>
+> If I run test/TEST-16-DMSQUASH and rd.break before switch-root, I can see
+>
+> switch_root:/run/systemd# find generator.early/
+> generator.early/
+> generator.early/dev-mapper-live\x2drw.device.d
+> generator.early/dev-mapper-live\x2drw.device.d/timeout.conf
+> generator.early/sysroot.mount
+> switch_root:/run/systemd# find generator
+> generator
+> generator/initrd-root-fs.target.requires
+> generator/initrd-root-fs.target.requires/sysroot.mount
+> generator/sysroot.mount
+>
+>
+> # systemctl show sysroot.mount |grep Path
+> FragmentPath=/run/systemd/generator.early/sysroot.mount
+>
+> # cat generator.early/sysroot.mount
+> [Unit]
+> Before=initrd-root-fs.target
+> [Mount]
+> Where=/sysroot
+> What=/dev/mapper/live-rw
+>
+> # cat generator/sysroot.mount
+> # Automatically generated by systemd-fstab-generator
+>
+> [Unit]
+> SourcePath=/proc/cmdline
+> Documentation=man:fstab(5) man:systemd-fstab-generator(8)
+> Before=initrd-root-fs.target
+>
+> [Mount]
+> What=live:CDLABEL=LiveCD
+> Where=/sysroot
+> Options=rw
+>
+>
+> So, works as expected. The question is, why is your system different?
