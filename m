@@ -1,36 +1,47 @@
-From: Giuseppe Scrivano <gscrivan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut --reproducible by default
-Date: Tue, 03 Nov 2015 10:33:21 +0100
-Message-ID: <87r3k7mnq6.fsf@foo.bar.baz>
-References: <87a8tnvhs0.fsf@foo.bar.baz> <87vbc3fpd5.fsf@foo.bar.baz>
-	<55E6CC75.5080206@redhat.com> <87vbbtyqac.fsf@foo.bar.baz>
-	<55E6E79E.1060800@redhat.com>
+From: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
+Subject: Update FC23 - doesn't boot - ssh preboot not working anymore
+Date: Tue, 3 Nov 2015 22:39:10 +0100
+Message-ID: <5639297E.7050905@wiesinger.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <55E6E79E.1060800-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Harald Hoyer's message of "Wed, 2
-	Sep 2015 14:12:14 +0200")
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Harald,
+Hello,
 
-Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+After upgrading one machine it does't boot anymore. Booting the old FC22 
+kernel works well.
 
->> do you think it makes sense to make --reproducible the default, or do
->> you expect Dracut users, rpm-ostree in this case, to explicitly use it?
->> 
->> Thanks,
->> Giuseppe
->> 
->
-> I think, I'll make it the default.
+Reached target Basic System.
+Found device /dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf
+Found device /dev/mapper/fedora_hostname-root
 
-is there any version of Dracut that has it as the default so I can start
-testing it with rpm-ostree?
+Also integration of ssh preboot authentication is not available anymore.
 
-Regards,
-Giuseppe
+blkid:
+/dev/vda2: UUID="f3e2c8a9-51b1-4110-aef5-039cf714425a" TYPE="ext4" 
+PARTLABEL="Linux filesystem" PARTUUID="6bc53fb0-771b-4b52-b584-c87735715a47"
+/dev/vda3: UUID="9fbecd95-508a-45ca-997a-42a613c4e5bf" 
+TYPE="crypto_LUKS" PARTLABEL="Linux filesystem" 
+PARTUUID="090ffe9b-6791-46df-b9a4-f30adbb95e50"
+/dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf: 
+UUID="A3RzKd-F7ym-pN6a-F01g-Q0Gw-DrVr-jhTgbo" TYPE="LVM2_member"
+/dev/mapper/fedora_hostname-swap: 
+UUID="cef5950c-43bc-485c-ae2b-832fcbe752c7" TYPE="swap"
+/dev/mapper/fedora_hostname-root: 
+UUID="8f5436a3-28cb-4c7e-91df-e3f9249d17d2" TYPE="ext4"
+/dev/vda1: PARTLABEL="BIOS Boot Partition" 
+PARTUUID="35685b7e-917c-4cc5-9133-69f00f5a1e2f"
+
+Any ideas?
+
+Thank you.
+
+Ciao,
+Gerhard
+
+--
+http://www.wiesinger.com/
