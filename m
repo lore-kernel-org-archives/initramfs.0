@@ -1,52 +1,30 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Update FC23 - doesn't boot - ssh preboot not working anymore
-Date: Mon, 9 Nov 2015 15:58:04 +0100
-Message-ID: <5640B47C.1020101@redhat.com>
-References: <5639297E.7050905@wiesinger.com>
+From: Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Request Overflow support for persistent snapshot
+Date: Mon, 9 Nov 2015 10:12:17 -0800
+Message-ID: <CAEcBt+X82E875F4KMMFGwZNqSdWBjPRxfMmf=O_vrzx+nraRNA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <5639297E.7050905-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:from:date:message-id:subject:to:content-type;
+        bh=1fCKyE+V9e6iN5633v54wXCDebdevDTvIaGlJWSiMy8=;
+        b=FLXpQNKDTNOb0tpXjCKHVonsZSq8K6CW3oRrcJVz4+WdkDz3ezDsSQBeUgVO4DR7pL
+         Y6uj7ZjNHN/USCEH09mPk8w0B3jIIMBpTuRt3NL/B9vmT2lU7M3AMWKoCFMA9j964AHl
+         ZPGQ7Au6jVPZxCA+1XFl5duA+95b8Td+/uL82YinirP1Im49xFF1YLB7T5ihOnkTU/Q3
+         6c4cVmCafu45/6pR8/5UCYh/VkmbyFaot2hbMOneNbckfmIPaxUqjHDM4kjOkdXxB4NA
+         3pP7uxUvUWfvrTmJxliV/teVFZsztc+97X9P5q50h/kCn0HyswFOnecW4wfdOmvPP9yh
+         eMsQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Am 03.11.2015 um 22:39 schrieb Gerhard Wiesinger:
-> Hello,
-> 
-> After upgrading one machine it does't boot anymore. Booting the old FC22 kernel
-> works well.
-> 
-> Reached target Basic System.
-> Found device /dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf
-> Found device /dev/mapper/fedora_hostname-root
-> 
-> Also integration of ssh preboot authentication is not available anymore.
-> 
-> blkid:
-> /dev/vda2: UUID="f3e2c8a9-51b1-4110-aef5-039cf714425a" TYPE="ext4"
-> PARTLABEL="Linux filesystem" PARTUUID="6bc53fb0-771b-4b52-b584-c87735715a47"
-> /dev/vda3: UUID="9fbecd95-508a-45ca-997a-42a613c4e5bf" TYPE="crypto_LUKS"
-> PARTLABEL="Linux filesystem" PARTUUID="090ffe9b-6791-46df-b9a4-f30adbb95e50"
-> /dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf:
-> UUID="A3RzKd-F7ym-pN6a-F01g-Q0Gw-DrVr-jhTgbo" TYPE="LVM2_member"
-> /dev/mapper/fedora_hostname-swap: UUID="cef5950c-43bc-485c-ae2b-832fcbe752c7"
-> TYPE="swap"
-> /dev/mapper/fedora_hostname-root: UUID="8f5436a3-28cb-4c7e-91df-e3f9249d17d2"
-> TYPE="ext4"
-> /dev/vda1: PARTLABEL="BIOS Boot Partition"
-> PARTUUID="35685b7e-917c-4cc5-9133-69f00f5a1e2f"
-> 
-> Any ideas?
-> 
-> Thank you.
-> 
-> Ciao,
-> Gerhard
+Now with kernel 4.3, we can take advantage of the Persistence with Overflow
+snapshot store type.
+https://git.kernel.org/cgit/linux/kernel/git/device-mapper/linux-dm.git/commit/?h=dm-4.3&id=b0d3cc011e532d8c9db76cf717bcafa53c135595
 
+This makes overflowing a LiveOS persistent overlay less catastrophic by
+allowing read only access to the root file system.
 
-
-https://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_troubleshooting
-
-please file a bugzilla on the fedora/redhat bugzilla and add rdsosreport.txt
+See https://github.com/haraldh/dracut/pull/102
