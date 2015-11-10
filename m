@@ -1,51 +1,44 @@
-From: Alex <mysqlstudent-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Update FC23 - doesn't boot - ssh preboot not working anymore
-Date: Mon, 9 Nov 2015 15:05:14 -0500
-Message-ID: <CAB1R3sj5hJVtihk63GnPxV4pMMFMcmpuXinZMKEQEq8dM9qBbw@mail.gmail.com>
-References: <5639297E.7050905@wiesinger.com>
-	<5640B47C.1020101@redhat.com>
-Mime-Version: 1.0
+From: Mei Liu <liumbj-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [dracut PATCH] Add awk and getopt as dependencies of znetconf
+Date: Tue, 10 Nov 2015 12:34:24 +0800
+Message-ID: <1447130064-8391-1-git-send-email-liumbj@linux.vnet.ibm.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :cc:content-type;
-        bh=6of7SLx7lwlTEUUr2q8vyY/JV4BNIZe6vXERYcF3LVU=;
-        b=XQ2NXQ2KJJG1vpdCm4a6gTZ4gI4wbq3GGliMhTUu1OPXhtRPKDcBKRuRqql9JVb6M1
-         8/6NZ+CuZx7pF4ukdcdVv8aRGCvPzHducaqZUB8NqrmtFZEL5bZiVx6jsvSBowksqnr2
-         ArX0+h0JhmVtTwkZQM+PU4TY5ApRZMaAbhrgPShqfnBHuzROFA7+qhUUszCrCUNCvjkq
-         KhKVRuXD8WDzsBOChvQ9gFloAE4QDYFqoIn2B8GGeIIAsIJGV1m4eY54hMx9pa2iXGWI
-         gbt+JvU2evNxikASFgbZi8ZxQH4qKMW6HruhtShSMmnl84Fbwkk9uLFcANGvl9gXSDRI
-         PR2g==
-In-Reply-To: <5640B47C.1020101-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mei Liu <liumbj-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Hi,
+znetconf command is part of s390utils-base package. It depends on
+awk and getopt.
 
->> After upgrading one machine it does't boot anymore. Booting the old FC22 kernel
->> works well.
->>
->> Reached target Basic System.
->> Found device /dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf
->> Found device /dev/mapper/fedora_hostname-root
->>
->> Also integration of ssh preboot authentication is not available anymore.
-...
->
->
-> https://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_troubleshooting
->
-> please file a bugzilla on the fedora/redhat bugzilla and add rdsosreport.txt
+This patch is used to fix the following error:
 
-Please follow up here with the bugzilla ID, as I had a similar problem.
+dracut:/#
+znetconf -c
 
-My solution was to create a "BIOS Boot" partition where one previously
-didn't exist then reinstall grub. I really don't know if all that I
-did was necessary, or if there was something else in my process that
-actually fixed it, but I've had to do it on a few machines now and
-it's fixed it every time.
+/usr/sbin/znetconf: line 70: awk: command not found
+/usr/sbin/znetconf: line 1138: getopt: command not found
+
+Signed-off-by: Mei Liu <liumbj-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ modules.d/80cms/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules.d/80cms/module-setup.sh b/modules.d/80cms/module-setup.sh
+index c99f236..daa64d1 100755
+--- a/modules.d/80cms/module-setup.sh
++++ b/modules.d/80cms/module-setup.sh
+@@ -25,7 +25,7 @@ install() {
+     inst_script "$moddir/cmsifup.sh" /sbin/cmsifup
+     inst_multiple /etc/cmsfs-fuse/filetypes.conf /etc/udev/rules.d/99-fuse.rules /etc/fuse.conf \
+         cmsfs-fuse fusermount ulockmgr_server bash insmod rmmod cat normalize_dasd_arg sed \
+-        $(rpm -ql s390utils-base)
++        $(rpm -ql s390utils-base) awk getopt
+ 
+     inst_libdir_file "gconv/*"
+     #inst /usr/lib/locale/locale-archive
+-- 
+1.9.3
