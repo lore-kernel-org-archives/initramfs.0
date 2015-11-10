@@ -1,44 +1,70 @@
-From: Mei Liu <liumbj-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [dracut PATCH] Add awk and getopt as dependencies of znetconf
-Date: Tue, 10 Nov 2015 12:34:24 +0800
-Message-ID: <1447130064-8391-1-git-send-email-liumbj@linux.vnet.ibm.com>
+From: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
+Subject: Re: Update FC23 - doesn't boot - ssh preboot not working anymore
+Date: Tue, 10 Nov 2015 13:23:44 +0100
+Message-ID: <5641E1D0.8080902@wiesinger.com>
+References: <5639297E.7050905@wiesinger.com> <5640B47C.1020101@redhat.com>
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <5640B47C.1020101-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mei Liu <liumbj-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-znetconf command is part of s390utils-base package. It depends on
-awk and getopt.
+On 09.11.2015 15:58, Harald Hoyer wrote:
+> Am 03.11.2015 um 22:39 schrieb Gerhard Wiesinger:
+>> Hello,
+>>
+>> After upgrading one machine it does't boot anymore. Booting the old FC22 kernel
+>> works well.
+>>
+>> Reached target Basic System.
+>> Found device /dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf
+>> Found device /dev/mapper/fedora_hostname-root
+>>
+>> Also integration of ssh preboot authentication is not available anymore.
+>>
+>> blkid:
+>> /dev/vda2: UUID="f3e2c8a9-51b1-4110-aef5-039cf714425a" TYPE="ext4"
+>> PARTLABEL="Linux filesystem" PARTUUID="6bc53fb0-771b-4b52-b584-c87735715a47"
+>> /dev/vda3: UUID="9fbecd95-508a-45ca-997a-42a613c4e5bf" TYPE="crypto_LUKS"
+>> PARTLABEL="Linux filesystem" PARTUUID="090ffe9b-6791-46df-b9a4-f30adbb95e50"
+>> /dev/mapper/luks-9fbecd95-508a-45ca-997a-42a613c4e5bf:
+>> UUID="A3RzKd-F7ym-pN6a-F01g-Q0Gw-DrVr-jhTgbo" TYPE="LVM2_member"
+>> /dev/mapper/fedora_hostname-swap: UUID="cef5950c-43bc-485c-ae2b-832fcbe752c7"
+>> TYPE="swap"
+>> /dev/mapper/fedora_hostname-root: UUID="8f5436a3-28cb-4c7e-91df-e3f9249d17d2"
+>> TYPE="ext4"
+>> /dev/vda1: PARTLABEL="BIOS Boot Partition"
+>> PARTUUID="35685b7e-917c-4cc5-9133-69f00f5a1e2f"
+>>
+>> Any ideas?
+>>
+>> Thank you.
+>>
+>> Ciao,
+>> Gerhard
+>
+>
+> https://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_troubleshooting
+>
+> please file a bugzilla on the fedora/redhat bugzilla and add rdsosreport.txt
+>
 
-This patch is used to fix the following error:
 
-dracut:/#
-znetconf -c
+Hello Harald,
 
-/usr/sbin/znetconf: line 70: awk: command not found
-/usr/sbin/znetconf: line 1138: getopt: command not found
+Applied kernel parameters from link but I dont't get a shell. Very 
+strange, it looks like if you wait for minutes it works well and I get a 
+password prompt. But afterwards it is still slow on booting, but get the 
+log file after some long waiting and tricks. It looks like it hangs in 
+some endless loop when working on string operations.
 
-Signed-off-by: Mei Liu <liumbj-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- modules.d/80cms/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Send you a private email with further private information about the 
+issue (screenshots).
 
-diff --git a/modules.d/80cms/module-setup.sh b/modules.d/80cms/module-setup.sh
-index c99f236..daa64d1 100755
---- a/modules.d/80cms/module-setup.sh
-+++ b/modules.d/80cms/module-setup.sh
-@@ -25,7 +25,7 @@ install() {
-     inst_script "$moddir/cmsifup.sh" /sbin/cmsifup
-     inst_multiple /etc/cmsfs-fuse/filetypes.conf /etc/udev/rules.d/99-fuse.rules /etc/fuse.conf \
-         cmsfs-fuse fusermount ulockmgr_server bash insmod rmmod cat normalize_dasd_arg sed \
--        $(rpm -ql s390utils-base)
-+        $(rpm -ql s390utils-base) awk getopt
- 
-     inst_libdir_file "gconv/*"
-     #inst /usr/lib/locale/locale-archive
--- 
-1.9.3
+Will open a bug report later on.
+
+Ciao,
+Gerhard
