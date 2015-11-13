@@ -1,90 +1,51 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: dracut is too "clever" at identifying modules to exclude.
-Date: Fri, 13 Nov 2015 13:42:50 +0100
-Message-ID: <5645DACA.20403@redhat.com>
-References: <20150409140840.0bb6d59d@notabene.brown>
- <87r3l023ha.fsf@notabene.neil.brown.name> <561BD1E9.5010007@redhat.com>
- <87vbabzv6a.fsf@notabene.neil.brown.name> <5645D9A1.3040304@redhat.com>
+Subject: Re: [patch 0/6] Revert action_on_fail patches
+Date: Fri, 13 Nov 2015 13:43:27 +0100
+Message-ID: <5645DAEF.5040505@redhat.com>
+References: <20150831024314.798498962@redhat.com>
+ <20150929081150.GD30623@dhcp-129-73.nay.redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <5645D9A1.3040304-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20150929081150.GD30623-sa4SJRhfYT7Js+WLOFIw6R/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Neil Brown <neilb-IBi9RG/b67k@public.gmane.org>, trenn-IBi9RG/b67k@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: bhe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
-On 13.11.2015 13:37, Harald Hoyer wrote:
-> On 12.10.2015 22:30, Neil Brown wrote:
->> Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+On 29.09.2015 10:11, Dave Young wrote:
+> On 08/31/15 at 10:43am, Dave Young wrote:
+>> Hi,
 >>
->>> On 12.10.2015 05:02, Neil Brown wrote:
->>>>
->>>> If I have booted a kernel with md/raid built in (no modules) and
->>>> I use dracut to build the initramfs for a different kernel which
->>>> has the md code compiled as separate modules, then it does not include
->>>> the required md modules in the initramfs.
->>>>
->>>> As a particular instance this happen when the root filesystem is on
->>>> RAID0.  The 'raid0.ko' module is not included and boot fails.
->>>>
->>>> https://bugzilla.opensuse.org/show_bug.cgi?id=935993
->>>>
->>>> This only happens when 'host-only' is selected (which is the default for
->>>> openSUSE).
->>>>
->>>> the modules.d/90mdraid/module-setup.sh code calls
->>>>
->>>>     instmods =drivers/md
->>>>
->>>> instmods calls
->>>>    module_is_host_only "raid0"
->>>> and this incorrectly fails.
->>>>
->>>> If raid0.ko didn't have any alias this would succeed, but it does.
->>>>
->>>> $ modinfo -F alias raid0
->>>> md-level-0
->>>> md-raid0
->>>> md-personality-2
->>>
->>> Huh? Is the module not loaded?
+>> action_on_fail was introduced originally for kdump error handling.
+>> Before the patches, dracut will drop into emergency shell for many
+>> failure cases, but kdump does not care about some of failures as
+>> long as vmcore can be saved successfully. Thus action_on_fail was
+>> introduced to fall to kdump service in case early failure in dracut.
 >>
->> No, because the running kernel has "md/raid built in (no modules)".
+>> But later with new systemd services, there are cases that kdump
+>> script can never be called in case early dracut failure because of
+>> systemd service dependency issues.
 >>
->> Thanks,
->> NeilBrown
+>> Thus there was below post which create a new kdump error handler
+>> systemd service:
+>> https://lists.stg.fedoraproject.org/archives/list/kexec-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org/thread/3EN63K2NDC6C545M5Z434VCHWDR3BCHD/
 >>
->>>
->>>>
->>>> However these aliases don't appear in any modalias file in /sys/devices,
->>>> in /proc/crypto, or in /proc/modules.
->>>>
->>>> Maybe you could parse /proc/mdstat..
->>>>
->>>> if [ -f /proc/mdstat ]; then
->>>>   while read _d _c _a _m _x; do
->>>>    if [ "$_c" = ':' -a "$_a" = 'active' ]; then
->>>>       host_modalias["md-$_m"]=1
->>>>    fi
->>>>   done < /proc/mdstat
->>>> fi
->>>>
->>>> but it all seems rather fragile.  There are probably other modules that
->>>> might miss out accidentally. dm?
->>>>
->>>> Do we really need the host_modalias stuff?
->>>>
->>>> Thanks,
->>>> NeilBrown
->>>>
+>> Now this action_on_fail interface was useless, nobody use it and
+>> it is broken with systemd sometimes. So I send this series to revert
+>> them one by one.
+>>
 > 
-> Interesting... so we have to blow up the initramfs with the entire drivers/md
-> in the case, where you switch from "compiled in" to "not compiled in"..
+> Harald, ping
 > 
-> I guess that happens not that often, so better be safe than sorry.
+> Since the code is useless, IMHO it is odd to keep them and it will
+> cause trouble in the future for further fixes and improvements.
+> 
+> What do you think?
+> 
+> Thanks
+> Dave
 
-remove host_modalias
 
-<https://github.com/haraldh/dracut/commit/07a081f352497258862ae164d11d9e6dc2c5b959>
+Thanks, pushed!
