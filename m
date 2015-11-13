@@ -1,78 +1,85 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Use udev rules to create dmraid /dev/mapper/ devices
-Date: Fri, 13 Nov 2015 12:00:38 +0100
-Message-ID: <5645C2D6.2010702@redhat.com>
-References: <1435330557-17685-9-git-send-email-trenn@suse.de>
- <1435599415-10187-1-git-send-email-trenn@suse.de>
- <559BBAF5.5000501@redhat.com> <559BBE0F.1070903@suse.com>
+Subject: Re: dracut is too "clever" at identifying modules to exclude.
+Date: Fri, 13 Nov 2015 13:37:53 +0100
+Message-ID: <5645D9A1.3040304@redhat.com>
+References: <20150409140840.0bb6d59d@notabene.brown>
+ <87r3l023ha.fsf@notabene.neil.brown.name> <561BD1E9.5010007@redhat.com>
+ <87vbabzv6a.fsf@notabene.neil.brown.name>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <559BBE0F.1070903-IBi9RG/b67k@public.gmane.org>
+In-Reply-To: <87vbabzv6a.fsf-wvvUuzkyo1HefUI2i7LXDhCRmIWqnp/j@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Hannes Reinecke <hare-IBi9RG/b67k@public.gmane.org>, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Heinz Mauelshagen <heinzm-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Neil Brown <neilb-IBi9RG/b67k@public.gmane.org>, trenn-IBi9RG/b67k@public.gmane.org
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 07.07.2015 13:54, Hannes Reinecke wrote:
-> On 07/07/2015 01:41 PM, Harald Hoyer wrote:
->> On 29.06.2015 19:36, Thomas Renninger wrote:
->>> From: Hannes Reinecke <hare-IBi9RG/b67k@public.gmane.org>
->>>
->>> https://bugzilla.opensuse.org/show_bug.cgi?id=905746
->>>
->>> Version 2: Remove 64-md-raid.rules
->>>
->>> Signed-off-by: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
->>> ---
->>>  modules.d/90dmraid/dmraid.sh       | 2 --
->>>  modules.d/90dmraid/module-setup.sh | 2 ++
->>>  2 files changed, 2 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/modules.d/90dmraid/dmraid.sh b/modules.d/90dmraid/dmraid.sh
->>> index 3dcff38..cc4390f 100755
->>> --- a/modules.d/90dmraid/dmraid.sh
->>> +++ b/modules.d/90dmraid/dmraid.sh
->>> @@ -26,8 +26,6 @@ if [ -n "$DM_RAIDS" ] || getargbool 0 rd.auto; then
->>>                  if [ "${s##$r}" != "$s" ]; then
->>>                      info "Activating $s"
->>>                      dmraid -ay -i -p --rm_partitions "$s" 2>&1 | vinfo
->>> -                    [ -e "/dev/mapper/$s" ] && kpartx -a "/dev/mapper/$s" 2>&1 | vinfo
->>> -                    udevsettle
->>>                  fi
->>>              done
->>>          done
->>> diff --git a/modules.d/90dmraid/module-setup.sh b/modules.d/90dmraid/module-setup.sh
->>> index e8de5f5..797a58e 100755
->>> --- a/modules.d/90dmraid/module-setup.sh
->>> +++ b/modules.d/90dmraid/module-setup.sh
->>> @@ -74,6 +74,8 @@ install() {
->>>  
->>>      inst "$moddir/dmraid.sh" /sbin/dmraid_scan
->>>  
->>> +    inst_rules 66-kpartx.rules 67-kpartx-compat.rules
->>> +
->>>      inst_libdir_file "libdmraid-events*.so*"
->>>  
->>>      inst_rules "$moddir/61-dmraid-imsm.rules"
->>>
->>
->> Fedora does not have 66-kpartx.rules nor 67-kpartx-compat.rules ...
->>
->> Heinz, do we need the kpartx part still?
->>
->> I reverted to kpartx, because "dmraid" adds a "p" as a seperator by default for
->> the partitions and this breaks existing installations.
->>
+On 12.10.2015 22:30, Neil Brown wrote:
+> Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> I would recommend splitting the kpartx call into a separate udev
-> rule; otherwise you'll run into timing issues with udev.
+>> On 12.10.2015 05:02, Neil Brown wrote:
+>>>
+>>> If I have booted a kernel with md/raid built in (no modules) and
+>>> I use dracut to build the initramfs for a different kernel which
+>>> has the md code compiled as separate modules, then it does not include
+>>> the required md modules in the initramfs.
+>>>
+>>> As a particular instance this happen when the root filesystem is on
+>>> RAID0.  The 'raid0.ko' module is not included and boot fails.
+>>>
+>>> https://bugzilla.opensuse.org/show_bug.cgi?id=935993
+>>>
+>>> This only happens when 'host-only' is selected (which is the default for
+>>> openSUSE).
+>>>
+>>> the modules.d/90mdraid/module-setup.sh code calls
+>>>
+>>>     instmods =drivers/md
+>>>
+>>> instmods calls
+>>>    module_is_host_only "raid0"
+>>> and this incorrectly fails.
+>>>
+>>> If raid0.ko didn't have any alias this would succeed, but it does.
+>>>
+>>> $ modinfo -F alias raid0
+>>> md-level-0
+>>> md-raid0
+>>> md-personality-2
+>>
+>> Huh? Is the module not loaded?
 > 
-> Cheers,
+> No, because the running kernel has "md/raid built in (no modules)".
 > 
-> Hannes
+> Thanks,
+> NeilBrown
 > 
+>>
+>>>
+>>> However these aliases don't appear in any modalias file in /sys/devices,
+>>> in /proc/crypto, or in /proc/modules.
+>>>
+>>> Maybe you could parse /proc/mdstat..
+>>>
+>>> if [ -f /proc/mdstat ]; then
+>>>   while read _d _c _a _m _x; do
+>>>    if [ "$_c" = ':' -a "$_a" = 'active' ]; then
+>>>       host_modalias["md-$_m"]=1
+>>>    fi
+>>>   done < /proc/mdstat
+>>> fi
+>>>
+>>> but it all seems rather fragile.  There are probably other modules that
+>>> might miss out accidentally. dm?
+>>>
+>>> Do we really need the host_modalias stuff?
+>>>
+>>> Thanks,
+>>> NeilBrown
+>>>
 
-Care to share your 66-kpartx.rules 67-kpartx-compat.rules or make them
-upstream? Shouldn't we agree on one naming scheme?
+Interesting... so we have to blow up the initramfs with the entire drivers/md
+in the case, where you switch from "compiled in" to "not compiled in"..
+
+I guess that happens not that often, so better be safe than sorry.
