@@ -1,26 +1,25 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add new file to export the common functions
-Date: Fri, 13 Nov 2015 13:44:45 +0100
-Message-ID: <5645DB3D.5080606@redhat.com>
-References: <1441871080-10392-1-git-send-email-mhuang@redhat.com>
- <20151029060453.GA32560@dhcp-128-25.nay.redhat.com>
+Subject: Re: [PATCH] dracut.sh: Support --mount with just mountpoint as
+ parameter
+Date: Fri, 13 Nov 2015 13:45:12 +0100
+Message-ID: <5645DB58.5040405@redhat.com>
+References: <1602461.PPk7fxS36o@linux-lm3i>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20151029060453.GA32560-0VdLhd/A9Pl6Yz8KYMO23x/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <1602461.PPk7fxS36o@linux-lm3i>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Fabian <fvogt-IBi9RG/b67k@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 29.10.2015 07:04, Minfei Huang wrote:
-> Hi, Harald.
+On 11.09.2015 13:35, Fabian wrote:
+> Right now the --mount parameter of dracut expects a rather long fstab-like 
+> line. This makes it possible to invoke dracut with e.g. --mount /boot.
 > 
-> Ping. Do you have any feedback about this patch?
-> 
-> Thanks
-> Minfei
+> ---
+>  dracut.8.asc |  4 ++++
+>  dracut.sh    | 16 +++++++++++++++-
+>  2 files changed, 19 insertions(+), 1 deletion(-)
 
-cleaned up dracut-functions.sh and moved dracut specific functions to
-dracut-inist.sh
+Thanks! Pushed.
