@@ -1,61 +1,83 @@
-From: Frederick Grose <fgrose-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: OverlayFS support for LiveOS
-Date: Sat, 19 Dec 2015 19:51:37 -0800
-Message-ID: <CAEcBt+XQd2aGRFrVkoAyEP9gjrkij1h9pX0VRaNXNrvshwnb4g@mail.gmail.com>
+From: Andrey Utkin <andrey.od.utkin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: LUKS rootfs & resume from suspend-to-disk - hangs on boot
+Date: Tue, 22 Dec 2015 23:58:01 +0200
+Message-ID: <5679C769.3050903@gmail.com>
 Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="GjmRWicGnwNPRk8GpTHMXLPNxvCFK0fCm"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
-        h=mime-version:from:date:message-id:subject:to:content-type;
-        bh=PDBc1PYOs7jLgWl5ZkqXvgKcvRFOGPBCJYfpUTKY8sk=;
-        b=E4djCEXlb7nS5SnaUta9LF3GekZzz+in7jQbxAPHnCy/7ZClIJgUlmi49xgTbU45dl
-         6kxthIWl7qZW2uEMTBXhl7pERT9zw+QDlXJ2uqk3RPar9T9jfcApW4q2l3qO4iJrostY
-         m3HzpIsKU6Zgwxf0yB6pwTrValyUJAwMISWTQxt7FFWhDpuQPnuutGRDe47W68Dennkn
-         yXOiBXXWAsoXFYl2kH1270X/NWPEC/HlzPifKxNTHfri+IGj9lEnEjceUqkV6sh1yqrH
-         eMDuawyzIwQlW6N4WuM9RoHi41e0IvCcG5BidVODXlDeMeRk99CDaPKXQeED6+/KhRk6
-         dmmQ==
+        h=to:from:subject:message-id:date:user-agent:mime-version
+         :content-type;
+        bh=fTC34KPhmO4/384hfmHfczhxkK9rkp6dQrKeDLAU+y4=;
+        b=NulfByZLyus25+739uh6rqvxDJR7udk2BdtelYxYotLFGHaYbLXGftMs66FK1ganks
+         CNbldCP6j1JMKR2nB+xLG1A5U59g16NXx2cYfBuxktRHEV+GntVkgvp54D5UylrDqXmy
+         e3ig+Fl6czH+v9vGNx+anqRExNRa6nr2M1rCGMKQgSY29DIdo5njx4pkKo5AXksURPnQ
+         dEoP+cA17xx/cUzFNaAo/5scR3MhWAMH1A2voR93tSfgH6SmGxG0u/RPunP7XX/aUPAJ
+         H6LZMTrBpD/hhSFmdBpYhV9LHyA0grpBmwTQmXBtNMbSuyh8OGY0zrqOTMJz6f3U48kN
+         6lIg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-See this pull request, https://github.com/haraldh/dracut/pull/107
-and issue discussion, https://github.com/haraldh/dracut/issues/104
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--GjmRWicGnwNPRk8GpTHMXLPNxvCFK0fCm
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-This may be suitable for rawhide testing, particularly with btrfs and
-other filesystems.
+Hi, I have my rootfs and swap partition LUKS-encrypted. Now I cannot
+make resume from swap to work. I can only get working my LUKS rootfs
+alone, without resume.
+The working way, I give options
 
-Commit message:
-Integrate the option to use an OverlayFS as the root filesystem
-into the 90dmsquash-live module for testing purposes.
+rd.luks.uuid=3D(rootfs-uuid)
+rd.luks.key=3D/key:UUID=3D(boot uuid)
+root=3D/dev/mapper/luks-(rootfs-uuid)
 
-Tested primarily with transient, in-RAM overlay boots on vfat-
-formatted Live USB devices, with persistent overlay directories
-on ext4-formatted Live USB devices, and with embedded, persistent
-overlay directories on vfat-formatted devices. (Persistent overlay
-directories on a vfat-formatted device must be in an embedded
-filesystem that supports the creation of trusted.* extended attributes,
-and must provide valid d_type in readdir responses.) The
-rd.live.overlay.readonly option to allow a persistent overlayfs to be
-mounted read only through a higher level transient overlay directory
-has been implemented through the multiple lower layers feature of
-OverlayFS.
+But if I remove rd.luks.uuid (specifying to open all LUKS devices), or
+if I put another rd.luks.uuid parameter for my swap partition, no matter
+if I specify rd.luks.key with luksdev part twice, or anyhow, it hangs on
+boot. What's supposed way to accomplish this?
 
-This implementation currently requires the enforcing=0 kernel command
-line option. Further SELinux tuning may change this limitation.
+Note that on the same USB stick where I have /boot, I have another
+partition encrypted with another key. Maybe this is what makes it hang?
 
-To permit easier comparison of Device-mapper vs. OverlayFS performance,
-the default transient dm overlay size has been adjusted up to 32 GiB.
-A transient dm overlay is a sparse file in memory, so this does not
-consume more RAM for legacy applications. It does permit a user to
-use all of the available root filesystem storage, and fails gently
-when it is consumed, as the available free root filesystem storage on
-a typical LiveOS build is under a few GiB. Thus, when booted on other-
-than-small RAM systems, the transient dm overlay should not overflow.
+I can provide any logs required, but I've tried many configurations and
+nothing works, so I am asking how it is supposed to work at all, so that
+I report the bug and logs against correct configuration.
 
-OverlayFS offers the potential to use all of the available free RAM,
-or all of the available free disc storage on non-vfat-devices,
-in its overlay, even beyond the root filesystem available space,
-because the OverlayFS root filesystem is a union of directories on
-two different partitions.
+Thanks in advance.
+
+--=20
+OpenPGP usage is appreciated (it also helps your letter to bypass spam
+filters). To email me with encryption easily, go
+https://encrypt.to/0xC6FCDB11
+I also use Jabber and appreciate you to use it, too.
+
+
+--GjmRWicGnwNPRk8GpTHMXLPNxvCFK0fCm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWecdpAAoJENVqfNDG/NsRlv4QAJtkrFs41MAHAIm6LgJ5bBvP
+2tnD4o6LMRgxldxkSURGE2evJGQkIIO4fTvlFgnu0StkkJnB3y70oYcjVFzBOS3g
+htK5d7zSoJ+3weNw2/kWt6vz9ELY1PP6ikoMB1zGUhWKEsCxZS82E/lcGsrY0Y62
+UbDPEZgnBvIqqJWfv57TGQEUgLb15niZuYqp6YxLAMAHPD5z+xJAryJLyEKXiFME
+cfk2/DZdEkh4WNXgGS9rLI8DEG0fOa8fCya1iAfa+aWF+0YD8W2h6+bATnbZ8HRx
+tP7hp3g6c6MAu5nsKikkMScgFWu56nz6uqyPkkCUSmS2Ec9VnbEXTPmgWi32UNa/
+D2ZGlEPAHeMtt+WgsCTo8ewKeT3EWvAIQMbNb9YKryBS5h0N+dLTj5+xeX1QAb2O
+xNSTzHiIzPUrnae72DOSjihnNC0M0/q237H3Cm+yaTjtE2rIisDAXMbTVu7Ti3E7
+6ZPKy2Ocdh9CbAkW5suK9F9+3ZUgxlI1zzmieEbymxoqxWNburA5pUZdjybl64pK
+OLa2Eq1l5KOjIrIOdyu7N9cmo05+GgQvfn/OXD/ywpLyrRWfmoNKHWN6SMiYngLG
+1r7mNSpfAJtcbZvCNDNWNUXlf9eB/mSjYJv9ho2jdaZPW7a201Cg77geHU/KTbMF
+jGaYdgMvoQmSurL7BQi+
+=HIK+
+-----END PGP SIGNATURE-----
+
+--GjmRWicGnwNPRk8GpTHMXLPNxvCFK0fCm--
