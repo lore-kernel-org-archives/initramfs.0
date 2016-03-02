@@ -1,18 +1,32 @@
-From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH RFC dracut] watchdog: install module for active watchdog
-Date: Fri, 26 Feb 2016 14:03:40 -0000
-Message-ID: <20160226140340.19671.3050.githubbot@v6.hoyer.xyz>
-References: <84fb272d0cfa043a19256ce4231c72c73268cca1.1456494446.git.panand@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+From: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH V2 dracut 0/2] Install kernel module for active watchdog
+Date: Wed,  2 Mar 2016 17:36:27 +0530
+Message-ID: <cover.1456919929.git.panand@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <84fb272d0cfa043a19256ce4231c72c73268cca1.1456494446.git.panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Patchset imported to github.
-Pull request:
-<https://github.com/haraldh/dracut/compare/master...dracut-mailing-devs:84fb272d0cfa043a19256ce4231c72c73268cca1.1456494446.git.panand%40redhat.com>
+Changes since RFC:
+ -- Added one more patch to take care that dracut does not add watchdog
+hooks when systemd module is included. In that case systemd daemon will
+manage watchdog for kicking.
+ -- Removed --nowdt argument. User can use -o or --omit when wathdog module
+is not needed. Thanks Harald for this suggestion.
+ -- Now I also do not check for "hostonly" to add modules for active
+watchdog. It seems reasonable to add kernel watchdog modules whenever,
+dracut watchdog module has been added.
 
+Pratyush Anand (2):
+  watchdog: Do not add hooks if systemd module is included
+  watchdog: install module for active watchdog
+
+ modules.d/04watchdog/module-setup.sh | 38 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+-- 
+2.5.0
