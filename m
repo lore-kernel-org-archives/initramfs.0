@@ -1,13 +1,15 @@
 From: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V2 dracut 0/2] Install kernel module for active watchdog
-Date: Fri, 4 Mar 2016 09:04:43 +0530
-Message-ID: <20160304033443.GB7467@dhcppc3.redhat.com>
+Subject: Re: [PATCH V2 dracut 2/2] watchdog: install module for active
+ watchdog
+Date: Fri, 4 Mar 2016 09:45:50 +0530
+Message-ID: <20160304041550.GC7467@dhcppc3.redhat.com>
 References: <cover.1456919929.git.panand@redhat.com>
- <20160304031633.GB3592@dhcp-128-65.nay.redhat.com>
+ <0d7adcfdf08f4eb753a0e65e7e65d5fe0ef22f70.1456919929.git.panand@redhat.com>
+ <20160304031334.GA3592@dhcp-128-65.nay.redhat.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20160304031633.GB3592-0VdLhd/A9Pl+NNSt+8eSiB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <20160304031334.GA3592-0VdLhd/A9Pl+NNSt+8eSiB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
@@ -17,30 +19,60 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dzickus-H+wXaHxf7aLQT0dZR
 
 Hi Dave,
 
-On 04/03/2016:11:16:33 AM, Dave Young wrote:
+On 04/03/2016:11:13:34 AM, Dave Young wrote:
 > Hi, Pratyush
 > 
-> On 03/02/16 at 05:36pm, Pratyush Anand wrote:
-> > Changes since RFC:
-> >  -- Added one more patch to take care that dracut does not add watchdog
-> > hooks when systemd module is included. In that case systemd daemon will
-> > manage watchdog for kicking.
-> >  -- Removed --nowdt argument. User can use -o or --omit when wathdog module
-> > is not needed. Thanks Harald for this suggestion.
-> >  -- Now I also do not check for "hostonly" to add modules for active
-> > watchdog. It seems reasonable to add kernel watchdog modules whenever,
-> > dracut watchdog module has been added.
+> [snip]
+> > 
+> > Signed-off-by: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > Cc: Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  modules.d/04watchdog/module-setup.sh | 33 +++++++++++++++++++++++++++++++++
+> >  1 file changed, 33 insertions(+)
+> > 
+> > diff --git a/modules.d/04watchdog/module-setup.sh b/modules.d/04watchdog/module-setup.sh
+> > index 7ec757aec032..6232afb0d9ca 100755
+> > --- a/modules.d/04watchdog/module-setup.sh
+> > +++ b/modules.d/04watchdog/module-setup.sh
+> > @@ -32,3 +32,36 @@ install() {
+> >      inst_multiple -o wdctl
+> >  }
+> >  
+> > +installkernel() {
+> > +    cd /sys/class/watchdog
+> > +    for dir in */; do
+> > +	    cd $dir
+> > +	    active=`[ -f state ] && cat state`
+> > +	    if [ "$active" =  "active" ]; then
+> > +		    # applications like kdump need to know that, which
+> > +		    # watchdog modules have been added into initramfs
+> > +		    echo `cat identity` >> "$initdir/tmp/active-watchdogs"
+> > +		    # device/modalias will return driver of this device
 > 
-> >From my understanding hostonly is a different mode comparing with the default
-> one which being used for distribution provided initramfs. In the latter case
-> all possible drivers should be included. But hostonly mode only adding the
-> drivers being used in this boot. From the code logic we provided it will detect
-> active wdt module and add the driver, the behavior is just "hostonly", no?
+> Seems I do not find where the identiy being used..
 
-I think, I am agreeing to this.
+Yes, as stated in comment it is being used by kdump.
+https://github.com/pratyushanand/kexec-tools/commit/88c2c9c931c6d2acc68bdd0adf9ac04a93a1a864#diff-c8f5f515755d435842acf0793a131c28R345
 
-So, should we also add no "hostonly" case where driver will be present
-irrespective of whether wdt is active or not? May be we can leave it for now,
-and can be added if someone needs it latter.
+> 
+> OTOH if we use it in kdump module, we should find it in kdump module code instead
+> of depending on the tmp file created by wdt module.
+
+Unfortunately, I do not see any nice way to do it in kdump until we replicate
+almost all of this code (except module installation) again in kdump. In kdump
+dracut module we will have to parse each directory in sysfs again to determine
+active watchdogs, and then putting all this stuff in watchdog dracut is almost
+useless for kdump.
+
+Another implementation which has occurred to me was as follows:
+is_wdt_modified() of kdump can rely on "driver name" instead of "identity". For
+example if watchdog module installs mei_me then is_wdt_modified() just looks for
+a filename  in initrd having "mei_me" string in it. But I am not sure about it.
+Same string might be present in other name as well. 
+
+However, if we can get full path of ".ko" from module name easily, that would be
+helpful.
 
 ~Pratyush
