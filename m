@@ -1,41 +1,49 @@
 From: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V2 dracut 2/2] watchdog: install module for active
- watchdog
-Date: Tue, 8 Mar 2016 07:45:31 +0530
-Message-ID: <20160308021531.GD20953@dhcppc3.redhat.com>
-References: <cover.1456919929.git.panand@redhat.com>
- <0d7adcfdf08f4eb753a0e65e7e65d5fe0ef22f70.1456919929.git.panand@redhat.com>
- <56DD86D4.8040800@redhat.com>
- <20160307162813.GC20953@dhcppc3.redhat.com>
- <56DDB1DF.7050500@redhat.com>
-Mime-Version: 1.0
+Subject: [PATCH V4 dracut 0/3] Install kernel module for active watchdog
+Date: Tue,  8 Mar 2016 14:14:34 +0530
+Message-ID: <cover.1457425628.git.panand@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <56DDB1DF.7050500-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 07/03/2016:05:52:47 PM, Harald Hoyer wrote:
-> On 07.03.2016 17:28, Pratyush Anand wrote:
-> > 
-> > In some cases there could be an alias representing more than one module like as
-> > follows
-> > # modprobe -R pci:v00008086d000024D0sv00000000sd00000000bc06sc01i00
-> > intel_rng
-> > lpc_ich
-> > 
-> > In such cases, we need to convert the above output of `modprobe -R` into the
-> > format like intel_rng,lpc_ich, so that we can ask instmods to install all of them.
-> 
-> But instmods wants space separated arguments
+Changes since V3:
+-- Incorporated changes suggested by Harald for V2 patches
 
-Ohh, I mistaken with rd.driver.pre :(.
-Will correct.
+Changes since V2:
+-- Added one more patch to update rd.driver.pre with watchdog module name,
+so that they are loaded into kernel as early as possible.
+-- Removed creation of tmp/active-watchdogs. modinfo will be helpful for
+kexec-tools.
+-- Now we add modules for active watchdog in hostonly mode and modules for
+all watchdog in no-hostonly mode.
 
-Thanks for pointing it out.
+Changes since RFC:
+-- Added one more patch to take care that dracut does not add watchdog
+hooks when systemd module is included. In that case systemd daemon will
+manage watchdog for kicking.
+-- Removed --nowdt argument. User can use -o or --omit when wathdog module
+is not needed. Thanks Harald for this suggestion.
+-- Now I also do not check for "hostonly" to add modules for active
+watchdog. It seems reasonable to add kernel watchdog modules whenever,
+dracut watchdog module has been added.
 
-~Pratyush
+
+Pratyush Anand (3):
+  watchdog: Do not add hooks if systemd module is included
+  watchdog: install module for active watchdog
+  watchdog: ensure that module is loaded as early as possible
+
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+ modules.d/04watchdog/module-setup.sh | 38 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+-- 
+2.5.0
