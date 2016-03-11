@@ -1,19 +1,19 @@
 From: Ronit Halder <ronit.linux-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: creating initramfs in fedora
-Date: Fri, 11 Mar 2016 18:12:10 +0530
-Message-ID: <CACeEjS+Sv7E3gKyZ1RTt1vuPUXj7h48nP117f8HUrF+fFfTBBg@mail.gmail.com>
+Date: Fri, 11 Mar 2016 18:19:26 +0530
+Message-ID: <CACeEjSLk0fDg+Yd3ieGE5+4gRuBnuYjsj2WNr3Q5x1ZfZ8KuRA@mail.gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
         h=mime-version:date:message-id:subject:from:to;
         bh=O3qPwpSa2Iqcmp+/XAm5AaujI4PP55wQhYUGkN06JOY=;
-        b=nZcrzOGtycHvLM6xo7sSH4FTQJ+0g/dAiKusB1fYFe3JXWBrC6WxHlPEToXral40Gr
-         ATklexZdEXiYWYnqFZhCw7eg5OqT8TMvEikBJ7+qmoyOVOW10e9N4V1xdiRjqQ3AWl5c
-         yHTq5tnQC3kJxcC/d+4ODZbV0GKq8tutu5Q7dSKYJEAc00jk01dD8c1OPRvktMd1RPNu
-         8VMtH5mHFetHa3uNqV203tf5nKgI1DU6twybqUGGWGK/c24dVFatpP8JgTYXiVopbnS6
-         aSc1rF3sYPdVlnIZjIf9jltwz+iwgSLdV5GiWyLEnkfH5u96RAWNv0Qtscw/jwkz7d7j
-         gHIA==
+        b=bTjebq1YK9fI/BOKghaPglkUIKyVZw1oVaqUhDxWygCCgE2favYS0PM7fnz3ZefYWm
+         D6pxXuuSEBg/Lm+5I5SWtzZ5MYt0szjWad13K4lCKYikS+3nbcpS3r7vJhLlQnCEFITB
+         PzxBux0ygpx7bkcvm4h+Xlzqdo2MseZxEqXC5SOEfAg1xJelZz3rh2oBWwtOSF4/9h8s
+         gVBcY/120HUDye0Idqfl3KB37Hqwr5kO0q94s+Bzdnx40FtKM1bMJl3g+/Zuavu1wYO4
+         Clsqb2ifstPL8xYBRW7jQedyWY05lIsG9m9iKQ6IFvn7b60HSF2eujmw3Pm8dmPbnk7p
+         PQkg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
