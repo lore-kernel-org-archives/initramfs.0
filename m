@@ -1,47 +1,23 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V5 dracut 3/3] watchdog: ensure that module is loaded as
- early as possible
-Date: Thu, 17 Mar 2016 15:08:04 +0100
-Message-ID: <56EABA44.8090406@redhat.com>
-References: <cover.1458099200.git.panand@redhat.com>
- <2751555c29f26f69a63888745513edeceb39d416.1458099200.git.panand@redhat.com>
- <56E8DE95.4090308@redhat.com>
+From: Ronit Halder <ronit.linux-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: "kdumpbase" dracut module
+Date: Sat, 19 Mar 2016 12:59:07 +0530
+Message-ID: <CACeEjSL0jrqF9WtX3mZrO0036pGc4O4aPg+=JPMOB7QH47DLWA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <56E8DE95.4090308-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to;
+        bh=SKu1FYlWgUA3G6XlCBA8e7ry8XjfVTrI0Fg/QlcOQGA=;
+        b=Ex2/I3lRD9nVj8D0WeKF42ec2TwjNdAWKVBDQAr3vZW/9nqwrv5CxEwNy977EJ4WwT
+         XluCQgglgLCQPA3j2K2HPs7Mm5im5T1hThoMw4MXqD45DZw0dtCObJF8JpcLWDrWboQt
+         Eol6SGbAen7VnfCI8zO9JSWgi+PdF35Rzwl8Zhq3kn0lfRhn4mIe5XqkM2+qY7yI0q6q
+         qfSdku8rD5z3GKFfPxBSX4n7spfKWKkY77WWMkNEHnYjEmEo03+JUvxVcJcJc7IO+86S
+         q5iAsBh8hMQHGK0C2qODa74ljPKXLQydTJ1i8ETzih9zwAJP8cOLUlBoEFfcldg+Wlmv
+         n5Eg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kernelnewbies <kernelnewbies-7JyXY6prKcjpASu1u0TL5ti2O/JbrIOy@public.gmane.org>
 
-On 16.03.2016 05:18, Pratyush Anand wrote:
-> 
-> 
-> On Wednesday 16 March 2016 09:09 AM, Pratyush Anand wrote:
->> It is expected that a watchdog module will disable an active watchdog when
->> its probe is called ie, when it is loaded. So an early load of the module
->> will help to disable it earlier.
->> This can be helpful in some corner cases where kdump and watchdog daemon
->> both are active.
->>
->> Testing:
->>      -- When watchdog kernel modules were added
->>     # dracut --no-hostonly initramfs-test.img -a watchdog
->>     # lsinitrd initramfs-test.img -f etc/cmdline.d/04-watchdog.conf
-> 
-> Sorry, please ignore this patch and take "resend" if there is not any further
-> comment.
-> 
-> ~Pratyush
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-Imported to github:
-
-https://github.com/dracutdevs/dracut/pull/121
-
-I will comment there.
+I want to know what is the job of "kdumpbase" dracut module.
