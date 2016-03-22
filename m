@@ -1,90 +1,98 @@
-From: Freeman Zhang <freeman.zhang1992-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: "kdumpbase" dracut module
-Date: Tue, 22 Mar 2016 08:41:21 +0800
-Message-ID: <56F094B1.6070209@gmail.com>
-References: <CACeEjSL0jrqF9WtX3mZrO0036pGc4O4aPg+=JPMOB7QH47DLWA@mail.gmail.com>
- <20160321062655.GA9896@dhcp-128-65.nay.redhat.com>
- <CAAm8cU6EaVwQPV5wwy5PXeEShtEfscTz-vAOOxmZWP56YDgNSg@mail.gmail.com>
+From: Felix Miata <mrmazda-ihVZJaRskl1bRRN4PJnoQQ@public.gmane.org>
+Subject: Re: kernel/initrd loading delays
+Date: Tue, 22 Mar 2016 04:49:13 -0400
+Message-ID: <56F10709.8040305@earthlink.net>
+References: <561BDFDF.1030303@earthlink.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="6dOVfa93sM5pEqnjMliEqQ7lraUd8VFUQ"
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=subject:to:references:from:cc:message-id:date:user-agent
-         :mime-version:in-reply-to;
-        bh=YHEygWP6z0MbJq9AkJ2itEIfSqmU4aHB03VOLnw6ISE=;
-        b=ZE6zDgx0VNLvyn23InxfGYUIgLGLMmvNFt8zma16nPJo/RxCfLz5+oeCvwyf5qSraL
-         Od/ZkPKSONryYSvPUvSDExGmpP6vDsruGgzgyjUZeMcHxzxvnVkv0f1gsfLMJMcExxLN
-         +JaAomGY5wS2JkErNi6NbxQC5eTywM0z40i3FRFsC3RCpKPxB68B1eDRBli30Dzw1fax
-         PDNPg03M2c5vCjG5yswxQo1dSwPQOQIOTP2l3e4JZ0jCYSbRS6Lurya8Iwrv0AP5eglY
-         bSbig/Sx8DaMS8HtOJP9v/bvg2VXmrKfbsG/xKo4Co7lbJIIIL0yPJR5AxIIRsIUQ/KV
-         KmfA==
-In-Reply-To: <CAAm8cU6EaVwQPV5wwy5PXeEShtEfscTz-vAOOxmZWP56YDgNSg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <561BDFDF.1030303-ihVZJaRskl1bRRN4PJnoQQ@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: Ronit Halder <ronit.crj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ronit.linux-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kernelnewbies-7JyXY6prKcjpASu1u0TL5ti2O/JbrIOy@public.gmane.org, zhezhang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---6dOVfa93sM5pEqnjMliEqQ7lraUd8VFUQ
-Content-Type: multipart/mixed; boundary="7HXTNAAQ0AEP43IvBNRvqmQwcSf92bsQu"
-From: Freeman Zhang <freeman.zhang1992-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-To: Ronit Halder <ronit.crj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ronit.linux-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org,
- kernelnewbies-7JyXY6prKcjpASu1u0TL5ti2O/JbrIOy@public.gmane.org, zhezhang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Message-ID: <56F094B1.6070209-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: "kdumpbase" dracut module
-References: <CACeEjSL0jrqF9WtX3mZrO0036pGc4O4aPg+=JPMOB7QH47DLWA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
- <20160321062655.GA9896-0VdLhd/A9Pl+NNSt+8eSiB/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
- <CAAm8cU6EaVwQPV5wwy5PXeEShtEfscTz-vAOOxmZWP56YDgNSg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-In-Reply-To: <CAAm8cU6EaVwQPV5wwy5PXeEShtEfscTz-vAOOxmZWP56YDgNSg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Felix Miata composed on 2015-10-12 12:29 (UTC-0400):
 
---7HXTNAAQ0AEP43IvBNRvqmQwcSf92bsQu
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+> On more and more installations since most distros have replaced mkinitrd with
+> dracut, on selecting a bootloader menu choice the "root
+> (hd0,...filesystemtype..[Linux-bzImage, setup, ... initrd /boot/initrd"
+> message stays on screen 40 seconds or more before the time-stamped boot
+> messages begin scrolling the screen. IIRC, these delays first began appearing
+> last January or February, and appear on multiple machines. All kernel and
+> initrd images are on smallish EXT3 or EXT4 (mostly the latter) filesystems
+> using 1024 blocksize on BIOS logical partitions on rotating rust (IIRC, all
+> with native 512b sector size, manufactured in 2011 or earlier). All
+> installations are configured with static IP. All have Plymouth either not
+> installed, or are booted with noplymouth included on kernel cmdline.
 
-On 3/21/16 9:55 PM, Ronit Halder wrote:
-> Thanks for helping
->=20
-> So, this module is used to dump the crash kernel.
-> Am I right?
-> If not then can you explain how kdump kernel calls the makedumpfile?
->=20
+> e.g, on my fastest system, host msi85, a 3.0 GHz dual core Haswell, total
+> time from boot stanza select on BIOS host msi85 to Rawhide 4.3.0-0.rc3.git4.1
+> (dracut initramfs.img 11,326,223) multi-user.target shell prompt ready is
+> about 80 seconds following that 40 second delay, with last time stamp showing
+> 36.844484.
 
-You are absolutely right Ronit. By the time the second kernel is booted,
-this module will start a service called kdump-capture, which will
-execute kdump.sh, which will invoke makedumpfile after all, depending on
-your kdump configuration.
+> Same msi85 system booting LMDE 2 3.16.0-4 (non-dracut? initrd.img 27,362,964;
+> initramfs-tools 0.120) delays start of boot messages nearly 80 seconds,
+> reaching DM greeter ready nearly 140 seconds after stanza selection.
 
-All the best!
-Freeman
+> Same system booting openSUSE Leap 42.1 4.1.8 (dracut initrd 8,082,360)
+> exhibits no perceptible delay, reaching multi-user.target shell prompt in
+> under 47 seconds from boot stanza selection.
 
+> Same system booting openSUSE 13.2 3.16.7 (dracut initrd 5,351,996) delays
+> start of boot messages about 40 seconds, reaching multi-user.target bash
+> prompt about 90 seconds after stanza selection.
 
---7HXTNAAQ0AEP43IvBNRvqmQwcSf92bsQu--
+> Same system booting Mageia 5 4.1.8 (dracut initrd.img 9,391,664) exhibits no
+> delay, reaching multi-user.target bash prompt in about 45 seconds.
 
---6dOVfa93sM5pEqnjMliEqQ7lraUd8VFUQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+> Same system booting Wheezy 3.2.0 (non-dracut initrd.img 10,537,321) exhibits
+> no delay, reaching DM greeter in less than about 45 seconds.
 
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - https://gpgtools.org
+> Same system booting openSUSE 13.1 3.12.44 (non-dracut initrd 7,679,390)
+> exhibits no delay, reaching multi-user.target bash prompt in less than 45
+> seconds.
 
-iQIcBAEBCgAGBQJW8JSxAAoJENZCakLuo2TNQqgQAJBH7iFXr7s0dlyEviayZn/g
-rrZXG1UJyWU+uTAUlCjM1DnmroHf4dmGwwKeYlg+GDuEo+C+XsbLRmfUSeeln+Jp
-U53NXUrEE4nnQZlreapPE9F6p1ULBmYWJ4qUr3CwcAR8Uk+sy68AG3x0bfmV2/Q+
-z/f1WRda+ALvSzFkMqK2DK1iUYM5qWrL+1ynmGpmRyRdrQU7g4FqkkenAItbal2e
-RdXbbzMQvuDMkiOlWa+IVj/+ZTPQTJZEEqa/EfiENL5N5s+DKn8K7/gD1NdypWrH
-Ba/gDufOAfykY/Ecdapnm5yqt/N/KrmEVjDzUSLoYEG88HeD2mVQwL0eMdLtUIoF
-qeV0I8IWvMczGnk2iSrw4Z2BWS1lTgo3ZWhOTusfvPvsrhljS0ItS1VGaR/VKZqW
-lLIVx+tzFWyU3kKFJGtiwH2YSrD1RtW1pKm25BQ4Us2ooKvIv80t06AG8IzT5Vkt
-2Zf4lxgYDEHMR0WYiVg8mFS9no3hzvO1pSBsGMBrTtzkoqbwmQkPCDQeh/5wpoSO
-zAPagqriVSN9UoCJJr0vHkV7dd55fJzAp0LU1N7Ghgnpz0U2Gkz1j9d5s5RDotAw
-ME/WHX5vWWhuIrGu3oOWsvLh1P+MWLN03H7yXsK/a0s337LW8Pe427GMsW9rb1+u
-6+7YmHVzpDJ/S5lXJMtf
-=Id4S
------END PGP SIGNATURE-----
+> Same system booting Fedora 23 4.2.2 (dracut initramfs.img 11,255,214) reaches
+> multi-user.target shell prompt in about 75 seconds after unknown
+> kernel/initrd delay (puts display into sleep mode until boot messages appear).
 
---6dOVfa93sM5pEqnjMliEqQ7lraUd8VFUQ--
+> Same system booting openSUSE Tumbleweed 4.2.1 (dracut initrd 8,970,760)
+> exhibits no delay, reaching multi-user.target bash prompt in less than 45
+> seconds.
+
+> Same system booting (second, on sda28, vs. other on sda23) openSUSE
+> Tumbleweed 4.2.1 (dracut initrd 8,965,124) exhibits ~40 second delay,
+> reaching multi-user.target bash prompt in about 100 seconds.
+
+> Same system booting Kubuntu 14.10 3.16.0 (non-dracut initrd 20,550,608)
+> exhibits no initial (linux/initrd) delay, reaching KDM greeter in about 90
+> seconds.
+
+> Same system booting Fedora 22 4.1.8 (dracut initrd 10,788,392) exhibits no
+> delay, reaching multi-user.target bash prompt in less than 50 seconds.
+
+> Any ideas what could cause these delays, or how to eliminate them?
+
+Booting host hpg33 openSUSE Tumbleweed 20160307 64 bit kernel-default 4.4.3, 
+6194336 bytes, and initrd 38456340 bytes, just took 9.4 minutes for the last 
+Grub message to clear, and extended that to ~10.2 minutes to reach a shell 
+prompt. Prior 4.3.3-5 kernel-default's initrd is 9589212 bytes, 25% the size 
+of the current. 4.3.3-5 took 2 2/3 minutes for the Grub message to clear, 
+about 2/3 more minute to reach shell prompt, and 4.3.3-1 about the same. 3rd 
+prior, kernel-desktop-4.2.1 cleared the Grub message in too few seconds to 
+count, well under a minute to reach shell prompt. kernel-default-4.5.0 
+cleared the Grub in 130 seconds, reached shell prompt at 174.
+
+Mount reported /dev/mapper/* names with 4.4.3 and 4.5.0, while 4.2.1 and 
+4.3.3 reported device names.
+
+What's taking so long with kernel-default?
+-- 
+"The wise are known for their understanding, and pleasant
+words are persuasive." Proverbs 16:21 (New Living Translation)
+
+  Team OS/2 ** Reg. Linux User #211409 ** a11y rocks!
+
+Felix Miata  ***  http://fm.no-ip.com/
