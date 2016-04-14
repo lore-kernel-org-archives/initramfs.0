@@ -1,19 +1,122 @@
-From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: Re: [PATCH] dracut: 99base: do not mount /run with the "noexec"
+From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+Subject: Re: [PATCH] dracut: 99base: do not mount /run with the "noexec"
  option
-Date: Thu, 14 Apr 2016 11:03:03 -0000
-Message-ID: <146063178363.23619.10614635055686320261.githubbot@v6.hoyer.xyz>
-References: <570F71FD.3020101@redhat.com>
+Date: Thu, 14 Apr 2016 13:18:34 +0200
+Message-ID: <1460632714.2782.3.camel@trentalancia.net>
+References: <1460470060.3152.3.camel@trentalancia.net>
+	 <570D0533.6070704@redhat.com> <1460472110.3152.14.camel@trentalancia.net>
+	 <570F71FD.3020101@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <570F71FD.3020101-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Patchset imported to github.
-Pull request:
-<https://github.com/haraldh/dracut/compare/master...dracut-mailing-devs:570F71FD.3020101%40redhat.com>
+Hello Harald.
 
+My reply follows the quoted text from previous messages...
+
+On gio, 2016-04-14 at 12:33 +0200, Harald Hoyer wrote:
+> On 12.04.2016 16:41, Guido Trentalancia wrote:
+> > On mar, 2016-04-12 at 16:24 +0200, Harald Hoyer wrote:
+> > > Am 12.04.2016 um 16:07 schrieb Guido Trentalancia:
+> > > > Do not mount the /run directory with the "noexec" option,
+> > > > otherwise
+> > > > the
+> > > > system bootup fails (no binary can be executed, everything
+> > > > fails
+> > > > with
+> > > > permission denied errors).
+> > > >=20
+> > > > The bug was introduced in version 042 (11 Jun 2015) and affects
+> > > > all
+> > > > versions up to 044 (latest) and including git checked out on 12
+> > > > Apr
+> > > > 2016.
+> > > >=20
+> > > > Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+> > > > ---
+> > > > =C2=A0modules.d/99base/init.sh |=C2=A0=C2=A0=C2=A0=C2=A02 +-
+> > > > =C2=A01 file changed, 1 insertion(+), 1 deletion(-)
+> > > >=20
+> > > > --- dracut-044/modules.d/99base/init.sh	2015-11-25
+> > > > 14:22:28.000000000 +0100
+> > > > +++ dracut-044-99base-init-should-mount-newrun-as-
+> > > > exec/modules.d/99base/init.sh	2016-04-12
+> > > > 15:37:44.163185387
+> > > > +0200
+> > > > @@ -64,7 +64,7 @@ fi
+> > > > =C2=A0
+> > > > =C2=A0if ! ismounted /run; then
+> > > > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mkdir -m 0755 /newrun
+> > > > -=C2=A0=C2=A0=C2=A0=C2=A0mount -t tmpfs -o
+> > > > mode=3D0755,noexec,nosuid,nodev,strictatime
+> > > > tmpfs /newrun >/dev/null
+> > > > +=C2=A0=C2=A0=C2=A0=C2=A0mount -t tmpfs -o mode=3D0755,nosuid,n=
+odev,strictatime tmpfs
+> > > > /newrun >/dev/null
+> > > > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0cp -a /run/* /newrun >/dev/null 2=
+>&1
+> > > > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mount --move /newrun /run
+> > > > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0rm -fr -- /newrun
+> > > >=20
+> > >=20
+> > > Which binary resides in /run ??
+> >=20
+> >=20
+> > The whole initram filesystem binaries, including
+> > (/run/initramfs)/bin,
+> > (/run/initramfs)/sbin, (/run/initramfs)/usr/bin and
+> > (/run/initramfs)/usr/sbin.
+
+[...]
+
+> > The patch has been tested and it works fine. Without the patch,
+> > dracut
+> > is unusable (the system cannot be booted).
+
+[...]
+
+> I would prefer something like this. Care to check, if that solves it?
+
+No, it does NOT work.
+
+Harald, you should apply the patch I sent to you (and quoted above),
+unmodified in order to sort out this major bug which produces
+unbootable initram filesystems.
+
+> diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
+> index bd7ef70..31126d6 100755
+> --- a/modules.d/99base/init.sh
+> +++ b/modules.d/99base/init.sh
+> @@ -64,7 +64,12 @@ fi
+>=20
+> =C2=A0if ! ismounted /run; then
+> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mkdir -m 0755 /newrun
+> -=C2=A0=C2=A0=C2=A0=C2=A0mount -t tmpfs -o mode=3D0755,noexec,nosuid,=
+nodev,strictatime
+> tmpfs /newrun >/dev/null
+> +=C2=A0=C2=A0=C2=A0=C2=A0if ! str_starts "$(readlink -f /bin/sh)" "/r=
+un"; then
+> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mount -t tmpfs -o mo=
+de=3D0755,noexec,nosuid,nodev,strictatime
+> tmpfs /newrun >/dev/null
+> +=C2=A0=C2=A0=C2=A0=C2=A0else
+> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0# the initramfs is b=
+ased in /run, so don't mount it with
+> noexec
+> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mount -t tmpfs -o mo=
+de=3D0755,nosuid,nodev,strictatime tmpfs
+> /newrun >/dev/null
+> +=C2=A0=C2=A0=C2=A0=C2=A0fi
+> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0cp -a /run/* /newrun >/dev/null 2>&1
+> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mount --move /newrun /run
+> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0rm -fr -- /newrun
+
+
+Regards,
+
+Guido
