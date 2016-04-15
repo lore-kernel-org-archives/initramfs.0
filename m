@@ -1,67 +1,56 @@
-From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-Subject: Re: [PATCH v2 1/2]: dracut: 95resume: avoid possible symbolic link
- creation error on bootup
-Date: Fri, 15 Apr 2016 10:55:22 +0200
-Message-ID: <1460710522.3382.5.camel@trentalancia.net>
-References: <1460387473.2670.20.camel@trentalancia.net>
-	 <1460390439.2670.24.camel@trentalancia.net> <5710A8B2.60704@redhat.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V5 dracut 0/3] Install kernel module for active watchdog
+Date: Fri, 15 Apr 2016 11:54:03 +0200
+Message-ID: <5710BA3B.8030600@redhat.com>
+References: <cover.1458099200.git.panand@redhat.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <5710A8B2.60704-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <cover.1458099200.git.panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On Fri, 2016-04-15 at 10:39 +0200, Harald Hoyer wrote:
-> On 11.04.2016 18:00, Guido Trentalancia wrote:
-> > Avoid symbolic link creation error (should apply to latest dracut
-> > version).
-> >=20
-> > Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-> > ---
-> > =C2=A0modules.d/95resume/parse-resume.sh |=C2=A0=C2=A0=C2=A0=C2=A02=
- +-
-> > =C2=A01 file changed, 1 insertion(+), 1 deletion(-)
-> >=20
-> > --- dracut-044/modules.d/95resume/parse-resume.sh	2015-11-25=20
-> > 14:22:28.000000000 +0100
-> > +++ dracut-044-95resume-force-symlink/modules.d/95resume/parse-
-> > resume.sh	2016-04-11 17:53:20.664983390 +0200
-> > @@ -67,7 +67,7 @@ if ! getarg noresume; then
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0printf -- '%s\n' ' RUN+=3D"/sbin/initqueue --finished --
-> > unique --name 00resume echo %M:%m=C2=A0=C2=A0> /sys/power/resume"'
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0} >> /etc/ude=
-v/rules.d/99-resume.rules
-> > =C2=A0
-> > -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0printf '[ -e "%s" =
-] && { ln -s "%s" /dev/resume 2>
-> > /dev/null; rm -f -- "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
-> > +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0printf '[ -e "%s" =
-] && { ln -sf "%s" /dev/resume 2>
-> > /dev/null; rm -f -- "$job" "%s/initqueue/timeout/resume.sh"; }\n' \
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0"$resume" "$resume" "$hookdir" >>
-> > $hookdir/initqueue/settled/resume.sh
-> > =C2=A0
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0{
+On 16.03.2016 04:39, Pratyush Anand wrote:
+> Changes since V4:
+> -- Renamed 04watchdog.conf to 00watchdog.conf
+> Changes since V3:
+> -- Incorporated changes suggested by Harald for V2 patches
+> 
+> Changes since V2:
+> -- Added one more patch to update rd.driver.pre with watchdog module name,
+> so that they are loaded into kernel as early as possible.
+> -- Removed creation of tmp/active-watchdogs. modinfo will be helpful for
+> kexec-tools.
+> -- Now we add modules for active watchdog in hostonly mode and modules for
+> all watchdog in no-hostonly mode.
+> 
+> Changes since RFC:
+> -- Added one more patch to take care that dracut does not add watchdog
+> hooks when systemd module is included. In that case systemd daemon will
+> manage watchdog for kicking.
+> -- Removed --nowdt argument. User can use -o or --omit when wathdog module
+> is not needed. Thanks Harald for this suggestion.
+> -- Now I also do not check for "hostonly" to add modules for active
+> watchdog. It seems reasonable to add kernel watchdog modules whenever,
+> dracut watchdog module has been added.
+> 
+> 
+> 
+> Pratyush Anand (3):
+>   watchdog: Do not add hooks if systemd module is included
+>   watchdog: install module for active watchdog
+>   watchdog: ensure that module is loaded as early as possible
+> 
+> Cc: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> 
+>  modules.d/04watchdog/module-setup.sh | 38 ++++++++++++++++++++++++++++++++++++
+>  1 file changed, 38 insertions(+)
+> 
 
->=20
-> patching file modules.d/95resume/parse-resume.sh
-> patch: **** malformed patch at line 8:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0printf -- '%s\n'
-> ' RUN+=3D"/sbin/initqueue --finished --unique --name 00resume
-> echo %M:%m=C2=A0=C2=A0> /sys/power/resume"'
-
-Very strange. I have checked again (version 2 of the patch, not version
-1) and it applies cleanly to version 044 and git.
-
-> anyway.. applied by hand and pushed.
-
-Excellent. Thanks.
-
-Regards,
-
-Guido
+pushed, please review my changes:
+<https://github.com/dracutdevs/dracut/commit/74e2d1e69f5527ab31b01fc19f67143d1f091980>
