@@ -1,32 +1,40 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [dracut] rd.shell won't work if "root=" is missing
-Date: Fri, 15 Apr 2016 12:04:23 +0200
-Message-ID: <5710BCA7.30204@redhat.com>
-References: <trinity-fb369bfb-8623-46c4-8628-71f8a6be4d9a-1451985097774@3capp-webde-bs44>
+From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+Subject: [PATCH v2 2/2]: dracut: 10i18n: support default loadkeys/setfont
+ data paths using symbolic links
+Date: Fri, 15 Apr 2016 13:06:45 +0200
+Message-ID: <1460718405.2616.14.camel@trentalancia.net>
+References: <1460387675.2670.21.camel@trentalancia.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <trinity-fb369bfb-8623-46c4-8628-71f8a6be4d9a-1451985097774@3capp-webde-bs44>
+In-Reply-To: <1460387675.2670.21.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: tammo-v8BkjJTOJzf1qYPpFx2fzhvVK+yQ3ZXh@public.gmane.org, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 05.01.2016 10:11, tammo-v8BkjJTOJzf1qYPpFx2fzhvVK+yQ3ZXh@public.gmane.org wrote:
-> Hi,
->  
-> i just stumbled upon a detail in dracut that i found surprising and appears as a small bug to me. 
-> 
-> If you boot a dracut image without giving a "root=" parameter (or e.g. a misspelled argument to that parameter) the system will _not_ drop you into a shell, even if rd.shell is set. IMHO this is not the expected behavior, as the manual says that rd.shell will drop you into a shell if rd.shell is set and no root is found. So i would suggest to change the "die()" function in the dracut-lib.sh and add a test for rd.shell in line 460 (getargbool 0 "rd.debug=" && emergency_shell) too. The system will already drop you in a shell if you have a "rd.debug" parameter set, but i think that rd.shell (and probably "rdshell" too) alone should be sufficient, as this is more convinient and less surprising.
-> 
-> I could prepare a patch, if you prefer that.
-> 
-> If this is not some kind of bug, you may call it a "wishlist item" and/or change the documentation accordingly.
-> 
-> kr
-> Tammo
-> 
 
-yes... changed with
+Avoid keymap/font not found error when loadkeys/setfont
+are compiled with the default data directory path.
 
-https://github.com/dracutdevs/dracut/commit/9d74747f926d038f2e149d70a9c8f955861ab354
+Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+---
+ modules.d/10i18n/module-setup.sh |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- dracut-038/modules.d/10i18n/module-setup.sh 2016-04-15 12:58:46.105952161 +0200
++++ dracut-038-10i18n-create-usr-share-symlinks-v2/modules.d/10i18n/module-setup.sh     2016-04-15 12:59:06.874241231 +0200
+@@ -100,6 +100,13 @@ install() {
+             inst_rules ${moddir}/10-console.rules
+             inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
+         fi
++
++        if [[ ${kbddir} != "/usr/share" ]]; then
++            inst_dir /usr/share
++            for _src in $(eval echo {${KBDSUBDIRS}}); do
++                [ ! -e "${initdir}/usr/share/${_src}" ] && ln -s "${kbddir}/${_src}" "${initdir}/usr/share/${_src}"
++            done
++        fi
+     }
+
+     install_all_kbd() {
