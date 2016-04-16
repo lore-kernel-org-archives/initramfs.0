@@ -1,106 +1,89 @@
 From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-Subject: Re: [PATCH] dracut: add support for updating the CPU microcode
-Date: Sat, 16 Apr 2016 15:54:22 +0200
-Message-ID: <1460814862.4296.4.camel@trentalancia.net>
-References: <1460762332.3054.2.camel@trentalancia.net>
-	 <5711D522.3090907@gmail.com>
+Subject: [PATCH v2] dracut: 10i18n: add support for custom locale definitions
+Date: Sat, 16 Apr 2016 16:12:46 +0200
+Message-ID: <1460815966.4296.13.camel@trentalancia.net>
+References: <1460758050.3211.2.camel@trentalancia.net>
+	 <5711D4E7.9070705@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <5711D522.3090907-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <5711D4E7.9070705-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"
 To: Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello Andrei,
+Hello Andrei.
 
-thanks for getting back on this...
+Thanks very for much for reviewing the patch...
 
-On Sat, 16/04/2016 at 09.01 +0300, Andrei Borzenkov wrote:
-> 16.04.2016 02:18, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > This is the initial version of a new "microcode" dracut module
-> > that can be used to update the microcode on Intel(R) CPUs.
+On Sat, 16/04/2016 at 09.00 +0300, Andrei Borzenkov wrote:
+> 16.04.2016 01:07, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> > Compile and install locale definitions using localedef from GNU
+> > libc. The
+> > resulting locale definitions archive contains at most two different
+> > locale
+> > definitions, therefore its size is relatively small.
 > >=20
 >=20
-> ??? dracut already supports early microcode loading, why it is not
-> enough and what problem this patch solves?
+> On many distributions sources for locale definitions are in separate
+> packages that are not installed by default. You need at least error
+> checks and some alternative way to gather the same information.
 
-To be honest, I didn't notice it. I was expecting such support, if
-available, to be a module and I couldn't find it, so I wrote it.
+Good point, I have now included a check to make sure that the localedef
+executable is available on the system (please see the new patch version
+reported below)...
 
-However, I have noticed it is much simpler than the actual
-implementation. It doesn't differentiate between Intel and AMD (why it
-should ?), it just loads the microcode in the standard location as
-defined by the microcode update utility.
+I don't know exactly what you mean by "some alternative way to gather
+the same information", however if you mean copying the locale archive
+from the one installed on the system, I am against that, as it is
+usually very large, while the one we generate here is rather small and
+should be usually compatible with the initram filesystem size
+constraint.
 
-> > Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-> > ---
-> > =C2=A0modules.d/00microcode/module-setup.sh |=C2=A0=C2=A0=C2=A026
-> > ++++++++++++++++++++++++++
-> > =C2=A0modules.d/99base/init.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A09=
- +++++++++
-> > =C2=A02 files changed, 35 insertions(+)
-> >=20
-> > diff -pruN dracut-git/modules.d/00microcode/module-setup.sh dracut-
-> > git-microcode-update/modules.d/00microcode/module-setup.sh
-> > --- dracut-git/modules.d/00microcode/module-setup.sh	1970-
-> > 01-01 01:00:00.000000000 +0100
-> > +++ dracut-git-microcode-update/modules.d/00microcode/module-
-> > setup.sh	2016-04-16 01:11:20.719287468 +0200
-> > @@ -0,0 +1,26 @@
-> > +#!/bin/bash
-> > +
-> > +# Dracut module to update the microcode on Intel(R) CPUs
-> > +# Copyright 2016 Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-> > +
-> > +# called by dracut
-> > +check() {
-> > +=C2=A0=C2=A0=C2=A0=C2=A0[[ "$mount_needs" ]] && return 1
-> > +
-> > +=C2=A0=C2=A0=C2=A0=C2=A0require_binaries microcode_ctl || return 1
-> > +
-> > +=C2=A0=C2=A0=C2=A0=C2=A0return 0
-> > +}
-> > +
-> > +# called by dracut
-> > +depends() {
-> > +=C2=A0=C2=A0=C2=A0=C2=A0return 0
-> > +}
-> > +
-> > +# called by dracut
-> > +install() {
-> > +=C2=A0=C2=A0=C2=A0=C2=A0inst microcode_ctl
-> > +
-> > +=C2=A0=C2=A0=C2=A0=C2=A0inst_dir /lib/firmware
-> > +=C2=A0=C2=A0=C2=A0=C2=A0inst /lib/firmware/microcode.dat
-> > +}
-> > diff -pruN dracut-git/modules.d/99base/init.sh dracut-git-
-> > microcode-update/modules.d/99base/init.sh
-> > --- dracut-git/modules.d/99base/init.sh	2016-04-14
-> > 22:21:22.681548895 +0200
-> > +++ dracut-git-microcode-update/modules.d/99base/init.sh	201
-> > 6-04-16 01:09:58.517080944 +0200
-> > @@ -62,6 +62,15 @@ if ! ismounted /dev/shm; then
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mount -t tmpfs -o mode=3D1777,noexec,=
-nosuid,nodev,strictatime
-> > tmpfs /dev/shm >/dev/null
-> > =C2=A0fi
-> > =C2=A0
-> > +# Update CPU microcode
-> > +if [ -x /usr/sbin/microcode_ctl ]; then
-> > +=C2=A0=C2=A0=C2=A0=C2=A0MICROCODE_CTL=3D/usr/sbin/microcode_ctl
-> > +elif [ -x /sbin/microcode_ctl ]; then
-> > +=C2=A0=C2=A0=C2=A0=C2=A0MICROCODE_CTL=3D/sbin/microcode_ctl
-> > +fi
-> > +[ $MICROCODE_CTL ] && [ ! -e /dev/cpu/microcode ] && echo
-> > "Creating microcode update device..." && mknod /dev/cpu/microcode c
-> > 10 184
-> > +[ $MICROCODE_CTL ] && [ -e /lib/firmware/microcode.dat ] &&
-> > $MICROCODE_CTL -u
-> > +
-> > =C2=A0if ! ismounted /run; then
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mkdir -m 0755 /newrun
-> > =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0if ! str_starts "$(readlink -f /bin/s=
-h)" "/run/"; then
+/usr/lib/locale-archive (system-wide):=C2=A0101,997,312 bytes
+average locale-archive generated ad-hoc by localedef for initramfs:
+1,629,568
+
+=2E.. there is a size factor of about 63 !
+---
+Compile and install locale definitions using localedef from GNU libc. T=
+he
+resulting locale definitions archive contains at most two different loc=
+ale
+definitions, therefore its size is relatively small.
+
+Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+---
+ modules.d/10i18n/module-setup.sh |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- dracut-git/modules.d/10i18n/module-setup.sh	2016-04-12 15:59:43.174=
+765608 +0200
++++ dracut-044-10i18n-add-support-for-custom-locale-definitions/modules=
+=2Ed/10i18n/module-setup.sh	2016-04-16 15:59:51.254099707 +0200
+@@ -212,6 +219,16 @@ install() {
+             print_vars LC_ALL LANG >> ${initdir}${I18N_CONF}
+         fi
+=20
++        [[ $LC_ALL || $LANG ]] && inst_dir /usr/lib/locale
++
++        # Generate locale definitions for LC_ALL
++        [ $LC_ALL ] && LC_ALL_LOCALE=3D`echo $LC_ALL | awk -F. '{ prin=
+t $1 }'` && LC_ALL_CHARMAP=3D`echo $LC_ALL | awk -F. '{ print $2 }'`
++        [[ $LC_ALL && $LC_ALL_LOCALE && $LC_ALL_CHARMAP ]] && command =
+-v localedef > /dev/null && localedef --prefix=3D"${initdir}" -i $LC_AL=
+L_LOCALE -f $LC_ALL_CHARMAP $LC_ALL
++
++        # Generate locale definitions for LANG
++        [ $LANG ] && LANG_LOCALE=3D`echo $LANG | awk -F. '{ print $1 }=
+'` && LANG_CHARMAP=3D`echo $LANG | awk -F. '{ print $2 }'`
++        [[ $LANG && $LANG_LOCALE && $LANG_CHARMAP ]] && command -v loc=
+aledef > /dev/null && localedef --prefix=3D"${initdir}" -i $LANG_LOCALE=
+ -f $LANG_CHARMAP $LANG
++
+         if dracut_module_included "systemd" && [[ -f ${VCONFIG_CONF} ]=
+]; then
+             inst_simple ${VCONFIG_CONF}
+         else
+
