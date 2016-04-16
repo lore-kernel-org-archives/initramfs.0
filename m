@@ -1,14 +1,15 @@
 From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-Subject: [PATCH v4] dracut: 10i18n: add support for custom locale definitions
-Date: Sat, 16 Apr 2016 22:13:42 +0200
-Message-ID: <1460837622.3201.14.camel@trentalancia.net>
+Subject: [PATCH v5] dracut: 10i18n: add support for custom locale definitions
+Date: Sat, 16 Apr 2016 22:24:29 +0200
+Message-ID: <1460838269.3201.18.camel@trentalancia.net>
 References: <1460758050.3211.2.camel@trentalancia.net>
 	 <5711D4E7.9070705@gmail.com> <1460815966.4296.13.camel@trentalancia.net>
 	 <57127BC9.70103@gmail.com> <1460835143.3201.10.camel@trentalancia.net>
+	 <1460837622.3201.14.camel@trentalancia.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1460835143.3201.10.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+In-Reply-To: <1460837622.3201.14.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
@@ -31,7 +32,7 @@ Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org
  1 file changed, 20 insertions(+)
 
 --- dracut-044-orig/modules.d/10i18n/module-setup.sh	2015-11-25 14:22:28.000000000 +0100
-+++ dracut-044-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh	2016-04-16 22:09:43.667941277 +0200
++++ dracut-044-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh	2016-04-16 22:20:41.175221254 +0200
 @@ -212,6 +219,26 @@ install() {
              print_vars LC_ALL LANG >> ${initdir}${I18N_CONF}
          fi
@@ -40,16 +41,16 @@ Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org
 +
 +        # Check if we can compile locale definitions
 +        command -v localedef > /dev/null && HAS_LOCALEDEF=true || HAS_LOCALEDEF=false
-+        [[ -e /usr/share/i18n/locales/${LC_ALL} || -e /usr/share/i18n/locales/${LANG} ]] && HAS_LOCALE_SOURCES=true || HAS_LOCALE_SOURCES=false
++        [ ${LC_ALL} ] && LC_ALL_LOCALE=`echo ${LC_ALL} | awk -F. '{ print $1 }'` && LC_ALL_CHARMAP=`echo ${LC_ALL} | awk -F. '{ print $2 }'`
++        [ ${LANG} ] && [ ${LANG} != ${LC_ALL} ] && LANG_LOCALE=`echo ${LANG} | awk -F. '{ print $1 }'` && LANG_CHARMAP=`echo ${LANG} | awk -F. '{ print $2 }'`
++        [[ -e /usr/share/i18n/locales/${LC_ALL_LOCALE} || -e /usr/share/i18n/locales/${LANG_LOCALE} ]] && HAS_LOCALE_SOURCES=true || HAS_LOCALE_SOURCES=false
 +        [[ ${HAS_LOCALEDEF} == true && ${HAS_LOCALE_SOURCES} == true ]] && CAN_BUILD_LOCALE=true || CAN_BUILD_LOCALE=false
 +
 +        # Generate locale definitions for LC_ALL
-+        [ ${LC_ALL} ] && LC_ALL_LOCALE=`echo ${LC_ALL} | awk -F. '{ print $1 }'` && LC_ALL_CHARMAP=`echo ${LC_ALL} | awk -F. '{ print $2 }'`
-+        [[ ${LC_ALL} && ${LC_ALL_LOCALE} && ${LC_ALL_CHARMAP} ]] && [ ${CAN_BUILD_LOCALE} == true ] && [ -e /usr/share/i18n/locales/${LC_ALL} ] && localedef --prefix="${initdir}" -i ${LC_ALL_LOCALE} -f ${LC_ALL_CHARMAP} ${LC_ALL}
++        [[ ${LC_ALL} && ${LC_ALL_LOCALE} && ${LC_ALL_CHARMAP} ]] && [ ${CAN_BUILD_LOCALE} == true ] && [ -e /usr/share/i18n/locales/${LC_ALL_LOCALE} ] && localedef --prefix="${initdir}" -i ${LC_ALL_LOCALE} -f ${LC_ALL_CHARMAP} ${LC_ALL}
 +
 +        # Generate locale definitions for LANG
-+        [ ${LANG} ] && [ ${LANG} != ${LC_ALL} ] && LANG_LOCALE=`echo ${LANG} | awk -F. '{ print $1 }'` && LANG_CHARMAP=`echo ${LANG} | awk -F. '{ print $2 }'`
-+        [[ ${LANG} && ${LANG_LOCALE} && ${LANG_CHARMAP} ]] && [ ${CAN_BUILD_LOCALE} == true ] && [ -e /usr/share/i18n/locales/${LANG} ] && localedef --prefix="${initdir}" -i ${LANG_LOCALE} -f ${LANG_CHARMAP} ${LANG}
++        [[ ${LANG} && ${LANG_LOCALE} && ${LANG_CHARMAP} ]] && [ ${CAN_BUILD_LOCALE} == true ] && [ -e /usr/share/i18n/locales/${LANG_LOCALE} ] && localedef --prefix="${initdir}" -i ${LANG_LOCALE} -f ${LANG_CHARMAP} ${LANG}
 +
 +        # If locale definitions cannot be built, but compiled split definitions are
 +        # available, then copy them over
