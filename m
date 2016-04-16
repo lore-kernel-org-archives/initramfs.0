@@ -1,62 +1,68 @@
 From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-Subject: [PATCH v5] dracut: 10i18n: add support for custom locale definitions
-Date: Sat, 16 Apr 2016 22:24:29 +0200
-Message-ID: <1460838269.3201.18.camel@trentalancia.net>
-References: <1460758050.3211.2.camel@trentalancia.net>
-	 <5711D4E7.9070705@gmail.com> <1460815966.4296.13.camel@trentalancia.net>
-	 <57127BC9.70103@gmail.com> <1460835143.3201.10.camel@trentalancia.net>
-	 <1460837622.3201.14.camel@trentalancia.net>
+Subject: Re: [PATCH] dracut: add support for updating the CPU microcode
+Date: Sat, 16 Apr 2016 23:05:53 +0200
+Message-ID: <1460840753.3201.24.camel@trentalancia.net>
+References: <1460762332.3054.2.camel@trentalancia.net>
+	 <5711D522.3090907@gmail.com> <1460814862.4296.4.camel@trentalancia.net>
+	 <5712582A.2090502@gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1460837622.3201.14.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+In-Reply-To: <5712582A.2090502-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+To: "Alexander E. Patrakov" <patrakov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Compile and install locale definitions using localedef from GNU libc or,
-if locale definitions cannot be compiled but are available on the system
-as split definitions, just install them.
+On Sat, 2016-04-16 at 20:20 +0500, Alexander E. Patrakov wrote:
+> 16.04.2016 18:54, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> > Hello Andrei,
+> >=20
+> > thanks for getting back on this...
+> >=20
+> > On Sat, 16/04/2016 at 09.01 +0300, Andrei Borzenkov wrote:
+> > > 16.04.2016 02:18, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82=
+:
+> > > > This is the initial version of a new "microcode" dracut module
+> > > > that can be used to update the microcode on Intel(R) CPUs.
+> > > >=20
+> > >=20
+> > > ??? dracut already supports early microcode loading, why it is
+> > > not
+> > > enough and what problem this patch solves?
+> >=20
+> > To be honest, I didn't notice it. I was expecting such support, if
+> > available, to be a module and I couldn't find it, so I wrote it.
+> >=20
+> > However, I have noticed it is much simpler than the actual
+> > implementation. It doesn't differentiate between Intel and AMD (why
+> > it
+> > should ?), it just loads the microcode in the standard location as
+> > defined by the microcode update utility.
+>=20
+> The microcode update utility stopped working when a Haswell
+> microcode=C2=A0
+> update got released that makes some CPU instructions illegal
+> (because=C2=A0
+> they didn't work properly in the first place). Please see=C2=A0
+> http://bugs.debian.org/762195
+>=20
+> Sure, glibc no longer uses these instructions, but now (exactly to
+> avoid=C2=A0
+> repetition of this bug) the only supported way to update the
+> microcode=C2=A0
+> is to place it in the initcpio so that "early microcode update" in
+> the=C2=A0
+> kernel loader notices it.
 
-The resulting locale definitions archive contains at most two different
-locale definitions, therefore its size is relatively small.
+If glibc has been fixed to avoid using those instructions, then I
+suppose no initramfs process will crash, independently of whether the
+microcode is loaded earlier or not.
 
-This revised version fixes several issues in the initial patch (including
-the possibility to build locale definitions). Thanks to Andrei Borzenkov
-for reviewing the initial patch and providing useful suggestions.
+However, if the support already exist, it is working well, is stable
+and doesn't require a lot of maintenance, I do not want to insist on
+adding a new module, although it's easier to use and avoids complexity.
 
-Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
----
- modules.d/10i18n/module-setup.sh |   20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Regards,
 
---- dracut-044-orig/modules.d/10i18n/module-setup.sh	2015-11-25 14:22:28.000000000 +0100
-+++ dracut-044-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh	2016-04-16 22:20:41.175221254 +0200
-@@ -212,6 +219,26 @@ install() {
-             print_vars LC_ALL LANG >> ${initdir}${I18N_CONF}
-         fi
- 
-+        [[ ${LC_ALL} || ${LANG} ]] && inst_dir /usr/lib/locale
-+
-+        # Check if we can compile locale definitions
-+        command -v localedef > /dev/null && HAS_LOCALEDEF=true || HAS_LOCALEDEF=false
-+        [ ${LC_ALL} ] && LC_ALL_LOCALE=`echo ${LC_ALL} | awk -F. '{ print $1 }'` && LC_ALL_CHARMAP=`echo ${LC_ALL} | awk -F. '{ print $2 }'`
-+        [ ${LANG} ] && [ ${LANG} != ${LC_ALL} ] && LANG_LOCALE=`echo ${LANG} | awk -F. '{ print $1 }'` && LANG_CHARMAP=`echo ${LANG} | awk -F. '{ print $2 }'`
-+        [[ -e /usr/share/i18n/locales/${LC_ALL_LOCALE} || -e /usr/share/i18n/locales/${LANG_LOCALE} ]] && HAS_LOCALE_SOURCES=true || HAS_LOCALE_SOURCES=false
-+        [[ ${HAS_LOCALEDEF} == true && ${HAS_LOCALE_SOURCES} == true ]] && CAN_BUILD_LOCALE=true || CAN_BUILD_LOCALE=false
-+
-+        # Generate locale definitions for LC_ALL
-+        [[ ${LC_ALL} && ${LC_ALL_LOCALE} && ${LC_ALL_CHARMAP} ]] && [ ${CAN_BUILD_LOCALE} == true ] && [ -e /usr/share/i18n/locales/${LC_ALL_LOCALE} ] && localedef --prefix="${initdir}" -i ${LC_ALL_LOCALE} -f ${LC_ALL_CHARMAP} ${LC_ALL}
-+
-+        # Generate locale definitions for LANG
-+        [[ ${LANG} && ${LANG_LOCALE} && ${LANG_CHARMAP} ]] && [ ${CAN_BUILD_LOCALE} == true ] && [ -e /usr/share/i18n/locales/${LANG_LOCALE} ] && localedef --prefix="${initdir}" -i ${LANG_LOCALE} -f ${LANG_CHARMAP} ${LANG}
-+
-+        # If locale definitions cannot be built, but compiled split definitions are
-+        # available, then copy them over
-+        [ ${LC_ALL} ] && [ ${CAN_BUILD_LOCALE} == false ] && [ -d /usr/lib/locale/${LC_ALL} ] && cp -prfL -t "${initdir}/usr/lib/locale/" /usr/lib/locale/${LC_ALL}
-+        [ ${LANG} ] && [ ${LANG} != ${LC_ALL} ] && [ ${CAN_BUILD_LOCALE} == false ] && [ -d /usr/lib/locale/${LANG} ] && cp -prfL -t "${initdir}/usr/lib/locale/" /usr/lib/locale/${LANG}
-+
-         if dracut_module_included "systemd" && [[ -f ${VCONFIG_CONF} ]]; then
-             inst_simple ${VCONFIG_CONF}
-         else
+Guido
