@@ -1,8 +1,8 @@
 From: Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] dracut: add support for custom locale definitions
-Date: Sat, 16 Apr 2016 09:00:07 +0300
-Message-ID: <5711D4E7.9070705@gmail.com>
-References: <1460758050.3211.2.camel@trentalancia.net>
+Subject: Re: [PATCH] dracut: add support for updating the CPU microcode
+Date: Sat, 16 Apr 2016 09:01:06 +0300
+Message-ID: <5711D522.3090907@gmail.com>
+References: <1460762332.3054.2.camel@trentalancia.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
@@ -10,63 +10,92 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-transfer-encoding;
-        bh=RTulUVy+hq+XjjJqotZCfnzPd02irqsl7h/m0QplOOE=;
-        b=PiIYeEZ8nVZN2CNrLk2oNgNvJMzztDMpw3MwkFfRmzdRl/zVAc+6L07BhtP1YITtGa
-         4KyWoRiMlLP9UitNQeugXxXoS2+TaYQTfCurjoDs29IcfYQxKdv0LqxcJShcLVgQRZpd
-         bNjMlU24hZ+idgXie1rGXtngiSurRl9nfdzoo1iJjhWTnUCYZMKitrPAFgKWC1tGJdgi
-         XYnMAe/Mzg/vY5WoCgntl3UXw9fLtr8laAwa/bhCADjlZ3iQyBGoD4FQFVKH5ra+B2KQ
-         VX67orBk29WJusNOjU1MA7wUI2cX5QkiFSWWEfBVP0q3gE4MtfpG3sZpa/v25UVz2NfN
-         v8pQ==
-In-Reply-To: <1460758050.3211.2.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+        bh=FcUL02Os6PqgJbSwJEM/LRlsfu1ksYnZrQ0yIYz0dDc=;
+        b=eN83G/1Ap7VTjuMMrfZl6sUp69xx+jYiw90lSq7YHEVmbSZLG+M/OmL4OsF7Tb6eTY
+         ZvbGcGNPx+0EPfJV9DwtLH+036NaRWkIiuR7TbZTM+ZRvAyECwSNu/IktcnWhRyOnNc2
+         nRbN7ht2RHIyNNODiE7Nztltbw8e5ua2sqB+9OEGoE5PyFP2b4MNRiUc/gr72gOGS8QO
+         ikWFTcc6umLyl0wL6xQvO0s1Ernm+s3Z5h452cp44dFC4nUK9XLmwdQSEKzFQkqlSXHU
+         dM9Scv0WzZzDL0pRaGN3u0vBWFof4i97WQHQ1OeRtViTaCD6edS9hXWqDNTXfPbByeOd
+         iwMA==
+In-Reply-To: <1460762332.3054.2.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"
 To: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-16.04.2016 01:07, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> Compile and install locale definitions using localedef from GNU libc.=
- The
-> resulting locale definitions archive contains at most two different l=
-ocale
-> definitions, therefore its size is relatively small.
+16.04.2016 02:18, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> This is the initial version of a new "microcode" dracut module
+> that can be used to update the microcode on Intel(R) CPUs.
 >=20
 
-On many distributions sources for locale definitions are in separate
-packages that are not installed by default. You need at least error
-checks and some alternative way to gather the same information.
+??? dracut already supports early microcode loading, why it is not
+enough and what problem this patch solves?
 
 > Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 > ---
->  modules.d/10i18n/module-setup.sh |   10 ++++++++++
->  1 file changed, 10 insertions(+)
+>  modules.d/00microcode/module-setup.sh |   26 +++++++++++++++++++++++=
++++
+>  modules.d/99base/init.sh              |    9 +++++++++
+>  2 files changed, 35 insertions(+)
 >=20
-> --- dracut-044/modules.d/10i18n/module-setup.sh	2016-04-15 23:34:44.0=
-11398268 +0200
-> +++ dracut-044-10i18n-add-support-for-custom-locale-definitions/modul=
-es.d/10i18n/module-setup.sh	2016-04-15 23:32:05.292860621 +0200
-> @@ -219,6 +219,16 @@ install() {
->              print_vars LC_ALL LANG >> ${initdir}${I18N_CONF}
->          fi
+> diff -pruN dracut-git/modules.d/00microcode/module-setup.sh dracut-gi=
+t-microcode-update/modules.d/00microcode/module-setup.sh
+> --- dracut-git/modules.d/00microcode/module-setup.sh	1970-01-01 01:00=
+:00.000000000 +0100
+> +++ dracut-git-microcode-update/modules.d/00microcode/module-setup.sh=
+	2016-04-16 01:11:20.719287468 +0200
+> @@ -0,0 +1,26 @@
+> +#!/bin/bash
+> +
+> +# Dracut module to update the microcode on Intel(R) CPUs
+> +# Copyright 2016 Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+> +
+> +# called by dracut
+> +check() {
+> +    [[ "$mount_needs" ]] && return 1
+> +
+> +    require_binaries microcode_ctl || return 1
+> +
+> +    return 0
+> +}
+> +
+> +# called by dracut
+> +depends() {
+> +    return 0
+> +}
+> +
+> +# called by dracut
+> +install() {
+> +    inst microcode_ctl
+> +
+> +    inst_dir /lib/firmware
+> +    inst /lib/firmware/microcode.dat
+> +}
+> diff -pruN dracut-git/modules.d/99base/init.sh dracut-git-microcode-u=
+pdate/modules.d/99base/init.sh
+> --- dracut-git/modules.d/99base/init.sh	2016-04-14 22:21:22.681548895=
+ +0200
+> +++ dracut-git-microcode-update/modules.d/99base/init.sh	2016-04-16 0=
+1:09:58.517080944 +0200
+> @@ -62,6 +62,15 @@ if ! ismounted /dev/shm; then
+>      mount -t tmpfs -o mode=3D1777,noexec,nosuid,nodev,strictatime tm=
+pfs /dev/shm >/dev/null
+>  fi
 > =20
-> +        [[ $LC_ALL || $LANG ]] && inst_dir /usr/lib/locale
+> +# Update CPU microcode
+> +if [ -x /usr/sbin/microcode_ctl ]; then
+> +    MICROCODE_CTL=3D/usr/sbin/microcode_ctl
+> +elif [ -x /sbin/microcode_ctl ]; then
+> +    MICROCODE_CTL=3D/sbin/microcode_ctl
+> +fi
+> +[ $MICROCODE_CTL ] && [ ! -e /dev/cpu/microcode ] && echo "Creating =
+microcode update device..." && mknod /dev/cpu/microcode c 10 184
+> +[ $MICROCODE_CTL ] && [ -e /lib/firmware/microcode.dat ] && $MICROCO=
+DE_CTL -u
 > +
-> +        # Generate locale definitions for LC_ALL
-> +        [ $LC_ALL ] && LC_ALL_LOCALE=3D`echo $LC_ALL | awk -F. '{ pr=
-int $1 }'` && LC_ALL_CHARMAP=3D`echo $LC_ALL | awk -F. '{ print $2 }'`
-> +        [[ $LC_ALL && $LC_ALL_LOCALE && $LC_ALL_CHARMAP ]] && locale=
-def --prefix=3D"${initdir}" -i $LC_ALL_LOCALE -f $LC_ALL_CHARMAP $LC_AL=
-L
-> +
-> +        # Generate locale definitions for LANG
-> +        [ $LANG ] && LANG_LOCALE=3D`echo $LANG | awk -F. '{ print $1=
- }'` && LANG_CHARMAP=3D`echo $LANG | awk -F. '{ print $2 }'`
-> +        [[ $LANG && $LANG_LOCALE && $LANG_CHARMAP ]] && localedef --=
-prefix=3D"${initdir}" -i $LANG_LOCALE -f $LANG_CHARMAP $LANG
-> +
->          if dracut_module_included "systemd" && [[ -f ${VCONFIG_CONF}=
- ]]; then
->              inst_simple ${VCONFIG_CONF}
->          else
+>  if ! ismounted /run; then
+>      mkdir -m 0755 /newrun
+>      if ! str_starts "$(readlink -f /bin/sh)" "/run/"; then
 > --
 > To unsubscribe from this list: send the line "unsubscribe initramfs" =
 in
