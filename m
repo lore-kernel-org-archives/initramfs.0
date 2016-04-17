@@ -1,68 +1,66 @@
-From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-Subject: Re: [PATCH] dracut: add support for updating the CPU microcode
-Date: Sat, 16 Apr 2016 23:05:53 +0200
-Message-ID: <1460840753.3201.24.camel@trentalancia.net>
-References: <1460762332.3054.2.camel@trentalancia.net>
-	 <5711D522.3090907@gmail.com> <1460814862.4296.4.camel@trentalancia.net>
-	 <5712582A.2090502@gmail.com>
+From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
+Subject: initramfs-tools 0.124 release
+Date: Sun, 17 Apr 2016 02:56:41 +0100
+Message-ID: <1460858201.4051.2.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-qeiegvfDbHMC1VwU7a8t"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <5712582A.2090502-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: "Alexander E. Patrakov" <patrakov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrei Borzenkov <arvidjaar-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-On Sat, 2016-04-16 at 20:20 +0500, Alexander E. Patrakov wrote:
-> 16.04.2016 18:54, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > Hello Andrei,
-> >=20
-> > thanks for getting back on this...
-> >=20
-> > On Sat, 16/04/2016 at 09.01 +0300, Andrei Borzenkov wrote:
-> > > 16.04.2016 02:18, Guido Trentalancia =D0=BF=D0=B8=D1=88=D0=B5=D1=82=
-:
-> > > > This is the initial version of a new "microcode" dracut module
-> > > > that can be used to update the microcode on Intel(R) CPUs.
-> > > >=20
-> > >=20
-> > > ??? dracut already supports early microcode loading, why it is
-> > > not
-> > > enough and what problem this patch solves?
-> >=20
-> > To be honest, I didn't notice it. I was expecting such support, if
-> > available, to be a module and I couldn't find it, so I wrote it.
-> >=20
-> > However, I have noticed it is much simpler than the actual
-> > implementation. It doesn't differentiate between Intel and AMD (why
-> > it
-> > should ?), it just loads the microcode in the standard location as
-> > defined by the microcode update utility.
->=20
-> The microcode update utility stopped working when a Haswell
-> microcode=C2=A0
-> update got released that makes some CPU instructions illegal
-> (because=C2=A0
-> they didn't work properly in the first place). Please see=C2=A0
-> http://bugs.debian.org/762195
->=20
-> Sure, glibc no longer uses these instructions, but now (exactly to
-> avoid=C2=A0
-> repetition of this bug) the only supported way to update the
-> microcode=C2=A0
-> is to place it in the initcpio so that "early microcode update" in
-> the=C2=A0
-> kernel loader notices it.
 
-If glibc has been fixed to avoid using those instructions, then I
-suppose no initramfs process will crash, independently of whether the
-microcode is loaded earlier or not.
+--=-qeiegvfDbHMC1VwU7a8t
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-However, if the support already exist, it is working well, is stable
-and doesn't require a lot of maintenance, I do not want to insist on
-adding a new module, although it's easier to use and avoids complexity.
+This update fixes a small number of bugs reported in the Debian bug
+tracker, and adds support for detached module signatures as used in
+Debian's experimental linux-signed package.
 
-Regards,
+Ben.
 
-Guido
+Ben Hutchings (7):
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0hook-functions: Add detached module sig=
+natures if present
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0hook-functions: Create ORDER files even=
+ if there are no valid scripts
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mkinitramfs: Exclude VCS directories wh=
+en copying /etc/initramfs-tools/scripts
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0parse_numeric: Do not attempt to canoni=
+calise root device name
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0auto_add_modules: Include most USB host=
+ drivers
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0auto_add_modules: Include all bus drive=
+r modules
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0Releasing version 0.124.
+
+--=20
+Ben Hutchings
+Make three consecutive correct guesses and you will be considered an expert=
+.
+
+--=-qeiegvfDbHMC1VwU7a8t
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAABCgAGBQJXEu1ZAAoJEOe/yOyVhhEJtj0P/iErcx0ftGRAhtqsREzdwrsX
+wVnkBsmABJVQtIJylZCVrLvVL6JbympxhbcdCeFiwZP+9/HjcegWgwHhZsX5s5yo
+Wlb/VQzOuKOZiydc//KDkL4lbGNNk9w7bZQhSX2WaUfbQOYgNCyPVV9TuvSsAjH7
+N9oa5g1phvMgN4/4/NSDWW6cLskJk4Rxiq+Uau+OFrzhTSom8a5UY3cD2EXyzsAz
+fbe+ZA5ySgZuPXyQXimQD9/Sm5BSMSJfkHEtWQ4peAHh3rbM8m5tZmQiZQxjy5Sy
+GjBd/oOboDqGI+rQdOI815eSrZysqry2Y7Q1BQ1uEXXEcF4dijVKZpmRm3UFeUMt
+ySrxKREj6aLOIPOeudiFdTeE446HiAaB84LdQJr/wzHNTR5PYxGcNDGvA1w3ianP
+HHPAJqJCSyfJMy1qCpXSaPNqNDIp2z1L1q8e+y9SeLnxnOTkxVcfmp1kSLwSafme
+KJc0CrhpIKk/WdozRGS1Uqf7L52fPpt6OOvqyPumEVo/6W1yycnofopR1zHfTaK+
+bAOt+bYwEiGIQ739j7DWuAMkyvsWp48vazAuWpjisGajyZ9jTX3ki7fMZgaJ9j1s
+q41e1vufBFTnbOQU5N8k4nyxpVKA4ZqXLiaD4u+OVzWlY7AO/NOOaKdJfBW/Q75V
+K7tbv4PO8Ad4vRGMsRCC
+=BCK7
+-----END PGP SIGNATURE-----
+
+--=-qeiegvfDbHMC1VwU7a8t--
