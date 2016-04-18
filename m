@@ -1,61 +1,55 @@
-From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: initramfs-tools 0.125 release
-Date: Sun, 17 Apr 2016 23:26:48 +0100
-Message-ID: <1460932008.9121.44.camel@decadent.org.uk>
+From: Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V5 dracut 0/3] Install kernel module for active watchdog
+Date: Mon, 18 Apr 2016 18:36:14 +0530
+Message-ID: <20160418130614.GD28676@dhcppc6.redhat.com>
+References: <cover.1458099200.git.panand@redhat.com>
+ <5710BA3B.8030600@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-VUYWGjrMkLXBAf8y3n49"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <5710BA3B.8030600-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Don Zickus <dzickus-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
+Hi Harald,
 
---=-VUYWGjrMkLXBAf8y3n49
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+On 15/04/2016:11:54:03 AM, Harald Hoyer wrote:
+> pushed, please review my changes:
+> <https://github.com/dracutdevs/dracut/commit/74e2d1e69f5527ab31b01fc19f67143d1f091980>
 
-This is a brown paper bag release, fixing a regression in 0.124. =C2=A0Ther=
-e
-is also a further change to support Debian's experimental linux-signed
-package, and a minor cleanup I made along the way.
+Thanks for rewriting the module nicely. I have to learn a lot in shell scripting :-).
 
-Ben.
+I have commented at github. I found two errors during my testing:
+(1) A case when install_kenrel() may not return 0 and it will cause to fail
+dracut process.
+(2) _wdtppath calculation before while loop need to be corrected, otherwise we
+will not be able to install parent device's driver.
 
-Ben Hutchings (4):
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0update-initramfs: Remove $USETRIGGERS v=
-ariable and condition
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0initramfs-tools: Install script to be i=
-nvoked by linux-signed postinst
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0mkinitramfs: Fix wildcard for excluding=
- dot-files
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0Releasing version 0.125.
+Following patches on top op upstream/master is working fine.
 
---=20
-Ben Hutchings
-Make three consecutive correct guesses and you will be considered an expert=
-.
+diff --git a/modules.d/04watchdog/module-setup.sh b/modules.d/04watchdog/module-setup.sh
+index 04686f6..d50429f 100755
+--- a/modules.d/04watchdog/module-setup.sh
++++ b/modules.d/04watchdog/module-setup.sh
+@@ -56,7 +56,7 @@ installkernel() {
+         # however in some cases, we also need to check that if there is
+         # a specific driver for the parent bus/device.  In such cases
+         # we also need to enable driver for parent bus/device.
+-        _wdtppath=$(readlink -f "$_dir/device/..")
++        _wdtppath=$(readlink -f "$_dir/device/")
+         while [[ -d "$_wdtppath" ]] && [[ "$_wdtppath" != "/sys" ]]; do
+             _wdtppath=$(readlink -f "$_wdtppath/..")
+             [[ -f "$_wdtppath/modalias" ]] || continue
+@@ -73,5 +73,5 @@ installkernel() {
+     done
+     # ensure that watchdog module is loaded as early as possible
+     _alldrivers="${!_drivers[*]}"
+-    [[ $_alldrivers ]] && echo "rd.driver.pre=${_alldrivers// /,}" > ${initdir}/etc/cmdline.d/00-watchdog.conf
++    [[ $_alldrivers = "" ]] || echo "rd.driver.pre=${_alldrivers// /,}" > ${initdir}/etc/cmdline.d/00-watchdog.conf
+ }
 
---=-VUYWGjrMkLXBAf8y3n49
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCgAGBQJXFA2oAAoJEOe/yOyVhhEJRAcQAIU4JskNf7+yItP4Fw6EXZvA
-q+WeUkzuzHJVBoWaIhrNOKTemkOtVkKQ2hMSjR1rH1dfHTZlsqhdTUEjHUW8ceGb
-Is0TA6s6KrBafnAiQ6V2OiDUQM4dYJPKahUjJmBIuSV0T+5gDka5/ZENN/E3/EUs
-3nmx/OoKz3+zJqn6oTQC/Vc44mwU0MSI6aE1Tax24aGStrOLEodxA+sxMak3oW/o
-JdtT5VxT1BIgtyPEeZlrPUykXXGEMEZH8YEm1mQnqeol1Z+t05IefLyA0UE4yCiV
-XhmDgXAjypDRRHSkbzZ6aQNDo2O25u3ZGPFD1JHpGF/GzD+E6ihXoKkFJZczus0t
-2c/RhHzB5wN0mTzXjfImN+qUpfqXvDaFEPR2wzOvwLnQscU4Gzgt/IumdGaxU7mV
-i1Nx5KlHrPQ6FduErNid/f1gZ9Qdn8+uBKTJ+FxRToXjiaPsN3xIHKWv6Wh1NFDO
-XvfHFkSqoZzlKzcOCk/TqbZ7HMrgGqs0v4v2aWq0KkBL7g4CMW9NVL1PZ0yXfbds
-0XjqIrvO7xje0MYZXNRTD30JfCg5fjMPV5nTZkAoihkyQBhMSWbgholup++k4JAS
-Yf1PBvhxmt/3zaqX30DhWcUBk2DXy7zx0k4ku6ZX1Q8YZULv3eQ26U3s0kWJdQK/
-6YkOCWhzQpvF3L8N9cw+
-=2ddK
------END PGP SIGNATURE-----
-
---=-VUYWGjrMkLXBAf8y3n49--
+~Pratyush
