@@ -1,16 +1,17 @@
 From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
-Subject: [PATCH v6] dracut: add support for custom locale definitions
-Date: Tue, 19 Apr 2016 02:36:48 +0200
-Message-ID: <1461026208.2262.1.camel@trentalancia.net>
+Subject: [PATCH v7] dracut: add support for custom locale definitions
+Date: Wed, 20 Apr 2016 15:04:51 +0200
+Message-ID: <1461157491.11229.3.camel@trentalancia.net>
 References: <1460758050.3211.2.camel@trentalancia.net>
 	 <5711D4E7.9070705@gmail.com> <1460815966.4296.13.camel@trentalancia.net>
 	 <57127BC9.70103@gmail.com> <1460835143.3201.10.camel@trentalancia.net>
 	 <1460837622.3201.14.camel@trentalancia.net>
 	 <1460838269.3201.18.camel@trentalancia.net>
+	 <1461026208.2262.1.camel@trentalancia.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1460838269.3201.18.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+In-Reply-To: <1461026208.2262.1.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
@@ -25,7 +26,8 @@ locale definitions, therefore its size is relatively small.
 
 Add support for localised messages from core packages (LC_MESSAGES).
 
-Add support for non-latin fonts using Unicode (Asian ones needs testing).
+Add support for non-latin fonts using Unicode (tested successfully with
+Greek, Hebrew and Cyrillic).
 
 This revised version fixes several issues in the initial patch (including
 the possibility to build locale definitions). Thanks to Andrei Borzenkov
@@ -34,17 +36,47 @@ for reviewing the initial patch and providing useful suggestions.
 Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 ---
  modules.d/10i18n/README          |    1
- modules.d/10i18n/console_init.sh |    2 +
- modules.d/10i18n/module-setup.sh |   69 +++++++++++++++++++++++++++++++++++++--
- modules.d/10i18n/parse-i18n.sh   |    8 ++--
- modules.d/99base/init.sh         |   27 ++++++++++++++-
- modules.d/99base/module-setup.sh |    4 ++
- 6 files changed, 104 insertions(+), 7 deletions(-)
+ modules.d/10i18n/console_init.sh |   24 +++++++++++
+ modules.d/10i18n/module-setup.sh |   82 +++++++++++++++++++++++++++++++++++++--
+ modules.d/10i18n/parse-i18n.sh   |    8 ++-
+ modules.d/99base/bashrc          |    9 ++++
+ modules.d/99base/init.sh         |    4 +
+ modules.d/99base/module-setup.sh |    4 +
+ 7 files changed, 125 insertions(+), 7 deletions(-)
 
-diff -pru dracut-git-orig/modules.d/10i18n/console_init.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/console_init.sh
---- dracut-git-orig/modules.d/10i18n/console_init.sh	2016-04-19 02:19:10.657042489 +0200
-+++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/console_init.sh	2016-04-19 02:26:46.616644174 +0200
-@@ -89,5 +89,7 @@ set_terminal ${dev}
+diff -pruN dracut-git-orig/modules.d/10i18n/console_init.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/console_init.sh
+--- dracut-git-orig/modules.d/10i18n/console_init.sh	2016-04-20 14:11:02.824944921 +0200
++++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/console_init.sh	2016-04-20 14:01:51.452010155 +0200
+@@ -74,6 +74,28 @@ devname=${dev#/dev/}
+     exit 1
+ }
+ 
++shopt -q -s nocasematch
++if [[ ${UNICODE} ]]
++then
++    if [[ ${UNICODE} = YES || ${UNICODE} = 1 ]]
++    then
++        UNICODE=1
++    elif [[ ${UNICODE} = NO || ${UNICODE} = 0 ]]
++    then
++        UNICODE=0
++    else
++        UNICODE=''
++    fi
++fi
++if [[ ! ${UNICODE} && ${LANG} =~ .*\.UTF-?8 ]]
++then
++    UNICODE=1
++fi
++shopt -q -u nocasematch
++
++[[ ${UNICODE} == 1 && ${FONT} && ! ${FONT_MAP} ]] && [ -x /usr/bin/unicode_start ] && /usr/bin/unicode_start ${FONT}
++[[ ${UNICODE} == 1 && ${FONT} && ${FONT_MAP} ]] && [ -x /usr/bin/unicode_start ] && /usr/bin/unicode_start ${FONT} ${FONT_MAP}
++
+ dev_open ${dev}
+ 
+ for fd in 6 7; do
+@@ -89,5 +111,7 @@ set_terminal ${dev}
  set_font ${dev}
  set_keymap
  
@@ -52,10 +84,18 @@ diff -pru dracut-git-orig/modules.d/10i18n/console_init.sh dracut-git-10i18n-add
 +
  dev_close
  
-diff -pru dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh
---- dracut-git-orig/modules.d/10i18n/module-setup.sh	2016-04-19 02:19:10.657042489 +0200
-+++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh	2016-04-19 02:27:40.408336513 +0200
-@@ -4,7 +4,7 @@
+diff -pruN dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh
+--- dracut-git-orig/modules.d/10i18n/module-setup.sh	2016-04-20 14:11:02.825944933 +0200
++++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/module-setup.sh	2016-04-20 14:44:39.610119250 +0200
+@@ -1,10 +1,15 @@
+ #!/bin/bash
+ 
++# Updated: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
++#
++#  Added full localisation support (including message-based
++#  program localisation and support for non-latin charsets)
++
+ # called by dracut
  check() {
      [[ "$mount_needs" ]] && return 1
  
@@ -64,15 +104,23 @@ diff -pru dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add
  
      return 0
  }
-@@ -26,6 +26,7 @@ install() {
+@@ -26,6 +31,15 @@ install() {
      DEFAULT_FONT="${i18n_default_font:-LatArCyrHeb-16}"
      I18N_CONF="/etc/locale.conf"
      VCONFIG_CONF="/etc/vconsole.conf"
-+    CORE_PACKAGES="libc bash coreutils util-linux e2fsprogs grep sed kbd"
++    LOCALISED_PACKAGES="libc bash coreutils util-linux e2fsprogs grep sed kbd cryptsetup"
++
++    if dracut_module_included "crypt"; then
++       LOCALISED_PACKAGES="${LOCALISED_PACKAGES} cryptsetup"
++    fi
++
++    if dracut_module_included "crypt-gpg"; then
++       LOCALISED_PACKAGES="${LOCALISED_PACKAGES} gnupg"
++    fi
  
      # This is from 10redhat-i18n.
      findkeymap () {
-@@ -93,7 +94,7 @@ install() {
+@@ -93,7 +107,7 @@ install() {
      }
  
      install_base() {
@@ -81,7 +129,7 @@ diff -pru dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add
  
          if ! dracut_module_included "systemd"; then
              inst ${moddir}/console_init.sh /lib/udev/console_init
-@@ -205,11 +206,73 @@ install() {
+@@ -205,11 +219,73 @@ install() {
              inst_simple ${kbddir}/unimaps/${FONT_UNIMAP}.uni
          fi
  
@@ -124,7 +172,7 @@ diff -pru dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add
 +
 +        locale_dirs="${LC_ALL_LOCALE} ${LANG_LOCALE} ${LC_MESSAGES_LOCALE} ${LC_ALL_LOCALE_SHORT} ${LANG_LOCALE_SHORT} {LC_MESSAGES_LOCALE_SHORT}"
 +        for dir in ${locale_dirs}; do
-+            [ -d /usr/share/locale/${dir} ] && for pkg in ${CORE_PACKAGES}; do
++            [ -d /usr/share/locale/${dir} ] && for pkg in ${LOCALISED_PACKAGES}; do
 +                for file in `find /usr/share/locale/${dir} -type f -name "${pkg}.mo"`; do
 +                    cp -pfL --parents -t "${initdir}/" ${file};
 +                done
@@ -137,12 +185,12 @@ diff -pru dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add
 +        [ ${UNICODE} == 1 ] && inst_multiple /usr/${LIBDIR}/gconv/UTF-*.so
 +        [ ${UNICODE} == 1 ] && inst_simple /usr/${LIBDIR}/gconv/UNICODE.so
 +        command -v iconvconfig > /dev/null && HAS_ICONVCONFIG=true || HAS_ICONVCONFIG=false
-+        [ ${HAS_ICONVCONFIG} == true ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^alias" | grep ISO8859- > /tmp/gconv-modules
-+        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^alias" | grep UTF- >> /tmp/gconv-modules
-+        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^alias" | grep UNICODE >> /tmp/gconv-modules
-+        [ ${HAS_ICONVCONFIG} == true ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^module" | grep ISO8859- | grep INTERNAL >> /tmp/gconv-modules
-+        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^module" | grep UTF- | grep INTERNAL >> /tmp/gconv-modules
-+        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^module" | grep UNICODE | grep INTERNAL >> /tmp/gconv-modules
++        [ ${HAS_ICONVCONFIG} == true ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^[\t\ ]*alias" | grep ISO8859- > /tmp/gconv-modules
++        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^[\t\ ]*alias" | grep UTF- >> /tmp/gconv-modules
++        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^[\t\ ]*alias" | grep UNICODE >> /tmp/gconv-modules
++        [ ${HAS_ICONVCONFIG} == true ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^[\t\ ]*module" | grep ISO8859- | grep INTERNAL >> /tmp/gconv-modules
++        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^[\t\ ]*module" | grep UTF- | grep INTERNAL >> /tmp/gconv-modules
++        [ ${HAS_ICONVCONFIG} == true ] && [ ${UNICODE} == 1 ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules ] && cat /usr/${LIBDIR}/gconv/gconv-modules | grep "^[\t\ ]*module" | grep UNICODE | grep INTERNAL >> /tmp/gconv-modules
 +        [ ${HAS_ICONVCONFIG} == true ] && [ -e /tmp/gconv-modules ] && inst /tmp/gconv-modules /usr/${LIBDIR}/gconv/gconv-modules && rm -f /tmp/gconv-modules
 +        [ ${HAS_ICONVCONFIG} == true ] && iconvconfig --prefix="${initdir}"
 +        [ ${HAS_ICONVCONFIG} == false ] && [ -e /usr/${LIBDIR}/gconv/gconv-modules.cache ] && inst_simple /usr/${LIBDIR}/gconv/gconv-modules.cache
@@ -156,8 +204,8 @@ diff -pru dracut-git-orig/modules.d/10i18n/module-setup.sh dracut-git-10i18n-add
          fi
  
          if dracut_module_included "systemd" && [[ -f ${VCONFIG_CONF} ]]; then
-diff -pru dracut-git-orig/modules.d/10i18n/parse-i18n.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/parse-i18n.sh
---- dracut-git-orig/modules.d/10i18n/parse-i18n.sh	2016-04-19 02:19:10.657042489 +0200
+diff -pruN dracut-git-orig/modules.d/10i18n/parse-i18n.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/parse-i18n.sh
+--- dracut-git-orig/modules.d/10i18n/parse-i18n.sh	2016-04-20 14:11:02.825944933 +0200
 +++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/parse-i18n.sh	2016-04-19 02:26:46.617644187 +0200
 @@ -23,11 +23,13 @@ inst_key_val /etc/vconsole.conf FONT_UNI
  inst_key_val /etc/vconsole.conf UNICODE      1 rd.vconsole.font.unicode UNICODE vconsole.unicode
@@ -176,8 +224,8 @@ diff -pru dracut-git-orig/modules.d/10i18n/parse-i18n.sh dracut-git-10i18n-add-s
      export LC_ALL
 +    export LC_MESSAGES
  fi
-diff -pru dracut-git-orig/modules.d/10i18n/README dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/README
---- dracut-git-orig/modules.d/10i18n/README	2016-04-19 02:19:10.657042489 +0200
+diff -pruN dracut-git-orig/modules.d/10i18n/README dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/README
+--- dracut-git-orig/modules.d/10i18n/README	2016-04-20 14:11:02.826944946 +0200
 +++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/10i18n/README	2016-04-19 02:26:46.617644187 +0200
 @@ -65,6 +65,7 @@ I'm leaving it in case...  The following
  
@@ -187,42 +235,32 @@ diff -pru dracut-git-orig/modules.d/10i18n/README dracut-git-10i18n-add-support-
  
  If UNICODE variable is not provided, script indicates if UTF-8 should be
  used on the basis of LANG value (if it ends with ".utf8" or similar).
-diff -pru dracut-git-orig/modules.d/99base/init.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/init.sh
---- dracut-git-orig/modules.d/99base/init.sh	2016-04-19 02:19:10.702043068 +0200
-+++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/init.sh	2016-04-19 02:26:46.618644199 +0200
-@@ -8,6 +8,31 @@
+diff -pruN dracut-git-orig/modules.d/99base/bashrc dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/bashrc
+--- dracut-git-orig/modules.d/99base/bashrc	1970-01-01 01:00:00.000000000 +0100
++++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/bashrc	2016-04-20 14:22:39.804711030 +0200
+@@ -0,0 +1,9 @@
++# /etc/bashrc
++
++# Load locale settings
++if [ -f /etc/locale.conf ]; then
++  . /etc/locale.conf
++  [ -n "${LANG}" ] && export LANG || unset LANG
++  [ -n "${LC_ALL}" ] && export LC_ALL || unset LC_ALL
++  [ -n "${LC_MESSAGES}" ] && export LC_MESSAGES || unset LC_MESSAGES
++fi
+diff -pruN dracut-git-orig/modules.d/99base/init.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/init.sh
+--- dracut-git-orig/modules.d/99base/init.sh	2016-04-20 14:11:02.826944946 +0200
++++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/init.sh	2016-04-20 14:02:01.578137511 +0200
+@@ -8,6 +8,8 @@
  
  export -p > /tmp/export.orig
  
 +[ -f /etc/locale.conf ] && . /etc/locale.conf
-+[ -f /etc/vconsole.conf ] && . /etc/vconsole.conf
-+
-+shopt -q -s nocasematch
-+if [[ ${UNICODE} ]]
-+then
-+    if [[ ${UNICODE} = YES || ${UNICODE} = 1 ]]
-+    then
-+        UNICODE=1
-+    elif [[ ${UNICODE} = NO || ${UNICODE} = 0 ]]
-+    then
-+        UNICODE=0
-+    else
-+        UNICODE=''
-+    fi
-+fi
-+if [[ ! ${UNICODE} && ${LANG} =~ .*\.UTF-?8 ]]
-+then
-+    UNICODE=1
-+fi
-+shopt -q -u nocasematch
-+
-+[[ ${UNICODE} == 1 && ${FONT} && ! ${FONT_MAP} ]] && [ -x /usr/bin/unicode_start ] && /usr/bin/unicode_start ${FONT}
-+[[ ${UNICODE} == 1 && ${FONT} && ${FONT_MAP} ]] && [ -x /usr/bin/unicode_start ] && /usr/bin/unicode_start ${FONT} ${FONT_MAP}
 +
  NEWROOT="/sysroot"
  [ -d $NEWROOT ] || mkdir -p -m 0755 $NEWROOT
  
-@@ -323,7 +348,7 @@ for i in $(export -p); do
+@@ -323,7 +325,7 @@ for i in $(export -p); do
      i=${i%%=*}
      [ -z "$i" ] && continue
      case $i in
@@ -231,8 +269,8 @@ diff -pru dracut-git-orig/modules.d/99base/init.sh dracut-git-10i18n-add-support
              :;;
          *)
              unset "$i";;
-diff -pru dracut-git-orig/modules.d/99base/module-setup.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/module-setup.sh
---- dracut-git-orig/modules.d/99base/module-setup.sh	2016-04-19 02:19:10.702043068 +0200
+diff -pruN dracut-git-orig/modules.d/99base/module-setup.sh dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/module-setup.sh
+--- dracut-git-orig/modules.d/99base/module-setup.sh	2016-04-20 14:11:02.827944958 +0200
 +++ dracut-git-10i18n-add-support-for-custom-locale-definitions/modules.d/99base/module-setup.sh	2016-04-19 02:26:46.619644212 +0200
 @@ -26,6 +26,10 @@ install() {
          (ln -s bash "${initdir}/bin/sh" || :)
