@@ -1,57 +1,19 @@
-From: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] network/net-lib.sh: delete duplicated DNS items from "/etc/resolv.conf"
-Date: Tue, 26 Apr 2016 18:05:11 +0800
-Message-ID: <1461665111-7385-2-git-send-email-xlpang@redhat.com>
-References: <1461665111-7385-1-git-send-email-xlpang@redhat.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1461665111-7385-1-git-send-email-xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH 2/2] network/net-lib.sh: delete duplicated DNS items from
+ "/etc/resolv.conf"
+Date: Tue, 26 Apr 2016 11:03:30 -0000
+Message-ID: <146166861097.19659.4333060056579910732.githubbot@v6.hoyer.xyz>
+References: <1461665111-7385-2-git-send-email-xlpang@redhat.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kdump-team-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1461665111-7385-2-git-send-email-xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Users can pass the DNS information throught "nameserver=" cmdline,
-there maybe duplicated inputs.
+Patchset imported to github.
+Pull request:
+<https://github.com/haraldh/dracut/compare/master...dracut-mailing-devs:1461665111-7385-2-git-send-email-xlpang%40redhat.com>
 
-"/etc/resolv.conf" have some restrictions on the number of DNS items
-effective, so make sure that this file contains no duplicated items.
-
-We achieve this by simply making the file have no duplicated lines.
-
-Signed-off-by: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- modules.d/40network/module-setup.sh | 2 +-
- modules.d/40network/net-lib.sh      | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/modules.d/40network/module-setup.sh b/modules.d/40network/module-setup.sh
-index 4bf93cc..53b4b60 100755
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -23,7 +23,7 @@ installkernel() {
- # called by dracut
- install() {
-     local _arch _i _dir
--    inst_multiple ip arping dhclient sed
-+    inst_multiple ip arping dhclient sed awk
-     inst_multiple -o ping ping6
-     inst_multiple -o brctl
-     inst_multiple -o teamd teamdctl teamnl
-diff --git a/modules.d/40network/net-lib.sh b/modules.d/40network/net-lib.sh
-index 31f1a56..005ad1b 100755
---- a/modules.d/40network/net-lib.sh
-+++ b/modules.d/40network/net-lib.sh
-@@ -120,7 +120,7 @@ setup_net() {
-     [ -e /tmp/dhclient.$netif.dhcpopts ] && . /tmp/dhclient.$netif.dhcpopts
-     # set up resolv.conf
-     [ -e /tmp/net.$netif.resolv.conf ] && \
--        cp -f /tmp/net.$netif.resolv.conf /etc/resolv.conf
-+        awk '!array[$0]++' /tmp/net.$netif.resolv.conf > /etc/resolv.conf
-     [ -e /tmp/net.$netif.gw ]            && . /tmp/net.$netif.gw
- 
-     # add static route
--- 
-1.8.3.1
