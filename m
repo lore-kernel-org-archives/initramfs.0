@@ -1,57 +1,104 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add new file to export the common functions
-Date: Mon, 2 May 2016 12:47:24 +0200
-Message-ID: <f032f0da-9ac5-5c23-ea83-66f1cd765080@redhat.com>
-References: <1441871080-10392-1-git-send-email-mhuang@redhat.com>
- <20151029060453.GA32560@dhcp-128-25.nay.redhat.com>
- <5645DB3D.5080606@redhat.com>
- <20160502101707.GA12999@dhcp-128-25.nay.redhat.com>
+From: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+Subject: Re: [PATCH v9] dracut: add support for custom locale definitions
+Date: Fri, 06 May 2016 17:01:31 +0200
+Message-ID: <1462546891.2287.1.camel@trentalancia.net>
+References: <1460758050.3211.2.camel@trentalancia.net>
+	 <5711D4E7.9070705@gmail.com> <1460815966.4296.13.camel@trentalancia.net>
+	 <57127BC9.70103@gmail.com> <1460835143.3201.10.camel@trentalancia.net>
+	 <1460837622.3201.14.camel@trentalancia.net>
+	 <1460838269.3201.18.camel@trentalancia.net>
+	 <1461026208.2262.1.camel@trentalancia.net>
+	 <1461157491.11229.3.camel@trentalancia.net> <5718AA77.8090600@redhat.com>
+	 <1461341618.21231.0.camel@trentalancia.net>
+	 <1461430242.2604.15.camel@trentalancia.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <20160502101707.GA12999-0VdLhd/A9Pl6Yz8KYMO23x/sF2h8X+2i0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <1461430242.2604.15.camel-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Minfei Huang <mhuang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset="utf-8"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 02.05.2016 12:17, Minfei Huang wrote:
-> On 11/13/15 at 01:44pm, Harald Hoyer wrote:
->> On 29.10.2015 07:04, Minfei Huang wrote:
->>> Hi, Harald.
->>>
->>> Ping. Do you have any feedback about this patch?
->>>
->>> Thanks
->>> Minfei
->>
->> cleaned up dracut-functions.sh and moved dracut specific functions to
->> dracut-inist.sh
->
-> Hi, Harald.
->
-> The dracut exported lib dracut-functions.sh still cann't be sourced
-> directly by third-party project, due to undefined variable initdir.
->
-> Could you please help move following code to dracut-init.sh as well?
->
-> if [[ "$(ln --help)" == *--relative* ]]; then
->     ln_r() {
->         ln -sfnr "${initdir}/$1" "${initdir}/$2"
->     }
-> else
->     ln_r() {
->         local _source=$1
->         local _dest=$2
->         [[ -d "${_dest%/*}" ]] && _dest=$(readlink -f "${_dest%/*}")/${_dest##*/}
->         ln -sfn -- "$(convert_abs_rel "${_dest}" "${_source}")" "${initdir}/${_dest}"
->     }
-> fi
->
->
-> Thanks
-> Minfei
->
+Hello !
 
-sure
+I have noticed the patch below has not been applied yet, despite the
+amendments that have been made as required. Is there any reason for
+that ?
+
+Regards,
+
+Guido
+
+On Sat, 23/04/2016 at 18.50 +0200, Guido Trentalancia wrote:
+> Compile and install locale definitions using localedef from GNU libc
+> or,
+> if locale definitions cannot be compiled but are available on the
+> system
+> as split definitions, just install them.
+>=20
+> The resulting locale definitions archive contains at most two
+> different
+> locale definitions, therefore its size is relatively small.
+>=20
+> Add support for localised messages from core packages (LC_MESSAGES).
+>=20
+> Add support for non-latin fonts using Unicode (tested successfully
+> with
+> Greek, Hebrew and Cyrillic).
+>=20
+> This revised version fixes several issues in the initial patch
+> (including
+> the possibility to build locale definitions). Thanks to Andrei
+> Borzenkov
+> for reviewing the initial patch and providing useful suggestions.
+>=20
+> Thanks for Harald Hoyer for the full style review and other useful
+> suggestions.
+>=20
+> Signed-off-by: Guido Trentalancia <guido-D1bseh+SzQhuxeB9wqlrNw@public.gmane.org>
+> ---
+> =C2=A0NEWS=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+|=C2=A0=C2=A0=C2=A0=C2=A04 +
+> =C2=A0dracut-bash-completion.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A011 +--
+> =C2=A0dracut-init.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A037 ++++++++++
+> =C2=A0dracut.8.asc=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A08 ++
+> =C2=A0dracut.conf.5.asc=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0|=C2=A0=C2=A0=C2=A014 ++-
+> =C2=A0dracut.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A020 +=
++++-
+> =C2=A0modules.d/10i18n/README=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A0=
+1
+> =C2=A0modules.d/10i18n/console_init.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0|=C2=A0=C2=A0=C2=A058 +++++++++++-----
+> =C2=A0modules.d/10i18n/module-setup.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0|=C2=A0=C2=A0123
+> +++++++++++++++++++++++++++++++++-
+> =C2=A0modules.d/10i18n/parse-i18n.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A08 +-
+> =C2=A0modules.d/90crypt/module-setup.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+|=C2=A0=C2=A0=C2=A0=C2=A06 +
+> =C2=A0modules.d/91crypt-gpg/module-setup.sh |=C2=A0=C2=A0=C2=A0=C2=A0=
+6 +
+> =C2=A0modules.d/99base/init.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A04=
+ -
+> =C2=A0modules.d/99base/module-setup.sh=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0|=C2=A0=C2=A0=C2=A0=C2=A04 +
+> =C2=A0modules.d/99base/profile=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A09=
+ ++
+> =C2=A015 files changed, 275 insertions(+), 38 deletions(-)
+
+[...]
