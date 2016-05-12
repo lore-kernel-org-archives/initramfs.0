@@ -1,60 +1,46 @@
-From: Peter Robinson <pbrobinson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 2/2] dracut: Add drivers/tty/serial on arm
-Date: Thu, 12 May 2016 21:04:33 +0100
-Message-ID: <CALeDE9PW+KdECc_u2t4fv9-7ixyOwQ9JM=9sY-5290oFgAHhkQ@mail.gmail.com>
-References: <1463066902-11767-1-git-send-email-kwizart@gmail.com>
-	<1463066902-11767-2-git-send-email-kwizart@gmail.com>
-Mime-Version: 1.0
+From: Daniel Drake <drake-6IF/jdPJHihWk0Htik3J/w@public.gmane.org>
+Subject: [PATCH] systemd-initrd: install new initrd-root-device.target
+Date: Thu, 12 May 2016 15:11:14 -0600
+Message-ID: <1463087474-22316-1-git-send-email-drake@endlessm.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
-         :cc;
-        bh=by7lFUo1Br5vWCGjn7XZcSWNhzNcbEo4AjKWzk1Fk98=;
-        b=nxdIToP4SxLFyivYzdWk6MZXis5IXrdnXskO96LNkM45KVoGhp5tTGD/jdrep+7jEY
-         Iqg5adAZn3xSZoKyLnfFXdlbx9LpYMmNcQRt5BxUQYds4xZLLPHpUsfz3xt4bfM9m5tY
-         /mVEwMrodRPSuLqHfpwCSOgweGCtnfUfa/TiYfo78kVVrxZ1vYD0+UL+iJFv4j2pEfu5
-         LN4OH16ZmXARiYf4TnoByDb/idBKz41gdJ8sowXykZ86DQpkFtIDvnPN8FE0V9E48cT6
-         9+v3UyIgy3IweiaE6cMjgCuSB/Fwm944LoY2F8YOYU1LC4FnVVtEqJnFGO8k6GFEs1/Z
-         YgVQ==
-In-Reply-To: <1463066902-11767-2-git-send-email-kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+        d=endlessm-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id;
+        bh=SgHv2ZuoYDPIfjBHpklOE1ZPU3viXkOF8E42rfUuhFc=;
+        b=xRWYhcdjcC3bk8DWYWpPe9SWAXByir3r6NVfcfUV03o4efs0BiScvYpQ7/QlBsqBaH
+         JwkCsjHNx7hr9nl1nouhD9s7lHsRDTCwSk+WZqKW40Vox3rul1gGVAc8Szj7FxMxEssY
+         lKZl1pXcSzIW73mpy+hZLu7gKJgefxZeFFhIuLMRJOe9Cwhq0t9P3l5t80NkZ949+xph
+         Bl7QZgaM1zl53Ha3PkQkP2IeIlRD3+6RMJqO/POqY4q0hKiZKA6ortG+pp1BXJwAY33y
+         wmhWN+vjnphceoeLBVu/qCLHjxHOXavgVj0bI10G0iy+pu9MEfAds31Ykr5KEZHfQGDI
+         xJdA==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, May 12, 2016 at 4:28 PM, Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> This is needed when serial drivers are compiled as module on arm
-> Current candidates are 8250_omap or msn_serial
+systemd has a new initramfs target useful for inserting custom initramfs
+code after the root device is available, before it has been checked and
+mounted.
+https://github.com/systemd/systemd/pull/3239
 
-Neither of these are used for serial consoles so why do they need to
-be in the initrd?
+Make that available in dracut initramfs as standard.
+---
+ modules.d/01systemd-initrd/module-setup.sh | 1 +
+ 1 file changed, 1 insertion(+)
 
-Peter
-
-> Signed-off-by: Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->  modules.d/90kernel-modules/module-setup.sh | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/modules.d/90kernel-modules/module-setup.sh b/modules.d/90kernel-modules/module-setup.sh
-> index 7904c02..215f468 100755
-> --- a/modules.d/90kernel-modules/module-setup.sh
-> +++ b/modules.d/90kernel-modules/module-setup.sh
-> @@ -30,6 +30,7 @@ installkernel() {
->                  "=drivers/i2c/busses" \
->                  "=drivers/regulator" \
->                  "=drivers/rtc" \
-> +                "=drivers/tty/serial" \
->                  "=drivers/usb/host" \
->                  "=drivers/usb/phy" \
->                  ${NULL}
-> --
-> 2.4.11
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/modules.d/01systemd-initrd/module-setup.sh b/modules.d/01systemd-initrd/module-setup.sh
+index fb6a9ea..c1ccd2a 100755
+--- a/modules.d/01systemd-initrd/module-setup.sh
++++ b/modules.d/01systemd-initrd/module-setup.sh
+@@ -28,6 +28,7 @@ install() {
+     inst_multiple -o \
+         $systemdsystemunitdir/initrd.target \
+         $systemdsystemunitdir/initrd-fs.target \
++        $systemdsystemunitdir/initrd-root-device.target \
+         $systemdsystemunitdir/initrd-root-fs.target \
+         $systemdsystemunitdir/initrd-switch-root.target \
+         $systemdsystemunitdir/initrd-switch-root.service \
+-- 
+2.7.4
