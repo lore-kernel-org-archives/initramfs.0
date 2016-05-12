@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-IBi9RG/b67k@public.gmane.org>
-Subject: [PATCH 11/12] mulitpath: Boot up, also without multipath.conf, it is not mandatory
-Date: Thu, 12 May 2016 20:03:35 +0200
-Message-ID: <1463076216-410-12-git-send-email-trenn@suse.com>
+Subject: [PATCH 02/12] 40network: always start netroot in ifup.sh
+Date: Thu, 12 May 2016 20:03:26 +0200
+Message-ID: <1463076216-410-3-git-send-email-trenn@suse.com>
 References: <1463076216-410-1-git-send-email-trenn@suse.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1463076216-410-1-git-send-email-trenn-IBi9RG/b67k@public.gmane.org>
@@ -15,36 +15,48 @@ Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, thomas.blume-IBi9RG/b67k@
 
 From: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 
-If rootfs is on multipath, but platform does not have an /etc/multipath.conf
-file which is not urgently needed, they system will not boot, due to:
+It's totally irrelevant how the network is configured when
+trying to setup netroot. It only matters if it could be
+configured at all.
+So change the logic the check for correct network setup
+and then start netroot.
 
-multipathd is not started and rootfs and swap are not found:
-systemctl status multipathd.service
-* multipathd.service - Device-Mapper Multipath Device Controller
-   Loaded: loaded (/usr/lib/systemd/system/multipathd.service; disabled; vendor preset: enabled)
-   Active: inactive (dead)
-Condition: start condition failed at Thu 2015-05-07 11:49:11 CEST; 7min ago
-           ConditionPathExists=/etc/multipath.conf was not met
+References: bnc#881235
 
-
-and exit to dracut shell.
-
+Signed-off-by: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>
 Signed-off-by: Thomas Renninger <trenn-IBi9RG/b67k@public.gmane.org>
 ---
- modules.d/90multipath/multipathd.service | 1 -
- 1 file changed, 1 deletion(-)
+ modules.d/40network/ifup.sh | 18 +++++-------------
+ 1 file changed, 5 insertions(+), 13 deletions(-)
 
-diff --git a/modules.d/90multipath/multipathd.service b/modules.d/90multipath/multipathd.service
-index b64b02c..f7bc65f 100644
---- a/modules.d/90multipath/multipathd.service
-+++ b/modules.d/90multipath/multipathd.service
-@@ -6,7 +6,6 @@ Conflicts=shutdown.target
- ConditionKernelCommandLine=!nompath
- ConditionKernelCommandLine=!rd.multipath=0
- ConditionKernelCommandLine=!rd_NO_MULTIPATH
--ConditionPathExists=/etc/multipath.conf
+diff --git a/modules.d/40network/ifup.sh b/modules.d/40network/ifup.sh
+index 1185523..3234c56 100755
+--- a/modules.d/40network/ifup.sh
++++ b/modules.d/40network/ifup.sh
+@@ -388,19 +388,11 @@ for p in $(getargs ip=); do
+             > /tmp/net.$(cat /sys/class/net/${netif}/address).up
+         fi
  
- [Service]
- Type=simple
+-        case $autoconf in
+-            dhcp|on|any|dhcp6)
+-            ;;
+-            *)
+-                if [ $ret -eq 0 ]; then
+-                    setup_net $netif
+-                    source_hook initqueue/online $netif
+-                    if [ -z "$manualup" ]; then
+-                        /sbin/netroot $netif
+-                    fi
+-                fi
+-                ;;
+-        esac
++        setup_net $netif
++        source_hook initqueue/online $netif
++        if [ -z "$manualup" ]; then
++            /sbin/netroot $netif
++        fi
+         exit $ret
+     fi
+ done
 -- 
 2.1.4
