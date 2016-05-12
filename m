@@ -1,7 +1,7 @@
 From: Thomas Renninger <trenn-IBi9RG/b67k@public.gmane.org>
-Subject: [PATCH 03/12] 40network: Only enable network interfaces if explicitly requested
-Date: Thu, 12 May 2016 20:03:27 +0200
-Message-ID: <1463076216-410-4-git-send-email-trenn@suse.com>
+Subject: [PATCH 08/12] NFS: Support host being a DNS ALIAS
+Date: Thu, 12 May 2016 20:03:32 +0200
+Message-ID: <1463076216-410-9-git-send-email-trenn@suse.com>
 References: <1463076216-410-1-git-send-email-trenn@suse.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 In-Reply-To: <1463076216-410-1-git-send-email-trenn-IBi9RG/b67k@public.gmane.org>
@@ -13,34 +13,31 @@ Content-Transfer-Encoding: 7bit
 To: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, thomas.blume-IBi9RG/b67k@public.gmane.org, pwieczorkiewicz-l3A5Bk7waGM@public.gmane.org, hare-IBi9RG/b67k@public.gmane.org, fvogt-IBi9RG/b67k@public.gmane.org, trenn-IBi9RG/b67k@public.gmane.org
 
-From: Pawel Wieczorkiewicz <pwieczorkiewicz-l3A5Bk7waGM@public.gmane.org>
+From: Fabian Vogt <fvogt-IBi9RG/b67k@public.gmane.org>
 
-Currently all available network interfaces are started whenever
-40network is pulled in. This causes massive delays during bootup.
-This patch modifies the behaviour to start interfaces only if
-rd.neednet is specified.
+The "host" command may also print something else than
+"asdf.local.lan has address 1.2.3.4", like:
+"rootserver.local.net is an alias for rainbow.local.net.".
+So "head -n1" is not enough.
 
-References: bnc#879038
-
-Signed-off-by: Pawel Wieczorkiewicz <pwieczorkiewicz-l3A5Bk7waGM@public.gmane.org>
+https://bugzilla.suse.com/show_bug.cgi?id=955592
 Signed-off-by: Thomas Renninger <trenn-IBi9RG/b67k@public.gmane.org>
 ---
- modules.d/40network/net-genrules.sh | 2 +-
+ modules.d/95nfs/module-setup.sh | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules.d/40network/net-genrules.sh b/modules.d/40network/net-genrules.sh
-index c964531..acaee7c 100755
---- a/modules.d/40network/net-genrules.sh
-+++ b/modules.d/40network/net-genrules.sh
-@@ -104,8 +104,8 @@ command -v fix_bootif >/dev/null || . /lib/net-lib.sh
+diff --git a/modules.d/95nfs/module-setup.sh b/modules.d/95nfs/module-setup.sh
+index c8dfa94..ed62b05 100755
+--- a/modules.d/95nfs/module-setup.sh
++++ b/modules.d/95nfs/module-setup.sh
+@@ -53,7 +53,7 @@ cmdline() {
+     if [[ $nfs_device = [0-9]*\.[0-9]*\.[0-9]*.[0-9]* ]] || [[ $nfs_device = \[.*\] ]]; then
+         nfs_address="${nfs_device%%:*}"
      else
-         cond='ACTION=="add", SUBSYSTEM=="net"'
-         # if you change the name of "91-default-net.rules", also change modules.d/80cms/cmssetup.sh
--        echo "$cond, $runcmd" > /etc/udev/rules.d/91-default-net.rules
-         if [ "$NEEDNET" = "1" ]; then
-+            echo "$cond, $runcmd" > /etc/udev/rules.d/91-default-net.rules
-             echo "[ -f /tmp/net.*.did-setup ]" >$hookdir/initqueue/finished/wait-network.sh
-         fi
+-        lookup=$(host "${nfs_device%%:*}"| head -n1)
++        lookup=$(host "${nfs_device%%:*}"| grep " address " | head -n1)
+         nfs_address=${lookup##* }
      fi
+     ifname=$(ip -o route get to $nfs_address | sed -n 's/.*dev \([^ ]*\).*/\1/p')
 -- 
 2.1.4
