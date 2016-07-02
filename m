@@ -1,11 +1,11 @@
 From: Gerhard Wiesinger <lists-tcxHB8FAk+J54TAoqtyWWQ@public.gmane.org>
 Subject: Udev problem with FC24 (was ok in FC23)
-Date: Fri, 1 Jul 2016 19:55:50 +0200
-Message-ID: <2b2d505f-1119-2b1d-9a80-16c6bd2e30e0@wiesinger.com>
+Date: Sat, 2 Jul 2016 08:13:08 +0200
+Message-ID: <c433c1aa-1d16-7ea3-f614-a4d0eb72505a@wiesinger.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Filter: OpenDKIM Filter v2.10.3 wiesinger.com u61HtpCk015757
+DKIM-Filter: OpenDKIM Filter v2.10.3 wiesinger.com u626D8uG001990
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"; format="flowed"
@@ -58,7 +58,8 @@ So when something more specific correct filter is added it doesn't work=
 any more (I tried several different more distinct filters):
 
 I tried already: udevadm info --attribute-walk /dev/ttyUSB1 which looks=
- good
+=20
+good
 
 =46irst lines are:
 
@@ -114,7 +115,7 @@ Ciao,
 Gerhard
 
 
---
+--=20
 
 https://www.wiesinger.com/
 
