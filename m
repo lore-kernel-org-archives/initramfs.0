@@ -1,64 +1,41 @@
-From: Martin Wilck <mwilck-l3A5Bk7waGM@public.gmane.org>
-Subject: [RFC/PATCH] Give --persistent_policy precedence over /dev/mapper names
-Date: Wed,  5 Oct 2016 14:13:03 +0200
-Message-ID: <20161005121303.31582-1-mwilck@suse.de>
+From: Chad Dupuis <chad.dupuis-YGCgFSpz5w/QT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] fcoe: Allow more time for the bnx2x link negotiation before brining up fcoe interfaces.
+Date: Wed, 12 Oct 2016 11:32:47 -0400
+Message-ID: <1476286367-30606-1-git-send-email-chad.dupuis@cavium.com>
+Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Martin Wilck <mwilck-l3A5Bk7waGM@public.gmane.org>
+Cc: chad.dupuis-YGCgFSpz5w/QT0dZR+AlfA@public.gmane.org
 
-There is currently no way to override dracut's preference for
-/dev/mapper device names. But using these is problematic in
-different scenarios: For example, if a user has a multipath-
-enabled system but wants to disable multipath, or if the
-names of multipath maps change because of configuration changes
-(e.g. toggling user_friendly_names in /etc/multipath.conf).
+bnx2x can take no longer than 3 seconds to initialize the link in some setups
+which can cause fipvlan to fail and thus the fcoe interface(s) won't be
+created.
 
-This patch makes dracut prefer the user-specified
---persistent_policy names over /dev/mapper names.
+Add another 10 seconds to give the link enough time to initialize.
 
-It might be worthwhile to discuss why dracut prefers /dev/mapper
-of /dev/disk/by-uuid at all. This preference was introduced
-in 9037b63e with the argument "dm devices maintain /dev/mapper/* as
-persistent names", but that's wrong for the scenarios mentioned
-above, and is not a compelling reason for preferring /dev/mapper
-over /dev/disk/by-uuid.
-
-Signed-off-by: Martin Wilck <mwilck-l3A5Bk7waGM@public.gmane.org>
+Signed-off-by: Chad Dupuis <chad.dupuis-YGCgFSpz5w/QT0dZR+AlfA@public.gmane.org>
 ---
- dracut-functions.sh | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ modules.d/95fcoe/fcoe-up.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/dracut-functions.sh b/dracut-functions.sh
-index 249d8fb..e97765d 100755
---- a/dracut-functions.sh
-+++ b/dracut-functions.sh
-@@ -223,14 +223,20 @@ get_devpath_block() {
- 
- # get a persistent path from a device
- get_persistent_dev() {
--    local i _tmp _dev
-+    local i _tmp _dev _pol
- 
-     _dev=$(get_maj_min "$1")
-     [ -z "$_dev" ] && return
- 
-+    if [[ -n "$persistent_policy" ]]; then
-+	_pol="/dev/disk/${persistent_policy}/*"
-+    else
-+	_pol=
-+    fi
-+
-     for i in \
-+        $_pol \
-         /dev/mapper/* \
--        /dev/disk/${persistent_policy:-by-uuid}/* \
-         /dev/disk/by-uuid/* \
-         /dev/disk/by-label/* \
-         /dev/disk/by-partuuid/* \
+diff --git a/modules.d/95fcoe/fcoe-up.sh b/modules.d/95fcoe/fcoe-up.sh
+index fb3b4c4..ddc87b1 100755
+--- a/modules.d/95fcoe/fcoe-up.sh
++++ b/modules.d/95fcoe/fcoe-up.sh
+@@ -84,8 +84,8 @@ elif [ "$netdriver" = "bnx2x" ]; then
+     # If driver is bnx2x, do not use /sys/module/fcoe/parameters/create but fipvlan
+     modprobe 8021q
+     udevadm settle --timeout=30
+-    # Sleep for 3 s to allow dcb negotiation
+-    sleep 3
++    # Sleep for 13 s to allow dcb negotiation
++    sleep 13
+     fipvlan "$netif" -c -s
+ else
+     vlan="no"
 -- 
-2.10.0
+1.8.5.6
