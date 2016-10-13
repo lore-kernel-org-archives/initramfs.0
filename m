@@ -1,41 +1,45 @@
-From: Jeff Elsloo <jeff.elsloo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Contribution Question
-Date: Thu, 13 Oct 2016 11:12:22 -0600
-Message-ID: <CABjXaGv8B9eK5ucw6H436oAWTNwTpB__snrCFGv1UDwnMb48yg@mail.gmail.com>
-Mime-Version: 1.0
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH] 98integrity: support validating the IMA policy file signature
+Date: Thu, 13 Oct 2016 15:51:04 -0400
+Message-ID: <1476388264-23649-1-git-send-email-stefanb@linux.vnet.ibm.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20120113;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=byMV3kfJ484jAIEQ8wMUO3iUg8+ooGYUMZdJgDSzsYw=;
-        b=JHVyRiATexA6F9uxweOfsU69hbojYq0HsTUbxUNmh3H7BDYa4NiWce1fJhJJhRCBb+
-         RqOb1qBwSwCkUlT3DoDZLo3ZXCYjScF8DNzAOAdUMuGNSoJuWOM5NrArZWIlowUQHf3F
-         mjHcZYguAb7kvkB2slKKNWxKIrYgBXXBYY7c7QXONZ4L8OBlZtRHLywU7sWkxAqG5lbU
-         KpTy8Ir5DUPlFyp1PCoi63NVQjgcIWZpN7jpdvgqU2Twqxq7qur4zofLSUfRQIn0UYkh
-         j/XxMk/GCYi2pprUJ70RBCQs25USEtyA4b1WIeGn8nSJI/R9loaeGOc4j2rf3PyAFQAS
-         My3g==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Stefan Berger <stefanb-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Hi all,
+From: Stefan Berger <stefanb-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-I've been working on a small enhancement for dracut and unfortunately
-before I'm able to make a contribution, my company's legal team has a
-licensing question. Is the project strictly governed by the terms of
-the GPLv2, or are there additional requirements such as a Contributor
-License Agreement (CLA)? I looked around at the project and various
-sites/docs and didn't see anything about a CLA, but I still need to
-confirm.
+IMA validates file signatures based on the security.ima xattr. As of
+Linux-4.7, instead of cat'ing the IMA policy into the securityfs policy,
+the IMA policy pathname can be written, allowing the IMA policy file
+signature to be validated.
 
-Additionally I'm curious about the contribution process in general. Do
-you prefer pull requests via GitHub, or a discussion of the proposed
-feature (and patch?) on the list? I'm expecting that the enhancement
-might need some work to fit within the framework properly.
+This patch first attempts to write the pathname, but on failure falls
+back to cat'ing the IMA policy contents .
 
-Any insight is appreciated!
+Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Signed-off-by: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ modules.d/98integrity/ima-policy-load.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Thanks,
-Jeff
+diff --git a/modules.d/98integrity/ima-policy-load.sh b/modules.d/98integrity/ima-policy-load.sh
+index 0061cff..5460d02 100755
+--- a/modules.d/98integrity/ima-policy-load.sh
++++ b/modules.d/98integrity/ima-policy-load.sh
+@@ -30,7 +30,8 @@ load_ima_policy()
+     # check the existence of the IMA policy file
+     [ -f "${IMAPOLICYPATH}" ] && {
+         info "Loading the provided IMA custom policy";
+-        cat ${IMAPOLICYPATH} > ${IMASECDIR}/policy;
++        echo -n "${IMAPOLICYPATH}" > ${IMASECDIR}/policy || \
++            cat "${IMAPOLICYPATH}" > ${IMASECDIR}/policy
+     }
+ 
+     return 0
+-- 
+2.7.0
