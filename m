@@ -1,79 +1,84 @@
-From: Martin Wilck <mwilck-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [RFC/PATCH] Give --persistent_policy precedence over
- /dev/mapper names
-Date: Thu, 27 Oct 2016 09:18:30 +0200
-Message-ID: <1477552710.3553.1.camel@suse.de>
-References: <20161005121303.31582-1-mwilck@suse.de>
-         <e8384369-a93f-63b1-9422-21c9d5bce657@redhat.com>
+From: Dennis Luehring <dl.soluz-hi6Y0CQ0nG0@public.gmane.org>
+Subject: PROBLEM: why not panic on initramfs.c/populate_rootfs errors?
+Date: Fri, 28 Oct 2016 13:38:27 +0200
+Message-ID: <56acd08b-8fab-d238-ac24-fd55844e8d3d@gmx.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <e8384369-a93f-63b1-9422-21c9d5bce657-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello Harald,
+i've already posted this on linux-kernel mailinglist but didn't get any 
+response - so i hope this is the right mailing list for such questions
 
-thanks for your reply.
+im building initrd/initramfs cpios for serveral qemu (qemu 2.7.x git 
+head) platforms and
+stumbled over inconsistent rootfs after kernel load
+using vanilla kernel 4.8.4(and 4.7.0), bash 4.4, core-utils/linux-utils
+build with gcc 6.1 under Ubuntu 16.04.1 x64
+but its not qemu or platform related - the behaviour of 
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/init/initramfs.c?id=refs/tags/v4.8.4
+populate_rootfs function is equal to all platforms and makes it harder 
+to find problems with initrd/initramfs,cpio,ram
 
-On Wed, 2016-10-26 at 13:45 +0200, Harald Hoyer wrote:
-> On 05.10.2016 14:13, Martin Wilck wrote:
-> > There is currently no way to override dracut's preference for
-> > /dev/mapper device names. But using these is problematic in
-> > different scenarios: For example, if a user has a multipath-
-> > enabled system but wants to disable multipath, or if the
-> > names of multipath maps change because of configuration changes
-> > (e.g. toggling user_friendly_names in /etc/multipath.conf).
-> > 
-> > This patch makes dracut prefer the user-specified
-> > --persistent_policy names over /dev/mapper names.
-> > 
-> > It might be worthwhile to discuss why dracut prefers /dev/mapper
-> > of /dev/disk/by-uuid at all. This preference was introduced
-> > in 9037b63e with the argument "dm devices maintain /dev/mapper/* as
-> > persistent names", but that's wrong for the scenarios mentioned
-> > above, and is not a compelling reason for preferring /dev/mapper
-> > over /dev/disk/by-uuid.
-> > 
-> > 
-[...]
+using a big(~380MB) initrd.cpio with not enough ram (1GB) in qemu i get 
+this kernel message
+"Initramfs unpacking failed: write error"
+that sometimes led to missing files in my rootfs (thanks to "Richard 
+Henderson"(DEC-Alpha maintainer) who directed me to the kernel log
+message - after searching for hours why some executables didn't work 
+after kernel load)
 
-> 
-> looks good to me.
-> I would even do:
-> <https://github.com/dracutdevs/dracut/pull/166/files>
-> in PR
-> <https://github.com/dracutdevs/dracut/pull/166>
-> 
-> Which lets us set persistent_policy to something like:
-> persistent_policy="mapper by-uuid by-label"
-> or
-> persistent_policy=(by-label by-id by-path by-partuuid)
-> 
-> What do you think?
+using a small(~15MB) initrd.cpio with just a staticaly linked c/c++ based
+init for the kernel also with 1GB ram gives me this kernel message:
+"Initramfs unpacking failed: junk in compressed archive"
 
-That patch needs a fix, because /dev/disk/mapper doesn't exist. I
-commented on github.
+both initrd.cpios are created with cpio (version 2.11)
+"find . | cpio -H newc -o initrd.cpio"
 
-IMO, being able to override only the first choice would be sufficient
-for almost every use case. But of course it doesn't hurt to have the
-option to customize more, either ... I'm uncertain.
+why do the kernel not panic if not able to populate the roofs consistently?
 
-I'd rather like to discuss the default again, which your patch leaves
-at "mapper". As I argued before, I think "by-uuid" would be the better
-choice. The awareness level for the "persistent_policy" option is low
-among users, few people are likely to use it. The default should be
-such that only the strangest setups out there should create a need to
-change it. 
+related to the panic i've found this commit (from 2009-01-14) that 
+allows inconsistent rootfs
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/init/initramfs.c?id=73310a169aebe257efdd35a763cce1c7658f40c9
 
-Thus I'd like to know why "mapper" should continue to be favored over
-UUID-based policy in the future. The obvious advantage of the UUID-
-based approach for multipath setups is that it enables booting even if
-multipathd fails or refuses to set up the map (think of a setup using
-the "find_multipaths" option, where only a single path is up during
-boot).
+is that still a good idea/practise?
 
-Best Regards,
-Martin
+to have initramfs recovery seems to  be a rare case and a simple panic 
+would help much better in many other
+common situations or are the errors comming from unpack_to_rootfs() 
+currently not
+always errors but sometimes warnings where panic would be the wrong 
+action to take?
+
+i don't know if both messages telling me that something bad happend and
+i need to fix it first or is the second just a warning?
+"Initramfs unpacking failed: write error"
+"Initramfs unpacking failed: junk in compressed archive"
+
+i've uploaded my cpios, kernel and start-scripts for my szenario to 
+(~72MB): http://www.filedropper.com/initramfstestalpha-linux-gcc-610fail
+files:
+config - kernel 4.8.4 config for DEC Alpha (default)
+big_initrd.cpio - the ~380MB initrd
+initrd.cpio - the ~15MB initrd
+init.cpp - the staticaly linked c/c++ based init source
+start_big_initrd.cpio_1GB.sh - start-script for qemu using big_initrd 
+and 1GB of ram
+start_big_initrd.cpio_2GB.sh - start-script for qemu using big_initrd 
+and 2GB of ram
+start_initrd.cpio.sh - start-script for qemu using initrd and 1GB of ram
+start_big_initrd.cpio_1GB.kernel.out - kernel output of 
+start_big_initrd.cpio_1GB.sh
+start_big_initrd.cpio_2GB.kernel.out - kernel output of 
+start_big_initrd.cpio_2GB.sh
+start_initrd.cpio.kernel.out - kernel output of start_initrd.cpio.sh
+System.map - kernel map
+clfskernel - kernel 4.8.4 for DEC Alpha
+
+please direct me to the correct mailinglist (or person) that could
+answer this questions if im wrong here
+
+thx
