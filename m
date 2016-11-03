@@ -1,7 +1,7 @@
 From: Xunlei Pang <xpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC PATCH 1/2] add 99memdebug-ko dracut module
-Date: Thu, 3 Nov 2016 12:45:57 +0800
-Message-ID: <581AC105.3090003@redhat.com>
+Date: Thu, 3 Nov 2016 15:28:07 +0800
+Message-ID: <581AE707.9050606@redhat.com>
 References: <1478077386-30039-1-git-send-email-xlpang@redhat.com>
  <20161103030142.GA3201@dhcp-128-65.nay.redhat.com>
  <581AB9D7.2010905@redhat.com>
@@ -15,8 +15,6 @@ List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-Ccing Pratyush who is familiar with tracing
 
 On 2016/11/03 at 12:15, Xunlei Pang wrote:
 > On 2016/11/03 at 11:01, Dave Young wrote:
@@ -182,6 +180,27 @@ On 2016/11/03 at 12:15, Xunlei Pang wrote:
 > the time consumption is huge, I am afraid in minutes because I once suspected the script was in some
 > dead loop when parsing "tracing/trace" directly. It is the same situation when turning off tracing_on and
 > try again.
+
+Although I don't know why, after I replaced the following scripts
+1)
+while read pid cpu flags ts function
+do
+    ... ...
+done < "$TRACE_BASE/tracing/trace"
+
+with
+
+2)
+cat "$TRACE_BASE/tracing/trace" | while read pid cpu flags ts function
+do
+    ... ...
+done
+
+2) became not time-consuming just like parsing the copied filename in 1) ...
+
+Regards,
+Xunlei
+
 >
 >>> +    TMPFILE=/tmp/kdump.trace.tmp.$$$$
 >>> +    cp $TRACE_BASE/tracing/trace $TMPFILE -f
