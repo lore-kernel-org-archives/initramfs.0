@@ -1,50 +1,19 @@
-From: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v3 3/3] dracut.cmdline.7.asc: update document for rd.memdebug=4
-Date: Mon, 14 Nov 2016 14:11:26 +0800
-Message-ID: <1479103886-24568-3-git-send-email-xlpang@redhat.com>
-References: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1479103886-24568-1-git-send-email-xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH v3 3/3] dracut.cmdline.7.asc: update document for
+ rd.memdebug=4
+Date: Mon, 14 Nov 2016 07:03:55 -0000
+Message-ID: <147910703579.3580.14926360655286017459.githubbot@v6.hoyer.xyz>
+References: <1479103886-24568-3-git-send-email-xlpang@redhat.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1479103886-24568-3-git-send-email-xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-"rd.memdebug=4" is for kernel module memory consumption debugging.
+Patchset imported to github.
+Pull request:
+<https://github.com/haraldh/dracut/compare/master...dracut-mailing-devs:1479103886-24568-3-git-send-email-xlpang%40redhat.com>
 
-Signed-off-by: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- dracut.cmdline.7.asc | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/dracut.cmdline.7.asc b/dracut.cmdline.7.asc
-index 0009ff2..7fc4499 100644
---- a/dracut.cmdline.7.asc
-+++ b/dracut.cmdline.7.asc
-@@ -187,8 +187,8 @@ It should be attached to any report about dracut problems.
-     _/run/initramfs/init.log_.
-     If "quiet" is set, it also logs to the console.
- 
--**rd.memdebug=[0-3]**::
--    Print memory usage info at various points, set the verbose level from 0 to 3.
-+**rd.memdebug=[0-4]**::
-+    Print memory usage info at various points, set the verbose level from 0 to 4.
- +    
-     Higher level means more debugging output:
- +
-@@ -197,6 +197,10 @@ It should be attached to any report about dracut problems.
-     1 - partial /proc/meminfo
-     2 - /proc/meminfo
-     3 - /proc/meminfo + /proc/slabinfo
-+    4 - /proc/meminfo + /proc/slabinfo + tracekomem
-+        NOTE: tracekomem is a shell script utilizing kernel trace to track
-+              the rough total memory consumption of kernel modules during
-+              loading. It may override other trace configurations.
- ----
- 
- **rd.break**::
--- 
-1.8.3.1
