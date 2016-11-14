@@ -1,8 +1,10 @@
 From: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v3 1/3] 99base: add memtrace-ko.sh to debug kernel module large memory consumption
-Date: Mon, 14 Nov 2016 14:11:24 +0800
-Message-ID: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
+Subject: [PATCH v3 2/3] 99base: apply kernel module memory debug support
+Date: Mon, 14 Nov 2016 14:11:25 +0800
+Message-ID: <1479103886-24568-2-git-send-email-xlpang@redhat.com>
+References: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1479103886-24568-1-git-send-email-xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
@@ -11,255 +13,170 @@ Content-Transfer-Encoding: 7bit
 To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-The current method for memory debug is to use "rd.memdebug=[0-3]",
-it is not enough for debugging kernel modules. For example, when we
-want to find out which kernel module consumes a large amount of memory,
-"rd.memdebug=[0-3]" won't help too much.
-
-A better way is needed to achieve this requirement, this is useful for
-kdump OOM debugging.
-
-The principle of this patch is to use kernel trace to track slab and
-buddy allocation calls during kernel module loading(module_init), thus
-we can analyze all the trace data and get the total memory consumption.
-As for large slab allocation, it will probably fall into buddy allocation,
-thus tracing "mm_page_alloc" alone should be enough for the purpose(this
-saves quite some trace buffer memory, also large free is quite unlikey
-during module loading, we neglect those memory free events).
-
-The trace events include memory calls under "tracing/events/":
-  kmem/mm_page_alloc
-
-We also inpect the following events to detect the module loading:
-  module/module_load
-  module/module_put
-
-Since we use filters to trace events, the final trace data size won't
-be too big. Users can adjust the trace buffer size via "trace_buf_size"
-kernel boot command line as needed.
-
-We can get the module name and task pid from "module_load" event which
-also mark the beginning of the loading, and module_put called by the
-same task pid implies the end of the loading. So the memory events
-recorded in between by the same task pid are consumed by this module
-during loading(i.e. modprobe or module_init()).
-
-With these information, we can record the rough total memory(the larger,
-the more precise the result will be) consumption involved by each kernel
-module loading.
-
-Thus we introduce this shell script to find out which kernel module
-consumes a large amount of memory during loading. Use "rd.memdebug=4"
-as the tigger.
-
-After applying this patch and specifying "rd.memdebug=4", during booting
-it will print out something extra like below:
-0 pages consumed by "pata_acpi"
-0 pages consumed by "ata_generic"
-1 pages consumed by "drm"
-0 pages consumed by "ttm"
-0 pages consumed by "drm_kms_helper"
-835 pages consumed by "qxl"
-0 pages consumed by "mii"
-6 pages consumed by "8139cp"
-0 pages consumed by "virtio"
-0 pages consumed by "virtio_ring"
-9 pages consumed by "virtio_pci"
-1 pages consumed by "8139too"
-0 pages consumed by "serio_raw"
-0 pages consumed by "crc32c_intel"
-199 pages consumed by "virtio_console"
-0 pages consumed by "libcrc32c"
-9 pages consumed by "xfs"
-
-From the print, we see clearly that "qxl" consumed the most memory.
-
-This file will be installed as a separate executable named "tracekomem"
-in the following patch.
+Extend "rd.memdebug" to "4", and "make_trace_mem" to "4+:komem".
+Add new "cleanup_trace_mem" to cleanup the trace if active.
 
 Signed-off-by: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
-Series change from v2:
-Improved documentation, no functional change.
+ modules.d/98dracut-systemd/dracut-cmdline.sh     |  2 +-
+ modules.d/98dracut-systemd/dracut-pre-mount.sh   |  2 +-
+ modules.d/98dracut-systemd/dracut-pre-pivot.sh   |  3 ++-
+ modules.d/98dracut-systemd/dracut-pre-trigger.sh |  2 +-
+ modules.d/99base/dracut-lib.sh                   | 13 ++++++++++++-
+ modules.d/99base/init.sh                         |  9 +++++----
+ modules.d/99base/module-setup.sh                 |  1 +
+ 7 files changed, 23 insertions(+), 9 deletions(-)
 
- modules.d/99base/memtrace-ko.sh | 169 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 169 insertions(+)
- create mode 100755 modules.d/99base/memtrace-ko.sh
-
-diff --git a/modules.d/99base/memtrace-ko.sh b/modules.d/99base/memtrace-ko.sh
-new file mode 100755
-index 0000000..f4720bf
---- /dev/null
-+++ b/modules.d/99base/memtrace-ko.sh
-@@ -0,0 +1,169 @@
-+# Try to find out kernel modules with large total memory allocation during loading.
-+# For large slab allocation, it will fall into buddy, thus tracing "mm_page_alloc"
-+# alone should be enough for the purpose.
-+
-+# "sys/kernel/tracing" has the priority if exists.
-+get_trace_base() {
-+    # trace access through debugfs would be obsolete if "/sys/kernel/tracing" is available.
-+    if [[ -d "/sys/kernel/tracing" ]]; then
-+        echo "/sys/kernel"
-+    else
-+        echo "/sys/kernel/debug"
+diff --git a/modules.d/98dracut-systemd/dracut-cmdline.sh b/modules.d/98dracut-systemd/dracut-cmdline.sh
+index 6c6ee02..bff9435 100755
+--- a/modules.d/98dracut-systemd/dracut-cmdline.sh
++++ b/modules.d/98dracut-systemd/dracut-cmdline.sh
+@@ -42,7 +42,7 @@ export root
+ export rflags
+ export fstype
+ 
+-make_trace_mem "hook cmdline" '1+:mem' '1+:iomem' '3+:slab'
++make_trace_mem "hook cmdline" '1+:mem' '1+:iomem' '3+:slab' '4+:komem'
+ # run scriptlets to parse the command line
+ getarg 'rd.break=cmdline' -d 'rdbreak=cmdline' && emergency_shell -n cmdline "Break before cmdline"
+ source_hook cmdline
+diff --git a/modules.d/98dracut-systemd/dracut-pre-mount.sh b/modules.d/98dracut-systemd/dracut-pre-mount.sh
+index ae51128..a3b9d29 100755
+--- a/modules.d/98dracut-systemd/dracut-pre-mount.sh
++++ b/modules.d/98dracut-systemd/dracut-pre-mount.sh
+@@ -8,7 +8,7 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+ source_conf /etc/conf.d
+ 
+-make_trace_mem "hook pre-mount" '1:shortmem' '2+:mem' '3+:slab'
++make_trace_mem "hook pre-mount" '1:shortmem' '2+:mem' '3+:slab' '4+:komem'
+ # pre pivot scripts are sourced just before we doing cleanup and switch over
+ # to the new root.
+ getarg 'rd.break=pre-mount' 'rdbreak=pre-mount' && emergency_shell -n pre-mount "Break pre-mount"
+diff --git a/modules.d/98dracut-systemd/dracut-pre-pivot.sh b/modules.d/98dracut-systemd/dracut-pre-pivot.sh
+index cc70e3c..dc9a250 100755
+--- a/modules.d/98dracut-systemd/dracut-pre-pivot.sh
++++ b/modules.d/98dracut-systemd/dracut-pre-pivot.sh
+@@ -8,12 +8,13 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+ source_conf /etc/conf.d
+ 
+-make_trace_mem "hook pre-pivot" '1:shortmem' '2+:mem' '3+:slab'
++make_trace_mem "hook pre-pivot" '1:shortmem' '2+:mem' '3+:slab' '4+:komem'
+ # pre pivot scripts are sourced just before we doing cleanup and switch over
+ # to the new root.
+ getarg 'rd.break=pre-pivot' 'rdbreak=pre-pivot' && emergency_shell -n pre-pivot "Break pre-pivot"
+ source_hook pre-pivot
+ 
++cleanup_trace_mem
+ # pre pivot cleanup scripts are sourced just before we switch over to the new root.
+ getarg 'rd.break=cleanup' 'rdbreak=cleanup' && emergency_shell -n cleanup "Break cleanup"
+ source_hook cleanup
+diff --git a/modules.d/98dracut-systemd/dracut-pre-trigger.sh b/modules.d/98dracut-systemd/dracut-pre-trigger.sh
+index ac1ec36..7cd821e 100755
+--- a/modules.d/98dracut-systemd/dracut-pre-trigger.sh
++++ b/modules.d/98dracut-systemd/dracut-pre-trigger.sh
+@@ -8,7 +8,7 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+ source_conf /etc/conf.d
+ 
+-make_trace_mem "hook pre-trigger" "1:shortmem" "2+:mem" "3+:slab"
++make_trace_mem "hook pre-trigger" '1:shortmem' '2+:mem' '3+:slab' '4+:komem'
+ 
+ source_hook pre-trigger
+ 
+diff --git a/modules.d/99base/dracut-lib.sh b/modules.d/99base/dracut-lib.sh
+index 060b3fe..2a29bbc 100755
+--- a/modules.d/99base/dracut-lib.sh
++++ b/modules.d/99base/dracut-lib.sh
+@@ -1206,12 +1206,20 @@ are_lists_eq() {
+ 
+ setmemdebug() {
+     if [ -z "$DEBUG_MEM_LEVEL" ]; then
+-        export DEBUG_MEM_LEVEL=$(getargnum 0 0 3 rd.memdebug)
++        export DEBUG_MEM_LEVEL=$(getargnum 0 0 4 rd.memdebug)
+     fi
+ }
+ 
+ setmemdebug
+ 
++cleanup_trace_mem()
++{
++    # tracekomem based on kernel trace needs cleanup after use.
++    if [[ $DEBUG_MEM_LEVEL -eq 4 ]]; then
++        tracekomem --cleanup
 +    fi
 +}
 +
-+# We want to enable these trace events.
-+get_want_events() {
-+    echo "module:module_put module:module_load kmem:mm_page_alloc"
-+}
-+
-+get_event_filter() {
-+    echo "comm == systemd-udevd || comm == modprobe || comm == insmod"
-+}
-+
-+is_trace_ready() {
-+    local trace_base want_events current_events
-+
-+    trace_base=$(get_trace_base)
-+    ! [[ -f "$trace_base/tracing/trace" ]] && return 1
-+
-+    [[ $(cat $trace_base/tracing/tracing_on) = 0 ]] && return 1
-+
-+    # Also check if trace events were properly setup.
-+    want_events=$(get_want_events)
-+    current_events=$(echo $(cat $trace_base/tracing/set_event))
-+    [[ "$current_events" != "$want_events" ]] && return 1
-+
-+    return 0
-+}
-+
-+prepare_trace() {
-+    local trace_base
-+
-+    trace_base=$(get_trace_base)
-+    # old debugfs interface case.
-+    if ! [[ -d "$trace_base/tracing" ]]; then
-+        mount none -t debugfs $trace_base
-+    # new tracefs interface case.
-+    elif ! [[ -f "$trace_base/tracing/trace" ]]; then
-+        mount none -t tracefs "$trace_base/tracing"
-+    fi
-+
-+    if ! [[ -f "$trace_base/tracing/trace" ]]; then
-+        echo "WARN: Mount trace failed for kernel module memory analyzing."
-+        return
-+    fi
-+
-+    # Active all the wanted trace events.
-+    echo "$(get_want_events)" > $trace_base/tracing/set_event
-+
-+    # There are three kinds of known applications for module loading:
-+    # "systemd-udevd", "modprobe" and "insmod".
-+    # Set them as the global events filter.
-+    # NOTE: Some kernel may not support this format of filter, anyway
-+    #       the operation will fail and it doesn't matter.
-+    echo "$(get_event_filter)" > $trace_base/tracing/events/kmem/filter
-+    echo "$(get_event_filter)" > $trace_base/tracing/events/module/filter
-+
-+    # Set the number of comm-pid if supported.
-+    if [[ -f "$trace_base/tracing/saved_cmdlines_size" ]]; then
-+        # Thanks to filters, 4096 is big enough(also well supported).
-+        echo 4096 > $trace_base/tracing/saved_cmdlines_size
-+    fi
-+
-+    # Enable and clear trace data for the first time.
-+    echo 1 > $trace_base/tracing/tracing_on
-+    echo > $trace_base/tracing/trace
-+    echo "Prepare trace success."
-+}
-+
-+parse_trace_data() {
-+    local module_name
-+    # Indexed by task pid.
-+    local -A current_module
-+    # Indexed by module name.
-+    local -A module_loaded
-+    local -A nr_alloc_pages
-+
-+    cat "$(get_trace_base)/tracing/trace" | while read pid cpu flags ts function
-+    do
-+        # Skip comment lines
-+        if [[ $pid = "#" ]]; then
-+            continue
-+        fi
-+
-+        if [[ $function = module_load* ]]; then
-+            # One module is being loaded, save the task pid for tracking.
-+            module_name=${function#*: }
-+            # Remove the trailing after whitespace, there may be the module flags.
-+            module_name=${module_name%% *}
-+            # Mark current_module to track the task.
-+            current_module[$pid]="$module_name"
-+            [[ ${module_loaded[$module_name]} ]] && echo "WARN: \"$module_name\" was loaded multiple times!"
-+            unset module_loaded[$module_name]
-+            nr_alloc_pages[$module_name]=0
-+            continue
-+        fi
-+
-+        if ! [[ ${current_module[$pid]} ]]; then
-+            continue
-+        fi
-+
-+        # Once we get here, the task is being tracked(is loading a module).
-+        # Get the module name.
-+        module_name=${current_module[$pid]}
-+
-+        if [[ $function = module_put* ]]; then
-+            # Mark the module as loaded when the first module_put event happens after module_load.
-+            echo "${nr_alloc_pages[$module_name]} pages consumed by \"$module_name\""
-+            module_loaded[$module_name]=1
-+            # Module loading finished, so untrack the task.
-+            unset current_module[$pid]
-+            continue
-+        fi
-+
-+        if [[ $function = mm_page_alloc* ]]; then
-+            order=$(echo $function | sed -e 's/.*order=\([0-9]*\) .*/\1/')
-+            nr_alloc_pages[$module_name]=$((${nr_alloc_pages[$module_name]}+$((2 ** $order))))
-+        fi
-+    done
-+}
-+
-+cleanup_trace() {
-+    local trace_base
-+
-+    if is_trace_ready; then
-+        trace_base=$(get_trace_base)
-+        echo 0 > $trace_base/tracing/tracing_on
-+        echo > $trace_base/tracing/trace
-+        echo > $trace_base/tracing/set_event
-+        echo 0 > $trace_base/tracing/events/kmem/filter
-+        echo 0 > $trace_base/tracing/events/module/filter
-+    fi
-+}
-+
-+show_usage() {
-+    echo "Find out kernel modules with large memory consumption during loading based on trace."
-+    echo "Usage:"
-+    echo "1) run it first to setup trace."
-+    echo "2) run again to parse the trace data if any."
-+    echo "3) run with \"--cleanup\" option to cleanup trace after use."
-+}
-+
-+if [[ $1 = "--help" ]]; then
-+    show_usage
-+    exit 0
-+fi
-+
-+
-+if [[ $1 = "--cleanup" ]]; then
-+    cleanup_trace
-+    exit 0
-+fi
-+
-+if is_trace_ready ; then
-+    echo "tracekomem - Rough memory consumption by loading kernel modules (larger value with better accuracy)"
-+    parse_trace_data
-+else
-+    prepare_trace
-+fi
+ # parameters: msg [trace_level:trace]...
+ make_trace_mem()
+ {
+@@ -1296,6 +1304,9 @@ show_memstats()
+         iomem)
+             cat /proc/iomem
+             ;;
++        komem)
++            tracekomem
++            ;;
+     esac
+ }
+ 
+diff --git a/modules.d/99base/init.sh b/modules.d/99base/init.sh
+index a563393..e4f7cff 100755
+--- a/modules.d/99base/init.sh
++++ b/modules.d/99base/init.sh
+@@ -131,7 +131,7 @@ if ! getargbool 1 'rd.hostonly'; then
+ fi
+ 
+ # run scriptlets to parse the command line
+-make_trace_mem "hook cmdline" '1+:mem' '1+:iomem' '3+:slab'
++make_trace_mem "hook cmdline" '1+:mem' '1+:iomem' '3+:slab' '4+:komem'
+ getarg 'rd.break=cmdline' -d 'rdbreak=cmdline' && emergency_shell -n cmdline "Break before cmdline"
+ source_hook cmdline
+ 
+@@ -160,7 +160,7 @@ fi
+ 
+ udevproperty "hookdir=$hookdir"
+ 
+-make_trace_mem "hook pre-trigger" '1:shortmem' '2+:mem' '3+:slab'
++make_trace_mem "hook pre-trigger" '1:shortmem' '2+:mem' '3+:slab' '4+:komem'
+ getarg 'rd.break=pre-trigger' -d 'rdbreak=pre-trigger' && emergency_shell -n pre-trigger "Break before pre-trigger"
+ source_hook pre-trigger
+ 
+@@ -230,7 +230,7 @@ unset RDRETRY
+ 
+ # pre-mount happens before we try to mount the root filesystem,
+ # and happens once.
+-make_trace_mem "hook pre-mount" '1:shortmem' '2+:mem' '3+:slab'
++make_trace_mem "hook pre-mount" '1:shortmem' '2+:mem' '3+:slab' '4+:komem'
+ getarg 'rd.break=pre-mount' -d 'rdbreak=pre-mount' && emergency_shell -n pre-mount "Break pre-mount"
+ source_hook pre-mount
+ 
+@@ -266,11 +266,12 @@ done
+ 
+ # pre pivot scripts are sourced just before we doing cleanup and switch over
+ # to the new root.
+-make_trace_mem "hook pre-pivot" '1:shortmem' '2+:mem' '3+:slab'
++make_trace_mem "hook pre-pivot" '1:shortmem' '2+:mem' '3+:slab' '4+:komem'
+ getarg 'rd.break=pre-pivot' -d 'rdbreak=pre-pivot' && emergency_shell -n pre-pivot "Break pre-pivot"
+ source_hook pre-pivot
+ 
+ make_trace_mem "hook cleanup" '1:shortmem' '2+:mem' '3+:slab'
++cleanup_trace_mem
+ # pre pivot cleanup scripts are sourced just before we switch over to the new root.
+ getarg 'rd.break=cleanup' -d 'rdbreak=cleanup' && emergency_shell -n cleanup "Break cleanup"
+ source_hook cleanup
+diff --git a/modules.d/99base/module-setup.sh b/modules.d/99base/module-setup.sh
+index b03772e..a1569b1 100755
+--- a/modules.d/99base/module-setup.sh
++++ b/modules.d/99base/module-setup.sh
+@@ -35,6 +35,7 @@ install() {
+     inst_script "$moddir/initqueue.sh" "/sbin/initqueue"
+     inst_script "$moddir/loginit.sh" "/sbin/loginit"
+     inst_script "$moddir/rdsosreport.sh" "/sbin/rdsosreport"
++    inst_script "$moddir/memtrace-ko.sh" "/sbin/tracekomem"
+ 
+     [ -e "${initdir}/lib" ] || mkdir -m 0755 -p ${initdir}/lib
+     mkdir -m 0755 -p ${initdir}/lib/dracut
 -- 
 1.8.3.1
