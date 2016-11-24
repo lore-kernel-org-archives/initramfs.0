@@ -1,29 +1,38 @@
-From: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Xunlei Pang <xpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH v3 1/3] 99base: add memtrace-ko.sh to debug kernel module
  large memory consumption
-Date: Wed, 16 Nov 2016 10:30:34 +0800
-Message-ID: <20161116023034.GA3026@dhcp-128-65.nay.redhat.com>
+Date: Thu, 24 Nov 2016 10:32:21 +0800
+Message-ID: <58365135.3040400@redhat.com>
 References: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
+Reply-To: xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <1479103886-24568-1-git-send-email-xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 11/14/16 at 02:11pm, Xunlei Pang wrote:
+Hi Harald,
+
+Do you have any comment on this patchset?
+
+If you are ok with it, do I need tosend a pull request in github,or we can handle it directly
+as we have people in dracutdevs groupnow?
+
+Regards,
+Xunlei
+On 2016/11/14 at 14:11, Xunlei Pang wrote:
 > The current method for memory debug is to use "rd.memdebug=[0-3]",
 > it is not enough for debugging kernel modules. For example, when we
 > want to find out which kernel module consumes a large amount of memory,
 > "rd.memdebug=[0-3]" won't help too much.
-> 
+>
 > A better way is needed to achieve this requirement, this is useful for
 > kdump OOM debugging.
-> 
+>
 > The principle of this patch is to use kernel trace to track slab and
 > buddy allocation calls during kernel module loading(module_init), thus
 > we can analyze all the trace data and get the total memory consumption.
@@ -31,32 +40,32 @@ On 11/14/16 at 02:11pm, Xunlei Pang wrote:
 > thus tracing "mm_page_alloc" alone should be enough for the purpose(this
 > saves quite some trace buffer memory, also large free is quite unlikey
 > during module loading, we neglect those memory free events).
-> 
+>
 > The trace events include memory calls under "tracing/events/":
 >   kmem/mm_page_alloc
-> 
+>
 > We also inpect the following events to detect the module loading:
 >   module/module_load
 >   module/module_put
-> 
+>
 > Since we use filters to trace events, the final trace data size won't
 > be too big. Users can adjust the trace buffer size via "trace_buf_size"
 > kernel boot command line as needed.
-> 
+>
 > We can get the module name and task pid from "module_load" event which
 > also mark the beginning of the loading, and module_put called by the
 > same task pid implies the end of the loading. So the memory events
 > recorded in between by the same task pid are consumed by this module
 > during loading(i.e. modprobe or module_init()).
-> 
+>
 > With these information, we can record the rough total memory(the larger,
 > the more precise the result will be) consumption involved by each kernel
 > module loading.
-> 
+>
 > Thus we introduce this shell script to find out which kernel module
 > consumes a large amount of memory during loading. Use "rd.memdebug=4"
 > as the tigger.
-> 
+>
 > After applying this patch and specifying "rd.memdebug=4", during booting
 > it will print out something extra like below:
 > 0 pages consumed by "pata_acpi"
@@ -76,21 +85,21 @@ On 11/14/16 at 02:11pm, Xunlei Pang wrote:
 > 199 pages consumed by "virtio_console"
 > 0 pages consumed by "libcrc32c"
 > 9 pages consumed by "xfs"
-> 
+>
 > From the print, we see clearly that "qxl" consumed the most memory.
-> 
+>
 > This file will be installed as a separate executable named "tracekomem"
 > in the following patch.
-> 
+>
 > Signed-off-by: Xunlei Pang <xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > ---
 > Series change from v2:
 > Improved documentation, no functional change.
-> 
+>
 >  modules.d/99base/memtrace-ko.sh | 169 ++++++++++++++++++++++++++++++++++++++++
 >  1 file changed, 169 insertions(+)
 >  create mode 100755 modules.d/99base/memtrace-ko.sh
-> 
+>
 > diff --git a/modules.d/99base/memtrace-ko.sh b/modules.d/99base/memtrace-ko.sh
 > new file mode 100755
 > index 0000000..f4720bf
@@ -266,17 +275,3 @@ On 11/14/16 at 02:11pm, Xunlei Pang wrote:
 > +else
 > +    prepare_trace
 > +fi
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-The series looks good to me.
-
-Reviewed-by: Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-Thanks
-Dave
