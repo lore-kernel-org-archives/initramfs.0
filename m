@@ -1,31 +1,55 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v3 1/3] 99base: add memtrace-ko.sh to debug kernel module
- large memory consumption
-Date: Thu, 24 Nov 2016 08:39:15 +0100
-Message-ID: <667da8d4-923d-8cf0-fabe-5f5da7f481e4@redhat.com>
-References: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
- <58365135.3040400@redhat.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Tong Li <tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] 95ssh-client: attempt to copy UserKnownHostsFile to kdump's initramfs
+Date: Fri, 25 Nov 2016 10:11:35 +0800
+Message-ID: <1480039895-20001-1-git-send-email-tonli@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <58365135.3040400-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Tong Li <tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-On 24.11.2016 03:32, Xunlei Pang wrote:
-> Hi Harald,
-> 
-> Do you have any comment on this patchset?
-> 
-> If you are ok with it, do I need tosend a pull request in github,or we can handle it directly
-> as we have people in dracutdevs groupnow?
-> 
-> Regards,
-> Xunlei
+Bug related to this issue: https://bugzilla.redhat.com/show_bug.cgi?id=1360131
+Now dracut only attempts to copy GlobalKnownHostsFile while generating kdump's
+initramfs. This method will cause kdump's failure if users set customized
+UserKnownHostsFile in /etc/ssh/ssh_config. This patch simply attempts to copy
+those files too while going through /etc/ssh/ssh_config. Note that we need to
+make sure ~/foo will be copied as /root/foo in kdump's initramfs.
 
-Pull request would be good, because the CI test suite is now triggered with it.
+Signed-off-by: Tong Li <tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/95ssh-client/module-setup.sh | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
-Of course, it would be great, if you would add a test case to the test suite also, so we can verify it works :-)
+diff --git a/modules.d/95ssh-client/module-setup.sh b/modules.d/95ssh-client/module-setup.sh
+index 0a0e80c..bebcae5 100755
+--- a/modules.d/95ssh-client/module-setup.sh
++++ b/modules.d/95ssh-client/module-setup.sh
+@@ -45,11 +45,18 @@ inst_sshenv()
+         inst_simple /etc/ssh/ssh_config
+         sed -i -e 's/\(^[[:space:]]*\)ProxyCommand/\1# ProxyCommand/' ${initdir}/etc/ssh/ssh_config
+         while read key val || [ -n "$key" ]; do
+-            [[ $key != "GlobalKnownHostsFile" ]] && continue
+-            inst_simple "$val"
+-            break
+-        done < /etc/ssh/ssh_config
+-    fi
++            if [ $key != "GlobalKnownHostsFile" ]; then
++                inst_simple "$val"
++            # Copy customized UserKnowHostsFile
++            elif [ $key != "UserKnownHostsFile" ]; then
++                # Make sure that ~/foo will be copied as /root/foo in kdump's initramfs
++                if str_starts "$val" "~/"; then
++                    val="/root/${val#"~/"}"
++                fi
++                inst_simple "$val"
++            fi
++         done < /etc/ssh/ssh_config
++     fi
+ 
+     return 0
+ }
+-- 
+2.7.4
