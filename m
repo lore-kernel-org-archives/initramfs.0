@@ -1,19 +1,42 @@
-From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH] 95ssh-client: attempt to copy UserKnownHostsFile to
- kdump's initramfs
-Date: Fri, 25 Nov 2016 03:04:09 -0000
-Message-ID: <148004304958.792.9042035480756859189.githubbot@v6.hoyer.xyz>
-References: <1480039895-20001-1-git-send-email-tonli@redhat.com>
+From: Xunlei Pang <xpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v3 1/3] 99base: add memtrace-ko.sh to debug kernel module
+ large memory consumption
+Date: Sun, 27 Nov 2016 13:45:05 +0800
+Message-ID: <583A72E1.8070607@redhat.com>
+References: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
+ <58365135.3040400@redhat.com>
+ <667da8d4-923d-8cf0-fabe-5f5da7f481e4@redhat.com>
+Reply-To: xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1480039895-20001-1-git-send-email-tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <667da8d4-923d-8cf0-fabe-5f5da7f481e4-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Patchset imported to github.
-Pull request:
-<https://github.com/dracutdevs/dracut/compare/master...dracut-mailing-devs:1480039895-20001-1-git-send-email-tonli%40redhat.com>
+On 2016/11/24 at 15:39, Harald Hoyer wrote:
+> On 24.11.2016 03:32, Xunlei Pang wrote:
+>> Hi Harald,
+>>
+>> Do you have any comment on this patchset?
+>>
+>> If you are ok with it, do I need tosend a pull request in github,or we can handle it directly
+>> as we have people in dracutdevs groupnow?
+>>
+>> Regards,
+>> Xunlei
+> Pull request would be good, because the CI test suite is now triggered with it.
+>
+> Of course, it would be great, if you would add a test case to the test suite also, so we can verify it works :-)
 
+Hi Harald,
+
+Thanks for the feedback. I've made some changes about the patches(mainly changed to use POSIX shell syntax).
+My pull request "Introduce "rd.memdebug=4" to test kernel module memory consumption #183":
+https://github.com/dracutdevs/dracut/pull/183
+
+Regards,
+Xunlei
