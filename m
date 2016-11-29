@@ -1,42 +1,69 @@
 From: Xunlei Pang <xpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v3 1/3] 99base: add memtrace-ko.sh to debug kernel module
- large memory consumption
-Date: Sun, 27 Nov 2016 13:45:05 +0800
-Message-ID: <583A72E1.8070607@redhat.com>
-References: <1479103886-24568-1-git-send-email-xlpang@redhat.com>
- <58365135.3040400@redhat.com>
- <667da8d4-923d-8cf0-fabe-5f5da7f481e4@redhat.com>
+Subject: Re: [PATCH] 95ssh-client: attempt to copy UserKnownHostsFile to
+ kdump's initramfs
+Date: Tue, 29 Nov 2016 16:40:18 +0800
+Message-ID: <583D3EF2.4050705@redhat.com>
+References: <1480039895-20001-1-git-send-email-tonli@redhat.com>
 Reply-To: xlpang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <667da8d4-923d-8cf0-fabe-5f5da7f481e4-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1480039895-20001-1-git-send-email-tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pratyush Anand <panand-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tong Li <tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 2016/11/24 at 15:39, Harald Hoyer wrote:
-> On 24.11.2016 03:32, Xunlei Pang wrote:
->> Hi Harald,
->>
->> Do you have any comment on this patchset?
->>
->> If you are ok with it, do I need tosend a pull request in github,or we can handle it directly
->> as we have people in dracutdevs groupnow?
->>
->> Regards,
->> Xunlei
-> Pull request would be good, because the CI test suite is now triggered with it.
+On 2016/11/25 at 10:11, Tong Li wrote:
+> Bug related to this issue: https://bugzilla.redhat.com/show_bug.cgi?id=1360131
+> Now dracut only attempts to copy GlobalKnownHostsFile while generating kdump's
+> initramfs. This method will cause kdump's failure if users set customized
+> UserKnownHostsFile in /etc/ssh/ssh_config. This patch simply attempts to copy
+> those files too while going through /etc/ssh/ssh_config. Note that we need to
+> make sure ~/foo will be copied as /root/foo in kdump's initramfs.
 >
-> Of course, it would be great, if you would add a test case to the test suite also, so we can verify it works :-)
+> Signed-off-by: Tong Li <tonli-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  modules.d/95ssh-client/module-setup.sh | 17 ++++++++++++-----
+>  1 file changed, 12 insertions(+), 5 deletions(-)
+>
+> diff --git a/modules.d/95ssh-client/module-setup.sh b/modules.d/95ssh-client/module-setup.sh
+> index 0a0e80c..bebcae5 100755
+> --- a/modules.d/95ssh-client/module-setup.sh
+> +++ b/modules.d/95ssh-client/module-setup.sh
+> @@ -45,11 +45,18 @@ inst_sshenv()
+>          inst_simple /etc/ssh/ssh_config
+>          sed -i -e 's/\(^[[:space:]]*\)ProxyCommand/\1# ProxyCommand/' ${initdir}/etc/ssh/ssh_config
+>          while read key val || [ -n "$key" ]; do
+> -            [[ $key != "GlobalKnownHostsFile" ]] && continue
+> -            inst_simple "$val"
+> -            break
+> -        done < /etc/ssh/ssh_config
+> -    fi
+> +            if [ $key != "GlobalKnownHostsFile" ]; then
 
-Hi Harald,
+Shouldn't it be "$key = "GlobalKnownHostsFile" instead of "!="?
 
-Thanks for the feedback. I've made some changes about the patches(mainly changed to use POSIX shell syntax).
-My pull request "Introduce "rd.memdebug=4" to test kernel module memory consumption #183":
-https://github.com/dracutdevs/dracut/pull/183
+> +                inst_simple "$val"
+> +            # Copy customized UserKnowHostsFile
+> +            elif [ $key != "UserKnownHostsFile" ]; then
+
+ditto
+
+> +                # Make sure that ~/foo will be copied as /root/foo in kdump's initramfs
+> +                if str_starts "$val" "~/"; then
+> +                    val="/root/${val#"~/"}"
+> +                fi
+> +                inst_simple "$val"
+
+Seems may have "UserKnownHostsFile  no", so it will end up with "inst_simple no".
 
 Regards,
 Xunlei
+
+> +            fi
+> +         done < /etc/ssh/ssh_config
+> +     fi
+>  
+>      return 0
+>  }
