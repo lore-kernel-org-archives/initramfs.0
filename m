@@ -1,73 +1,28 @@
-From: Stefan Berger <stefanb@linux.vnet.ibm.com>
-Subject: [PATCH v2] 98integrity: Use /etc/ima as dir for IMA
-	policy and config file
-Date: Wed, 30 Nov 2016 10:10:34 -0500
-Message-ID: <1480518634-31897-1-git-send-email-stefanb@linux.vnet.ibm.com>
+From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2] 98integrity: Use /etc/ima as dir for IMA policy and
+ config file
+Date: Wed, 30 Nov 2016 16:16:22 +0100
+Message-ID: <5526de6b-c774-f94b-30ce-065e03d28ce3@redhat.com>
+References: <1480518634-31897-1-git-send-email-stefanb@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: base64
-Return-path: <systemd-devel-bounces@lists.freedesktop.org>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://lists.freedesktop.org/mailman/options/systemd-devel>, 
- <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <https://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <https://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
- <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Errors-To: systemd-devel-bounces@lists.freedesktop.org
-Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
+Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1480518634-31897-1-git-send-email-stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs@vger.kernel.org, harald@redhat.com
-Cc: linux-ima-user@lists.sourceforge.net, systemd-devel@lists.freedesktop.org, Stefan Berger <stefanb@us.ibm.com>
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Stefan Berger <stefanb-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-RnJvbTogU3RlZmFuIEJlcmdlciA8c3RlZmFuYkB1cy5pYm0uY29tPgoKVG8gc3luYyB3aXRoIHN5
-c3RlbWQsIHVzZSB0aGUgZmlsZXBhdGggL2V0Yy9pbWEvaW1hLXBvbGljeSBhcwp0aGUgZmlsZSBs
-b2NhdGlvbiBmb3IgdGhlIElNQSBwb2xpY3kuIEF0IHRoZSBzYW1lIHRpbWUgd2UKbW92ZSB0aGUg
-aW1hIGNvbmZpZyBmaWxlIGxvY2F0aW9uIHRvIC9ldGMvaW1hL2ltYS4gQWRhcHQgdGhlCmRvY3Vt
-ZW50YXRpb24gdG8gdGhlIG5ldyBwYXRoLgoKU2lnbmVkLW9mZi1ieTogU3RlZmFuIEJlcmdlciA8
-c3RlZmFuYkBsaW51eC52bmV0LmlibS5jb20+Ci0tLQogbW9kdWxlcy5kLzk4aW50ZWdyaXR5L1JF
-QURNRSAgICAgICAgICAgICB8IDggKysrKy0tLS0KIG1vZHVsZXMuZC85OGludGVncml0eS9pbWEt
-a2V5cy1sb2FkLnNoICAgfCAyICstCiBtb2R1bGVzLmQvOThpbnRlZ3JpdHkvaW1hLXBvbGljeS1s
-b2FkLnNoIHwgOSArKysrKysrLS0KIDMgZmlsZXMgY2hhbmdlZCwgMTIgaW5zZXJ0aW9ucygrKSwg
-NyBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9tb2R1bGVzLmQvOThpbnRlZ3JpdHkvUkVBRE1F
-IGIvbW9kdWxlcy5kLzk4aW50ZWdyaXR5L1JFQURNRQppbmRleCA2NGRlMGFlLi5jOGNjZWU1IDEw
-MDY0NAotLS0gYS9tb2R1bGVzLmQvOThpbnRlZ3JpdHkvUkVBRE1FCisrKyBiL21vZHVsZXMuZC85
-OGludGVncml0eS9SRUFETUUKQEAgLTMzLDEwICszMywxMCBAQCBsaW5lLgogCiAjIFNhdmUgdGhl
-IHBvbGljeSBpbiBhIGZpbGUuCiAKLSMgQ3JlYXRlIHRoZSBjb25maWd1cmF0aW9uIGZpbGUgJy9l
-dGMvc3lzY29uZmlnL2ltYScgdG8gb3ZlcnJpZGUgdGhlIHBhdGggbmFtZSBvZgorIyBDcmVhdGUg
-dGhlIGNvbmZpZ3VyYXRpb24gZmlsZSAnL2V0Yy9pbWEvaW1hJyB0byBvdmVycmlkZSB0aGUgcGF0
-aCBuYW1lIG9mCiAjIHRoZSBJTUEgY3VzdG9tIHBvbGljeS4KLS0tLS0tLS0tLS0tLS0gJy9ldGMv
-c3lzY29uZmlnL2ltYScgKHdpdGggdGhlIGRlZmF1bHQgdmFsdWUpIC0tLS0tLS0tLS0tLS0KLUlN
-QVBPTElDWT0iL2V0Yy9zeXNjb25maWcvaW1hLXBvbGljeSIKKy0tLS0tLS0tLS0tLS0gJy9ldGMv
-aW1hL2ltYScgKHdpdGggdGhlIGRlZmF1bHQgdmFsdWUpIC0tLS0tLS0tLS0tLS0KK0lNQVBPTElD
-WT0iL2V0Yy9pbWEvaW1hLXBvbGljeSIKIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KIAogCkBAIC02NCw1ICs2
-NCw1IEBAIElNQVBPTElDWT0iL2V0Yy9zeXNjb25maWcvaW1hLXBvbGljeSIKIAogIyA5OGludGVn
-cml0eS9pbWEta2V5cy1sb2FkLnNoIHNjcmlwdCBsb2FkcyB0aGUgc2lnbmVkIGNlcnRpZmljYXRl
-cyBzdG9yZWQgCiAjIGluIHRoZSAkSU1BS0VZU0RJUiBvbnRvIHRoZSB0cnVzdGVkIElNQSBrZXly
-aW5nLiAgVGhlIGRlZmF1bHQgJElNQUtFWVNESVIKLSMgZGlyZWN0b3J5IGlzIC9ldGMva2V5cy9p
-bWEsIGJ1dCBjYW4gYmUgc3BlY2lmaWVkIGluIHRoZSAvZXRjL3N5c2NvbmZpZy9pbWEKKyMgZGly
-ZWN0b3J5IGlzIC9ldGMva2V5cy9pbWEsIGJ1dCBjYW4gYmUgc3BlY2lmaWVkIGluIHRoZSAvZXRj
-L2ltYS9pbWEKICMgcG9saWN5LgpkaWZmIC0tZ2l0IGEvbW9kdWxlcy5kLzk4aW50ZWdyaXR5L2lt
-YS1rZXlzLWxvYWQuc2ggYi9tb2R1bGVzLmQvOThpbnRlZ3JpdHkvaW1hLWtleXMtbG9hZC5zaApp
-bmRleCA2NTliNzIyLi42YzZkYjQwIDEwMDc1NQotLS0gYS9tb2R1bGVzLmQvOThpbnRlZ3JpdHkv
-aW1hLWtleXMtbG9hZC5zaAorKysgYi9tb2R1bGVzLmQvOThpbnRlZ3JpdHkvaW1hLWtleXMtbG9h
-ZC5zaApAQCAtMiw3ICsyLDcgQEAKIAogU0VDVVJJVFlGU0RJUj0iL3N5cy9rZXJuZWwvc2VjdXJp
-dHkiCiBJTUFTRUNESVI9IiR7U0VDVVJJVFlGU0RJUn0vaW1hIgotSU1BQ09ORklHPSIke05FV1JP
-T1R9L2V0Yy9zeXNjb25maWcvaW1hIgorSU1BQ09ORklHPSIke05FV1JPT1R9L2V0Yy9pbWEvaW1h
-IgogCiBsb2FkX3g1MDlfa2V5cygpCiB7CmRpZmYgLS1naXQgYS9tb2R1bGVzLmQvOThpbnRlZ3Jp
-dHkvaW1hLXBvbGljeS1sb2FkLnNoIGIvbW9kdWxlcy5kLzk4aW50ZWdyaXR5L2ltYS1wb2xpY3kt
-bG9hZC5zaAppbmRleCA4NWNkM2I5Li40Y2Q2YmEzIDEwMDc1NQotLS0gYS9tb2R1bGVzLmQvOThp
-bnRlZ3JpdHkvaW1hLXBvbGljeS1sb2FkLnNoCisrKyBiL21vZHVsZXMuZC85OGludGVncml0eS9p
-bWEtcG9saWN5LWxvYWQuc2gKQEAgLTUsMTAgKzUsMTUgQEAKICMgQ29weXJpZ2h0IChDKSAyMDEx
-IFBvbGl0ZWNuaWNvIGRpIFRvcmlubywgSXRhbHkKICMgICAgICAgICAgICAgICAgICAgIFRPUlNF
-QyBncm91cCAtLSBodHRwOi8vc2VjdXJpdHkucG9saXRvLml0CiAjIFJvYmVydG8gU2Fzc3UgPHJv
-YmVydG8uc2Fzc3VAcG9saXRvLml0PgorIworIyBDb3B5cmlnaHQgKEMpIDIwMTYgSUJNIENvcnBv
-cmF0aW9uCisjCisjIFN0ZWZhbiBCZXJnZXIgPHN0ZWZhbmJAbGludXgudm5ldC5pYm0uY29tPgor
-IwogCiBJTUFTRUNESVI9IiR7U0VDVVJJVFlGU0RJUn0vaW1hIgotSU1BQ09ORklHPSIke05FV1JP
-T1R9L2V0Yy9zeXNjb25maWcvaW1hIgotSU1BUE9MSUNZPSIvZXRjL3N5c2NvbmZpZy9pbWEtcG9s
-aWN5IgorSU1BQ09ORklHPSIke05FV1JPT1R9L2V0Yy9pbWEvaW1hIgorSU1BUE9MSUNZPSIvZXRj
-L2ltYS9pbWEtcG9saWN5IgogCiBsb2FkX2ltYV9wb2xpY3koKQogewotLSAKMi44LjMKCl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCnN5c3RlbWQtZGV2ZWwg
-bWFpbGluZyBsaXN0CnN5c3RlbWQtZGV2ZWxAbGlzdHMuZnJlZWRlc2t0b3Aub3JnCmh0dHBzOi8v
-bGlzdHMuZnJlZWRlc2t0b3Aub3JnL21haWxtYW4vbGlzdGluZm8vc3lzdGVtZC1kZXZlbAo=
+On 30.11.2016 16:10, Stefan Berger wrote:
+> From: Stefan Berger <stefanb-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> To sync with systemd, use the filepath /etc/ima/ima-policy as
+> the file location for the IMA policy. At the same time we
+> move the ima config file location to /etc/ima/ima. Adapt the
+> documentation to the new path.
+> 
+> Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+
+
+One more thing: Do you want to be backwards compatible and also read the old files, if they exist?
