@@ -1,33 +1,44 @@
-From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH v2] 98integrity: Use /etc/ima as dir for IMA policy and
- config file
-Date: Wed, 30 Nov 2016 10:24:08 -0500
-Message-ID: <2bda8815-b753-a0b4-b69a-2317dbeb8b33@linux.vnet.ibm.com>
+From: Harald Hoyer <harald@redhat.com>
+Subject: Re: [PATCH v2] 98integrity: Use /etc/ima as dir for
+ IMA policy and config file
+Date: Wed, 30 Nov 2016 16:52:51 +0100
+Message-ID: <a377c12b-6ece-804c-8aae-218b09e67590@redhat.com>
 References: <1480518634-31897-1-git-send-email-stefanb@linux.vnet.ibm.com>
  <5526de6b-c774-f94b-30ce-065e03d28ce3@redhat.com>
+ <2bda8815-b753-a0b4-b69a-2317dbeb8b33@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <5526de6b-c774-f94b-30ce-065e03d28ce3-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, linux-ima-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Stefan Berger <stefanb-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: base64
+Return-path: <systemd-devel-bounces@lists.freedesktop.org>
+In-Reply-To: <2bda8815-b753-a0b4-b69a-2317dbeb8b33@linux.vnet.ibm.com>
+List-Id: <initramfs.vger.kernel.org>
+List-Unsubscribe: <https://lists.freedesktop.org/mailman/options/systemd-devel>, 
+ <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
+List-Archive: <https://lists.freedesktop.org/archives/systemd-devel>
+List-Post: <mailto:systemd-devel@lists.freedesktop.org>
+List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
+List-Subscribe: <https://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
+ <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
+Errors-To: systemd-devel-bounces@lists.freedesktop.org
+Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Stefan Berger <stefanb@linux.vnet.ibm.com>, initramfs@vger.kernel.org
+Cc: linux-ima-user@lists.sourceforge.net, systemd-devel@lists.freedesktop.org, Stefan Berger <stefanb@us.ibm.com>
 
-On 11/30/2016 10:16 AM, Harald Hoyer wrote:
-> On 30.11.2016 16:10, Stefan Berger wrote:
->> From: Stefan Berger <stefanb-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->>
->> To sync with systemd, use the filepath /etc/ima/ima-policy as
->> the file location for the IMA policy. At the same time we
->> move the ima config file location to /etc/ima/ima. Adapt the
->> documentation to the new path.
->>
->> Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
->
-> One more thing: Do you want to be backwards compatible and also read the old files, if they exist?
-
-I had thought about that and can certainly add it.  Neither Fedora, 
-RHEL, nor SUSE are packaging these files so far. So likely there aren't 
-many users out there. Considering that, what would you suggest?
+T24gMzAuMTEuMjAxNiAxNjoyNCwgU3RlZmFuIEJlcmdlciB3cm90ZToKPiBPbiAxMS8zMC8yMDE2
+IDEwOjE2IEFNLCBIYXJhbGQgSG95ZXIgd3JvdGU6Cj4+IE9uIDMwLjExLjIwMTYgMTY6MTAsIFN0
+ZWZhbiBCZXJnZXIgd3JvdGU6Cj4+PiBGcm9tOiBTdGVmYW4gQmVyZ2VyIDxzdGVmYW5iQHVzLmli
+bS5jb20+Cj4+Pgo+Pj4gVG8gc3luYyB3aXRoIHN5c3RlbWQsIHVzZSB0aGUgZmlsZXBhdGggL2V0
+Yy9pbWEvaW1hLXBvbGljeSBhcwo+Pj4gdGhlIGZpbGUgbG9jYXRpb24gZm9yIHRoZSBJTUEgcG9s
+aWN5LiBBdCB0aGUgc2FtZSB0aW1lIHdlCj4+PiBtb3ZlIHRoZSBpbWEgY29uZmlnIGZpbGUgbG9j
+YXRpb24gdG8gL2V0Yy9pbWEvaW1hLiBBZGFwdCB0aGUKPj4+IGRvY3VtZW50YXRpb24gdG8gdGhl
+IG5ldyBwYXRoLgo+Pj4KPj4+IFNpZ25lZC1vZmYtYnk6IFN0ZWZhbiBCZXJnZXIgPHN0ZWZhbmJA
+bGludXgudm5ldC5pYm0uY29tPgo+Pgo+PiBPbmUgbW9yZSB0aGluZzogRG8geW91IHdhbnQgdG8g
+YmUgYmFja3dhcmRzIGNvbXBhdGlibGUgYW5kIGFsc28gcmVhZCB0aGUgb2xkIGZpbGVzLCBpZiB0
+aGV5IGV4aXN0Pwo+IAo+IEkgaGFkIHRob3VnaHQgYWJvdXQgdGhhdCBhbmQgY2FuIGNlcnRhaW5s
+eSBhZGQgaXQuICBOZWl0aGVyIEZlZG9yYSwgUkhFTCwgbm9yIFNVU0UgYXJlIHBhY2thZ2luZyB0
+aGVzZSBmaWxlcyBzbyBmYXIuIFNvIGxpa2VseQo+IHRoZXJlIGFyZW4ndCBtYW55IHVzZXJzIG91
+dCB0aGVyZS4gQ29uc2lkZXJpbmcgdGhhdCwgd2hhdCB3b3VsZCB5b3Ugc3VnZ2VzdD8KPiAKCkht
+bSwgSSdsbCBhZGQgaXQgdG8gdGhlIGRyYWN1dCBORVdTIGZpbGUKX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX18Kc3lzdGVtZC1kZXZlbCBtYWlsaW5nIGxpc3QK
+c3lzdGVtZC1kZXZlbEBsaXN0cy5mcmVlZGVza3RvcC5vcmcKaHR0cHM6Ly9saXN0cy5mcmVlZGVz
+a3RvcC5vcmcvbWFpbG1hbi9saXN0aW5mby9zeXN0ZW1kLWRldmVsCg==
