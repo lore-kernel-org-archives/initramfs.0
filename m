@@ -1,94 +1,58 @@
-From: Philippe Troin <phil-zSL7SSj9W616jAk/7fyWoAC/G2K4zDHf@public.gmane.org>
-Subject: Buglets in shutdown module in HEAD
-Date: Wed, 18 Jan 2017 10:34:06 -0800
-Message-ID: <1484764446.31841.5.camel@coldcreektech.com>
+From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
+Subject: initramfs-tools 0.127 release
+Date: Mon, 23 Jan 2017 03:48:55 +0000
+Message-ID: <1485143335.2998.94.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg="pgp-sha512";
+        protocol="application/pgp-signature"; boundary="=-WU9/GM6JuK1/nhHVL4SL"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=coldcreektech-com.20150623.gappssmtp.com; s=20150623;
-        h=message-id:subject:from:to:date:mime-version
-         :content-transfer-encoding;
-        bh=F2BBANliNwcTs4Bp/nTcYxGU5Zv2tf3TqCdT6bBWavw=;
-        b=Ad40fYl+g4sQJqVtyR/h08z8pt5MsWoMBAWuD/B8lwcvAiY7/ZPGI8ir9Vfz6tcwQb
-         3FhVVO8IWsA/tA5+8y56gX2CEzKXcO3JHgm6Zhfj1+jv6Y+7hbyfWLDF9ojDtNqr97oU
-         qWeG0vc36Gt/Gno0j5WRIF1MvQQafPTyMp7fHDVf4gms1M5qDYWJctL+LUh6EDO1u1zh
-         4ag7ifQIzVmA1zlR59eq7/guKv6Umw51SaL/CZJ23y7L9tdWk4v0keYAPup42raDNpR3
-         PyVqite2XmRIpMf5cN/ppXKjmP41p768VHyiz8tfeOCFjtB6IdfF+/GnNMZqSqulzEQ2
-         LooQ==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-Hi Dracut maintainers,
 
-Note that I'm not subscribed to the mailing list, a CC is appreciated.
+--=-WU9/GM6JuK1/nhHVL4SL
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-I've spotted a couple of issues in the latest shutdown module,
-specifically this file: http://git.kernel.org/cgit/boot/dracut/dracut.g
-it/tree/modules.d/99shutdown/shutdown.sh
-918a8a4f123578e39f38404670d5cbe3e3436bb3
+This update fixes bugs in the new unmkinitramfs command that also
+caused regressions in the lsinitramfs command.
 
-The unmount loop seems to be doing the opposite of what it intends to.
+Ben.
 
-    _cnt=0
-    while [ $_cnt -le 40 ]; do
-        umount_a 2>/dev/null || break
-        _cnt=$(($_cnt+1))
-    done
+Ben Hutchings (3):
+      unmkinitramfs: Don't attempt to create /main directory when listing
+      unmkinitramfs: Change mkdir/cd/cpio command sequences to exit on fail=
+ure
+      Releasing version 0.127.
 
-doesn't do what's it's supposed to do as umount_a returns 0 in case of
-success and 1 in case of failure.
-The || should be changed into &&:
+--=20
+Ben Hutchings
+Hoare's Law of Large Problems:
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0Inside every large problem =
+is a small problem struggling to get
+out.
 
-    _cnt=0
-    while [ $_cnt -le 40 ]; do
-        umount_a 2>/dev/null && break
-        _cnt=$(($_cnt+1))
-    done
 
-[2] A little sleeping in between attempts helps too in my experience
-I'd suggest changing that code to:
+--=-WU9/GM6JuK1/nhHVL4SL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 
-    _cnt=0
-    while [ $_cnt -le 40 ]; do
-        umount_a 2>/dev/null && break
-        sleep 0.25
-        _cnt=$(($_cnt+1))
-    done
+-----BEGIN PGP SIGNATURE-----
 
-[3] The check_shutdown loop running all the hooks can be very verbose
-and needlessly scary when luks+lvm is involved.  It generally scrolls
-lots of messages about being unable to disable dm mappings before
-finally succeeding.
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAliFfSgACgkQ57/I7JWG
+EQm16hAAkuH+cjBbpwAIYAOJzhPkDOJGEfYSPFPHNZGKiM1frKQ1VQTyTkIfBv2A
+Es0iNDeOGVEVZqvqJo2qXRGsjxaddNYF8peKnAzvgkkWJsdSkZapGXSEFjKUp1sb
+PkxI8AJCJdBJW+jaOFHoD/9J4hwLidBWezeqhnuNLOJB+XcZ0qdovwO+a+NXZHhu
+uoRFMi9tTZWhQk2wZkGhnxnUDqRXlo7jtxTt4zTgim6z4mWTRH8zWBtragc+8uv4
+qEWPI8a6+MjrEtGWD5PhCT39GKLT7M03Yo6JFlRLzm4CAL2+jaNpJM6+YS1RJFkb
+hfQubkv5HJML2+pSKzYJq5xWESwj4bbpmIW/7zy4IpxkK79n0K101279SvLpC+9y
+LcRG5+oasasTsag89vuqnvBA7Jt1vNSLANvgi6IoGdwMJfI24E5Yr39M7nYIjdPW
+X5hQV+6Eic7MZaUz4TI3UC4SUwAX+FpmpKEYy4hhbW+g/sFAcAQgpmSTB7hYqd0V
+zbETvLON8aFezJN9ih7UfcTYO208//+kAM+SNxYnD32mPUqrs8Wccep9EC+FH3Ir
+agsaPQ+sq0ubAhXGRHajRscQXoT1jdusgveh27Fv+DJ/oGhb3MvPNeoawDKSLV4x
+SqPAuQLfAenmMdzEUS0N6P3wJWl0pa0rqWVMQb4Dg/xHl8/00Zc=
+=sXrc
+-----END PGP SIGNATURE-----
 
-I'd suggest using the same logic as the unmount loop:  loop quietly,
-and if it fails 40 times in a row, run one last time verbosely.
-
-So changing:
-
-    _cnt=0
-    while [ $_cnt -le 40 ]; do
-        _check_shutdown && break
-        _cnt=$(($_cnt+1))
-    done
-    [ $_cnt -ge 40 ] && _check_shutdown final
-
-to
-
-    _cnt=0
-    while [ $_cnt -le 40 ]; do
-        _check_shutdown 2> /dev/null && break
-        _cnt=$(($_cnt+1))
-        sleep 0.25
-    done
-    [ $_cnt -ge 40 ] && _check_shutdown final
-
-Again, the chances of a clean(er) shutdown may be improved by sleeping
-in between attempts.
-
-I believe [1] is a true bug, while [2] and [3] will be the maintainers'
-call.
-
-Phil.
+--=-WU9/GM6JuK1/nhHVL4SL--
