@@ -1,39 +1,18 @@
-From: Cristian Rodriguez <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
-Subject: [PATCH] systemd 233 requires sha256, hmac and algif_hash modules
-Date: Fri,  3 Mar 2017 13:21:46 +0000
-Message-ID: <20170303132146.4968-1-crrodriguez@opensuse.org>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=cristianrodriguez.net; s=google;
-        h=sender:from:to:cc:subject:date:message-id;
-        bh=E74bzqpnNwolxpABDfb4zk9fjTtmJ7fwtOGM51w9FFM=;
-        b=LrmzPTBGyH1npQxX/7MApBtzCYDPwptiVlxS/V6Y03ziQ6m1GYfO5X8Tx9kTpdeqjc
-         w0vU3LyrTcK5n32RCam+qbax0iu1Ysw3cpMYogLC6IbpVNSFe8iSLmjFmBqaL3P8+rov
-         bi9Bl+JkXf532+GUvB4SsO//Rp9KesBsqium8=
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
+From: Dracut GitHub Import Bot <github-24EQuJi+kKNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH] systemd 233 requires sha256, hmac and algif_hash modules
+Date: Fri, 03 Mar 2017 14:01:56 -0000
+Message-ID: <148854971654.12483.11980043114799549058.githubbot@v6.hoyer.xyz>
+References: <20170303132146.4968-1-crrodriguez@opensuse.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <20170303132146.4968-1-crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Cristian Rodriguez <crrodriguez-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org>
 
----
- modules.d/00systemd/module-setup.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Patchset imported to github.
+Pull request:
+<https://github.com/dracutdevs/dracut/compare/master...dracut-mailing-devs:20170303132146.4968-1-crrodriguez%40opensuse.org>
 
-diff --git a/modules.d/00systemd/module-setup.sh b/modules.d/00systemd/module-setup.sh
-index 51904c56..3c3e25d8 100755
---- a/modules.d/00systemd/module-setup.sh
-+++ b/modules.d/00systemd/module-setup.sh
-@@ -18,7 +18,7 @@ depends() {
- }
- 
- installkernel() {
--    hostonly='' instmods autofs4 ipv6
-+    hostonly='' instmods autofs4 ipv6 algif_hash hmac sha256
-     instmods -s efivarfs
- }
- 
--- 
-2.12.0
