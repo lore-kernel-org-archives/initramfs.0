@@ -1,100 +1,36 @@
-From: Cathy Zhou <cathy.zhou-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+From: Martin Wilck <mwilck-l3A5Bk7waGM@public.gmane.org>
 Subject: Re: iscsi netboot failure in case of multiple interfaces
-Date: Mon, 13 Nov 2017 10:43:30 -0800
-Message-ID: <98407a21-3e1d-6355-1ba5-f732afb674d7@oracle.com>
+Date: Wed, 15 Nov 2017 14:12:20 +0100
+Message-ID: <1510751540.17501.55.camel@suse.de>
 References: <3d6d6a40-692f-6c7f-fadd-ef6ccaab510d@oracle.com>
+         <98407a21-3e1d-6355-1ba5-f732afb674d7@oracle.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <3d6d6a40-692f-6c7f-fadd-ef6ccaab510d-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <98407a21-3e1d-6355-1ba5-f732afb674d7-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: Cathy Zhou <cathy.zhou-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Si-Wei <si-wei.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Vasanth Vemula <vasanth.vemula-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 
-Dracut experts,
+Hello Cathy,
 
-A gentle reminder ...  Looking forward to gaining some insights on below 
-questions.
+On Mon, 2017-11-13 at 10:43 -0800, Cathy Zhou wrote:
+> Dracut experts,
+> 
+> A gentle reminder ...  Looking forward to gaining some insights on
+> below 
+> questions.
 
-Thanks
-- Cathy
+I haven't analyzed your scenario in detail, but IMHO this is a long-
+standing issue. dracut is using both iscsid and iscsistart, which is
+wrong. iscsistart is meant for situations where iscsid is not
+available. It starts iscsid at startup, and stops it again when done.
+If proper iscsid is running, iscsiadm should be used rather than
+iscsistart to activate sessions.
 
-On 11/8/2017 10:55 AM, Cathy Zhou wrote:
-> Hi,
->
-> First I am sorry for the length of the email. Hopefully my description 
-> of the problem is clear. Any questions/suggestions are welcome. Please 
-> reply all as some of us on not on the alias.
->
-> -----
->
-> We are running into a failure with iscsi netboot with the following 
-> boot options:
->
->       "... rd.luks=0 rd.lvm=0 rd.md=0 rd.dm=0 ip=dhcp 
-> netroot=iscsi:169.254.0.2::::iqn.2015-02.oracle.boot:uefi 
-> iscsi_param=node.session.timeo.replacement_timeout=6000"
->
-> On the system, there are two interfaces (say eth0 and eth1) which are 
-> able to get dhcp offers successfully, but only one of them (eth0) is 
-> able to reach the specified iscsi target. After some debugging, we 
-> believe we've found the root cause. Here is what happened:
->
-> 1. eth0 successfully got the dhcp offer, the iscsiroot script was run 
-> and eventually ran "system-run" to start the "oneshot" iscsistart 
-> service.
-> 2. Before step 1 succeeds, the iscsiroot script was also run for eth1 
-> and it checks the status of the first iscsistart service instance, 
-> which was still "activating". So the iscsistart service was restarted 
-> and that killed the first instance. But the second instance also fails 
-> because of the "existing session" error.
->
-> Here are the questions we have:
->
-> a. We found in the iscsiroot script, the iscsid service was started 
-> before the iscsistart service. Because of this, the creation of the 
-> mgmt ipc socket by iscsistart failed, and iscsi login session request 
-> was handled by iscsid instead. In step 2 above, the first iscsistart 
-> instance was killed but not the iscsid daemon, hence the "existing 
-> error" as the first login session still existed in iscsid.
->
-> The questions is if the iscsid service is really required by the 
-> iscisroot script? Because the existence of iscsid, after the second 
-> iscsistart instance, we saw unexpected iscsid service unavailability 
-> because iscsid is stopped by the iscsistart instance (iscsistart.c 
-> calls stop_event_loop() to stop event loop in order to exits itself, 
-> but since the MGMT_IPC_IMMEDIATE_STOP request was handled by iscsid, 
-> iscsid's event loop was stopped and iscsid exited instead).
->
-> The related error messages we saw in the log:
->
->    "iscsistart[836]: iscsistart: Can not bind IPC socket
->     iscsistart[836]: iscsistart: Could not setup mgmt ipc
->     ...
->     iscsiadm[970]: iscsiadm: can not connect to iSCSI daemon (111)!
->     iscsiadm[970]: iscsiadm: initiator reported error (20 - could not 
-> connect to iscsid)
->     ..."
->
-> I tried to change the iscsiroot.sh script to stop the iscsid service 
-> instead of restarting iscsid service, it seems it fixed our problem. 
-> But I am not sure if this fix has any side-effect.
->
-> b. If stopping iscsid service is not the ideal fix, I am wondering if 
-> we can mimic the legacy way (prior systemd) and start the iscsistart 
-> service independently for each interface. This means, iscsistart 
-> service will be started for each interface without affecting the 
-> iscsistart instances which are already run for other interfaces. It 
-> may mean the service name needs to include $netif to uniquely identify 
-> each instance.
->
-> Thanks very much! Looking forward to your suggestions!
->
-> - Cathy
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe initramfs" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+In my experience, iscsistart will only work reliably if you have just a
+single interface.
+
+Martin
