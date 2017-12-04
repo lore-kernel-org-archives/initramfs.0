@@ -1,39 +1,55 @@
-From: Martin Wilck <mwilck-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: iscsi netboot failure in case of multiple interfaces
-Date: Tue, 21 Nov 2017 23:03:04 +0100
-Message-ID: <1511301784.25459.149.camel@suse.de>
-References: <3d6d6a40-692f-6c7f-fadd-ef6ccaab510d@oracle.com>
-         <98407a21-3e1d-6355-1ba5-f732afb674d7@oracle.com>
-         <1510751540.17501.55.camel@suse.de>
-         <d15c3567-509e-7bcd-62e9-6930b203753b@oracle.com>
-         <08997d6f-0b94-af50-d407-0c4803a70697@oracle.com>
-         <1510837385.10823.6.camel@suse.de>
-         <0a3f48bc-d110-e163-22a5-795c2d554297@oracle.com>
-         <1510945872.16284.37.camel@suse.de>
-         <70c4311d-ef4b-ee59-712d-930e173e289e@oracle.com>
-         <1510964277.7555.4.camel@suse.de>
-         <c8e88ebe-4a91-738a-d1c4-067e9f0c4df6@oracle.com>
-         <1511300063.25459.148.camel@suse.de>
-         <90870cf5-a5a0-6a2f-4568-4998b69d4aa3@oracle.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+From: Pingfan Liu <piliu-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut.sh: for_each_host_xx() function should indicate the empty case
+Date: Mon,  4 Dec 2017 17:24:11 +0800
+Message-ID: <1512379451-17727-1-git-send-email-piliu@redhat.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <90870cf5-a5a0-6a2f-4568-4998b69d4aa3-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-To: si-wei liu <si-wei.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Cathy Zhou <cathy.zhou-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: Vasanth Vemula <vasanth.vemula-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Tue, 2017-11-21 at 13:58 -0800, si-wei liu wrote:
-> 
-> OK. Then we'll proceed with posting our patch to fix the issue in
-> short 
-> term. Once you're ready to upstream please let us know so we can
-> retest. 
-> Let me know if that works for you.
+The caller of "for_each_host_xx func" needs to tell three cases:
+func success/ fail / not be called.
+E.g, in kdump case, host_devs can be empty, and we want to know it.
 
-I have no objections.
+Signed-off-by: Pingfan Liu <piliu-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ dracut-functions.sh | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-Cheers,
-Martin
+diff --git a/dracut-functions.sh b/dracut-functions.sh
+index 112b243..575bd4a 100755
+--- a/dracut-functions.sh
++++ b/dracut-functions.sh
+@@ -468,7 +468,8 @@ for_each_host_dev_fs()
+     local _dev
+     local _ret=1
+ 
+-    [[ "${#host_fs_types[@]}" ]] || return 0
++    [[ "${#host_fs_types[@]}" ]] || return 2
++
+ 
+     for _dev in "${!host_fs_types[@]}"; do
+         $_func "$_dev" "${host_fs_types[$_dev]}" && _ret=0
+@@ -527,7 +528,7 @@ for_each_host_dev_and_slaves_all()
+     local _dev
+     local _ret=1
+ 
+-    [[ "${host_devs[@]}" ]] || return 0
++    [[ "${host_devs[@]}" ]] || return 2
+ 
+     for _dev in "${host_devs[@]}"; do
+         [[ -b "$_dev" ]] || continue
+@@ -543,7 +544,7 @@ for_each_host_dev_and_slaves()
+     local _func="$1"
+     local _dev
+ 
+-    [[ "${host_devs[@]}" ]] || return 0
++    [[ "${host_devs[@]}" ]] || return 2
+ 
+     for _dev in "${host_devs[@]}"; do
+         [[ -b "$_dev" ]] || continue
+-- 
+2.7.4
