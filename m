@@ -1,21 +1,21 @@
 From: Taras Kondratiuk <takondra@cisco.com>
-Subject: [PATCH v2 13/15] gen_initramfs_list.sh: add -x option to enable newcx format
-Date: Thu, 25 Jan 2018 03:27:53 +0000
-Message-ID: <1516850875-25066-14-git-send-email-takondra@cisco.com>
+Subject: [PATCH v2 11/15] gen_init_cpio: add newcx format
+Date: Thu, 25 Jan 2018 03:27:51 +0000
+Message-ID: <1516850875-25066-12-git-send-email-takondra@cisco.com>
 References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-doc-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=3480; q=dns/txt; s=iport;
-  t=1516851455; x=1518061055;
+  d=cisco.com; i=@cisco.com; l=3931; q=dns/txt; s=iport;
+  t=1516851461; x=1518061061;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
-  bh=dQ7LLTRmN2q9Pmp/35oM3M+RAoO+z7MJHtmUq8U+j4Y=;
-  b=UfO6U7kI857Ync87UPID1n492RLG9agJFU4IY2dd727gaPvpMIZGJ7yU
-   iJEqb1PDmKKAN0BKs4r5PqqpflX2NFVFUOZ+4uaoyfgdiL6aZ4l/S1O74
-   0709XZnuYBqMBYQ6yv4D/GVElKJSurei1lCOX1RGpbVZLLJgHBvhnfzgZ
-   c=;
+  bh=u+De81/fDjtv0+iiYW8uJIVjAHF8Gax2ObiE6ovdTVk=;
+  b=WqqN+p+p8Exmz4UfsTygGjY/CEFhBg+pTIsEjiq2yTEkbTy23X6/0f/z
+   Gi8K1H5e+Zw+Pz7p00bWIgQZrSZCP18kmTe3hl04VDrc6kzaXFhyPXBuq
+   G9iZi/7bw/mlwUGYkbAXoi3+MMp8Ty1tL26Lk0swtQ9LY6Dxlud4A6+43
+   I=;
 In-Reply-To: <1516850875-25066-1-git-send-email-takondra@cisco.com>
-Sender: linux-kernel-owner@vger.kernel.org
+Sender: linux-doc-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,107 +23,163 @@ Content-Transfer-Encoding: 7bit
 To: "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
 Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
 
-From: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Add "newcx" format that supports extended attributes and has increased
+size of c_mtime and c_filesize fields.
 
--x option populates extended attributes in cpio_list file passed to
-get_init_cpio and selects newcx CPIO format.
+Added -x option to select "newcx" format. Default is "newc".
 
-Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Refer to Documentation/early-userspace/buffer-format.txt for detailed
+format description.
+
 Signed-off-by: Taras Kondratiuk <takondra@cisco.com>
 ---
- scripts/gen_initramfs_list.sh | 13 ++++++++++++-
- usr/Kconfig                   | 11 +++++++++++
- usr/Makefile                  |  3 ++-
- 3 files changed, 25 insertions(+), 2 deletions(-)
+ usr/gen_init_cpio.c | 70 +++++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 49 insertions(+), 21 deletions(-)
 
-diff --git a/scripts/gen_initramfs_list.sh b/scripts/gen_initramfs_list.sh
-index 86a3c0e5cfbc..cddb82f093d9 100755
---- a/scripts/gen_initramfs_list.sh
-+++ b/scripts/gen_initramfs_list.sh
-@@ -24,6 +24,7 @@ $0 [-o <file>] [-u <uid>] [-g <gid>] {-d | <cpio_source>} ...
- 	-g <gid>       Group ID to map to group ID 0 (root).
- 		       <gid> is only meaningful if <cpio_source> is a
- 		       directory.  "squash" forces all files to gid 0.
-+	-x             include file extended attributes in cpio archive.
- 	<cpio_source>  File list or directory for cpio archive.
- 		       If <cpio_source> is a .cpio file it will be used
- 		       as direct input to initramfs.
-@@ -146,6 +147,9 @@ parse() {
- 			;;
- 	esac
+diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
+index 7a2a6d85345d..78a47a5bdcb1 100644
+--- a/usr/gen_init_cpio.c
++++ b/usr/gen_init_cpio.c
+@@ -10,6 +10,7 @@
+ #include <errno.h>
+ #include <ctype.h>
+ #include <limits.h>
++#include <assert.h>
  
-+	$include_xattrs && \
-+		getfattr -h -d -m - -e hex --absolute-names ${location} | \
-+		sed -e '/^#/d' -e '/^$/d' -e 's/^/xattr /' >> ${output}
- 	echo "${str}" >> ${output}
+ /*
+  * Original work by Jeff Garzik
+@@ -21,6 +22,8 @@
+ #define xstr(s) #s
+ #define str(s) xstr(s)
  
- 	return 0
-@@ -226,6 +230,8 @@ root_gid=0
- dep_list=
- cpio_file=
- cpio_list=
-+cpio_opts=
-+include_xattrs=false
- output="/dev/stdout"
- output_file=""
- is_cpio_compressed=
-@@ -283,6 +289,10 @@ while [ $# -gt 0 ]; do
- 			default_list="$arg"
- 			${dep_list}default_initramfs
- 			;;
-+		"-x")   # include extended attributers
-+			cpio_opts="-x"
-+			include_xattrs=true
-+			;;
- 		"-h")
- 			usage
- 			exit 0
-@@ -312,7 +322,8 @@ if [ ! -z ${output_file} ]; then
- 			fi
- 		fi
- 		cpio_tfile="$(mktemp ${TMPDIR:-/tmp}/cpiofile.XXXXXX)"
--		usr/gen_init_cpio $timestamp ${cpio_list} > ${cpio_tfile}
-+		usr/gen_init_cpio $timestamp ${cpio_opts} ${cpio_list} \
-+			> ${cpio_tfile}
- 	else
- 		cpio_tfile=${cpio_file}
- 	fi
-diff --git a/usr/Kconfig b/usr/Kconfig
-index 43658b8a975e..0cc03bc4614c 100644
---- a/usr/Kconfig
-+++ b/usr/Kconfig
-@@ -52,6 +52,17 @@ config INITRAMFS_ROOT_GID
++static int newcx;
++static unsigned int cpio_hdr_size;
+ static unsigned int offset;
+ static unsigned int ino = 721;
+ static time_t default_mtime;
+@@ -56,7 +59,7 @@ static void push_rest(const char *name)
+ 	putchar(0);
+ 	offset += name_len;
  
- 	  If you are not sure, leave it set to "0".
+-	tmp_ofs = name_len + 110;
++	tmp_ofs = name_len + cpio_hdr_size;
+ 	while (tmp_ofs & 3) {
+ 		putchar(0);
+ 		offset++;
+@@ -77,6 +80,7 @@ struct cpio_header {
+ 	int rdevmajor;
+ 	int rdevminor;
+ 	size_t namesize;
++	size_t xattrsize;
+ 	unsigned int check;
+ };
  
-+config INITRAMFS_NEWCX
-+	bool "Use newcx CPIO format for initramfs"
-+	depends on INITRAMFS_SOURCE!=""
-+	default n
-+	help
-+	  If selected "usr/gen_init_cpio" will generate newcx CPIO archive
-+	  format that supports extended attributes.
-+
-+	  See <file:Documentation/early-userspace/buffer-format.txt> for
-+	  more details.
-+
- config RD_GZIP
- 	bool "Support initial ramdisk/ramfs compressed using gzip"
- 	depends on BLK_DEV_INITRD
-diff --git a/usr/Makefile b/usr/Makefile
-index 237a028693ce..1106bfd61475 100644
---- a/usr/Makefile
-+++ b/usr/Makefile
-@@ -29,7 +29,8 @@ ramfs-input := $(if $(filter-out "",$(CONFIG_INITRAMFS_SOURCE)), \
- 			$(shell echo $(CONFIG_INITRAMFS_SOURCE)),-d)
- ramfs-args  := \
-         $(if $(CONFIG_INITRAMFS_ROOT_UID), -u $(CONFIG_INITRAMFS_ROOT_UID)) \
--        $(if $(CONFIG_INITRAMFS_ROOT_GID), -g $(CONFIG_INITRAMFS_ROOT_GID))
-+        $(if $(CONFIG_INITRAMFS_ROOT_GID), -g $(CONFIG_INITRAMFS_ROOT_GID)) \
-+        $(if $(CONFIG_INITRAMFS_NEWCX), -x)
+@@ -84,24 +88,44 @@ static void push_hdr(const struct cpio_header *hdr)
+ {
+ 	char s[256];
  
- # $(datafile_d_y) is used to identify all files included
- # in initramfs and to detect if any files are added/removed.
+-	sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
+-		   "%08X%08X%08X%08X%08X%08X%08X",
+-		"070701",
+-		hdr->ino,
+-		hdr->mode,
+-		(long)hdr->uid,
+-		(long)hdr->gid,
+-		hdr->nlink,
+-		(long)hdr->mtime,
+-		(unsigned int)hdr->filesize,
+-		hdr->devmajor,
+-		hdr->devminor,
+-		hdr->rdevmajor,
+-		hdr->rdevminor,
+-		(unsigned int)hdr->namesize,
+-		hdr->check);
++	if (newcx) {
++		sprintf(s, "%s%08X%08X%08lX%08lX%08X%016llX"
++			   "%016llX%08X%08X%08X%08X%08X%08X",
++			"070703",
++			hdr->ino,
++			hdr->mode,
++			(long)hdr->uid,
++			(long)hdr->gid,
++			hdr->nlink,
++			hdr->mtime * 1000000ULL,
++			(long long)hdr->filesize,
++			hdr->devmajor,
++			hdr->devminor,
++			hdr->rdevmajor,
++			hdr->rdevminor,
++			(unsigned int)hdr->namesize,
++			(unsigned int)hdr->xattrsize);
++	} else {
++		sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
++			   "%08X%08X%08X%08X%08X%08X%08X",
++			"070701",
++			hdr->ino,
++			hdr->mode,
++			(long)hdr->uid,
++			(long)hdr->gid,
++			hdr->nlink,
++			(long)hdr->mtime,
++			(unsigned int)hdr->filesize,
++			hdr->devmajor,
++			hdr->devminor,
++			hdr->rdevmajor,
++			hdr->rdevminor,
++			(unsigned int)hdr->namesize,
++			hdr->check);
++	}
+ 	fputs(s, stdout);
+-	offset += 110;
++	assert((offset & 3) == 0);
++	offset += cpio_hdr_size;
+ }
+ 
+ static void cpio_trailer(void)
+@@ -301,7 +325,7 @@ static int cpio_mkfile(const char *name, const char *location,
+ {
+ 	char *filebuf = NULL;
+ 	struct stat buf;
+-	long size;
++	size_t size;
+ 	int file = -1;
+ 	int retval;
+ 	int rc = -1;
+@@ -450,7 +474,7 @@ static int cpio_mkfile_line(const char *line)
+ static void usage(const char *prog)
+ {
+ 	fprintf(stderr, "Usage:\n"
+-		"\t%s [-t <timestamp>] <cpio_list>\n"
++		"\t%s [-t <timestamp>] [-x] <cpio_list>\n"
+ 		"\n"
+ 		"<cpio_list> is a file containing newline separated entries that\n"
+ 		"describe the files to be included in the initramfs archive:\n"
+@@ -527,7 +551,7 @@ int main (int argc, char *argv[])
+ 
+ 	default_mtime = time(NULL);
+ 	while (1) {
+-		int opt = getopt(argc, argv, "t:h");
++		int opt = getopt(argc, argv, "t:h:x");
+ 		char *invalid;
+ 
+ 		if (opt == -1)
+@@ -542,12 +566,16 @@ int main (int argc, char *argv[])
+ 				exit(1);
+ 			}
+ 			break;
++		case 'x':
++			newcx = 1;
++			break;
+ 		case 'h':
+ 		case '?':
+ 			usage(argv[0]);
+ 			exit(opt == 'h' ? 0 : 1);
+ 		}
+ 	}
++	cpio_hdr_size = newcx ? 134 : 110;
+ 
+ 	if (argc - optind != 1) {
+ 		usage(argv[0]);
 -- 
 2.10.3.dirty
 
