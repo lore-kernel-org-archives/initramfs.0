@@ -1,215 +1,70 @@
-From: Taras Kondratiuk <takondra@cisco.com>
-Subject: [PATCH v2 07/15] initramfs: split header layout information from parsing function
-Date: Thu, 25 Jan 2018 03:27:47 +0000
-Message-ID: <1516850875-25066-8-git-send-email-takondra@cisco.com>
-References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Subject: Re: [PATCH v2 01/15] Documentation: add newcx initramfs format description
+Date: Thu, 25 Jan 2018 10:29:12 +0100
+Message-ID: <CAK8P3a2FqEcq44-sRQrsgJ=_DOanC-qgJ3yFr=J6UrOKO0_3uw@mail.gmail.com>
+References: <1516850875-25066-1-git-send-email-takondra@cisco.com> <1516850875-25066-2-git-send-email-takondra@cisco.com>
+Mime-Version: 1.0
 Return-path: <linux-kernel-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=5503; q=dns/txt; s=iport;
-  t=1516851448; x=1518061048;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references;
-  bh=7fdyqsS+k1XeqW14jyS/DXDdkMe9brBhAMIxsTBxYH8=;
-  b=emkagi8U3ggn3Cz5cwWotW7KZ/Y9ZYQ+dB5xuFemA72CMBVi++oLmf5Z
-   9Q7iSGsFeUErxgEWr77t7tdwF5DgY8ey8UYYguaFW00iny6Bh7K+xSgO5
-   OyLSLAvme/6kuvQqejgl++LJ2Quu62YfY6d8LVrCrJTylwfsJDIA/nYYs
-   E=;
-In-Reply-To: <1516850875-25066-1-git-send-email-takondra@cisco.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:sender:in-reply-to:references:from:date:message-id
+         :subject:to:cc;
+        bh=fyIk78pod9xeYj04xi8I/gXuJE7wryUm5CMMIdB89rE=;
+        b=fJ9AjSXuR13SUA2BUHfYBUoTSOne4YmuU6i0WVPEJ1JBoXRlXwiAMsthBkXaNEX9bX
+         dOh3NvEROX5bOaonunFRI+kZP/uJnO+bBWIOWMTxxmDGTWWmjpytw35I2VyphDcP35bD
+         Yv8wZ7Nm4BlFQnZg3YEu58NDjhHcepglw1Mv4oqJ61uJhZvuea1D9Noib8SEl2jPpLEs
+         tova+z+T5w5Zqz1wMxn+qpsa5q+dQCr5DBjw8P0mSfFpAMWZhfO9dZeETcnerGzESCE/
+         VU2tIbFvcqOmtkGbIUVCQw6FNOjE/ukMmEgIJw5qeUH0In4alDTOPJu8ut7mPfg7DoCw
+         PbmA==
+In-Reply-To: <1516850875-25066-2-git-send-email-takondra@cisco.com>
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
-Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
+To: Taras Kondratiuk <takondra@cisco.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>, initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, LSM List <linux-security-module@vger.kernel.org>, xe-linux-external@cisco.com
 
-Header parsing has hardcoded assumption about header field size and
-layout. It is hard to modify the function to parse a new format.
+On Thu, Jan 25, 2018 at 4:27 AM, Taras Kondratiuk <takondra@cisco.com> wrote:
+> Many of the Linux security/integrity features are dependent on file
+> metadata, stored as extended attributes (xattrs), for making decisions.
+> These features need to be initialized during initcall and enabled as
+> early as possible for complete security coverage.
+>
+> Initramfs (tmpfs) supports xattrs, but newc CPIO archive format does not
+> support including them into the archive.
+>
+> This patch describes "extended" newc format (newcx) that is based on
+> newc and has following changes:
+> - extended attributes support
+> - increased size of filesize to support files >4GB.
+> - increased mtime field size to have usec precision and more than
+>   32-bit of seconds.
+> - removed unused checksum field.
+>
+> Signed-off-by: Taras Kondratiuk <takondra@cisco.com>
+> Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
+> Signed-off-by: Victor Kamensky <kamensky@cisco.com>
 
-Move information about size and layout into a data structure to
-make parsing code more generic and simplify adding a new format.
-This also removes some magic numbers.
+Ah nice, I like the extension of the time handling, that certainly
+addresses one of the issues with y2038 that we have previously
+hacked around in an ugly way (interpreting the 32-bit
+number as unsigned).
 
-Signed-off-by: Taras Kondratiuk <takondra@cisco.com>
----
- init/initramfs.c | 122 +++++++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 92 insertions(+), 30 deletions(-)
+However, if this is to become a generally supported format
+for cpio files, could we make it use nanosecond resolution
+instead? The issue that I see with microseconds is that
+storing a file in an archive and extracting it again would
+otherwise keep the mtime stamp /almost/ identical on file
+systems that have nanosecond resolution, but most of
+the time a comparison would indicate that the files are
+not the same.
 
-diff --git a/init/initramfs.c b/init/initramfs.c
-index b3d39c8793be..7f0bbfde94e3 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -150,39 +150,100 @@ static void __init dir_utime(void)
- 	}
- }
- 
--static __initdata time64_t mtime;
--
- /* cpio header parsing */
--
--static __initdata unsigned long ino, major, minor, nlink;
-+static __initdata time64_t mtime;
-+static __initdata u32 ino, major, minor, nlink, rmajor, rminor;
- static __initdata umode_t mode;
--static __initdata unsigned long body_len, name_len;
-+static __initdata u32 body_len, name_len;
- static __initdata uid_t uid;
- static __initdata gid_t gid;
--static __initdata unsigned rdev;
-+static __initdata u32 mode_u32;
-+
-+struct cpio_hdr_field {
-+	size_t offset;
-+	size_t size;
-+	void *out;
-+	size_t out_size;
-+	const char *name;
-+};
-+
-+#define HDR_FIELD(type, field, variable) \
-+	{ .offset = offsetof(type, field) + \
-+	  BUILD_BUG_ON_ZERO(sizeof(*(variable))*2 < FIELD_SIZEOF(type, field)),\
-+	  .size = FIELD_SIZEOF(type, field), \
-+	  .out = variable, \
-+	  .out_size = sizeof(*(variable)), \
-+	  .name = #field }
-+
-+#define NEWC_FIELD(field, variable) \
-+		HDR_FIELD(struct cpio_newc_header, field, variable)
-+
-+#define CPIO_MAX_HEADER_SIZE sizeof(struct cpio_newc_header)
-+#define CPIO_MAX_FIELD_SIZE 8
-+#define CPIO_MAGIC_SIZE 6
-+
-+struct cpio_newc_header {
-+	char    c_ino[8];
-+	char    c_mode[8];
-+	char    c_uid[8];
-+	char    c_gid[8];
-+	char    c_nlink[8];
-+	char    c_mtime[8];
-+	char    c_filesize[8];
-+	char    c_devmajor[8];
-+	char    c_devminor[8];
-+	char    c_rdevmajor[8];
-+	char    c_rdevminor[8];
-+	char    c_namesize[8];
-+	char    c_check[8];
-+};
-+
-+static struct cpio_hdr_field cpio_newc_header_info[] __initdata = {
-+	NEWC_FIELD(c_ino, &ino),
-+	NEWC_FIELD(c_mode, &mode_u32),
-+	NEWC_FIELD(c_uid, &uid),
-+	NEWC_FIELD(c_gid, &gid),
-+	NEWC_FIELD(c_nlink, &nlink),
-+	NEWC_FIELD(c_mtime, &mtime),
-+	NEWC_FIELD(c_filesize, &body_len),
-+	NEWC_FIELD(c_devmajor, &major),
-+	NEWC_FIELD(c_devminor, &minor),
-+	NEWC_FIELD(c_rdevmajor, &rmajor),
-+	NEWC_FIELD(c_rdevminor, &rminor),
-+	NEWC_FIELD(c_namesize, &name_len),
-+	{ 0 },
-+};
- 
- static void __init parse_header(char *s)
- {
--	unsigned long parsed[12];
--	char buf[9];
--	int i;
--
--	buf[8] = '\0';
--	for (i = 0; i < 12; i++, s += 8) {
--		memcpy(buf, s, 8);
--		parsed[i] = simple_strtoul(buf, NULL, 16);
-+	char buf[CPIO_MAX_FIELD_SIZE + 1];
-+	struct cpio_hdr_field *field = cpio_newc_header_info;
-+
-+	while (field->size) {
-+		int ret = 0;
-+
-+		memcpy(buf, s + field->offset, field->size);
-+		buf[field->size] = '\0';
-+		switch (field->out_size) {
-+		case sizeof(u32):
-+			ret = kstrtou32(buf, 16, field->out);
-+			pr_debug("cpio field %s: %u, buf: %s\n",
-+				 field->name, *(u32 *)field->out, buf);
-+			break;
-+		case sizeof(u64):
-+			ret = kstrtou64(buf, 16, field->out);
-+			pr_debug("cpio field %s: %llu, buf: %s\n",
-+				 field->name, *(u64 *)field->out, buf);
-+			break;
-+		default:
-+			BUG_ON(1);
-+		}
-+
-+		if (ret)
-+			pr_err("invalid cpio header field (%d)", ret);
-+		field++;
- 	}
--	ino = parsed[0];
--	mode = parsed[1];
--	uid = parsed[2];
--	gid = parsed[3];
--	nlink = parsed[4];
--	mtime = parsed[5]; /* breaks in y2106 */
--	body_len = parsed[6];
--	major = parsed[7];
--	minor = parsed[8];
--	rdev = new_encode_dev(MKDEV(parsed[9], parsed[10]));
--	name_len = parsed[11];
-+	mode = mode_u32;
- }
- 
- /* FSM */
-@@ -234,7 +295,7 @@ static __initdata char *header_buf, *symlink_buf, *name_buf;
- 
- static int __init do_start(void)
- {
--	read_into(header_buf, 6, do_format);
-+	read_into(header_buf, CPIO_MAGIC_SIZE, do_format);
- 	return 0;
- }
- 
-@@ -254,15 +315,15 @@ static int __init do_collect(void)
- 
- static int __init do_format(void)
- {
--	if (memcmp(collected, "070707", 6)==0) {
-+	if (memcmp(collected, "070707", CPIO_MAGIC_SIZE) == 0) {
- 		error("incorrect cpio method used: use -H newc option");
- 		return 1;
- 	}
--	if (memcmp(collected, "070701", 6)) {
-+	if (memcmp(collected, "070701", CPIO_MAGIC_SIZE)) {
- 		error("no cpio magic");
- 		return 1;
- 	}
--	read_into(header_buf, 104, do_header);
-+	read_into(header_buf, sizeof(struct cpio_newc_header), do_header);
- 	return 0;
- }
- 
-@@ -374,6 +435,7 @@ static int __init do_create(void)
- 	} else if (S_ISBLK(mode) || S_ISCHR(mode) ||
- 		   S_ISFIFO(mode) || S_ISSOCK(mode)) {
- 		if (maybe_link(name_buf) == 0) {
-+			u32 rdev = new_encode_dev(MKDEV(rmajor, rminor));
- 			sys_mknod(name_buf, mode, rdev);
- 			sys_chown(name_buf, uid, gid);
- 			sys_chmod(name_buf, mode);
-@@ -464,7 +526,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 	const char *compress_name;
- 	static __initdata char msg_buf[64];
- 
--	header_buf = kmalloc(104, GFP_KERNEL);
-+	header_buf = kmalloc(CPIO_MAX_HEADER_SIZE, GFP_KERNEL);
- 	symlink_buf = kmalloc(PATH_MAX + 1, GFP_KERNEL);
- 	name_buf = kmalloc(N_ALIGN(PATH_MAX), GFP_KERNEL);
- 
--- 
-2.10.3.dirty
+Unfortunately, the range of a 64-bit nanoseconds counter
+is still a bit limited (584 years, or half of that if we make it
+signed). While this is clearly enough for the uses in
+initramfs, it still has a similar problem: someone creating
+a fake timestamp a long time in the past or future on
+a file system would lose information after going though
+cpio.
 
+         Arnd
