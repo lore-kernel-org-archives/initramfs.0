@@ -1,56 +1,101 @@
-From: si-wei liu <si-wei.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC dracut 1/1] unexpected boot failure due to races between
- iscsistart for multiple interfaces
-Date: Thu, 21 Dec 2017 22:20:40 -0800
-Message-ID: <ed8d3e69-1e22-356e-efd6-a2f4b277d43b@oracle.com>
-References: <1512418484-3948-1-git-send-email-cathy.zhou@oracle.com>
- <9326cbf7-b533-4cf2-baac-6699ee5dc4d6@googlegroups.com>
- <a759d3d3-5c21-4a28-a205-1390561abc2a@googlegroups.com>
- <213a0c37-587e-7375-341b-680faa752cde@oracle.com>
- <B00ADBFE-F00B-4BCD-A7FE-0FEFE2A64F9D@gmail.com>
- <29030bdf-e65a-dc01-ee1e-48498dafdc8f@oracle.com>
- <C94AC86B-C41E-4B3A-B375-3405E25BD45D@gmail.com>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH v2 04/15] initramfs: remove unnecessary symlinks processing shortcut
+Date: Thu, 25 Jan 2018 03:27:44 +0000
+Message-ID: <1516850875-25066-5-git-send-email-takondra@cisco.com>
+References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2017-10-26;
- bh=T9mxPh1Am6C+KBuLhT9vmeCkl6qj6woobLaj4BubFrk=;
- b=J2AB8vi8T+zxqsUgHDkgmnQPuAGYIT7mmMl59BMTO42jaeD+Id/6BifMP9Y5v8aZ0HLO
- lXAZyg6AXexr5rywoyP7+M+vemIQp33S9GJo54wiynmsHjaak1GA88P6KCO5zs5zQlnI
- T7g7BNb3NXPfg2Q/kbj8T/dcfyC5S4pjxLbW/OPCeytQy0QKHfd7qX9BqWRqFGwb5DZd
- kdR0ZaW/4aSI2cnGyu2c87t6is4hPdcbY9pTmpqhZ+zjTkeRV6C4bWkArZhVcwWQAAkl
- 1tLNDTuVv8MfsM94Dbmm22gsBvDXUJgMXukVdzqbPu7BuUkpcdQvBorzRi634eADEzv2 fA== 
-In-Reply-To: <C94AC86B-C41E-4B3A-B375-3405E25BD45D-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Content-Language: en-US
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=cisco.com; i=@cisco.com; l=2499; q=dns/txt; s=iport;
+  t=1516851438; x=1518061038;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references;
+  bh=nvpl0b5eWYplhP1sX/h4M5FhyqcWUI82Pb+U0GTb0WU=;
+  b=RPW6eYAzDGxV6JRtw20Z3xaO1K0FiskDNpqkRT2ERLeP6A/DXWMSFla8
+   tb06Vyy6ua14qyWv+EUEj1SYHi5Q2ajlL83Kdvyr+9XndKbWLY0uznnDT
+   2URt2j4fk2QMLJ1Jgr61Ca/PAm8uYpEoiBjM2NlgRgjuZ6L8vAJqavsKi
+   s=;
+In-Reply-To: <1516850875-25066-1-git-send-email-takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: Lee Duncan <leeman.duncan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cathy Zhou <cathy.zhou-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: open-iscsi <open-iscsi-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
 
+Special handling of symlinks in do_header() assumes that name and body
+entries are sequential and reads them together. This shortcut has no
+real performance benefits, but it complicates changes to the state
+machine.
 
+Make handling of symlinks more similar to a regular files. Store name
+in name_buf and destination in symlink_buf.
 
-On 12/21/2017 05:03 PM, Lee Duncan wrote:
-> That seems like the wrong approach to me. iscsiadm/iscsid were designed for this. The iscsistart script was designed for sing, one-shot use, and is not used in dracut now at all, AFAIK.
-The latter is not true, unfortunately. Distros like OpenSUSE and SLES 
-does move to iscsiadm to manage sessions for their dracut fork,  
-however, the upstream dracut still uses iscsistart now. The context is 
-that it might take a while for the SUSE patches to be upstream ready, 
-hence we need an interim that addressed the particular iSCSI boot issue 
-when dealing with multiple interfaces, until iscsiadm dracut patches 
-become avail. Please see:
+Signed-off-by: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+---
+ init/initramfs.c | 29 +++++++++++++----------------
+ 1 file changed, 13 insertions(+), 16 deletions(-)
 
-https://www.spinics.net/lists/linux-initramfs/msg04502.html
-https://www.spinics.net/lists/linux-initramfs/msg04505.html
-https://www.spinics.net/lists/linux-initramfs/msg04506.html
-
-
-Thanks,
--Siwei
-
->
-> —
-> Lee Duncan
->
+diff --git a/init/initramfs.c b/init/initramfs.c
+index b6ee675e5cdb..d0ab7ad6ac05 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -266,16 +266,7 @@ static int __init do_header(void)
+ 	state = do_skip;
+ 	if (name_len <= 0 || name_len > PATH_MAX)
+ 		return 0;
+-	if (S_ISLNK(mode)) {
+-		if (body_len > PATH_MAX)
+-			return 0;
+-		collect = collected = symlink_buf;
+-		remains = N_ALIGN(name_len) + body_len;
+-		next_state = do_symlink;
+-		state = do_collect;
+-		return 0;
+-	}
+-	if (S_ISREG(mode) || !body_len)
++	if (S_ISREG(mode) || S_ISLNK(mode) || !body_len)
+ 		read_into(name_buf, N_ALIGN(name_len), do_name);
+ 	return 0;
+ }
+@@ -372,6 +363,11 @@ static int __init do_name(void)
+ 			sys_chmod(collected, mode);
+ 			do_utime(collected, mtime);
+ 		}
++	} else if (S_ISLNK(mode)) {
++		if (body_len > PATH_MAX)
++			return 0;
++		memcpy_optional(name_buf, collected, N_ALIGN(name_len));
++		read_into(symlink_buf, body_len, do_symlink);
+ 	}
+ 	return 0;
+ }
+@@ -397,11 +393,12 @@ static int __init do_copy(void)
+ 
+ static int __init do_symlink(void)
+ {
+-	collected[N_ALIGN(name_len) + body_len] = '\0';
+-	clean_path(collected, 0);
+-	sys_symlink(collected + N_ALIGN(name_len), collected);
+-	sys_lchown(collected, uid, gid);
+-	do_utime(collected, mtime);
++	memcpy_optional(symlink_buf, collected, body_len);
++	symlink_buf[body_len] = '\0';
++	clean_path(name_buf, 0);
++	sys_symlink(symlink_buf, name_buf);
++	sys_lchown(name_buf, uid, gid);
++	do_utime(name_buf, mtime);
+ 	state = do_skip;
+ 	next_state = do_reset;
+ 	return 0;
+@@ -453,7 +450,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
+ 	static __initdata char msg_buf[64];
+ 
+ 	header_buf = kmalloc(110, GFP_KERNEL);
+-	symlink_buf = kmalloc(PATH_MAX + N_ALIGN(PATH_MAX) + 1, GFP_KERNEL);
++	symlink_buf = kmalloc(PATH_MAX + 1, GFP_KERNEL);
+ 	name_buf = kmalloc(N_ALIGN(PATH_MAX), GFP_KERNEL);
+ 
+ 	if (!header_buf || !symlink_buf || !name_buf)
+-- 
+2.10.3.dirty
