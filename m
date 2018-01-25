@@ -1,288 +1,131 @@
-From: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v2 10/15] gen_init_cpio: move header formatting into function
-Date: Thu, 25 Jan 2018 03:27:50 +0000
-Message-ID: <1516850875-25066-11-git-send-email-takondra@cisco.com>
+From: Taras Kondratiuk <takondra@cisco.com>
+Subject: [PATCH v2 01/15] Documentation: add newcx initramfs format description
+Date: Thu, 25 Jan 2018 03:27:41 +0000
+Message-ID: <1516850875-25066-2-git-send-email-takondra@cisco.com>
 References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=6472; q=dns/txt; s=iport;
-  t=1516851454; x=1518061054;
+  d=cisco.com; i=@cisco.com; l=4385; q=dns/txt; s=iport;
+  t=1516851451; x=1518061051;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
-  bh=VzDkcxzMGJ0IhODDQLEFZl6bqQ682naEKCD4uPEFu8A=;
-  b=hUuMfx9kBK3tnIIij74CEPHb8u7/g1aQsxxzVGiupVCHFw6NU87u2xhu
-   Z4+bk4V75Mwmi1rxtFnD6CNav2VU8v1NSgUqwFxhsoJkvGCig/ALFYlr3
-   XM/isls/PGVKL6ika0o/ODli88R9OovHb8ftTKFjr/agoJu6IZDwEv8Sn
-   g=;
-In-Reply-To: <1516850875-25066-1-git-send-email-takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+  bh=NWU4LY/nH5TMUYT9fw9A8+lrhtNXYJvc6/0WZT8FYuI=;
+  b=WW/BkkhqkFf658Ip5csD49l3OSZQNEWeji2IpJmb5iLaBFi0Ukj5FIiB
+   bCp7jRFbPq7jkgD3RgFrKjWO+q4Z0K8Zqg7OVaSFB7N2DKzjthdF6ega5
+   TQ5bsqqka8j5HT2SDluUc/TxXy/60JX3RALDrIhjJTKi3vUIkbdnTamGU
+   A=;
+In-Reply-To: <1516850875-25066-1-git-send-email-takondra@cisco.com>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
+To: "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
+Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
 
-CPIO header is generated in multiple places with the same sprintf()
-format string. Move formatting into a single function in preparation
-to adding a new cpio format.
+Many of the Linux security/integrity features are dependent on file
+metadata, stored as extended attributes (xattrs), for making decisions.
+These features need to be initialized during initcall and enabled as
+early as possible for complete security coverage.
 
-Signed-off-by: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+Initramfs (tmpfs) supports xattrs, but newc CPIO archive format does not
+support including them into the archive.
+
+This patch describes "extended" newc format (newcx) that is based on
+newc and has following changes:
+- extended attributes support
+- increased size of filesize to support files >4GB.
+- increased mtime field size to have usec precision and more than
+  32-bit of seconds.
+- removed unused checksum field.
+
+Signed-off-by: Taras Kondratiuk <takondra@cisco.com>
+Signed-off-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Signed-off-by: Victor Kamensky <kamensky@cisco.com>
 ---
- usr/gen_init_cpio.c | 186 ++++++++++++++++++++++++++--------------------------
- 1 file changed, 92 insertions(+), 94 deletions(-)
+ Documentation/early-userspace/buffer-format.txt | 46 ++++++++++++++++++++++---
+ 1 file changed, 41 insertions(+), 5 deletions(-)
 
-diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
-index 03b21189d58b..7a2a6d85345d 100644
---- a/usr/gen_init_cpio.c
-+++ b/usr/gen_init_cpio.c
-@@ -64,34 +64,55 @@ static void push_rest(const char *name)
- 	}
- }
+diff --git a/Documentation/early-userspace/buffer-format.txt b/Documentation/early-userspace/buffer-format.txt
+index e1fd7f9dad16..d818df4f72dc 100644
+--- a/Documentation/early-userspace/buffer-format.txt
++++ b/Documentation/early-userspace/buffer-format.txt
+@@ -24,6 +24,7 @@ grammar, where:
+ 	+	indicates concatenation
+ 	GZIP()	indicates the gzip(1) of the operand
+ 	ALGN(n)	means padding with null bytes to an n-byte boundary
++	[n]	means size of field is n bytes
  
--static void push_hdr(const char *s)
-+struct cpio_header {
-+	unsigned int ino;
-+	unsigned int mode;
-+	uid_t uid;
-+	gid_t gid;
-+	unsigned int nlink;
-+	time_t mtime;
-+	size_t filesize;
-+	int devmajor;
-+	int devminor;
-+	int rdevmajor;
-+	int rdevminor;
-+	size_t namesize;
-+	unsigned int check;
-+};
+ 	initramfs  := ("\0" | cpio_archive | cpio_gzip_archive)*
+ 
+@@ -31,20 +32,29 @@ grammar, where:
+ 
+ 	cpio_archive := cpio_file* + (<nothing> | cpio_trailer)
+ 
+-	cpio_file := ALGN(4) + cpio_header + filename + "\0" + ALGN(4) + data
++	cpio_file := (cpio_newc_file | cpio_newcx_file)
 +
-+static void push_hdr(const struct cpio_header *hdr)
- {
-+	char s[256];
++	cpio_newc_file := ALGN(4) + cpio_newc_header + filename + "\0" + \
++			  ALGN(4) + data
 +
-+	sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
-+		   "%08X%08X%08X%08X%08X%08X%08X",
-+		"070701",
-+		hdr->ino,
-+		hdr->mode,
-+		(long)hdr->uid,
-+		(long)hdr->gid,
-+		hdr->nlink,
-+		(long)hdr->mtime,
-+		(unsigned int)hdr->filesize,
-+		hdr->devmajor,
-+		hdr->devminor,
-+		hdr->rdevmajor,
-+		hdr->rdevminor,
-+		(unsigned int)hdr->namesize,
-+		hdr->check);
- 	fputs(s, stdout);
- 	offset += 110;
- }
++	cpio_newcx_file := ALGN(4) + cpio_newcx_header + filename + "\0" + \
++			   ALGN(4) + xattrs + ALGN(4) + data
++
++	xattrs := xattr_entry*
++
++	xattr_entry := xattr_size[8] + xattr_name + "\0" + xattr_value
  
- static void cpio_trailer(void)
- {
--	char s[256];
- 	const char name[] = "TRAILER!!!";
-+	struct cpio_header hdr = {
-+		.nlink = 1,
-+		.namesize = strlen(name)+1,
-+	};
+ 	cpio_trailer := ALGN(4) + cpio_header + "TRAILER!!!\0" + ALGN(4)
  
--	sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
--		"070701",		/* magic */
--		0,			/* ino */
--		0,			/* mode */
--		(long) 0,		/* uid */
--		(long) 0,		/* gid */
--		1,			/* nlink */
--		(long) 0,		/* mtime */
--		0,			/* filesize */
--		0,			/* major */
--		0,			/* minor */
--		0,			/* rmajor */
--		0,			/* rminor */
--		(unsigned)strlen(name)+1, /* namesize */
--		0);			/* chksum */
--	push_hdr(s);
-+	push_hdr(&hdr);
- 	push_rest(name);
  
- 	while (offset % 512) {
-@@ -103,27 +124,21 @@ static void cpio_trailer(void)
- static int cpio_mkslink(const char *name, const char *target,
- 			 unsigned int mode, uid_t uid, gid_t gid)
- {
--	char s[256];
--
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
--		"070701",		/* magic */
--		ino++,			/* ino */
--		S_IFLNK | mode,		/* mode */
--		(long) uid,		/* uid */
--		(long) gid,		/* gid */
--		1,			/* nlink */
--		(long) default_mtime,	/* mtime */
--		(unsigned)strlen(target)+1, /* filesize */
--		3,			/* major */
--		1,			/* minor */
--		0,			/* rmajor */
--		0,			/* rminor */
--		(unsigned)strlen(name) + 1,/* namesize */
--		0);			/* chksum */
--	push_hdr(s);
-+	struct cpio_header hdr = {
-+		.ino = ino++,
-+		.mode = S_IFLNK | mode,
-+		.uid = uid,
-+		.gid = gid,
-+		.nlink = 1,
-+		.mtime = default_mtime,
-+		.filesize = strlen(target)+1,
-+		.devmajor = 3,
-+		.devminor = 1,
-+		.namesize = strlen(name)+1,
-+	};
-+	push_hdr(&hdr);
- 	push_string(name);
- 	push_pad();
- 	push_string(target);
-@@ -152,27 +167,20 @@ static int cpio_mkslink_line(const char *line)
- static int cpio_mkgeneric(const char *name, unsigned int mode,
- 		       uid_t uid, gid_t gid)
- {
--	char s[256];
--
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
--		"070701",		/* magic */
--		ino++,			/* ino */
--		mode,			/* mode */
--		(long) uid,		/* uid */
--		(long) gid,		/* gid */
--		2,			/* nlink */
--		(long) default_mtime,	/* mtime */
--		0,			/* filesize */
--		3,			/* major */
--		1,			/* minor */
--		0,			/* rmajor */
--		0,			/* rminor */
--		(unsigned)strlen(name) + 1,/* namesize */
--		0);			/* chksum */
--	push_hdr(s);
-+	struct cpio_header hdr = {
-+		.ino = ino++,
-+		.mode = mode,
-+		.uid = uid,
-+		.gid = gid,
-+		.nlink = 2,
-+		.mtime = default_mtime,
-+		.devmajor = 3,
-+		.devminor = 1,
-+		.namesize = strlen(name)+1,
-+	};
-+	push_hdr(&hdr);
- 	push_rest(name);
- 	return 0;
- }
-@@ -241,8 +249,6 @@ static int cpio_mknod(const char *name, unsigned int mode,
- 		       uid_t uid, gid_t gid, char dev_type,
- 		       unsigned int maj, unsigned int min)
- {
--	char s[256];
--
- 	if (dev_type == 'b')
- 		mode |= S_IFBLK;
- 	else
-@@ -250,23 +256,20 @@ static int cpio_mknod(const char *name, unsigned int mode,
+ In human terms, the initramfs buffer contains a collection of
+-compressed and/or uncompressed cpio archives (in the "newc" or "crc"
+-formats); arbitrary amounts zero bytes (for padding) can be added
+-between members.
++compressed and/or uncompressed cpio archives; arbitrary amounts
++zero bytes (for padding) can be added between members.
  
- 	if (name[0] == '/')
- 		name++;
--	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--	       "%08X%08X%08X%08X%08X%08X%08X",
--		"070701",		/* magic */
--		ino++,			/* ino */
--		mode,			/* mode */
--		(long) uid,		/* uid */
--		(long) gid,		/* gid */
--		1,			/* nlink */
--		(long) default_mtime,	/* mtime */
--		0,			/* filesize */
--		3,			/* major */
--		1,			/* minor */
--		maj,			/* rmajor */
--		min,			/* rminor */
--		(unsigned)strlen(name) + 1,/* namesize */
--		0);			/* chksum */
--	push_hdr(s);
-+	struct cpio_header hdr = {
-+		.ino = ino++,
-+		.mode = mode,
-+		.uid = uid,
-+		.gid = gid,
-+		.nlink = 1,
-+		.mtime = default_mtime,
-+		.devmajor = 3,
-+		.devminor = 1,
-+		.rdevmajor = maj,
-+		.rdevminor = min,
-+		.namesize = strlen(name)+1,
-+	};
-+	push_hdr(&hdr);
- 	push_rest(name);
- 	return 0;
- }
-@@ -296,7 +299,6 @@ static int cpio_mkfile(const char *name, const char *location,
- 			unsigned int mode, uid_t uid, gid_t gid,
- 			unsigned int nlinks)
- {
--	char s[256];
- 	char *filebuf = NULL;
- 	struct stat buf;
- 	long size;
-@@ -340,23 +342,19 @@ static int cpio_mkfile(const char *name, const char *location,
- 		if (name[0] == '/')
- 			name++;
- 		namesize = strlen(name) + 1;
--		sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
--		       "%08lX%08X%08X%08X%08X%08X%08X",
--			"070701",		/* magic */
--			ino,			/* ino */
--			mode,			/* mode */
--			(long) uid,		/* uid */
--			(long) gid,		/* gid */
--			nlinks,			/* nlink */
--			(long) buf.st_mtime,	/* mtime */
--			size,			/* filesize */
--			3,			/* major */
--			1,			/* minor */
--			0,			/* rmajor */
--			0,			/* rminor */
--			namesize,		/* namesize */
--			0);			/* chksum */
--		push_hdr(s);
-+		struct cpio_header hdr = {
-+			.ino = ino,
-+			.mode = mode,
-+			.uid = uid,
-+			.gid = gid,
-+			.nlink = nlinks,
-+			.mtime = buf.st_mtime,
-+			.filesize = size,
-+			.devmajor = 3,
-+			.devminor = 1,
-+			.namesize = namesize,
-+		};
-+		push_hdr(&hdr);
- 		push_string(name);
- 		push_pad();
+ The cpio "TRAILER!!!" entry (cpio end-of-archive) is optional, but is
+ not ignored; see "handling of hard links" below.
+ 
+-The structure of the cpio_header is as follows (all fields contain
++The structure of the cpio_newc_header is as follows (all fields contain
+ hexadecimal ASCII numbers fully padded with '0' on the left to the
+ full width of the field, for example, the integer 4780 is represented
+ by the ASCII string "000012ac"):
+@@ -81,6 +91,32 @@ algorithm used.
+ If the filename is "TRAILER!!!" this is actually an end-of-archive
+ marker; the c_filesize for an end-of-archive marker must be zero.
+ 
++"Extended" newc format (newcx)
++"newcx" cpio format extends "newc" by increasing size of some fields
++and adding extended attributes support. cpio_newcx_header structure:
++
++Field name    Field size	 Meaning
++c_magic	       6 bytes		 The string "070703"
++c_ino	       8 bytes		 File inode number
++c_mode	       8 bytes		 File mode and permissions
++c_uid	       8 bytes		 File uid
++c_gid	       8 bytes		 File gid
++c_nlink	       8 bytes		 Number of links
++c_mtime	      16 bytes		 Modification time (microseconds)
++c_filesize    16 bytes		 Size of data field
++c_maj	       8 bytes		 Major part of file device number
++c_min	       8 bytes		 Minor part of file device number
++c_rmaj	       8 bytes		 Major part of device node reference
++c_rmin	       8 bytes		 Minor part of device node reference
++c_namesize     8 bytes		 Length of filename, including final \0
++c_xattrs_size  8 bytes		 Size of xattrs field
++
++Most of the fields match cpio_newc_header except c_mtime that contains
++microseconds. c_chksum field is dropped.
++
++xattr_size is a total size of xattr_entry including 8 bytes of
++xattr_size. xattr_size has the same hexadecimal ASCII encoding as other
++fields of cpio header.
+ 
+ *** Handling of hard links
  
 -- 
 2.10.3.dirty
+
