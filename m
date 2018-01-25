@@ -1,226 +1,215 @@
-From: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v2 02/15] initramfs: replace states with function pointers
-Date: Thu, 25 Jan 2018 03:27:42 +0000
-Message-ID: <1516850875-25066-3-git-send-email-takondra@cisco.com>
+From: Taras Kondratiuk <takondra@cisco.com>
+Subject: [PATCH v2 07/15] initramfs: split header layout information from parsing function
+Date: Thu, 25 Jan 2018 03:27:47 +0000
+Message-ID: <1516850875-25066-8-git-send-email-takondra@cisco.com>
 References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=5648; q=dns/txt; s=iport;
-  t=1516851450; x=1518061050;
+  d=cisco.com; i=@cisco.com; l=5503; q=dns/txt; s=iport;
+  t=1516851448; x=1518061048;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
-  bh=kPtfKRZKS/cOHG4AIpt4bEc+kdJD6gX/yiPBjFXhWw4=;
-  b=Mio1CcepFKBICFnIaM0a0JIUZi1tG9KGnvU71v8x4X1YkAzTwE/vee0Z
-   qZvvxhsZGAjYzOgAS2jOdhKEkL45LLzDWGkbX585OqJF+fYgVTYrGad57
-   JabVNOJJvYZycRYhMce15y4hHbuW2v4wqqfuTlCsS7F06N6yflVD08/gH
-   Y=;
-In-Reply-To: <1516850875-25066-1-git-send-email-takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+  bh=7fdyqsS+k1XeqW14jyS/DXDdkMe9brBhAMIxsTBxYH8=;
+  b=emkagi8U3ggn3Cz5cwWotW7KZ/Y9ZYQ+dB5xuFemA72CMBVi++oLmf5Z
+   9Q7iSGsFeUErxgEWr77t7tdwF5DgY8ey8UYYguaFW00iny6Bh7K+xSgO5
+   OyLSLAvme/6kuvQqejgl++LJ2Quu62YfY6d8LVrCrJTylwfsJDIA/nYYs
+   E=;
+In-Reply-To: <1516850875-25066-1-git-send-email-takondra@cisco.com>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
+To: "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
+Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
 
-Currently the FSM states are mapped directly to function pointers. Extra
-level of intirection is not needed and makes navigation over the code
-harder. One can't jump between states directly when browsing code (e.g.
-with cscope). Need to go through actions[] array each time.
+Header parsing has hardcoded assumption about header field size and
+layout. It is hard to modify the function to parse a new format.
 
-Replace states with their action function pointers. No behaviour change.
+Move information about size and layout into a data structure to
+make parsing code more generic and simplify adding a new format.
+This also removes some magic numbers.
 
-Signed-off-by: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Taras Kondratiuk <takondra@cisco.com>
 ---
- init/initramfs.c | 73 +++++++++++++++++++++++++-------------------------------
- 1 file changed, 32 insertions(+), 41 deletions(-)
+ init/initramfs.c | 122 +++++++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 92 insertions(+), 30 deletions(-)
 
 diff --git a/init/initramfs.c b/init/initramfs.c
-index 7e99a0038942..49cd2681a26f 100644
+index b3d39c8793be..7f0bbfde94e3 100644
 --- a/init/initramfs.c
 +++ b/init/initramfs.c
-@@ -187,16 +187,17 @@ static void __init parse_header(char *s)
- 
- /* FSM */
- 
--static __initdata enum state {
--	Start,
--	Collect,
--	GotHeader,
--	SkipIt,
--	GotName,
--	CopyFile,
--	GotSymlink,
--	Reset
--} state, next_state;
-+static int __init do_start(void);
-+static int __init do_collect(void);
-+static int __init do_header(void);
-+static int __init do_skip(void);
-+static int __init do_name(void);
-+static int __init do_copy(void);
-+static int __init do_symlink(void);
-+static int __init do_reset(void);
-+
-+typedef int (*fsm_state_t)(void);
-+static __initdata fsm_state_t state, next_state;
- 
- static __initdata char *victim;
- static unsigned long byte_count __initdata;
-@@ -214,7 +215,7 @@ static __initdata char *collected;
- static long remains __initdata;
- static __initdata char *collect;
- 
--static void __init read_into(char *buf, unsigned size, enum state next)
-+static void __init read_into(char *buf, unsigned size, fsm_state_t next)
- {
- 	if (byte_count >= size) {
- 		collected = victim;
-@@ -224,7 +225,7 @@ static void __init read_into(char *buf, unsigned size, enum state next)
- 		collect = collected = buf;
- 		remains = size;
- 		next_state = next;
--		state = Collect;
-+		state = do_collect;
+@@ -150,39 +150,100 @@ static void __init dir_utime(void)
  	}
  }
  
-@@ -232,7 +233,7 @@ static __initdata char *header_buf, *symlink_buf, *name_buf;
+-static __initdata time64_t mtime;
+-
+ /* cpio header parsing */
+-
+-static __initdata unsigned long ino, major, minor, nlink;
++static __initdata time64_t mtime;
++static __initdata u32 ino, major, minor, nlink, rmajor, rminor;
+ static __initdata umode_t mode;
+-static __initdata unsigned long body_len, name_len;
++static __initdata u32 body_len, name_len;
+ static __initdata uid_t uid;
+ static __initdata gid_t gid;
+-static __initdata unsigned rdev;
++static __initdata u32 mode_u32;
++
++struct cpio_hdr_field {
++	size_t offset;
++	size_t size;
++	void *out;
++	size_t out_size;
++	const char *name;
++};
++
++#define HDR_FIELD(type, field, variable) \
++	{ .offset = offsetof(type, field) + \
++	  BUILD_BUG_ON_ZERO(sizeof(*(variable))*2 < FIELD_SIZEOF(type, field)),\
++	  .size = FIELD_SIZEOF(type, field), \
++	  .out = variable, \
++	  .out_size = sizeof(*(variable)), \
++	  .name = #field }
++
++#define NEWC_FIELD(field, variable) \
++		HDR_FIELD(struct cpio_newc_header, field, variable)
++
++#define CPIO_MAX_HEADER_SIZE sizeof(struct cpio_newc_header)
++#define CPIO_MAX_FIELD_SIZE 8
++#define CPIO_MAGIC_SIZE 6
++
++struct cpio_newc_header {
++	char    c_ino[8];
++	char    c_mode[8];
++	char    c_uid[8];
++	char    c_gid[8];
++	char    c_nlink[8];
++	char    c_mtime[8];
++	char    c_filesize[8];
++	char    c_devmajor[8];
++	char    c_devminor[8];
++	char    c_rdevmajor[8];
++	char    c_rdevminor[8];
++	char    c_namesize[8];
++	char    c_check[8];
++};
++
++static struct cpio_hdr_field cpio_newc_header_info[] __initdata = {
++	NEWC_FIELD(c_ino, &ino),
++	NEWC_FIELD(c_mode, &mode_u32),
++	NEWC_FIELD(c_uid, &uid),
++	NEWC_FIELD(c_gid, &gid),
++	NEWC_FIELD(c_nlink, &nlink),
++	NEWC_FIELD(c_mtime, &mtime),
++	NEWC_FIELD(c_filesize, &body_len),
++	NEWC_FIELD(c_devmajor, &major),
++	NEWC_FIELD(c_devminor, &minor),
++	NEWC_FIELD(c_rdevmajor, &rmajor),
++	NEWC_FIELD(c_rdevminor, &rminor),
++	NEWC_FIELD(c_namesize, &name_len),
++	{ 0 },
++};
+ 
+ static void __init parse_header(char *s)
+ {
+-	unsigned long parsed[12];
+-	char buf[9];
+-	int i;
+-
+-	buf[8] = '\0';
+-	for (i = 0; i < 12; i++, s += 8) {
+-		memcpy(buf, s, 8);
+-		parsed[i] = simple_strtoul(buf, NULL, 16);
++	char buf[CPIO_MAX_FIELD_SIZE + 1];
++	struct cpio_hdr_field *field = cpio_newc_header_info;
++
++	while (field->size) {
++		int ret = 0;
++
++		memcpy(buf, s + field->offset, field->size);
++		buf[field->size] = '\0';
++		switch (field->out_size) {
++		case sizeof(u32):
++			ret = kstrtou32(buf, 16, field->out);
++			pr_debug("cpio field %s: %u, buf: %s\n",
++				 field->name, *(u32 *)field->out, buf);
++			break;
++		case sizeof(u64):
++			ret = kstrtou64(buf, 16, field->out);
++			pr_debug("cpio field %s: %llu, buf: %s\n",
++				 field->name, *(u64 *)field->out, buf);
++			break;
++		default:
++			BUG_ON(1);
++		}
++
++		if (ret)
++			pr_err("invalid cpio header field (%d)", ret);
++		field++;
+ 	}
+-	ino = parsed[0];
+-	mode = parsed[1];
+-	uid = parsed[2];
+-	gid = parsed[3];
+-	nlink = parsed[4];
+-	mtime = parsed[5]; /* breaks in y2106 */
+-	body_len = parsed[6];
+-	major = parsed[7];
+-	minor = parsed[8];
+-	rdev = new_encode_dev(MKDEV(parsed[9], parsed[10]));
+-	name_len = parsed[11];
++	mode = mode_u32;
+ }
+ 
+ /* FSM */
+@@ -234,7 +295,7 @@ static __initdata char *header_buf, *symlink_buf, *name_buf;
  
  static int __init do_start(void)
  {
--	read_into(header_buf, 110, GotHeader);
-+	read_into(header_buf, 110, do_header);
+-	read_into(header_buf, 6, do_format);
++	read_into(header_buf, CPIO_MAGIC_SIZE, do_format);
  	return 0;
  }
  
-@@ -263,7 +264,7 @@ static int __init do_header(void)
- 	parse_header(collected);
- 	next_header = this_header + N_ALIGN(name_len) + body_len;
- 	next_header = (next_header + 3) & ~3;
--	state = SkipIt;
-+	state = do_skip;
- 	if (name_len <= 0 || name_len > PATH_MAX)
- 		return 0;
- 	if (S_ISLNK(mode)) {
-@@ -271,12 +272,12 @@ static int __init do_header(void)
- 			return 0;
- 		collect = collected = symlink_buf;
- 		remains = N_ALIGN(name_len) + body_len;
--		next_state = GotSymlink;
--		state = Collect;
-+		next_state = do_symlink;
-+		state = do_collect;
- 		return 0;
- 	}
- 	if (S_ISREG(mode) || !body_len)
--		read_into(name_buf, N_ALIGN(name_len), GotName);
-+		read_into(name_buf, N_ALIGN(name_len), do_name);
- 	return 0;
- }
+@@ -254,15 +315,15 @@ static int __init do_collect(void)
  
-@@ -327,8 +328,8 @@ static __initdata int wfd;
- 
- static int __init do_name(void)
+ static int __init do_format(void)
  {
--	state = SkipIt;
--	next_state = Reset;
-+	state = do_skip;
-+	next_state = do_reset;
- 	if (strcmp(collected, "TRAILER!!!") == 0) {
- 		free_hash();
- 		return 0;
-@@ -348,7 +349,7 @@ static int __init do_name(void)
- 				if (body_len)
- 					sys_ftruncate(wfd, body_len);
- 				vcollected = kstrdup(collected, GFP_KERNEL);
--				state = CopyFile;
-+				state = do_copy;
- 			}
- 		}
- 	} else if (S_ISDIR(mode)) {
-@@ -377,7 +378,7 @@ static int __init do_copy(void)
- 		do_utime(vcollected, mtime);
- 		kfree(vcollected);
- 		eat(body_len);
--		state = SkipIt;
-+		state = do_skip;
- 		return 0;
- 	} else {
- 		if (xwrite(wfd, victim, byte_count) != byte_count)
-@@ -395,29 +396,19 @@ static int __init do_symlink(void)
- 	sys_symlink(collected + N_ALIGN(name_len), collected);
- 	sys_lchown(collected, uid, gid);
- 	do_utime(collected, mtime);
--	state = SkipIt;
--	next_state = Reset;
-+	state = do_skip;
-+	next_state = do_reset;
+-	if (memcmp(collected, "070707", 6)==0) {
++	if (memcmp(collected, "070707", CPIO_MAGIC_SIZE) == 0) {
+ 		error("incorrect cpio method used: use -H newc option");
+ 		return 1;
+ 	}
+-	if (memcmp(collected, "070701", 6)) {
++	if (memcmp(collected, "070701", CPIO_MAGIC_SIZE)) {
+ 		error("no cpio magic");
+ 		return 1;
+ 	}
+-	read_into(header_buf, 104, do_header);
++	read_into(header_buf, sizeof(struct cpio_newc_header), do_header);
  	return 0;
  }
  
--static __initdata int (*actions[])(void) = {
--	[Start]		= do_start,
--	[Collect]	= do_collect,
--	[GotHeader]	= do_header,
--	[SkipIt]	= do_skip,
--	[GotName]	= do_name,
--	[CopyFile]	= do_copy,
--	[GotSymlink]	= do_symlink,
--	[Reset]		= do_reset,
--};
--
- static long __init write_buffer(char *buf, unsigned long len)
- {
- 	byte_count = len;
- 	victim = buf;
+@@ -374,6 +435,7 @@ static int __init do_create(void)
+ 	} else if (S_ISBLK(mode) || S_ISCHR(mode) ||
+ 		   S_ISFIFO(mode) || S_ISSOCK(mode)) {
+ 		if (maybe_link(name_buf) == 0) {
++			u32 rdev = new_encode_dev(MKDEV(rmajor, rminor));
+ 			sys_mknod(name_buf, mode, rdev);
+ 			sys_chown(name_buf, uid, gid);
+ 			sys_chmod(name_buf, mode);
+@@ -464,7 +526,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
+ 	const char *compress_name;
+ 	static __initdata char msg_buf[64];
  
--	while (!actions[state]())
--		;
-+	do
-+		pr_debug("state: %pf\n", state);
-+	while (!state());
- 	return len - byte_count;
- }
+-	header_buf = kmalloc(104, GFP_KERNEL);
++	header_buf = kmalloc(CPIO_MAX_HEADER_SIZE, GFP_KERNEL);
+ 	symlink_buf = kmalloc(PATH_MAX + 1, GFP_KERNEL);
+ 	name_buf = kmalloc(N_ALIGN(PATH_MAX), GFP_KERNEL);
  
-@@ -433,11 +424,11 @@ static long __init flush_buffer(void *bufv, unsigned long len)
- 		if (c == '0') {
- 			buf += written;
- 			len -= written;
--			state = Start;
-+			state = do_start;
- 		} else if (c == 0) {
- 			buf += written;
- 			len -= written;
--			state = Reset;
-+			state = do_reset;
- 		} else
- 			error("junk in compressed archive");
- 	}
-@@ -462,13 +453,13 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 	if (!header_buf || !symlink_buf || !name_buf)
- 		panic("can't allocate buffers");
- 
--	state = Start;
-+	state = do_start;
- 	this_header = 0;
- 	message = NULL;
- 	while (!message && len) {
- 		loff_t saved_offset = this_header;
- 		if (*buf == '0' && !(this_header & 3)) {
--			state = Start;
-+			state = do_start;
- 			written = write_buffer(buf, len);
- 			buf += written;
- 			len -= written;
-@@ -497,7 +488,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 			}
- 		} else
- 			error("junk in compressed archive");
--		if (state != Reset)
-+		if (state != do_reset)
- 			error("junk in compressed archive");
- 		this_header = saved_offset + my_inptr;
- 		buf += my_inptr;
 -- 
 2.10.3.dirty
+
