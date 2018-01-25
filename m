@@ -1,19 +1,19 @@
 From: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v2 09/15] initramfs: set extended attributes
-Date: Thu, 25 Jan 2018 03:27:49 +0000
-Message-ID: <1516850875-25066-10-git-send-email-takondra@cisco.com>
+Subject: [PATCH v2 10/15] gen_init_cpio: move header formatting into function
+Date: Thu, 25 Jan 2018 03:27:50 +0000
+Message-ID: <1516850875-25066-11-git-send-email-takondra@cisco.com>
 References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=3554; q=dns/txt; s=iport;
-  t=1516851457; x=1518061057;
+  d=cisco.com; i=@cisco.com; l=6472; q=dns/txt; s=iport;
+  t=1516851454; x=1518061054;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
-  bh=SKSzgJ7JOr5F6Hhe3wP2BTpv621zuUSOPmDByr7KvIs=;
-  b=Uy9YB+afMKtsL5GxaonvXuMA1KmO8w3URINIMU5HOhDLPMC7BFnCXUwr
-   v7rQhTamOcyppjEtdWp9YoqNDTOlGvjf2aHxXQO/ajbDcJw5EreSVeLMP
-   k9IZ8kA9fPwfSCQ1vpcXEgPCpVKZ/Xv4A5+stbosgalsX0FDKeUyJYJns
-   o=;
+  bh=VzDkcxzMGJ0IhODDQLEFZl6bqQ682naEKCD4uPEFu8A=;
+  b=hUuMfx9kBK3tnIIij74CEPHb8u7/g1aQsxxzVGiupVCHFw6NU87u2xhu
+   Z4+bk4V75Mwmi1rxtFnD6CNav2VU8v1NSgUqwFxhsoJkvGCig/ALFYlr3
+   XM/isls/PGVKL6ika0o/ODli88R9OovHb8ftTKFjr/agoJu6IZDwEv8Sn
+   g=;
 In-Reply-To: <1516850875-25066-1-git-send-email-takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
@@ -23,128 +23,266 @@ Content-Transfer-Encoding: 7bit
 To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
 
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+CPIO header is generated in multiple places with the same sprintf()
+format string. Move formatting into a single function in preparation
+to adding a new cpio format.
 
-This patch writes out the extended attributes included in the cpio file.
-As the "security.ima" xattr needs to be written after the file data.
-this patch separates extracting and setting the xattrs by defining new
-do_setxattrs state.
-
-[kamensky: fixed restoring of xattrs for symbolic links by using
-           sys_lsetxattr() instead of sys_setxattr()]
-
-Signed-off-by: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Signed-off-by: Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
 Signed-off-by: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
 ---
- init/initramfs.c | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 52 insertions(+), 5 deletions(-)
+ usr/gen_init_cpio.c | 186 ++++++++++++++++++++++++++--------------------------
+ 1 file changed, 92 insertions(+), 94 deletions(-)
 
-diff --git a/init/initramfs.c b/init/initramfs.c
-index 3d0f46c28459..040e26cf451a 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -310,6 +310,7 @@ static int __init do_xattrs(void);
- static int __init do_create(void);
- static int __init do_copy(void);
- static int __init do_symlink(void);
-+static int __init do_setxattrs(void);
- static int __init do_reset(void);
- 
- typedef int (*fsm_state_t)(void);
-@@ -472,7 +473,7 @@ static int __init do_name(void)
- 
- static int __init do_xattrs(void)
- {
--	/* Do nothing for now */
-+	memcpy_optional(xattr_buf, collected, xattr_len);
- 	state = do_create;
- 	return 0;
- }
-@@ -481,8 +482,7 @@ static __initdata int wfd;
- 
- static int __init do_create(void)
- {
--	state = do_skip;
--	next_state = do_reset;
-+	state = do_setxattrs;
- 	clean_path(name_buf, mode);
- 	if (S_ISREG(mode)) {
- 		int ml = maybe_link(name_buf);
-@@ -515,8 +515,11 @@ static int __init do_create(void)
- 			do_utime(name_buf, mtime);
- 		}
- 	} else if (S_ISLNK(mode)) {
--		if (body_len > PATH_MAX)
-+		if (body_len > PATH_MAX) {
-+			state = do_skip;
-+			next_state = do_reset;
- 			return 0;
-+		}
- 		read_into(symlink_buf, body_len, do_symlink);
+diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
+index 03b21189d58b..7a2a6d85345d 100644
+--- a/usr/gen_init_cpio.c
++++ b/usr/gen_init_cpio.c
+@@ -64,34 +64,55 @@ static void push_rest(const char *name)
  	}
- 	return 0;
-@@ -530,7 +533,7 @@ static int __init do_copy(void)
- 		sys_close(wfd);
- 		do_utime(name_buf, mtime);
- 		eat(body_len);
--		state = do_skip;
-+		state = do_setxattrs;
- 		return 0;
- 	} else {
- 		if (xwrite(wfd, victim, byte_count) != byte_count)
-@@ -549,8 +552,52 @@ static int __init do_symlink(void)
- 	sys_symlink(symlink_buf, name_buf);
- 	sys_lchown(name_buf, uid, gid);
- 	do_utime(name_buf, mtime);
-+	state = do_setxattrs;
-+	return 0;
-+}
-+
-+struct xattr_hdr {
-+	char c_size[8]; /* total size including c_size field */
-+	char c_data[];  /* <name>\0<value> */
+ }
+ 
+-static void push_hdr(const char *s)
++struct cpio_header {
++	unsigned int ino;
++	unsigned int mode;
++	uid_t uid;
++	gid_t gid;
++	unsigned int nlink;
++	time_t mtime;
++	size_t filesize;
++	int devmajor;
++	int devminor;
++	int rdevmajor;
++	int rdevminor;
++	size_t namesize;
++	unsigned int check;
 +};
 +
-+static int __init do_setxattrs(void)
-+{
-+	char *buf = xattr_buf;
-+	char *bufend = buf + xattr_len;
-+	struct xattr_hdr *hdr;
-+	char str[sizeof(hdr->c_size) + 1];
++static void push_hdr(const struct cpio_header *hdr)
+ {
++	char s[256];
 +
- 	state = do_skip;
- 	next_state = do_reset;
-+	if (!xattr_len)
-+		return 0;
-+
-+	str[sizeof(hdr->c_size)] = 0;
-+
-+	while (buf < bufend) {
-+		char *xattr_name, *xattr_value;
-+		unsigned long xattr_entry_size, xattr_value_size;
-+		int ret;
-+
-+		hdr = (struct xattr_hdr *)buf;
-+		memcpy(str, hdr->c_size, sizeof(hdr->c_size));
-+		ret = kstrtoul(str, 16, &xattr_entry_size);
-+		buf += xattr_entry_size;
-+		if (ret || buf > bufend) {
-+			error("malformed xattrs");
-+			break;
-+		}
-+
-+		xattr_name = hdr->c_data;
-+		xattr_value = xattr_name + strlen(xattr_name) + 1;
-+		xattr_value_size = buf - xattr_value;
-+
-+		ret = sys_lsetxattr(name_buf, xattr_name, xattr_value,
-+				xattr_value_size, 0);
-+		pr_debug("%s: %s size: %lu val: %s (ret: %d)\n", name_buf,
-+				xattr_name, xattr_value_size, xattr_value, ret);
-+	}
++	sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
++		   "%08X%08X%08X%08X%08X%08X%08X",
++		"070701",
++		hdr->ino,
++		hdr->mode,
++		(long)hdr->uid,
++		(long)hdr->gid,
++		hdr->nlink,
++		(long)hdr->mtime,
++		(unsigned int)hdr->filesize,
++		hdr->devmajor,
++		hdr->devminor,
++		hdr->rdevmajor,
++		hdr->rdevminor,
++		(unsigned int)hdr->namesize,
++		hdr->check);
+ 	fputs(s, stdout);
+ 	offset += 110;
+ }
+ 
+ static void cpio_trailer(void)
+ {
+-	char s[256];
+ 	const char name[] = "TRAILER!!!";
++	struct cpio_header hdr = {
++		.nlink = 1,
++		.namesize = strlen(name)+1,
++	};
+ 
+-	sprintf(s, "%s%08X%08X%08lX%08lX%08X%08lX"
+-	       "%08X%08X%08X%08X%08X%08X%08X",
+-		"070701",		/* magic */
+-		0,			/* ino */
+-		0,			/* mode */
+-		(long) 0,		/* uid */
+-		(long) 0,		/* gid */
+-		1,			/* nlink */
+-		(long) 0,		/* mtime */
+-		0,			/* filesize */
+-		0,			/* major */
+-		0,			/* minor */
+-		0,			/* rmajor */
+-		0,			/* rminor */
+-		(unsigned)strlen(name)+1, /* namesize */
+-		0);			/* chksum */
+-	push_hdr(s);
++	push_hdr(&hdr);
+ 	push_rest(name);
+ 
+ 	while (offset % 512) {
+@@ -103,27 +124,21 @@ static void cpio_trailer(void)
+ static int cpio_mkslink(const char *name, const char *target,
+ 			 unsigned int mode, uid_t uid, gid_t gid)
+ {
+-	char s[256];
+-
+ 	if (name[0] == '/')
+ 		name++;
+-	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
+-	       "%08X%08X%08X%08X%08X%08X%08X",
+-		"070701",		/* magic */
+-		ino++,			/* ino */
+-		S_IFLNK | mode,		/* mode */
+-		(long) uid,		/* uid */
+-		(long) gid,		/* gid */
+-		1,			/* nlink */
+-		(long) default_mtime,	/* mtime */
+-		(unsigned)strlen(target)+1, /* filesize */
+-		3,			/* major */
+-		1,			/* minor */
+-		0,			/* rmajor */
+-		0,			/* rminor */
+-		(unsigned)strlen(name) + 1,/* namesize */
+-		0);			/* chksum */
+-	push_hdr(s);
++	struct cpio_header hdr = {
++		.ino = ino++,
++		.mode = S_IFLNK | mode,
++		.uid = uid,
++		.gid = gid,
++		.nlink = 1,
++		.mtime = default_mtime,
++		.filesize = strlen(target)+1,
++		.devmajor = 3,
++		.devminor = 1,
++		.namesize = strlen(name)+1,
++	};
++	push_hdr(&hdr);
+ 	push_string(name);
+ 	push_pad();
+ 	push_string(target);
+@@ -152,27 +167,20 @@ static int cpio_mkslink_line(const char *line)
+ static int cpio_mkgeneric(const char *name, unsigned int mode,
+ 		       uid_t uid, gid_t gid)
+ {
+-	char s[256];
+-
+ 	if (name[0] == '/')
+ 		name++;
+-	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
+-	       "%08X%08X%08X%08X%08X%08X%08X",
+-		"070701",		/* magic */
+-		ino++,			/* ino */
+-		mode,			/* mode */
+-		(long) uid,		/* uid */
+-		(long) gid,		/* gid */
+-		2,			/* nlink */
+-		(long) default_mtime,	/* mtime */
+-		0,			/* filesize */
+-		3,			/* major */
+-		1,			/* minor */
+-		0,			/* rmajor */
+-		0,			/* rminor */
+-		(unsigned)strlen(name) + 1,/* namesize */
+-		0);			/* chksum */
+-	push_hdr(s);
++	struct cpio_header hdr = {
++		.ino = ino++,
++		.mode = mode,
++		.uid = uid,
++		.gid = gid,
++		.nlink = 2,
++		.mtime = default_mtime,
++		.devmajor = 3,
++		.devminor = 1,
++		.namesize = strlen(name)+1,
++	};
++	push_hdr(&hdr);
+ 	push_rest(name);
  	return 0;
  }
+@@ -241,8 +249,6 @@ static int cpio_mknod(const char *name, unsigned int mode,
+ 		       uid_t uid, gid_t gid, char dev_type,
+ 		       unsigned int maj, unsigned int min)
+ {
+-	char s[256];
+-
+ 	if (dev_type == 'b')
+ 		mode |= S_IFBLK;
+ 	else
+@@ -250,23 +256,20 @@ static int cpio_mknod(const char *name, unsigned int mode,
+ 
+ 	if (name[0] == '/')
+ 		name++;
+-	sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
+-	       "%08X%08X%08X%08X%08X%08X%08X",
+-		"070701",		/* magic */
+-		ino++,			/* ino */
+-		mode,			/* mode */
+-		(long) uid,		/* uid */
+-		(long) gid,		/* gid */
+-		1,			/* nlink */
+-		(long) default_mtime,	/* mtime */
+-		0,			/* filesize */
+-		3,			/* major */
+-		1,			/* minor */
+-		maj,			/* rmajor */
+-		min,			/* rminor */
+-		(unsigned)strlen(name) + 1,/* namesize */
+-		0);			/* chksum */
+-	push_hdr(s);
++	struct cpio_header hdr = {
++		.ino = ino++,
++		.mode = mode,
++		.uid = uid,
++		.gid = gid,
++		.nlink = 1,
++		.mtime = default_mtime,
++		.devmajor = 3,
++		.devminor = 1,
++		.rdevmajor = maj,
++		.rdevminor = min,
++		.namesize = strlen(name)+1,
++	};
++	push_hdr(&hdr);
+ 	push_rest(name);
+ 	return 0;
+ }
+@@ -296,7 +299,6 @@ static int cpio_mkfile(const char *name, const char *location,
+ 			unsigned int mode, uid_t uid, gid_t gid,
+ 			unsigned int nlinks)
+ {
+-	char s[256];
+ 	char *filebuf = NULL;
+ 	struct stat buf;
+ 	long size;
+@@ -340,23 +342,19 @@ static int cpio_mkfile(const char *name, const char *location,
+ 		if (name[0] == '/')
+ 			name++;
+ 		namesize = strlen(name) + 1;
+-		sprintf(s,"%s%08X%08X%08lX%08lX%08X%08lX"
+-		       "%08lX%08X%08X%08X%08X%08X%08X",
+-			"070701",		/* magic */
+-			ino,			/* ino */
+-			mode,			/* mode */
+-			(long) uid,		/* uid */
+-			(long) gid,		/* gid */
+-			nlinks,			/* nlink */
+-			(long) buf.st_mtime,	/* mtime */
+-			size,			/* filesize */
+-			3,			/* major */
+-			1,			/* minor */
+-			0,			/* rmajor */
+-			0,			/* rminor */
+-			namesize,		/* namesize */
+-			0);			/* chksum */
+-		push_hdr(s);
++		struct cpio_header hdr = {
++			.ino = ino,
++			.mode = mode,
++			.uid = uid,
++			.gid = gid,
++			.nlink = nlinks,
++			.mtime = buf.st_mtime,
++			.filesize = size,
++			.devmajor = 3,
++			.devminor = 1,
++			.namesize = namesize,
++		};
++		push_hdr(&hdr);
+ 		push_string(name);
+ 		push_pad();
  
 -- 
 2.10.3.dirty
