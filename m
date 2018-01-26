@@ -1,55 +1,57 @@
-From: Rob Landley <rob@landley.net>
-Subject: Re: [PATCH v2 01/15] Documentation: add newcx initramfs format
- description
-Date: Thu, 25 Jan 2018 20:40:54 -0600
-Message-ID: <da9b623c-dd0c-9aff-8eaa-43afa4714b34@landley.net>
+From: Arnd Bergmann <arnd@arndb.de>
+Subject: Re: [PATCH v2 01/15] Documentation: add newcx initramfs format description
+Date: Fri, 26 Jan 2018 10:04:43 +0100
+Message-ID: <CAK8P3a0B0XK8g4H+4grEru2GKRG91_qKxZ=y8AxaQi9pcPwKRQ@mail.gmail.com>
 References: <1516850875-25066-1-git-send-email-takondra@cisco.com>
- <1516850875-25066-2-git-send-email-takondra@cisco.com>
+ <1516850875-25066-2-git-send-email-takondra@cisco.com> <CAK8P3a2FqEcq44-sRQrsgJ=_DOanC-qgJ3yFr=J6UrOKO0_3uw@mail.gmail.com>
+ <0725a45f-45ee-7346-12ee-c3cc4b862654@landley.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-doc-owner@vger.kernel.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=Sf1pOaQX2oNfIpq1Km/dxdn2y3sPH+zwvfNgvOtpVgE=;
-        b=Gv5DldYf8vtO6mN0aJnPazvBXGZjmFe6pIOdMLtrNDGMq4nojTy8CVuDei2tPMvogy
-         pGarB0HH5FjJ/+HNWwIgdnzB3xCKliftpG7OjVYYjbtCuJ1LJxM7B+Yd1+0NA9f4Hi7A
-         FpJsaDwgBvYostDgsfmw4kWG87V3PTv6O20jemlxqvzJWejM02fWqVq4xS9LTuMeVE12
-         fwA0hPhb5kkReoSU8C3AwJ66dJcxb8+564ULZAiTLT1PRyIuovbtTsuG1xTICJU228uG
-         8xX+1rU3meviEQTOvvwlUwji32mS6pQaCCoIQejRjQsKAMkou3LZGWGXwzX6jSpGmBVL
-         QaKw==
-In-Reply-To: <1516850875-25066-2-git-send-email-takondra@cisco.com>
-Content-Language: en-US
-Sender: linux-doc-owner@vger.kernel.org
+        d=gmail.com; s=20161025;
+        h=mime-version:sender:in-reply-to:references:from:date:message-id
+         :subject:to:cc;
+        bh=bpZC8XtPRGsM+ozV8xNLktjuDtgCBWgO2tIw0R5wVTA=;
+        b=GG89q/hgHno2vEzBnXVz2LUmXCppw3htlI3rl1OZM8ysdhROb4sb+zm0UFIbKSui5e
+         0hAWzLNeMORW6XY4m5oGtVGnY5CJi0cXfF+S/TzamfeefPGJ++npgiWNAlfVvw9IqSt+
+         EXNy5hi4jCp+3GTqu6uCGbV9Ve+THmyNwfKOEfmuq2n54aF0sZXezr7hvtPRZxlAF0Av
+         MNIfp1rkA5AH5Y9+JwAUs5c9+TAbCHELjxpAXNAXUTH9Fm+BY1KsTuKvmDLJY02quRJv
+         KPQPhPj1IUeG2hzYYdG7n8xKx9EtDlrt/2pq1ztf+WuJLHYSOmbNIXiCslqBx3rNuIrX
+         VZcA==
+In-Reply-To: <0725a45f-45ee-7346-12ee-c3cc4b862654@landley.net>
+Sender: owner-linux-security-module@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Taras Kondratiuk <takondra@cisco.com>, "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
-Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
+Content-Transfer-Encoding: 7bit
+To: Rob Landley <rob@landley.net>
+Cc: Taras Kondratiuk <takondra@cisco.com>, "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>, initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, LSM List <linux-security-module@vger.kernel.org>, xe-linux-external@cisco.com
 
-On 01/24/2018 09:27 PM, Taras Kondratiuk wrote:
-> diff --git a/Documentation/early-userspace/buffer-format.txt b/Documentation/early-userspace/buffer-format.txt
-> index e1fd7f9dad16..d818df4f72dc 100644
-> --- a/Documentation/early-userspace/buffer-format.txt
-> +++ b/Documentation/early-userspace/buffer-format.txt
+On Fri, Jan 26, 2018 at 3:39 AM, Rob Landley <rob@landley.net> wrote:
 
-> +compressed and/or uncompressed cpio archives; arbitrary amounts
-> +zero bytes (for padding) can be added between members.
+> The problem with 1 second timestamps was you honestly could confuse
+> "make" about which file was newer once an exec() could complete in the
+> same second having done real work. That was the motivating issue causing
+> the change, going to nanoseconds was just the big hammer of "this is
+> large enough it won't matter again in our lifetimes". But nanosecond
+> time stamps are recording more jitter than useful information, and that
+> seems unlikely to change this century?
 
-Missing "of" between amounts and zero. (Yeah it was in the original, but
-if you're touching it anyway...)
+Sure, the only thing we really need the nanosecond timestamp for is
+to keep them identical. E.g. if you use cpio to make an exact copy
+of a file system, using microseconds timestamps will round all mtime
+values. If you then use 'rsync' to compare/update the two copies
+without passing a --modify-window= or --size-only, it will have
+to read all files in rather then skipping those with identical size and
+mtime.
 
-> +c_xattrs_size  8 bytes		 Size of xattrs field
-> +
-> +Most of the fields match cpio_newc_header except c_mtime that contains
-> +microseconds. c_chksum field is dropped.
-> +
-> +xattr_size is a total size of xattr_entry including 8 bytes of
-> +xattr_size. xattr_size has the same hexadecimal ASCII encoding as other
-> +fields of cpio header.
+Side note: the default behavior for file systems is actually to only use
+the coarse timestamps of the last timer tick, so you actually do get
+identical timestamps in practice, plus six digits of nonsense:
 
-xattrs_size or xattr_size?
+(on tmpfs)
+ $ for i in {000..999} ; do > $i ; done; stat --format="%y" *  | uniq -c
+     86 2018-01-26 10:01:48.811135084 +0100
+    469 2018-01-26 10:01:48.815135143 +0100
+    445 2018-01-26 10:01:48.819135201 +0100
 
-Total nitpicks, I know. :)
-
-Rob
+         Arnd
