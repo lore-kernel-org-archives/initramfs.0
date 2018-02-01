@@ -1,102 +1,37 @@
-From: Rob Landley <rob@landley.net>
+From: Arvind Sankar <nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org>
 Subject: Re: [RFC PATCH] rootfs: force mounting rootfs as tmpfs
-Date: Wed, 31 Jan 2018 17:48:20 -0600
-Message-ID: <a538e55c-81ca-6d59-20cf-21b47387c3e2@landley.net>
+Date: Wed, 31 Jan 2018 21:03:32 -0500
+Message-ID: <20180201020331.GA3774@rani.riverdale>
 References: <1517348777.3469.5.camel@linux.vnet.ibm.com>
  <1814af5c-170d-39c0-58fd-02eb7216e008@landley.net>
  <1517436423.3469.237.camel@linux.vnet.ibm.com>
+ <a538e55c-81ca-6d59-20cf-21b47387c3e2@landley.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
-Return-path: <linux-security-module-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=zuCTEB8VDrY7Eu5egogxy24JdM/bqXUOd9HXpl8lB1I=;
-        b=AFTxScLnph4M+cfAqNZdjHYFWkVP2fxzghm/6izf5pcDOjrgETkQusGvKgFpgngcU0
-         NH0hKU4jhhGdcUsFFtjm1bx8Negn8HfNMysRM+WmHUhseG6uOL+pXnXMo4vJxqYJdevO
-         kHEq4gYZJlOb5Vb/KveUlRwRAr8VgUklKqLD5w1YvtR5Ibl+ioEEhTJ/xkJQPSdqUSko
-         TaAcjJkutaIZop89wxcTu4MJ9VFv0MvZYqvpNDbRjm+R7e7hq8zKR7ox+f3kXPdkMyow
-         4iUc2rxJFwpMNHG+GrwORF6P5CJpPlEPaoBiy/nQDqTNYAtP9JYi5QnX4LI7aVu/bI6M
-         I+9g==
-In-Reply-To: <1517436423.3469.237.camel@linux.vnet.ibm.com>
-Content-Language: en-US
-Sender: owner-linux-security-module@vger.kernel.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <a538e55c-81ca-6d59-20cf-21b47387c3e2-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="iso-8859-1"
-To: Mimi Zohar <zohar@linux.vnet.ibm.com>, initramfs <initramfs@vger.kernel.org>
-Cc: Taras Kondratiuk <takondra@cisco.com>, Victor Kamensky <kamensky@cisco.com>, linux-security-module <linux-security-module@vger.kernel.org>, Al Viro <viro@ZenIV.linux.org.uk>, linux-kernel <linux-kernel@vger.kernel.org>
+To: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
+Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, initramfs <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On 01/31/2018 04:07 PM, Mimi Zohar wrote:
-> On Wed, 2018-01-31 at 13:32 -0600, Rob Landley wrote:>> (The old "I confi=
-gured in tmpfs and am using rootfs but I want that
-rootfs
->> to be ramfs, not tmpfs" code doesn't seem to be a real-world concern, do=
-es
->> it?)
+On Wed, Jan 31, 2018 at 05:48:20PM -0600, Rob Landley wrote:
+> On 01/31/2018 04:07 PM, Mimi Zohar wrote:
+> > On Wed, 2018-01-31 at 13:32 -0600, Rob Landley wrote:>> (The old "I con=
+figured in tmpfs and am using rootfs but I want that
+> rootfs
+> >> to be ramfs, not tmpfs" code doesn't seem to be a real-world concern, =
+does
+> >> it?)
+> >=20
+> > I must be missing something. =C2=A0Which systems don't specify "root=3D=
+" on
+> > the boot command line.
 >=20
-> I must be missing something. =C2=A0Which systems don't specify "root=3D" =
-on
-> the boot command line.
+> Any system using initrd or initramfs?
+>=20
 
-Any system using initrd or initramfs?
-
-I have one at https://github.com/landley/mkroot that doesn't, for
-example. It's 600 lines of bash that builds simple Linux systems for a
-bunch of different architectures, each with a qemu wrapper to boot it to
-a shell prompt. And yes, it's using tmpfs for its initramfs, you can
-tell because "grep rootfs /proc/mounts" gives a size. That's also where
-I tested the patch I sent you.
-
-The root=3D option specifies the filesystem to mount OVER rootfs. I.E.
-it's the fallback root filesystem to mount when initramfs doesn't
-contain an executable /init that can become PID 1. If you DO have an
-/init in rootfs which the kernel manages to launch as PID 1, the kernel
-code never reaches the part that uses the root=3D argument.
-
-(Look for the call to prepare_namespace() in init/main.c, notice how
-it's only called if it can't _already_ find "/init".)
-
-That's why the test I added for initramfs vs initmpfs was "did they
-specify root=3D", because if they did it means they're telling the kernel
-what to mount over rootfs, so they're not staying in rootfs. That's what
-that argument MEANS. They're telling init/main.c what fallback
-filesystem to mount over rootfs _after_ failing to find /init in rootfs,
-therefore they're not keeping rootfs as their root filesystem for userspace.
-
-That said, a lot of people don't understand how this works, and they set
-root=3D to things like /dev/ram when using initrd because "we must set
-this knob to something, this is something, therefore we must set this
-knob to it". The fact setting root=3D/dev/random would have the exact same
-effect doesn't seem to bother them, they had Done It and It Worked,
-therefore it was the Right Thing To Do. QED.
-
-The patch last message was me going "alright, if people can't NOT
-twiddle the knob, even when doing it breaks things in an immediate and
-obvious way, and a big DO NOT TOUCH sign won't dissuade them, just give
-the knob an explicit 'off' setting that literally does the same thing as
-not touching it at all would".
-
-Your solution was to add a safety catch for the knob, which is edging
-into Rube Goldberg territory if you ask me.
-
-> If we want to include and restore xattrs,
-> there needs to be a way of using tmpfs.
-
-Yes, using tmpfs for initramfs is useful, that's why I submitted patches
-to hook it up back in 2013.
-
-(Personally I find "cat /dev/zero > /filename" _not_ hard locking your
-system instantly the most compelling feature. Although I believe what
-motivated my initmpfs patches way back when was somebody wanting to
-install an rpm into intramfs and the installer failing because ramfs
-hasn't got a size so "df" always returns zero.)
-
-> Mimi
-
-Rob
---
-To unsubscribe from this list: send the line "unsubscribe linux-security-mo=
-dule" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Don't a lot of initramfs setups use root=3D to tell the initramfs which
+actual root file system to switch to after early boot?
