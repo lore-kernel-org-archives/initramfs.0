@@ -1,29 +1,29 @@
-From: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v3 14/14] selinux: delay sid population for rootfs till init is complete
-Date: Fri, 16 Feb 2018 20:33:53 +0000
-Message-ID: <1518813234-5874-18-git-send-email-takondra@cisco.com>
+From: Taras Kondratiuk <takondra@cisco.com>
+Subject: [PATCH v3 15/15] selinux: delay sid population for rootfs till init is complete
+Date: Fri, 16 Feb 2018 20:33:54 +0000
+Message-ID: <1518813234-5874-19-git-send-email-takondra@cisco.com>
 References: <1518813234-5874-1-git-send-email-takondra@cisco.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <linux-doc-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=cisco.com; i=@cisco.com; l=2865; q=dns/txt; s=iport;
   t=1518813251; x=1520022851;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
   bh=h+x182m25pAUhcejAUrzU53jlgUVrI0n67CYLEcHg4c=;
-  b=cOLZsB9Nzw8q1/StuKYf0pbeaeCA2urCwUkBI0bmQwiqz/hi1LCQuP//
-   1S8uT9eWWL7JxhxiFsW1vABwSEOU7gefPIGE9KZzNROAxNTHY0pxBlQ16
-   jgxD0Ib718nbLqSjENqeNyQ7odDOfXJEl7q7ZMUdCKHpJXGbr8NxwBOGy
-   k=;
-In-Reply-To: <1518813234-5874-1-git-send-email-takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+  b=MIHbBMXJwxMTVSusu7cqNfVjfHcll5rf1rUOSEsq+Gy3no8vQIEJYWZT
+   tMfmLMV0TUOH9RBZ2lZTpDPywJCOAgERrYmYOPyC/9U6ZMjZ7xIDJ33ck
+   6dbXgTnHu0DiWtN5sNtCFByioL7LQMZX6URyEXHHWRavTDbd/YpuJkFFM
+   c=;
+In-Reply-To: <1518813234-5874-1-git-send-email-takondra@cisco.com>
+Sender: linux-doc-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
+To: "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
+Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
 
-From: Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+From: Victor Kamensky <kamensky@cisco.com>
 
 With initramfs cpio format that supports extended attributes
 we need to skip sid population on sys_lsetxattr call from
@@ -44,7 +44,7 @@ Note new DELAYAFTERINIT_MNT super block flag is introduced
 to only mark rootfs for such behavior. For other types of
 tmpfs original logic is still used.
 
-Signed-off-by: Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Victor Kamensky <kamensky@cisco.com>
 ---
  security/selinux/hooks.c            | 9 ++++++++-
  security/selinux/include/security.h | 1 +
@@ -98,3 +98,4 @@ index 02f0412d42f2..585acfd6cbcf 100644
  #define SE_SBPROC		0x0200
 -- 
 2.10.3.dirty
+
