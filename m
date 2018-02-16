@@ -1,19 +1,19 @@
 From: Taras Kondratiuk <takondra@cisco.com>
-Subject: [PATCH v3 12/14] gen_initramfs_list.sh: add -x option to enable newcx format
-Date: Fri, 16 Feb 2018 20:33:49 +0000
-Message-ID: <1518813234-5874-14-git-send-email-takondra@cisco.com>
+Subject: [PATCH v3 13/15] gen_initramfs_list.sh: add -x option to enable newcx format
+Date: Fri, 16 Feb 2018 20:33:50 +0000
+Message-ID: <1518813234-5874-15-git-send-email-takondra@cisco.com>
 References: <1518813234-5874-1-git-send-email-takondra@cisco.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=cisco.com; i=@cisco.com; l=3480; q=dns/txt; s=iport;
-  t=1518813247; x=1520022847;
+  t=1518813248; x=1520022848;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
   bh=dQ7LLTRmN2q9Pmp/35oM3M+RAoO+z7MJHtmUq8U+j4Y=;
-  b=Yn8beohqbGrQFVoXs1a5Tq9CcAfXXsP8TxZJ/RVHaBgbCovKtOwJ9Hkc
-   eauEVIw8vJkvuCzEX99Rs66YoZN7RekfFUV2QF9SeOwALBT6zB8K8es9w
-   xgV4CTnNSoMcyRaCOyHrHLtDOWVqN7CoSiJCtZFSa+m9GRcb7dGBcmJE5
-   o=;
+  b=EsxXnq0Fii/4wdZoRI1K1Gu1sAuC2GfdlYk5AIcBS6ko/sNNE1EhqjUd
+   oNDDnyAkTB5H9esK4Ed9cjoBOY5fVjgCrS/j4h4yY5/eQCSYsA2PhP486
+   SmQcEcN6c5q8FeL4Q1QjrEPltIkyi0SKObNUimPUpkZGW+/kdFR4kjaN4
+   g=;
 In-Reply-To: <1518813234-5874-1-git-send-email-takondra@cisco.com>
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
