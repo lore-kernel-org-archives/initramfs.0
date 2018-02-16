@@ -1,19 +1,19 @@
 From: Taras Kondratiuk <takondra@cisco.com>
-Subject: [PATCH v3 15/15] selinux: delay sid population for rootfs till init is complete
-Date: Fri, 16 Feb 2018 20:33:54 +0000
-Message-ID: <1518813234-5874-19-git-send-email-takondra@cisco.com>
+Subject: [PATCH v3 14/15] selinux: allow setxattr on rootfs so initramfs code can set them
+Date: Fri, 16 Feb 2018 20:33:52 +0000
+Message-ID: <1518813234-5874-17-git-send-email-takondra@cisco.com>
 References: <1518813234-5874-1-git-send-email-takondra@cisco.com>
 Return-path: <linux-doc-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=2865; q=dns/txt; s=iport;
-  t=1518813251; x=1520022851;
+  d=cisco.com; i=@cisco.com; l=1404; q=dns/txt; s=iport;
+  t=1518813249; x=1520022849;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references;
-  bh=h+x182m25pAUhcejAUrzU53jlgUVrI0n67CYLEcHg4c=;
-  b=MIHbBMXJwxMTVSusu7cqNfVjfHcll5rf1rUOSEsq+Gy3no8vQIEJYWZT
-   tMfmLMV0TUOH9RBZ2lZTpDPywJCOAgERrYmYOPyC/9U6ZMjZ7xIDJ33ck
-   6dbXgTnHu0DiWtN5sNtCFByioL7LQMZX6URyEXHHWRavTDbd/YpuJkFFM
-   c=;
+  bh=GVG8yZSIqBpAYoYeLbJ4sv4eV9fL21UfOz/cszDkk3s=;
+  b=iGG+2L+e0Zb04v5nVWdGBjxAAMc/qwq/7Rdwldv5H43WS8Q7MEmmdznQ
+   MECm7Jy8iLikh+JJp2Qgm/mRFfr42SGN1j9ZZYlPXmS0aTKco7GeWKtKs
+   R1SBsMamqKd3VSyFE9PdkeR0dUByf4uUCbSw/JwOZycFOYcvO55lMBNWr
+   s=;
 In-Reply-To: <1518813234-5874-1-git-send-email-takondra@cisco.com>
 Sender: linux-doc-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
@@ -25,77 +25,42 @@ Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@v
 
 From: Victor Kamensky <kamensky@cisco.com>
 
-With initramfs cpio format that supports extended attributes
-we need to skip sid population on sys_lsetxattr call from
-initramfs for rootfs if security server is not initialized yet.
+initramfs code supporting extended cpio format have ability to
+fill extended attributes from cpio archive, but if SELinux enabled
+and security server is not initialized yet, selinux callback would
+refuse setxattr made by initramfs code.
 
-Otherwise callback in selinux_inode_post_setxattr will try to
-translate give security.selinux label into sid context and since
-security server is not available yet inode will receive default
-sid (typically kernel_t). Note that in the same time proper
-label will be stored in inode xattrs. Later, since inode sid
-would be already populated system will never look back at
-actual xattrs. But if we skip sid population for rootfs and
-we have policy that direct use of xattrs for rootfs, proper
-sid will be filled in from extended attributes one node is
-accessed and server is initialized.
-
-Note new DELAYAFTERINIT_MNT super block flag is introduced
-to only mark rootfs for such behavior. For other types of
-tmpfs original logic is still used.
+Solution enable SBLABEL_MNT on rootfs even if secrurity server is
+not initialized yet.
 
 Signed-off-by: Victor Kamensky <kamensky@cisco.com>
 ---
- security/selinux/hooks.c            | 9 ++++++++-
- security/selinux/include/security.h | 1 +
- 2 files changed, 9 insertions(+), 1 deletion(-)
+ security/selinux/hooks.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index f3fe65589f02..bb25268f734e 100644
+index 8644d864e3c1..f3fe65589f02 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
-@@ -716,7 +716,7 @@ static int selinux_set_mnt_opts(struct super_block *sb,
- 			 */
- 			if (!strncmp(sb->s_type->name, "rootfs",
- 				     sizeof("rootfs")))
--				sbsec->flags |= SBLABEL_MNT;
-+				sbsec->flags |= SBLABEL_MNT|DELAYAFTERINIT_MNT;
+@@ -706,6 +706,18 @@ static int selinux_set_mnt_opts(struct super_block *sb,
  
+ 	if (!ss_initialized) {
+ 		if (!num_opts) {
++			/*
++			 * Special handling for rootfs. Is genfs but supports
++			 * setting SELinux context on in-core inodes.
++			 *
++			 * Chicken and egg problem: policy may reside in rootfs
++			 * but for initramfs code to fill in attributes, it
++			 * needs selinux to allow that.
++			 */
++			if (!strncmp(sb->s_type->name, "rootfs",
++				     sizeof("rootfs")))
++				sbsec->flags |= SBLABEL_MNT;
++
  			/* Defer initialization until selinux_complete_init,
  			   after the initial policy is loaded and the security
-@@ -3253,6 +3253,7 @@ static void selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
- {
- 	struct inode *inode = d_backing_inode(dentry);
- 	struct inode_security_struct *isec;
-+	struct superblock_security_struct *sbsec;
- 	u32 newsid;
- 	int rc;
- 
-@@ -3261,6 +3262,12 @@ static void selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
- 		return;
- 	}
- 
-+	if (!ss_initialized) {
-+		sbsec = inode->i_sb->s_security;
-+		if (sbsec->flags & DELAYAFTERINIT_MNT)
-+			return;
-+	}
-+
- 	rc = security_context_to_sid_force(value, size, &newsid);
- 	if (rc) {
- 		printk(KERN_ERR "SELinux:  unable to map context to SID"
-diff --git a/security/selinux/include/security.h b/security/selinux/include/security.h
-index 02f0412d42f2..585acfd6cbcf 100644
---- a/security/selinux/include/security.h
-+++ b/security/selinux/include/security.h
-@@ -52,6 +52,7 @@
- #define ROOTCONTEXT_MNT	0x04
- #define DEFCONTEXT_MNT	0x08
- #define SBLABEL_MNT	0x10
-+#define DELAYAFTERINIT_MNT 0x20
- /* Non-mount related flags */
- #define SE_SBINITIALIZED	0x0100
- #define SE_SBPROC		0x0200
+ 			   server is ready to handle calls. */
 -- 
 2.10.3.dirty
 
