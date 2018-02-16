@@ -1,226 +1,116 @@
-From: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH v3 02/15] initramfs: replace states with function pointers
-Date: Fri, 16 Feb 2018 20:33:38 +0000
-Message-ID: <1518813234-5874-3-git-send-email-takondra@cisco.com>
+From: Rob Landley <rob@landley.net>
+Subject: Re: [PATCH v3 01/15] Documentation: add newcx initramfs format
+ description
+Date: Fri, 16 Feb 2018 15:25:07 -0600
+Message-ID: <72480de8-e6d6-5125-e647-08815eb9f6a7@landley.net>
 References: <1518813234-5874-1-git-send-email-takondra@cisco.com>
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=5648; q=dns/txt; s=iport;
-  t=1518813238; x=1520022838;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references;
-  bh=kPtfKRZKS/cOHG4AIpt4bEc+kdJD6gX/yiPBjFXhWw4=;
-  b=h4SjvRAK8FJ9it5aT6hjs2si4jDKj1R3KIDpDG2ye/I8VEK4+IamUDUS
-   5rs8MJ5lmd6s9GPN3OXEzoMOaBMsjCVCQS3Q7VitIhhgBl3+GsybdJI30
-   QxgcKtzSzZ5/JGGyX/jc/HAOItyL261/N7CgkfoTGKT54CtG1dEfL3qVv
-   s=;
-In-Reply-To: <1518813234-5874-1-git-send-email-takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+ <1518813234-5874-2-git-send-email-takondra@cisco.com>
+ <d69f329c-8365-bb0e-69ee-774cbea141b2@zytor.com>
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
+Return-path: <linux-security-module-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=Hr05Yrw7NhPVLNc2j5RI2loS1NWzCQzqESteGO5CPVo=;
+        b=GupeabcgxUTAi7NLp4uq6kkpyzdUvmiv7Yy4plxL8uBQoWBKLJWW6X3EeQeWQ4ZBvV
+         iGln1ma0SceeyY25DiTwpJHrnrpVeB9r7AHWqviRJajegP7ybyk63uNWjCyH4TGyKTVu
+         qpuvloNJOoI4h1MN2kJlIn9kNKL4tX8XNZvLciKrhQPPMFSoMxfvX+0qhEA9R3uL93hs
+         wW6x/kcmfV5jVUrrfMrFQIxOWExjIl6XLNq0IHvMx0JGchpXBpv+DI6aw2u+HX/haTGM
+         51SPikZ5FJ8oLS93Dr7zEqSaKB37kGTZ40cp5oegOG01cyq14FY+bDVhkr1CvTy/vc+B
+         LLCA==
+In-Reply-To: <d69f329c-8365-bb0e-69ee-774cbea141b2@zytor.com>
+Content-Language: en-US
+Sender: owner-linux-security-module@vger.kernel.org
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+To: "H. Peter Anvin" <hpa@zytor.com>, Taras Kondratiuk <takondra@cisco.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
+Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
 
-Currently the FSM states are mapped directly to function pointers. Extra
-level of intirection is not needed and makes navigation over the code
-harder. One can't jump between states directly when browsing code (e.g.
-with cscope). Need to go through actions[] array each time.
 
-Replace states with their action function pointers. No behaviour change.
+On 02/16/2018 02:59 PM, H. Peter Anvin wrote:
+> On 02/16/18 12:33, Taras Kondratiuk wrote:
+>> Many of the Linux security/integrity features are dependent on file
+>> metadata, stored as extended attributes (xattrs), for making decisions.
+>> These features need to be initialized during initcall and enabled as
+>> early as possible for complete security coverage.
+>>
+>> Initramfs (tmpfs) supports xattrs, but newc CPIO archive format does not
+>> support including them into the archive.
+>>
+>> This patch describes "extended" newc format (newcx) that is based on
+>> newc and has following changes:
+>> - extended attributes support
+>> - increased size of filesize to support files >4GB
+>> - increased mtime field size to have 64 bits of seconds and added a
+>>   field for nanoseconds
+>> - removed unused checksum field
+>>
+> 
+> If you are going to implement a new, non-backwards-compatible format,
+> you shouldn't replicate the mistakes of the current format.  Specifically:
 
-Signed-off-by: Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
----
- init/initramfs.c | 73 +++++++++++++++++++++++++-------------------------------
- 1 file changed, 32 insertions(+), 41 deletions(-)
+So rather than make minimal changes to the existing format and continue to
+support the existing format (sharing as much code as possible), you recommend
+gratuitous aesthetic changes?
 
-diff --git a/init/initramfs.c b/init/initramfs.c
-index 7e99a0038942..49cd2681a26f 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -187,16 +187,17 @@ static void __init parse_header(char *s)
- 
- /* FSM */
- 
--static __initdata enum state {
--	Start,
--	Collect,
--	GotHeader,
--	SkipIt,
--	GotName,
--	CopyFile,
--	GotSymlink,
--	Reset
--} state, next_state;
-+static int __init do_start(void);
-+static int __init do_collect(void);
-+static int __init do_header(void);
-+static int __init do_skip(void);
-+static int __init do_name(void);
-+static int __init do_copy(void);
-+static int __init do_symlink(void);
-+static int __init do_reset(void);
-+
-+typedef int (*fsm_state_t)(void);
-+static __initdata fsm_state_t state, next_state;
- 
- static __initdata char *victim;
- static unsigned long byte_count __initdata;
-@@ -214,7 +215,7 @@ static __initdata char *collected;
- static long remains __initdata;
- static __initdata char *collect;
- 
--static void __init read_into(char *buf, unsigned size, enum state next)
-+static void __init read_into(char *buf, unsigned size, fsm_state_t next)
- {
- 	if (byte_count >= size) {
- 		collected = victim;
-@@ -224,7 +225,7 @@ static void __init read_into(char *buf, unsigned size, enum state next)
- 		collect = collected = buf;
- 		remains = size;
- 		next_state = next;
--		state = Collect;
-+		state = do_collect;
- 	}
- }
- 
-@@ -232,7 +233,7 @@ static __initdata char *header_buf, *symlink_buf, *name_buf;
- 
- static int __init do_start(void)
- {
--	read_into(header_buf, 110, GotHeader);
-+	read_into(header_buf, 110, do_header);
- 	return 0;
- }
- 
-@@ -263,7 +264,7 @@ static int __init do_header(void)
- 	parse_header(collected);
- 	next_header = this_header + N_ALIGN(name_len) + body_len;
- 	next_header = (next_header + 3) & ~3;
--	state = SkipIt;
-+	state = do_skip;
- 	if (name_len <= 0 || name_len > PATH_MAX)
- 		return 0;
- 	if (S_ISLNK(mode)) {
-@@ -271,12 +272,12 @@ static int __init do_header(void)
- 			return 0;
- 		collect = collected = symlink_buf;
- 		remains = N_ALIGN(name_len) + body_len;
--		next_state = GotSymlink;
--		state = Collect;
-+		next_state = do_symlink;
-+		state = do_collect;
- 		return 0;
- 	}
- 	if (S_ISREG(mode) || !body_len)
--		read_into(name_buf, N_ALIGN(name_len), GotName);
-+		read_into(name_buf, N_ALIGN(name_len), do_name);
- 	return 0;
- }
- 
-@@ -327,8 +328,8 @@ static __initdata int wfd;
- 
- static int __init do_name(void)
- {
--	state = SkipIt;
--	next_state = Reset;
-+	state = do_skip;
-+	next_state = do_reset;
- 	if (strcmp(collected, "TRAILER!!!") == 0) {
- 		free_hash();
- 		return 0;
-@@ -348,7 +349,7 @@ static int __init do_name(void)
- 				if (body_len)
- 					sys_ftruncate(wfd, body_len);
- 				vcollected = kstrdup(collected, GFP_KERNEL);
--				state = CopyFile;
-+				state = do_copy;
- 			}
- 		}
- 	} else if (S_ISDIR(mode)) {
-@@ -377,7 +378,7 @@ static int __init do_copy(void)
- 		do_utime(vcollected, mtime);
- 		kfree(vcollected);
- 		eat(body_len);
--		state = SkipIt;
-+		state = do_skip;
- 		return 0;
- 	} else {
- 		if (xwrite(wfd, victim, byte_count) != byte_count)
-@@ -395,29 +396,19 @@ static int __init do_symlink(void)
- 	sys_symlink(collected + N_ALIGN(name_len), collected);
- 	sys_lchown(collected, uid, gid);
- 	do_utime(collected, mtime);
--	state = SkipIt;
--	next_state = Reset;
-+	state = do_skip;
-+	next_state = do_reset;
- 	return 0;
- }
- 
--static __initdata int (*actions[])(void) = {
--	[Start]		= do_start,
--	[Collect]	= do_collect,
--	[GotHeader]	= do_header,
--	[SkipIt]	= do_skip,
--	[GotName]	= do_name,
--	[CopyFile]	= do_copy,
--	[GotSymlink]	= do_symlink,
--	[Reset]		= do_reset,
--};
--
- static long __init write_buffer(char *buf, unsigned long len)
- {
- 	byte_count = len;
- 	victim = buf;
- 
--	while (!actions[state]())
--		;
-+	do
-+		pr_debug("state: %pf\n", state);
-+	while (!state());
- 	return len - byte_count;
- }
- 
-@@ -433,11 +424,11 @@ static long __init flush_buffer(void *bufv, unsigned long len)
- 		if (c == '0') {
- 			buf += written;
- 			len -= written;
--			state = Start;
-+			state = do_start;
- 		} else if (c == 0) {
- 			buf += written;
- 			len -= written;
--			state = Reset;
-+			state = do_reset;
- 		} else
- 			error("junk in compressed archive");
- 	}
-@@ -462,13 +453,13 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 	if (!header_buf || !symlink_buf || !name_buf)
- 		panic("can't allocate buffers");
- 
--	state = Start;
-+	state = do_start;
- 	this_header = 0;
- 	message = NULL;
- 	while (!message && len) {
- 		loff_t saved_offset = this_header;
- 		if (*buf == '0' && !(this_header & 3)) {
--			state = Start;
-+			state = do_start;
- 			written = write_buffer(buf, len);
- 			buf += written;
- 			len -= written;
-@@ -497,7 +488,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 			}
- 		} else
- 			error("junk in compressed archive");
--		if (state != Reset)
-+		if (state != do_reset)
- 			error("junk in compressed archive");
- 		this_header = saved_offset + my_inptr;
- 		buf += my_inptr;
--- 
-2.10.3.dirty
+> 1. The use of ASCII-encoded fixed-length numbers is an idiotic legacy
+> from an era before there were any portable way of dealing with numbers
+> with prespecified endianness.
+
+It lets encoders and decoders easily share code with the existing cpio format,
+which we still intend to be able to read and write.
+
+> If you are going to use ASCII, make them
+> delimited so that they don't have fixed limits, or just use binary.
+
+When it's gzipped this accomplishes what? (Other than being gratuitously
+different from the previous iteration?)
+
+> The cpio header isn't fixed size, so that argument goes away, in fact
+> the only way to determine the end of the header is to scan forward.
+> 
+> 2. Alignment sensitivity!  Because there is no header length
+> information, the above scan tells you where the header ends, but there
+> is padding before the data, and the size of that padding is only defined
+> by alignment.
+
+Again, these are minimal changes to the existing cpio format. You're complaining
+about _cpio_, and that the new stuff isn't _different_ enough from it.
+
+> 3. Inband encoding of EOF: if you actually have a filename "TRAILER!!!"
+> you have problems.
+
+Been there, done that:
+
+http://lkml.iu.edu/hypermail/linux/kernel/1801.3/01791.html
+
+> But first, before you define a whole new format for which no tools exist
+> (you will have to work with the maintainers of the GNU tools to add
+> support)
+
+No, he's been working with the maintainer of toybox to add support (for about a
+year now), which gets him the Android command line. And the kernel has its own
+built-in tool to generate cpio images anyway.
+
+Why would anyone care what the GNU project thinks?
+
+> you should see how complex it would be to support the POSIX
+> tar/pax format,
+
+That argument was had (at length) when initramfs went in over a decade ago.
+There are links in Documentation/filesystems/ramfs-rootfs-initramfs.txt to the
+mailing list entries about it.
+
+> which already has all the features you are seeking, and
+> by now is well-supported.
+
+So... tar wasn't well-supported 15 years ago? (Hasn't the kernel source always
+been distributed via tarball back since 0.0.1?)
+
+You're suggesting having a whole second codepath that shares no code with the
+existing cpio extractor. Are you suggesting abandoning support for the existing
+initramfs.cpio.gz file format?
+
+Rob
