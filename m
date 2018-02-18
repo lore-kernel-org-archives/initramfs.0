@@ -1,19 +1,19 @@
-From: hpa@zytor.com
+From: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
 Subject: Re: [PATCH v3 01/15] Documentation: add newcx initramfs format description
-Date: Sat, 17 Feb 2018 16:24:40 -0800
-Message-ID: <80AFCC79-14B2-4CF2-A601-89B18764C9BC@zytor.com>
+Date: Sat, 17 Feb 2018 16:26:45 -0800
+Message-ID: <117FCFDB-EA4C-4C0C-A01E-7C6C86693E6F@zytor.com>
 References: <1518813234-5874-1-git-send-email-takondra@cisco.com> <1518813234-5874-2-git-send-email-takondra@cisco.com> <d69f329c-8365-bb0e-69ee-774cbea141b2@zytor.com> <1518912912.5667.277.camel@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Return-path: <linux-doc-owner@vger.kernel.org>
-In-Reply-To: <1518912912.5667.277.camel@linux.vnet.ibm.com>
-Sender: linux-doc-owner@vger.kernel.org
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <1518912912.5667.277.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"
-To: Mimi Zohar <zohar@linux.vnet.ibm.com>, Taras Kondratiuk <takondra@cisco.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>
-Cc: initramfs@vger.kernel.org, Victor Kamensky <kamensky@cisco.com>, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com
+To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Taras Kondratiuk <takondra-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, James McMechan <james.w.mcmechan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Victor Kamensky <kamensky-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xe-linux-external-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org
 
-On February 17, 2018 4:15:12 PM PST, Mimi Zohar <zohar@linux.vnet.ibm.com> wrote:
+On February 17, 2018 4:15:12 PM PST, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 >On Fri, 2018-02-16 at 12:59 -0800, H. Peter Anvin wrote:
 >> On 02/16/18 12:33, Taras Kondratiuk wrote:
 >> > Many of the Linux security/integrity features are dependent on file
@@ -89,8 +89,6 @@ On February 17, 2018 4:15:12 PM PST, Mimi Zohar <zohar@linux.vnet.ibm.com> wrote
 >
 >Mimi
 
-I'm not trying to derail anything, but I do want to see it done well if it is going to be done.  I have several ideas already, but I may not have a chance to write them down properly until after the weekend due to family obligations.
-
-The assessment of pax/tar is useful; it should be added to the patch documentation in a future set.
+Do you have a description of the gaps you have identified?
 -- 
 Sent from my Android device with K-9 Mail. Please excuse my brevity.
