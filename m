@@ -1,135 +1,183 @@
 From: Victor Kamensky <kamensky@cisco.com>
-Subject: Re: [PATCH v3 15/15] selinux: delay sid population for rootfs till
- init is complete
-Date: Wed, 7 Mar 2018 09:26:00 -0800 (PST)
-Message-ID: <alpine.LRH.2.00.1803070855550.64437@sjc-ads-6991.cisco.com>
-References: <1518813234-5874-1-git-send-email-takondra@cisco.com> <1518813234-5874-19-git-send-email-takondra@cisco.com> <1519152994.14218.15.camel@tycho.nsa.gov> <d23913a5-2a18-4d2a-60ae-bfa1ba8aaa0c@landley.net>
+Subject: Re: [PATCH v3 14/15] selinux: allow setxattr on rootfs so initramfs
+ code can set them
+Date: Sat, 10 Mar 2018 19:07:18 -0800 (PST)
+Message-ID: <alpine.LRH.2.00.1803101848580.24419@sjc-ads-6991.cisco.com>
+References: <1518813234-5874-1-git-send-email-takondra@cisco.com>  <1518813234-5874-17-git-send-email-takondra@cisco.com> <1519153284.14218.18.camel@tycho.nsa.gov>
 Mime-Version: 1.0
 Return-path: <linux-kernel-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=4890; q=dns/txt; s=iport;
-  t=1520444134; x=1521653734;
+  d=cisco.com; i=@cisco.com; l=5802; q=dns/txt; s=iport;
+  t=1520737640; x=1521947240;
   h=date:from:to:cc:subject:in-reply-to:message-id:
    references:mime-version;
-  bh=1gA1q0bMaQG0531TrembWx2x3+ooj6uwmfN0gBtlXQc=;
-  b=hYQ2KQYCrjiD8cZihfqJdT1iJHUpkl8rxZs/2ldV9zRRi9eDZXbjkRO/
-   /rGbflHYTz6OAyCLp9tIv9dcRjR/hP3UvFdO21Kqj/ClJiP2e+88S9feC
-   gteTctbLaPNOIPlr17qK8HaF6aMaow8cY7HnZeLPQzRjv3Yx8oWDWRyVr
-   Y=;
-In-Reply-To: <d23913a5-2a18-4d2a-60ae-bfa1ba8aaa0c@landley.net>
+  bh=YISdkcMBaBiTyDrigL70tCJt4SqCT9dKnaR/7HnVB2k=;
+  b=LNjvqbhuzp0erFHYRX0/tn5lSOebYvRnnqwz7Ks3g9QZTRbRldEIctZQ
+   SK+Iyw4ny/V8ZhPavs98OCknvn1K2nMfwUn+KMbNp0MnLDjrQczWVVQOh
+   ChYngJwxciwtSW6mh955OknJ78p3vDIOnGloCvYjZJ9Hvv+O//XvZ38oJ
+   0=;
+In-Reply-To: <1519153284.14218.18.camel@tycho.nsa.gov>
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: TEXT/PLAIN; charset="us-ascii"; format="flowed"
+Content-Type: TEXT/PLAIN; format="flowed"; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Stephen Smalley <sds@tycho.nsa.gov>, Taras Kondratiuk <takondra@cisco.com>, "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>, initramfs@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com, Paul Moore <paul@paul-moore.com>, Eric Paris <eparis@parisplace.org>
+To: Stephen Smalley <sds@tycho.nsa.gov>
+Cc: Taras Kondratiuk <takondra@cisco.com>, "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>, initramfs@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com, Paul Moore <paul@paul-moore.com>, Eric Paris <eparis@parisplace.org>
 
 
 
-On Wed, 7 Mar 2018, Rob Landley wrote:
+On Tue, 20 Feb 2018, Stephen Smalley wrote:
 
-> On 02/20/2018 12:56 PM, Stephen Smalley wrote:
->> On Fri, 2018-02-16 at 20:33 +0000, Taras Kondratiuk wrote:
->>> From: Victor Kamensky <kamensky@cisco.com>
->>>
->>> With initramfs cpio format that supports extended attributes
->>> we need to skip sid population on sys_lsetxattr call from
->>> initramfs for rootfs if security server is not initialized yet.
->>>
->>> Otherwise callback in selinux_inode_post_setxattr will try to
->>> translate give security.selinux label into sid context and since
->>> security server is not available yet inode will receive default
->>> sid (typically kernel_t). Note that in the same time proper
->>> label will be stored in inode xattrs. Later, since inode sid
->>> would be already populated system will never look back at
->>> actual xattrs. But if we skip sid population for rootfs and
->>> we have policy that direct use of xattrs for rootfs, proper
->>> sid will be filled in from extended attributes one node is
->>> accessed and server is initialized.
->>>
->>> Note new DELAYAFTERINIT_MNT super block flag is introduced
->>> to only mark rootfs for such behavior. For other types of
->>> tmpfs original logic is still used.
+> On Fri, 2018-02-16 at 20:33 +0000, Taras Kondratiuk wrote:
+>> From: Victor Kamensky <kamensky@cisco.com>
 >>
->> (cc selinux maintainers)
+>> initramfs code supporting extended cpio format have ability to
+>> fill extended attributes from cpio archive, but if SELinux enabled
+>> and security server is not initialized yet, selinux callback would
+>> refuse setxattr made by initramfs code.
 >>
->> Wondering if we shouldn't just do this always, for all filesystem
->> types.  Also, I think this should likely also be done in
->> selinux_inode_setsecurity() for consistency.
-
-Sorry, I did not have time to try out Stephen's suggestion,
-especially given that core initramfs xattrs acceptance and dicussion
-looks a bit stalled, and for my use case it is dependency before
-SELinux changes.
-
-I will look for both suggestion this week. Hope to see initramfs
-xattrs patch series review going again.
-
-> I don't understand what selinux thinks it's doing here.
+>> Solution enable SBLABEL_MNT on rootfs even if secrurity server is
+>> not initialized yet.
 >
-> Initramfs is special because it's populated early, ideally early enough drivers
-> can load their firmware out of it. This is guaranteed to be before any processes
-> have launched, before any other filesystems have been mounted. I'm surprised
-> selinux is trying to do anything this early because A) what is there for it to
-> do, B) where did it get a ruleset?
->
-> This isn't really a mount flag, this is a "the selinux subsystem isn't
-> functionally initialized yet" flag. We haven't launched init. In a modular
-> system the module probably isn't loaded. There are no processes, and the only
-> files anywhere are the ones we're in the process of extracting. What's there
-> fore selinux to do?
->
-> When a filesystem is mounted, none of these cached selinux "we already looked at
-> the xattrs" inode fields are populated yet, correct? It can figure that out when
-> something accesses the file and do it then, so the point is _not_ doing this now
-> and thus not cacheing the wrong info. That's what the mount flag is doing,
-> telling selinux "not yet". So why does selinux not already _know_ "not yet"?
->
-> Why doesn't load_policy flush the cache of the old default contexts? What
-> happens if you mount an ext2 root and then init reads a dozen files before it
-> gets to the load_policy?
+> What if we were to instead skip the SBLABEL_MNT check in
+> selinux_inode_setxattr() if !ss_initialized?  Not dependent on
+> filesystem type.
 
-I need to check whether security context caching happens on all
-file operations, or when setxattr is executed. If latter, 
-setxattr operation before policy load may not be very common use case.
+Stephen, thank you for looking into this. Sorry, for dealyed reponse -
+I needed to find time to require context about these changes.
 
-Also note there is a second SELinux related patch and 
-corresponding Stephen's comment: if SELinux is enabled
-in kernel, but policy is not loaded yet, setxattr for security.selinux
-extended attribute will go for check to SELinux LSM callback, it will
-be denied. My other patch was relaxing above for "rootfs" only,
-i.e covering initramfs xattrs case. Stephen's point was that
-maybe it needs to be relaxed for
-all cases if policy not loaded yet. I need some time to look
-at the code and think about what can go wrong, if rule relaxed
-for all cases.
+As you suggested I've tried this and it works:
 
-> Do those doesn't files have bad default contexts forever now?
->
-> Where does the selinux ruleset come from during the cpio extract?
+From 6bf35bd055fdb12e94f3d5188eccfdbaa30dbcf4 Mon Sep 17 00:00:00 2001
+From: Victor Kamensky <kamensky@cisco.com>
+Date: Fri, 9 Mar 2018 23:01:20 -0800
+Subject: [PATCH 1/2] selinux: allow setxattr on file systems if policy is not
+  loaded
 
-Yes, in our use case SELinux policy file 
-(/etc/selinux/*/policy/policy.*) comes from cpio initramfs itself.
-So it is chicken and egg problem.
+initramfs code supporting extended cpio format have ability to
+fill extended attributes from cpio archive, but if SELinux enabled
+and security server is not initialized yet, selinux callback would
+refuse setxattr made by initramfs code because file system is not
+yet marked as one that support labeling (SBLABEL_MNT flag).
 
-> Was it
-> hardwired into the driver? It certainly didn't come out of a file, and it wasn't
-> a process that loaded it. Why is selinux trying to evaluate and cache the
-> security context of files before it has any rules?
+Solution do not refuse setxattr even if SBLABEL_MNT is not set
+for file systems when policy is not loaded yet.
 
-Note for ext2 case there is no setxattr first as we have in initramfs
-xattrs case, so extended attributes values are read from backing
-persitent storage as they were put there before, and there would not
-be discrepency what is cached in security context inode data scructure
-and real "security.selinux" extended attribute value in file system.
+Signed-off-by: Victor Kamensky <kamensky@cisco.com>
+---
+  security/selinux/hooks.c | 2 +-
+  1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index 819fd68..31303ed 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -3120,7 +3120,7 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
+  		return selinux_inode_setotherxattr(dentry, name);
+
+  	sbsec = inode->i_sb->s_security;
+-	if (!(sbsec->flags & SBLABEL_MNT))
++	if (!(sbsec->flags & SBLABEL_MNT) && ss_initialized)
+  		return -EOPNOTSUPP;
+
+  	if (!inode_owner_or_capable(inode))
+-- 
+2.7.4
+
+But with this change it would mean for that filesystem types, that
+never are supposed to get SBLABEL_MNT flag, code may go through
+if !ss_initialized. I have hard time evaluating impication of this,
+but it is not existing case or not a big deal.
+
+Generally I agree with your concern that the issue is not "rootfs"
+specific. Other thought that it could be solved with use of
+selinux_is_sblabel_mnt instead of "rootfs" specific check inside
+of selinux_set_mnt_opts, in addition to similar code
+in sb_finish_set_opts function. I.e something like this:
+
+From a94548b5ecde43ccc9c2b02b29becc086b4343a3 Mon Sep 17 00:00:00 2001
+From: Victor Kamensky <kamensky@cisco.com>
+Date: Fri, 9 Mar 2018 23:01:20 -0800
+Subject: [PATCH 1/2] selinux: allow setxattr on rootfs so initramfs code can
+  set them
+
+initramfs code supporting extended cpio format have ability to
+fill extended attributes from cpio archive, but if SELinux enabled
+and security server is not initialized yet, selinux callback would
+refuse setxattr made by initramfs code.
+
+Solution enable set SBLABEL_MNT on file systems for which we can
+figure out that they support securit labels even if secrurity
+server is not initialized yet.
+
+Signed-off-by: Victor Kamensky <kamensky@cisco.com>
+---
+  security/selinux/hooks.c | 12 ++++++++++++
+  1 file changed, 12 insertions(+)
+
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index 819fd68..326aca9 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -701,6 +701,18 @@ static int selinux_set_mnt_opts(struct super_block *sb,
+
+  	if (!ss_initialized) {
+  		if (!num_opts) {
++                        /*
++                         * For some of file systems we can mark them as
++                         * supporting security labels even before policy
++                         * loaded. It may be used by code that may want
++                         * to do setxatts before polict load.
++                         *
++                         * Note after policy loaded this check and marking
++                         * happens again.
++                         */
++                        if (selinux_is_sblabel_mnt(sb))
++                                sbsec->flags |= SBLABEL_MNT;
++
+  			/* Defer initialization until selinux_complete_init,
+  			   after the initial policy is loaded and the security
+  			   server is ready to handle calls. */
+-- 
+2.7.4
 
 Thanks,
 Victor
 
-> (It has xattr annotations,
-> but they have no _meaning_ without rules...?
->
-> Confused,
->
-> Rob
+>>
+>> Signed-off-by: Victor Kamensky <kamensky@cisco.com>
+>> ---
+>>  security/selinux/hooks.c | 12 ++++++++++++
+>>  1 file changed, 12 insertions(+)
+>>
+>> diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+>> index 8644d864e3c1..f3fe65589f02 100644
+>> --- a/security/selinux/hooks.c
+>> +++ b/security/selinux/hooks.c
+>> @@ -706,6 +706,18 @@ static int selinux_set_mnt_opts(struct
+>> super_block *sb,
+>>
+>>  	if (!ss_initialized) {
+>>  		if (!num_opts) {
+>> +			/*
+>> +			 * Special handling for rootfs. Is genfs but
+>> supports
+>> +			 * setting SELinux context on in-core
+>> inodes.
+>> +			 *
+>> +			 * Chicken and egg problem: policy may
+>> reside in rootfs
+>> +			 * but for initramfs code to fill in
+>> attributes, it
+>> +			 * needs selinux to allow that.
+>> +			 */
+>> +			if (!strncmp(sb->s_type->name, "rootfs",
+>> +				     sizeof("rootfs")))
+>> +				sbsec->flags |= SBLABEL_MNT;
+>> +
+>>  			/* Defer initialization until
+>> selinux_complete_init,
+>>  			   after the initial policy is loaded and
+>> the security
+>>  			   server is ready to handle calls. */
 >
