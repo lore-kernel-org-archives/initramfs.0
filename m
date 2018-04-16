@@ -1,121 +1,103 @@
-From: Stephen Smalley <sds@tycho.nsa.gov>
-Subject: Re: [Non-DoD Source] Re: [PATCH v3 15/15] selinux: delay sid
- population for rootfs till init is complete
-Date: Tue, 20 Mar 2018 12:30:55 -0400
-Message-ID: <fe13077c-b528-b42d-6fde-8637043f37bb@tycho.nsa.gov>
-References: <1518813234-5874-1-git-send-email-takondra@cisco.com>
- <1518813234-5874-19-git-send-email-takondra@cisco.com>
- <1519152994.14218.15.camel@tycho.nsa.gov>
- <alpine.LRH.2.00.1803101900250.24419@sjc-ads-6991.cisco.com>
+From: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Subject: Re: [RFC PATCH] rootfs: force mounting rootfs as tmpfs
+Date: Mon, 16 Apr 2018 11:46:05 -0400
+Message-ID: <1523893565.3272.191.camel@linux.vnet.ibm.com>
+References: <1517348777.3469.5.camel@linux.vnet.ibm.com>
+         <1814af5c-170d-39c0-58fd-02eb7216e008@landley.net>
+         <1517436423.3469.237.camel@linux.vnet.ibm.com>
+         <a538e55c-81ca-6d59-20cf-21b47387c3e2@landley.net>
+         <20180201020331.GA3774@rani.riverdale>
+         <1517458921.3329.2.camel@linux.vnet.ibm.com>
+         <f9112881-772c-2568-ebfa-d2ca807124e9@landley.net>
+         <1517500500.3974.45.camel@linux.vnet.ibm.com>
+         <875e5d2d-9ffe-14ab-090a-4a9632af0f35@landley.net>
+         <1517521912.3619.0.camel@linux.vnet.ibm.com>
+         <151752488608.10051.146219644323454814@takondra-t460s>
+         <8d6b1fcc-1a21-1707-dd8e-43529e1d644c@landley.net>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LRH.2.00.1803101900250.24419@sjc-ads-6991.cisco.com>
-Content-Language: en-US
+In-Reply-To: <8d6b1fcc-1a21-1707-dd8e-43529e1d644c@landley.net>
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"
-To: Victor Kamensky <kamensky@cisco.com>
-Cc: Taras Kondratiuk <takondra@cisco.com>, "H. Peter Anvin" <hpa@zytor.com>, Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, Mimi Zohar <zohar@linux.vnet.ibm.com>, Jonathan Corbet <corbet@lwn.net>, James McMechan <james.w.mcmechan@gmail.com>, initramfs@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, linux-security-module@vger.kernel.org, xe-linux-external@cisco.com, Paul Moore <paul@paul-moore.com>, Eric Paris <eparis@parisplace.org>
+To: Rob Landley <rob@landley.net>, Taras Kondratiuk <takondra@cisco.com>, Arvind Sankar <nivedita@alum.mit.edu>
+Cc: initramfs <initramfs@vger.kernel.org>, Victor Kamensky <kamensky@cisco.com>, linux-security-module <linux-security-module@vger.kernel.org>, Al Viro <viro@ZenIV.linux.org.uk>, linux-kernel <linux-kernel@vger.kernel.org>
 
-On 03/10/2018 10:08 PM, Victor Kamensky wrote:
-> 
-> 
-> On Tue, 20 Feb 2018, Stephen Smalley wrote:
-> 
->> On Fri, 2018-02-16 at 20:33 +0000, Taras Kondratiuk wrote:
->>> From: Victor Kamensky <kamensky@cisco.com>
->>>
->>> With initramfs cpio format that supports extended attributes
->>> we need to skip sid population on sys_lsetxattr call from
->>> initramfs for rootfs if security server is not initialized yet.
->>>
->>> Otherwise callback in selinux_inode_post_setxattr will try to
->>> translate give security.selinux label into sid context and since
->>> security server is not available yet inode will receive default
->>> sid (typically kernel_t). Note that in the same time proper
->>> label will be stored in inode xattrs. Later, since inode sid
->>> would be already populated system will never look back at
->>> actual xattrs. But if we skip sid population for rootfs and
->>> we have policy that direct use of xattrs for rootfs, proper
->>> sid will be filled in from extended attributes one node is
->>> accessed and server is initialized.
->>>
->>> Note new DELAYAFTERINIT_MNT super block flag is introduced
->>> to only mark rootfs for such behavior. For other types of
->>> tmpfs original logic is still used.
->>
->> (cc selinux maintainers)
->>
->> Wondering if we shouldn't just do this always, for all filesystem
->> types.
-> 
-> Ok, I think it makes sense. The one that do not support xattrs
-> will not reach selinux_inode_post_setxattr anyway. And try
-> to cache sid while !ss_initialized is not good idea for any
-> filesystem types.
-> 
->> Also, I think this should likely also be done in
->> selinux_inode_setsecurity() for consistency.
-> 
-> I am not sure that I follow selinux_inode_setsecurity suggestion.
-> selinux_inode_setsecurity is about permission check. And
-> selinux_inode_post_setxattr deals with processing and setting
-> side effects if xattr was "security.selinux", it does not
-> matter what happens in selinux_inode_setsecurity if it
-> returns access_ok, LSM will still call selinux_inode_post_setxattr
-> and we would need to check and not produce any sid caching
-> side effects if !ss_initialized.
+Hi Rob,
 
-selinux_inode_setsecurity is the vfs fallback for setting security
-attributes when the filesystem/inode does not support setxattr itself,
-and is also used by kernfs. 
-So you need to update both selinux_inode_post_setxattr and selinux_inode_setsecurity
-in the same way.
+On Thu, 2018-02-01 at 17:34 -0600, Rob Landley wrote:
+> 
+> On 02/01/2018 04:41 PM, Taras Kondratiuk wrote:
+> > Quoting Mimi Zohar (2018-02-01 13:51:52)
+> >> On Thu, 2018-02-01 at 11:09 -0600, Rob Landley wrote:
+> >>> On 02/01/2018 09:55 AM, Mimi Zohar wrote:
+> >>>> On Thu, 2018-02-01 at 09:20 -0600, Rob Landley wrote:
+> >>>>
+> >>>>>> With your patch and specifying "root=tmpfs", dracut is complaining:
+> >>>>>>
+> >>>>>> dracut: FATAL: Don't know how to handle 'root=tmpfs'
+> >>>>>> dracut: refusing to continue
+> >>>>>
+> >>>>> [googles]... I do not understand why this package exists.
+> >>>>>
+> >>>>> If you're switching to another root filesystem, using a tool that
+> >>>>> wikipedia[citation needed] says has no purpose but to switch to another
+> >>>>> root filesystem, (so let's reproduce the kernel infrastructure in
+> >>>>> userspace while leaving it the kernel too)... why do you need initramfs
+> >>>>> to be tmpfs? You're using it for half a second, then discarding it,
+> >>>>> what's the point of it being tmpfs?
+> >>>>
+> >>>> Unlike the kernel image which is signed by the distros, the initramfs
+> >>>> doesn't come signed, because it is built on the target system.  Even
+> >>>> if the initramfs did come signed, it is beneficial to measure and
+> >>>> appraise the individual files in the initramfs.
+> >>>
+> >>> You can still shoot yourself in the foot with tmpfs. People mount a /run
+> >>> and a /tmp and then as a normal user you can go
+> >>> https://twitter.com/landley/status/959103235305951233 and maybe the
+> >>> default should be a little more clever there...
+> >>>
+> >>> I'll throw it on the todo heap. :)
+> >>>
+> >>>>> Sigh. If people are ok with having rootfs just be tmpfs whenever tmpfs
+> >>>>> is configured in, even when you're then going to overmount it with
+> >>>>> something else like you're doing, let's just _remove_ the test. If it
+> >>>>> can be tmpfs, have it be tmpfs.
+> >>>>
+> >>>> Very much appreciated!
+> >>>
+> >>> Not yet tested, but something like the attached? (Sorry for the
+> >>> half-finished doc changes in there, I'm at work and have a 5 minute
+> >>> break. I can test properly this evening if you don't get to it...)
+> >>
+> >> Yes, rootfs is being mounted as tmpfs.
+> > 
+> > I don't think you can unconditionally replace ramfs with initramfs by
+> > default. Their behavior is different in some cases (e.g. pivot_root vs
+> > switch_root)
+> 
+> Both are switch_root, you can't pivot_root off of either one. (Yes, I
+> hit that bug and reported it, and they fixed it, back in the day...
+> http://lists.busybox.net/pipermail/busybox/2006-March/053529.html )
+> 
+> > and it can break many systems that expect ramfs by default.
+> 
+> The use case I told Mimi about off-list (since they stopped cc:ing the
+> list in one of their replies but the conversation continued) was the guy
+> who was extracting an initramfs bigger than 50% of system memory, which
+> worked with initramfs but failed with initmpfs. A quick google didn't
+> find the original message but it resulted in this blog entry from the
+> affected party:
+> 
+> http://www.lightofdawn.org/blog/?viewDetailed=00128
+> 
+> I.E. yeah, I know, I need to redo these patches tonight.
 
-> 
-> Sitll keeping logic in selinux_inode_post_setxattr, checked
-> that the following with much simple code works too:
-> 
->> From bfc54e4805f3059671417ff2cda1266bc68e18f9 Mon Sep 17 00:00:00 2001
-> From: Victor Kamensky <kamensky@cisco.com>
-> Date: Fri, 9 Mar 2018 23:06:08 -0800
-> Subject: [PATCH 2/2] selinux: delay sid population in setxattr till policy
->  loaded
-> 
-> With initramfs cpio format that supports extended attributes
-> we need to skip sid population on sys_lsetxattr call from
-> initramfs for rootfs if security server is not initialized yet.
-> 
-> Otherwise callback in selinux_inode_post_setxattr will try to
-> translate give security.selinux label into sid context and since
-> security server is not available yet inode will receive default
-> sid (typically kernel_t). Note that in the same time proper
-> label will be stored in inode xattrs. Later, since inode sid
-> would be already populated system will never look back at
-> actual xattrs. But if we skip sid population for rootfs and
-> we have policy that direct use of xattrs for rootfs, proper
-> sid will be filled in from extended attributes one node is
-> accessed and server is initialized.
-> 
-> Signed-off-by: Victor Kamensky <kamensky@cisco.com>
-> ---
->  security/selinux/hooks.c | 4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-> index 31303ed..4c13759 100644
-> --- a/security/selinux/hooks.c
-> +++ b/security/selinux/hooks.c
-> @@ -3197,6 +3197,10 @@ static void selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
->          return;
->      }
-> 
-> +        if (!ss_initialized) {
-> +                return;
-> +        }
-> +
->      rc = security_context_to_sid_force(value, size, &newsid);
->      if (rc) {
->          printk(KERN_ERR "SELinux:  unable to map context to SID"
+I'd really like to be able to have rootfs be a tmpfs filesystem.  Any
+time estimate on this patch?
+
+thanks!
+
+Mimi
 
