@@ -1,8 +1,8 @@
 From: Gerhard Wiesinger <lists@wiesinger.com>
 Subject: Re: B53 DSA switch problem on Banana Pi-R1 on Fedora 26 -
  systemd-networkd problem
-Date: Mon, 28 May 2018 07:24:52 +0200
-Message-ID: <bf9f5db4-7fb8-2ccd-7ba3-f31da6c344ce@wiesinger.com>
+Date: Mon, 28 May 2018 07:32:10 +0200
+Message-ID: <8ffb6309-3d08-3043-43d9-49aa3a686bf6@wiesinger.com>
 References: <3bdb712d-38bd-e2ca-63cf-8406a7b5689d@wiesinger.com>
  <20180522201632.GB4396@lunn.ch>
  <59d6b55f-d50a-063c-90a9-31a758e01383@gmail.com>
@@ -15,26 +15,25 @@ References: <3bdb712d-38bd-e2ca-63cf-8406a7b5689d@wiesinger.com>
  <ba1a6179-48ff-ca2b-bb3c-f99f8376df50@wiesinger.com>
  <18ca17a1-4673-2ace-7142-d4aef6854bc4@wiesinger.com>
  <219eaac0-3d76-005a-f8d6-c54ea21f205e@wiesinger.com>
- <485b3a0e-23d6-c90c-6f41-8d9f33b1ad1f@wiesinger.com>
- <6c93d27e-66dc-02a9-f8f9-f349f27dfec6@gmail.com>
+ <80a5da81-0ed3-14bc-2e62-bd25f05de792@gmail.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-DKIM-Filter: OpenDKIM Filter v2.11.0 wiesinger.com w4S5OqbU008017
+DKIM-Filter: OpenDKIM Filter v2.11.0 wiesinger.com w4S5WADJ008891
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=wiesinger.com;
-        s=default; t=1527485093;
-        bh=EC7bgISMY4pWTXbsJ2d9WS6k/HDqU5u36zUO3cRvIHk=;
+        s=default; t=1527485531;
+        bh=PwFfWlGq1s5rDXXbPcmONsaPmWD6DA9bSwWdAuXKpkU=;
         h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=Vyd05511SgfYepfceFn02CzBskJHobMhRvi/yN00PRvFAQo+4Wmbt1x6DSWM1h0Nw
-         OdDPvLUCF7AFHCksYZQDCBIC3WIdmDBits5haxG4h41DkxRG1TSkzZuoNSRBiNFPdX
-         GfK9cq5Hp0qNxoyU9Nb1YI3HtMfvrbvAMPMhIzAdhj8W4xiFhXS6p04kJ+uwlyBycW
-         ZmObSqPXtifi5H23KwamsuspZYDYozwabzJQ+P7rEOZHIaSZT/OjF4o1bI1dmXfx74
-         Frs2Md2on9X9jjX6XUXWO9dB/z+9eZHxpBI1YitULSCNP/gSrtqjqrCavoMQ1h1qtM
-         vPA3Z5d+zzv3li5nNWZGeEhQ8F13Oz3i6lmneyWZqmoajlr1msn+ViWQfaMuE6X24t
-         nIdJPw7lLLrca869+5pcBi6R/D7YwFEDomDusap7DYVXLbMUS+rPuFyADDZL7cbFDA
-         +WVCO5caNWdAbLtMTPm7R5qZLTFIjQ2Js+QIhBdf5B7JvJWK5GioR9OeW2HsYuLB0D
-         FqIjCBp6HRmas/QtITjBNOqRo5jE+8BG4zVsy90++SW1Zc/Eqx2IIV67rvq 
-In-Reply-To: <6c93d27e-66dc-02a9-f8f9-f349f27dfec6@gmail.com>
+        b=rpZmkGkAxAcijRRBkHjnXnlDIHLn2UERqSUT+xinn1rVMEq6SvAmHDEy5+s4S/4Vt
+         aW/3XLREf+9TQppb9R1QanfPDLYT7GTOuPXzw4S3LkWLdFeCMa9sgVcMZZMX1vrAJ5
+         PsrgN9xAM1zymHRUhOArjdYMpkssHapOwG9NZmMVtK/qfOh7GuxaNvihx7o0Ic09/b
+         g7MemI0kb06wHdICbTyz3HOAu+jc0Re554mzydRQV+zkT0C0RYts28UxaFWZzE/x12
+         8OS6+f1Yx8h9MMzrC6NDOPsKJWIgMjFX+73AxV8Kd8nwWjXpbks3X7f4LU4wjP/1ln
+         UO/8V6I19sHLxmahwsp9f5EkNWRroN2GbaWzgc6QLxYGJYiQf2c9u/d8EilF9j72Gm
+         m7uo1Ms/EL0u9RaExR2JTAeXOfy47umlJf7MOUvPk4CZE+//8mNU5K8h+W3FPrsxyk
+         h8nOa+DuGwFPpzTpVbmyVkexO2P5+sY8FaBjd3Je4EF2H2XGhGZ+9xIJneJp5lrfMX
+         tqhdDxIKlzrMPySOiRwFj4I+r4SViX2S0+t8atJfMAYSkXeSUrRNt/COAcX 
+In-Reply-To: <80a5da81-0ed3-14bc-2e62-bd25f05de792@gmail.com>
 Content-Language: en-US
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
@@ -42,110 +41,102 @@ Content-Type: text/plain; charset="utf-8"; format="flowed"
 To: Florian Fainelli <f.fainelli@gmail.com>, Andrew Lunn <andrew@lunn.ch>, initramfs@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org
 
-On 27.05.2018 22:35, Florian Fainelli wrote:
-> Le 05/27/18 à 12:18, Gerhard Wiesinger a écrit :
->> On 27.05.2018 21:01, Gerhard Wiesinger wrote:
->>> On 24.05.2018 08:22, Gerhard Wiesinger wrote:
->>>> On 24.05.2018 07:29, Gerhard Wiesinger wrote:
->>>>> After some analysis with Florian (thnx) we found out that the
->>>>> current implementation is broken:
->>>>>
->>>>> https://patchwork.ozlabs.org/patch/836538/
->>>>> https://github.com/torvalds/linux/commit/c499696e7901bda18385ac723b7bd27c3a4af624#diff-a2b6f8d89e18de600e873ac3ac43fa1d
->>>>>
->>>>>
->>>>> Florians comment:
->>>>>
->>>>> c499696e7901bda18385ac723b7bd27c3a4af624 ("net: dsa: b53: Stop using
->>>>> dev->cpu_port incorrectly") since it would result in no longer setting
->>>>> the CPU port as tagged for a specific VLAN. Easiest way for you right
->>>>> now is to just revert it, but this needs some more thoughts for a
->>>>> proper
->>>>> upstream change. I will think about it some more.
->>>> Can confirm 4.14.18-200.fc26.armv7hl works, 4.15.x should be broken.
+On 27.05.2018 22:31, Florian Fainelli wrote:
+> Le 05/27/18 à 12:01, Gerhard Wiesinger a écrit :
+>> On 24.05.2018 08:22, Gerhard Wiesinger wrote:
+>>> On 24.05.2018 07:29, Gerhard Wiesinger wrote:
+>>>> After some analysis with Florian (thnx) we found out that the current
+>>>> implementation is broken:
 >>>>
->>>> # Kernel 4.14.x ok
->>>> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/log/drivers/net/dsa/b53?h=v4.14.43
+>>>> https://patchwork.ozlabs.org/patch/836538/
+>>>> https://github.com/torvalds/linux/commit/c499696e7901bda18385ac723b7bd27c3a4af624#diff-a2b6f8d89e18de600e873ac3ac43fa1d
 >>>>
->>>> # Kernel 4.15.x should be NOT ok
->>>> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/log/drivers/net/dsa/b53?h=v4.15.18
 >>>>
+>>>> Florians comment:
+>>>>
+>>>> c499696e7901bda18385ac723b7bd27c3a4af624 ("net: dsa: b53: Stop using
+>>>> dev->cpu_port incorrectly") since it would result in no longer setting
+>>>> the CPU port as tagged for a specific VLAN. Easiest way for you right
+>>>> now is to just revert it, but this needs some more thoughts for a proper
+>>>> upstream change. I will think about it some more.
+>>> Can confirm 4.14.18-200.fc26.armv7hl works, 4.15.x should be broken.
 >>>
->> Forgot to mention: What's also strange is that the VLAN ID is very high:
+>>> # Kernel 4.14.x ok
+>>> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/log/drivers/net/dsa/b53?h=v4.14.43
+>>>
+>>> # Kernel 4.15.x should be NOT ok
+>>> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/log/drivers/net/dsa/b53?h=v4.15.18
+>>>
+>> Kernel 4.14.18-300.fc27.armv7hl works well so far, even with FC28
+>> update. Florian send me a patch to try for 4.16.x
+> So does my patch make 4.16 work correctly for you now? If so, can I just
+> submit it and copy you?
+>
+>> I got the  commands below to work with manual script commands.
+>> Afterwards I wrote systemd-networkd config where I've a strage problem
+>> when IPv6 sends a multicast broadcast from another machine to the bridge
+>> this will be sent back via the network interface, but with the source
+>> MAC of the bridge of the other machine. dmesg from the other machine:
+>> [117768.330444] br0: received packet on lan0 with own address as source
+>> address (addr:a0:36:9f:ab:cd:ef, vlan:0)
+>> [117768.334887] br0: received packet on lan0 with own address as source
+>> address (addr:a0:36:9f:ab:cd:ef, vlan:0)
+>> [117768.339281] br0: received packet on lan0 with own address as source
+>> address (addr:a0:36:9f:ab:cd:ef, vlan:0)
 >>
->> # 4.14.18-300.fc27.armv7hl, iproute-4.15.0-1.fc28.armv7hl
->> ip -d link show eth0.101 | grep "vlan protocol"
->>      vlan protocol 802.1Q id 3069279796 <REORDER_HDR>
->> ip -d link show eth0.102 | grep "vlan protocol"
->>      vlan protocol 802.1Q id 3068673588 <REORDER_HDR>
+>> And: If I just enter this command after e.g. a systemd-network restart
+>> everything is fine forever:
+>> # Not OK (dmesg message above is triggered on a remote computer, whole
+>> switching network gets unstable, ssh terminals close, packet loss, etc.)
+>> systemctl restart systemd-networkd
+>> # OK again when this command is entered
+>> bridge vlan add dev wan vid 102 pvid untagged
 >>
->> On older kernels this looks ok: 4.12.8-200.fc25.armv7hl,
->> iproute-4.11.0-1.fc25.armv7hl:
->>   ip -d link show eth0.101 | grep "vlan protocol"
->>      vlan protocol 802.1Q id 101 <REORDER_HDR>
->> ip -d link show eth0.102 | grep "vlan protocol"
->>      vlan protocol 802.1Q id 102 <REORDER_HDR>
+>> brctl show, ip link, bridge vlan, bridge link commands, etc. look all
+>> the same, also /sys/class/net/br0/bridge, /sys/class/net/br1/bridge
+>> settings
 >>
->> Ideas?
-> That is quite likely a kernel/iproute2 issue, if you configured the
-> switch through bridge vlan to have the ports in VLAN 101 and VLAN 102
-> and you do indeed see frames entering eth0 with these VLAN IDs, then
-> clearly the bridge -> switchdev -> dsa -> b53 part is working just fine
-> and what you are seeing is some for of kernel header/netlink
-> incompatibility.
+>> Systemd config correct?
+>> Any ideas?
+> You should not have eth0.101 and eth0.102 to be enslaved in a bridge at
+> all, this is what is causing the bridge to be confused. Remember what I
+> wrote to you before, with the current b53 driver that does not have any
+> tagging enabled the lanX interfaces and brX interfaces are only used for
+> control and should not be used for passing any data. The only network
+> device that will be passing data is eth0, which is why we need to set-up
+> VLAN interfaces to pop/push the VLAN id accordingly.
+>
+> I have no idea why manual vs. systemd does not work but you can most
+> certainly troubleshoot that by comparing the bridge/ip outputs.
 
-Yes, sniffing on eth0 shows the correct VLAN IDs, e.g. 101.
+So is that then the correct structure?
 
-Yes, my guess is that tools are wrong and have random values on 2 calls 
-in different values (e.g. alsopromiscuity ) , see below ....
+br1
+- lan1 (with VID 101)
+- lan2 (with VID 101)
+- lan3 (with VID 101)
+- lan4 (with VID 101)
 
-Who can fix it?
+brlan
+- eth0.101
+- wlan0 (currently not active, could be optimized without bridge but for 
+future comfort)
 
-BTW: On FC27 same issue with same kernel version, but guess older 
-iproute version.
+br2
+- wan (with VID 102) (could be optimized without bridge but for future 
+comfort)
+- future1
+
+brwan
+- eth0.102 (could be optimized without bridge but for future comfort)
+- future2
+
+Ad systemd vs. manual config: As I said I didn't find any difference in 
+the bridge/ip outputs. As they are broken (see other message) maybe 
+something else is broken, too.
+
+Thnx.
 
 Ciao,
-
 Gerhard
-
-
-ip -d link show eth0.101
-
-13: eth0.101@eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc 
-noqueue master br0 state UP mode DEFAULT group default qlen 1000
-     link/ether 02:18:09:ab:cd:ef brd ff:ff:ff:ff:ff:ff promiscuity 
-3068661300
-     vlan protocol 802.1Q id 3068661300 <REORDER_HDR>
-     bridge_slave state forwarding priority 32 cost 4 hairpin off guard 
-off root_block off fastleave off learning on flood on port_id 0x8005 
-port_no 0x5 designa
-ted_port 3068661300 designated_cost 3068661300 designated_bridge 
-8000.66:5d:a2:ab:cd:ef designated_root 8000.66:5d:a2:ab:cd:ef 
-hold_timer    0.00 message_age_tim
-er    0.00 forward_delay_timer    0.00 topology_change_ack 3068661300 
-config_pending 3068661300 proxy_arp off proxy_arp_wifi off mcast_router 
-3068661300 mcast_
-fast_leave off mcast_flood on vlan_tunnel off addrgenmode eui64 
-numtxqueues 3068661300 numrxqueues 3068661300 gso_max_size 3068661300 
-gso_max_segs 3068661300
-
-ip -d link show eth0.101
-13: eth0.101@eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc 
-noqueue master br0 state UP mode DEFAULT group default qlen 1000
-     link/ether 02:18:09:ab:cd:ef brd ff:ff:ff:ff:ff:ff promiscuity 
-3068735028
-     vlan protocol 802.1Q id 3068735028 <REORDER_HDR>
-     bridge_slave state forwarding priority 32 cost 4 hairpin off guard 
-off root_block off fastleave off learning on flood on port_id 0x8005 
-port_no 0x5 designa
-ted_port 3068735028 designated_cost 3068735028 designated_bridge 
-8000.66:5d:ab:cd:ef designated_root 8000.66:5d:a2:ab:cd:ef hold_timer    
-0.00 message_age_tim
-er    0.00 forward_delay_timer    0.00 topology_change_ack 3068735028 
-config_pending 3068735028 proxy_arp off proxy_arp_wifi off mcast_router 
-3068735028 mcast_
-fast_leave off mcast_flood on vlan_tunnel off addrgenmode eui64 
-numtxqueues 3068735028 numrxqueues 3068735028 gso_max_size 3068735028 
-gso_max_segs 3068735028
-
 
