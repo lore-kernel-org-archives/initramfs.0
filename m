@@ -1,142 +1,143 @@
-From: Gerhard Wiesinger <lists@wiesinger.com>
-Subject: Re: B53 DSA switch problem on Banana Pi-R1 on Fedora 26 -
- systemd-networkd problem
-Date: Mon, 28 May 2018 07:32:10 +0200
-Message-ID: <8ffb6309-3d08-3043-43d9-49aa3a686bf6@wiesinger.com>
-References: <3bdb712d-38bd-e2ca-63cf-8406a7b5689d@wiesinger.com>
- <20180522201632.GB4396@lunn.ch>
- <59d6b55f-d50a-063c-90a9-31a758e01383@gmail.com>
- <fa5c2615-40b3-62bc-3dda-59f9ef574686@wiesinger.com>
- <76c3f5ec-0ab2-c06d-98e8-277284bb1a8e@gmail.com>
- <779f2be3-3e74-e650-5240-efaf1003d77c@wiesinger.com>
- <4f7c5173-019d-ba0e-70b3-addf64a6a9fa@gmail.com>
- <aba2788a-ba54-dbc8-dd60-e862ba31d66d@wiesinger.com>
- <53c9272a-0e1a-e8fb-a3e4-b4e23e77be10@gmail.com>
- <ba1a6179-48ff-ca2b-bb3c-f99f8376df50@wiesinger.com>
- <18ca17a1-4673-2ace-7142-d4aef6854bc4@wiesinger.com>
- <219eaac0-3d76-005a-f8d6-c54ea21f205e@wiesinger.com>
- <80a5da81-0ed3-14bc-2e62-bd25f05de792@gmail.com>
+From: Ben Hutchings <ben@decadent.org.uk>
+Subject: initramfs-tools 0.131 release
+Date: Thu, 19 Jul 2018 17:03:02 +0100
+Message-ID: <c61f8c8dc68911ccc1ea5e5c4e379ef058a094ba.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-DKIM-Filter: OpenDKIM Filter v2.11.0 wiesinger.com w4S5WADJ008891
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=wiesinger.com;
-        s=default; t=1527485531;
-        bh=PwFfWlGq1s5rDXXbPcmONsaPmWD6DA9bSwWdAuXKpkU=;
-        h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=rpZmkGkAxAcijRRBkHjnXnlDIHLn2UERqSUT+xinn1rVMEq6SvAmHDEy5+s4S/4Vt
-         aW/3XLREf+9TQppb9R1QanfPDLYT7GTOuPXzw4S3LkWLdFeCMa9sgVcMZZMX1vrAJ5
-         PsrgN9xAM1zymHRUhOArjdYMpkssHapOwG9NZmMVtK/qfOh7GuxaNvihx7o0Ic09/b
-         g7MemI0kb06wHdICbTyz3HOAu+jc0Re554mzydRQV+zkT0C0RYts28UxaFWZzE/x12
-         8OS6+f1Yx8h9MMzrC6NDOPsKJWIgMjFX+73AxV8Kd8nwWjXpbks3X7f4LU4wjP/1ln
-         UO/8V6I19sHLxmahwsp9f5EkNWRroN2GbaWzgc6QLxYGJYiQf2c9u/d8EilF9j72Gm
-         m7uo1Ms/EL0u9RaExR2JTAeXOfy47umlJf7MOUvPk4CZE+//8mNU5K8h+W3FPrsxyk
-         h8nOa+DuGwFPpzTpVbmyVkexO2P5+sY8FaBjd3Je4EF2H2XGhGZ+9xIJneJp5lrfMX
-         tqhdDxIKlzrMPySOiRwFj4I+r4SViX2S0+t8atJfMAYSkXeSUrRNt/COAcX 
-In-Reply-To: <80a5da81-0ed3-14bc-2e62-bd25f05de792@gmail.com>
-Content-Language: en-US
-Sender: linux-kernel-owner@vger.kernel.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"
-To: Florian Fainelli <f.fainelli@gmail.com>, Andrew Lunn <andrew@lunn.ch>, initramfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-A8Cdx8Xdx87u791FIPm3"
+Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane.org@lists.debian.org>
+Resent-Message-ID: <TN6RYv9__RD.A.9fH.QZLUbB@bendel>
+List-Id: <initramfs.vger.kernel.org>
+List-URL: <https://lists.debian.org/debian-kernel/>
+List-Post: <mailto:debian-kernel@lists.debian.org>
+List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
+List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
+List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
+List-Archive: https://lists.debian.org/msgid-search/c61f8c8dc68911ccc1ea5e5c4e379ef058a094ba.camel@decadent.org.uk
+To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
 
-On 27.05.2018 22:31, Florian Fainelli wrote:
-> Le 05/27/18 à 12:01, Gerhard Wiesinger a écrit :
->> On 24.05.2018 08:22, Gerhard Wiesinger wrote:
->>> On 24.05.2018 07:29, Gerhard Wiesinger wrote:
->>>> After some analysis with Florian (thnx) we found out that the current
->>>> implementation is broken:
->>>>
->>>> https://patchwork.ozlabs.org/patch/836538/
->>>> https://github.com/torvalds/linux/commit/c499696e7901bda18385ac723b7bd27c3a4af624#diff-a2b6f8d89e18de600e873ac3ac43fa1d
->>>>
->>>>
->>>> Florians comment:
->>>>
->>>> c499696e7901bda18385ac723b7bd27c3a4af624 ("net: dsa: b53: Stop using
->>>> dev->cpu_port incorrectly") since it would result in no longer setting
->>>> the CPU port as tagged for a specific VLAN. Easiest way for you right
->>>> now is to just revert it, but this needs some more thoughts for a proper
->>>> upstream change. I will think about it some more.
->>> Can confirm 4.14.18-200.fc26.armv7hl works, 4.15.x should be broken.
->>>
->>> # Kernel 4.14.x ok
->>> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/log/drivers/net/dsa/b53?h=v4.14.43
->>>
->>> # Kernel 4.15.x should be NOT ok
->>> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/log/drivers/net/dsa/b53?h=v4.15.18
->>>
->> Kernel 4.14.18-300.fc27.armv7hl works well so far, even with FC28
->> update. Florian send me a patch to try for 4.16.x
-> So does my patch make 4.16 work correctly for you now? If so, can I just
-> submit it and copy you?
->
->> I got the  commands below to work with manual script commands.
->> Afterwards I wrote systemd-networkd config where I've a strage problem
->> when IPv6 sends a multicast broadcast from another machine to the bridge
->> this will be sent back via the network interface, but with the source
->> MAC of the bridge of the other machine. dmesg from the other machine:
->> [117768.330444] br0: received packet on lan0 with own address as source
->> address (addr:a0:36:9f:ab:cd:ef, vlan:0)
->> [117768.334887] br0: received packet on lan0 with own address as source
->> address (addr:a0:36:9f:ab:cd:ef, vlan:0)
->> [117768.339281] br0: received packet on lan0 with own address as source
->> address (addr:a0:36:9f:ab:cd:ef, vlan:0)
->>
->> And: If I just enter this command after e.g. a systemd-network restart
->> everything is fine forever:
->> # Not OK (dmesg message above is triggered on a remote computer, whole
->> switching network gets unstable, ssh terminals close, packet loss, etc.)
->> systemctl restart systemd-networkd
->> # OK again when this command is entered
->> bridge vlan add dev wan vid 102 pvid untagged
->>
->> brctl show, ip link, bridge vlan, bridge link commands, etc. look all
->> the same, also /sys/class/net/br0/bridge, /sys/class/net/br1/bridge
->> settings
->>
->> Systemd config correct?
->> Any ideas?
-> You should not have eth0.101 and eth0.102 to be enslaved in a bridge at
-> all, this is what is causing the bridge to be confused. Remember what I
-> wrote to you before, with the current b53 driver that does not have any
-> tagging enabled the lanX interfaces and brX interfaces are only used for
-> control and should not be used for passing any data. The only network
-> device that will be passing data is eth0, which is why we need to set-up
-> VLAN interfaces to pop/push the VLAN id accordingly.
->
-> I have no idea why manual vs. systemd does not work but you can most
-> certainly troubleshoot that by comparing the bridge/ip outputs.
 
-So is that then the correct structure?
+--=-A8Cdx8Xdx87u791FIPm3
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-br1
-- lan1 (with VID 101)
-- lan2 (with VID 101)
-- lan3 (with VID 101)
-- lan4 (with VID 101)
+This overdue release fixes most of the important or higher severity
+bugs open in Debian, and includes most of the patches submitted since
+the last release.
 
-brlan
-- eth0.101
-- wlan0 (currently not active, could be optimized without bridge but for 
-future comfort)
+I also did some cleanup of the documentation and the debian/control
+file.
 
-br2
-- wan (with VID 102) (could be optimized without bridge but for future 
-comfort)
-- future1
+There is one known regression, which is a (non-fatal) error message
+from mkinitramfs if there is no /var/cache in the initramfs.  This will
+be fixed in the next release, probably quite soon.
 
-brwan
-- eth0.102 (could be optimized without bridge but for future comfort)
-- future2
+Ben.
 
-Ad systemd vs. manual config: As I said I didn't find any difference in 
-the bridge/ip outputs. As they are broken (see other message) maybe 
-something else is broken, too.
+Ben Hutchings (42):
+      debian/control: Remove maximilian attems and Adam Conrad from Uploade=
+rs field
+      hooks/resume: Generalise logic to replace dev name with UUID when RES=
+UME=3Dauto
+      hooks/resume: Store /dev/mapper path for swap if possible when RESUME=
+auto
+      Merge branch 'master' into 'master'
+      Merge branch 'master' into 'master'
+      Merge branch 'narrower-sync' into 'master'
+      Merge branch 'add-lz4-support-to-mkinitramfs' into 'master'
+      debian/control: Point Vcs URLs to Salsa
+      hooks/fsck: Fix invocation of fstype at build time
+      docs: Convert maintainer notes to Markdown format
+      docs/maintainer-notes.md: Update references to Alioth, to Salsa
+      docs/maintainer-notes.md: Delete mention of git-core package
+      docs/maintainer-notes.md: Change BTS link to specify source package
+      docs/maintainer-notes.md: Link to tracker.debian.org instead of PTS
+      docs/maintainer-notes.md: Remove stale link to Debian bug count graph
+      docs/maintainer-notes.md: Use HTTP-S for Debian wiki and popcon links
+      docs/maintainer-notes.md: Link directly to Ubuntu bug list
+      docs/maintainer-notes.md: Add myself as co-author
+      hook-functions: Correct the comment above hidden_dep_add_modules
+      hook-functions: Remove directory information from hidden_dep_add_modu=
+les
+      hook-functions: Check modules.builtin in hidden_dep_add_modules
+      hook-functions: Handle i8042 hidden dependency on psmouse
+      hook-functions: Handle nvme hidden dependency on vmd
+      unmkinitramfs, lsinitramfs: Split multiple early initramfs sections
+      debian/control: Add e2fsprogs to Depends for initramfs-tools-core
+      initramfs.conf: Update documentation of the DEVICE variable
+      mkinitramfs: Build reproducible images when SOURCE_DATE_EPOCH is set
+      mkinitramfs: Exclude ldconfig auxiliary cache from initramfs image
+      mkinitramfs(8): Remove description of nonexistent options
+      mkinitramfs(8), hook-functions: Correct references to "ramdisk"
+      docs: Move initramfs-tools man page to section 7
+      docs: Update man page header dates
+      docs: Set man page header source and manual parameters correctly
+      docs: Don't package maintainer documentation in initramfs-tools-core
+      docs: Remove outdated "HACKING" documentation file
+      debian/initramfs-tools-core.manpages: Fix filenames
+      debian/control: Remove obsolete Breaks and Depends relations
+      debian/control: Update Standards-Version to 4.1.5
+      debian/initramfs-tools-core.doc-base: Remove
+      initramfs-tools: Override lintian warning "breaks-without-version ups=
+tart"
+      docs/maintainer-notes.md: Update the name of this file
+      Releasing version 0.131.
 
-Thnx.
+Benjamin Drung (6):
+      Add mlx4 and mlx5 InfiniBand modules to hidden_dep_add_modules
+      Add option to clear screen at the beginning
+      Fix indentation (spaces to tabs)
+      Fix config directory in error message
+      Double quote to prevent globbing and word splitting
+      Make size of /run configurable
 
-Ciao,
-Gerhard
+Colin Watson (1):
+      Only sync the filesystem containing the initramfs
+
+Ivan Kozik (1):
+      init: export DEVICE so that when configured, it is actually set in co=
+nfigure_networking
+
+Karsten Merker (1):
+      Include the axp20x_usb_power module in the base modules list for MODU=
+LES=3Dmost
+
+Paul Menzel (2):
+      mkinitramfs: Add LZ4 support
+      control: Remove suggestion of *lz4-tools*
+
+Riku Voipio (1):
+      auto_add_modules: add mfd for MODULES=3D=3Dmost
+
+Steve Langasek (1):
+      Skip dmsetup resume devices if they are randomly encrypted.
+
+--=20
+Ben Hutchings
+We get into the habit of living before acquiring the habit of thinking.
+                                                         - Albert Camus
+
+
+--=-A8Cdx8Xdx87u791FIPm3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAltQtjYACgkQ57/I7JWG
+EQmBfg/8CSzjfhG41b7uGEbNUmiaZKafJAUvKkU9rPLhJ0oOdMSr7NekBiWBMYD9
+1v3n5BHs74wPT1bxeiWmtC+5eLJTjiY2/2gl/bawjcgddt7pXqhHSo/sAr91T2XK
+WlQhf0q+r4zFaJiM4wXcB+k3IUIF553s2GkYLYOAj7sXxTrrfkfiZycT5rSbP8Dx
+XEDfr94FIBLa+G2ac87uFPrpaZGX8Yw6tn0uXzq6YI50My4WJkDUax3QLYoWdCr4
+IXIdC3a/hXxbDQzcqqNkrj+wKL/V3vzX1TMz9mNmGbJQ4K/n8YJgrCq2jOhpNXsq
+6WnSCVlehDa1+sdHMnRDCAUv6mqYnTZdDGaL21IOhAiFWNLbD0SNuqZFhOSsYesB
+pUWoPJPTk7+ub86+rVNnxhCjLbpwA1Pcjaanz7ZrKhnw2C2/RLTz2S7MQL7mVjqV
+Abjxe4BX8fXiKYt1teLQY9vZjexE9bPQtSSfGIgJPl3aBQRA/RZ1J1Dr4Pj3J5/w
+eeTczOZAV3eLQIxSf/tRHtEHYF6fBPidosMZnKcOwgy1WGfnGuODtUI1IiyNcaVW
+gjFBuGfZQOcdbChspYzkxiI0XMR9SBr0klWqDp0UHKImQLJtVT32c0bI1bHdQcPP
+RoFrAFMTWXINvzE+4Fv1oF+kS+ZgcQ8WNEwWRxR/hDp4hbTO/P4=
+=3Ac6
+-----END PGP SIGNATURE-----
+
+--=-A8Cdx8Xdx87u791FIPm3--
 
