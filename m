@@ -1,47 +1,38 @@
-From: Olivier Brunel <jjk@jjacky.com>
-Subject: Re: bpfilter blocks root unmount during shutdown
-Date: Mon, 24 Sep 2018 16:55:31 +0200
-Message-ID: <20180924165531.5ae6615f@jjacky.com>
-References: <1ddb7086-3218-3335-04b7-d50414871945@gmail.com>
- <20180924132047.GD31443@gardel-login>
+From: Leonid Bloch <lb.workbox@gmail.com>
+Subject: Adding initramfs as an ELF section to bzImage
+Date: Tue, 23 Oct 2018 14:29:22 +0300
+Message-ID: <CAOwCge2F92GninYqckfrpOaTghsAUiESqpNUUpQLzvvBwOS87g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: base64
-Return-path: <systemd-devel-bounces@lists.freedesktop.org>
-In-Reply-To: <20180924132047.GD31443@gardel-login>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://lists.freedesktop.org/mailman/options/systemd-devel>, 
- <mailto:systemd-devel-request@lists.freedesktop.org?subject=unsubscribe>
-List-Archive: <https://lists.freedesktop.org/archives/systemd-devel>
-List-Post: <mailto:systemd-devel@lists.freedesktop.org>
-List-Help: <mailto:systemd-devel-request@lists.freedesktop.org?subject=help>
-List-Subscribe: <https://lists.freedesktop.org/mailman/listinfo/systemd-devel>, 
- <mailto:systemd-devel-request@lists.freedesktop.org?subject=subscribe>
-Errors-To: systemd-devel-bounces@lists.freedesktop.org
-Sender: "systemd-devel" <systemd-devel-bounces@lists.freedesktop.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=GxaUldInxt8S0WOf96/f1dggEVygmb1yXVURh5ZUr7A=;
+        b=OAP3h7O060GVB81SnN62qM9o3uJ0DeOVq9JnlEkYlTw8hDX9BZCJjcEFRaiIYTH99t
+         HIOfLeQ+y7j09q4vfhzPtVpNFR/4TooErcD78R0k5z3J0KBBgFcsNkM81e10PFxt/tCl
+         NHAVPEE7kVRY8av/OntQ9pkqoFzrkJ/ne47dwVRORwSlBt487F7WQNebK8AZQBRjgrs0
+         M7h+GTAEEW+sHdCFvGVEaA20Zyqv8Or3DHyPDQWaAqLVqLeSxF/DLNg8dWbeS4afXIGP
+         zH0hiTXutB+LLWH2c8nnDtewkowP3gsLCrHliZTfvKhThq6MraVg3Tcy0ZlDgH6izd+T
+         JJaw==
+Sender: linux-kernel-owner@vger.kernel.org
+List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: systemd-devel@lists.freedesktop.org
-Cc: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org, initramfs@vger.kernel.org
 
-T24gTW9uLCAyNCBTZXAgMjAxOCAxNToyMDo0NyArMDIwMApMZW5uYXJ0IFBvZXR0ZXJpbmcgPGxl
-bm5hcnRAcG9ldHRlcmluZy5uZXQ+IHdyb3RlOgoKPiBPbiBTbywgMjMuMDkuMTggMTA6MzgsIEFu
-ZHJlaSBCb3J6ZW5rb3YgKGFydmlkamFhckBnbWFpbC5jb20pIHdyb3RlOgo+IAo+ID4gRHJhY3V0
-IC9zaHV0ZG93biBzY3JpcHQgZmlyc3QgdHJpZXMgdG8ga2lsbCBhbGwgcHJvY2Vzc2VzIHN0aWxs
-Cj4gPiBydW5uaW5nIG9mZiBvbGQgcm9vdC4gVW5mb3J0dW5hdGVseSB0aGlzIGZhaWxzIGZvciBz
-cGVjaWFsIHVzZXIKPiA+IHByb2Nlc3MgdGhhdCBydW5zIGJwZmlsdGVyIGJlY2F1c2UgaXQgZG9l
-cyBub3QgaW5jbHVkZSByZWZlcmVuY2UKPiA+IHRvIC9vbGRyb290IGluIHBsYWNlcyB3aGVyZSBk
-cmFjdXQgbG9va3MgZm9yIGluCj4gPiBraWxhbGxfcHJvY19tb3VudHBvaW50KCkgIAo+IAo+IEht
-bSwgd2hlbiB3ZSBpbnZva2UgdGhlIC9zaHV0ZG93biBleGVjdXRhYmxlIHdlIGFscmVhZHkgZXhl
-Y3V0ZWQgb3VyCj4gcHJvY2VzcyBraWxsaW5nIHNwcmVlIGFzIHBhcnQgb2Ygc3lzdGVtZC1zaHV0
-ZG93bi4gSG93IGNvbWUgeW91cgo+IHByb2Nlc3NlcyBldmVuIHN1cnZpdmUgdGhhdCBsb25nPyBX
-aGF0IGFtIEkgbWlzc2luZz8KCkkgYmVsaWV2ZSBpdCdzIGJlY2F1c2UgdGhlIGJwZmlsdGVyIGhl
-bHBlciBwcm9jZXNzIGlzIGlkZW50aWZpZWQgYXMgYQprZXJuZWwgdGhyZWFkIC0gc2luY2UgaXQg
-aGFzIGFuIGVtcHR5IGNvbW1hbmQgbGluZSAtIGFuZCB0aGVyZWZvcmUgbm90CmtpbGxlZC4KCkkg
-cGVyc29uYWxseSBmZWVsIHRoaXMgaXMgYSBidWcgKGluIHRoZSBrZXJuZWwpLCBidXQgYXBwYXJl
-bnRseQp0aGlzIHdob2xlIGJwZmlsdGVyIHRoaW5nIGlzbid0IHF1aXRlIHJlYWR5IHlldCBhbmQg
-c2hvdWxkbid0IGJlCnVzZWQgZm9yIHRoZSBtb21lbnQgLS0gc28gaG9wZWZ1bGx5IGl0J2xsIGlt
-cHJvdmUvYmUgZml4ZWQgaW4gdGhlIG1lYW4KdGltZS4KWW91IGNhbiBzZWUgdGhpcyB0aHJlYWRb
-MV0gYWJvdXQgdGhlIGlzc3VlLgoKQ2hlZXJzLAoKCgpbMV0gaHR0cHM6Ly93d3cuc3Bpbmljcy5u
-ZXQvbGlzdHMvbmV0ZGV2L21zZzUyMDAzMC5odG1sCl9fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fCnN5c3RlbWQtZGV2ZWwgbWFpbGluZyBsaXN0CnN5c3RlbWQt
-ZGV2ZWxAbGlzdHMuZnJlZWRlc2t0b3Aub3JnCmh0dHBzOi8vbGlzdHMuZnJlZWRlc2t0b3Aub3Jn
-L21haWxtYW4vbGlzdGluZm8vc3lzdGVtZC1kZXZlbAo=
+Hello,
+
+I am wondering if it is possible to add initramfs as an ELF section to
+the bzImage, and if so - how?
+
+I am aware that it is possible to compile-in an initramfs or to supply
+it as an external file. Both of these options don't fit my needs. The
+first one doesn't fit because it is very difficult to manipulate after
+compilation, and the second - because I need a single file.
+
+It looks like there should be no problem to append a section to the
+bzImage for loading into memory as initramfs, but I didn't find a way
+to do it yet.
+
+Regards,
+Leonid.
