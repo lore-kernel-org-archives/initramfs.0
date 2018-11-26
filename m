@@ -1,94 +1,83 @@
 From: Casey Schaufler <casey@schaufler-ca.com>
 Subject: Re: [RFC][PATCH] fs: set xattrs in initramfs from regular files
-Date: Mon, 26 Nov 2018 08:17:58 -0800
-Message-ID: <9b289ef7-473b-5e39-57c0-11a06ca3be65@schaufler-ca.com>
+Date: Mon, 26 Nov 2018 08:34:54 -0800
+Message-ID: <f2886ac7-aff9-94bc-5f65-b3b2e946a6ff@schaufler-ca.com>
 References: <20181122154942.18262-1-roberto.sassu@huawei.com>
- <3d1bfbd7-7d45-4cf1-32d6-7f6985b42393@schaufler-ca.com>
- <1543001453.4298.23.camel@linux.ibm.com>
- <6d6f3a60-7c80-4107-6d9b-be3d53cefefc@schaufler-ca.com>
- <1543236710.3902.43.camel@linux.ibm.com>
+ <7f2b0288-a173-e2bb-70ee-d552610bfc1e@landley.net>
+ <b907b5ca-1515-1ed4-d50d-28c1736c0eb8@huawei.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1543249085; bh=u5gn/nmg74thKaY1zkY926hhudkk1aWQ0sk3fvpX9gM=; h=Subject:To:Cc:References:From:Date:In-Reply-To:From:Subject; b=A0g4G2GCWrEcynw12z+dbkKToHJxhMhgWfu3wAH8HPOkptQctdZM66lgV9c0wQ/AQfpUJKaZimsF/39GHuaONz//SKB66CuAjfvZNKSkhHJU3FNLdekzOjEiyqef95acdk2eMcjFefZHjjCO1JzqTUqevp4HWCGrsTxi9OnzFqVrkkYnKW5/CRdfxYfJqqL1k+dBP9ZnpFii2Ka4o429Cb2XRlh1tuCgwHU/ggcpatRK6elLn95ICkYqotcCMlTxRMfl/uZM4XuHyl87yMaaeDtHNvQuaMN0z0RKfKhcu2a/kbo7/xb+NmNNWMGyQeceLZeCv6ONJyGZb2eqJb5ctw==
-In-Reply-To: <1543236710.3902.43.camel@linux.ibm.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1543250098; bh=a3m1eFlsSM3SrVWRsMILtkAXDYkdsQYxiEQo5LLz7g4=; h=Subject:To:Cc:References:From:Date:In-Reply-To:From:Subject; b=AdOlgUu4iXOQJZR7eHGk20VdY9/nh6GSygi8bEH9V68n6/+dDP4SlK9w6Yv7AIc6y4ov+KN2FSEGi2jLUYSOL1vIziqwXZCDvkqX1UfAyX+qv8sUqCAiFHKPyjI295e7ET7DcfOYqs8wugPhr3ED5u54srWmLPqo3doU3N2U5LaVxz0GKETVp64RqD0OgWuWygbiWOT6LgyBukD/JxndVjKIh9cNkAgLxfQ8bh+qOv2uOPht3wD3Mf/t+6TajZFmtXsfVeLb8Lmn+m/8v36vHpITgph4cTxAoQqOR/nFJPwLu4o2itN/rcROh6UjloLOEh2yqb06TKFE3XwIdKeO0g==
+In-Reply-To: <b907b5ca-1515-1ed4-d50d-28c1736c0eb8@huawei.com>
 Content-Language: en-US
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Mimi Zohar <zohar@linux.ibm.com>, Roberto Sassu <roberto.sassu@huawei.com>, viro@zeniv.linux.org.uk
-Cc: linux-fsdevel@vger.kernel.org, linux-integrity@vger.kernel.org, linux-security-module@vger.kernel.org, initramfs@vger.kernel.org, linux-kernel@vger.kernel.org, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, Greg KH <gregkh@linuxfoundation.org>, Andrew Morton <akpm@linux-foundation.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Roberto Sassu <roberto.sassu@huawei.com>, Rob Landley <rob@landley.net>, viro@zeniv.linux.org.uk
+Cc: linux-fsdevel@vger.kernel.org, linux-integrity@vger.kernel.org, linux-security-module@vger.kernel.org, initramfs@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, james.w.mcmechan@gmail.com
 
-On 11/26/2018 4:51 AM, Mimi Zohar wrote:
-> On Fri, 2018-11-23 at 18:07 -0800, Casey Schaufler wrote:
->> On 11/23/2018 11:30 AM, Mimi Zohar wrote:
->>> On Fri, 2018-11-23 at 11:03 -0800, Casey Schaufler wrote:
->>>> On 11/22/2018 7:49 AM, Roberto Sassu wrote:
->>>>> Although rootfs (tmpfs) supports xattrs, they are not set due to the
->>>>> limitation of the cpio format. A new format called 'newcx' was proposed to
->>>>> overcome this limitation.
->>>>>
->>>>> However, it looks like that adding a new format is not simple: 15 kernel
->>>>> patches; user space tools must support the new format; mistakes made in the
->>>>> past should be avoided; it is unclear whether the kernel should switch from
->>>>> cpio to tar.
->>>>>
->>>>> The aim of this patch is to provide the same functionality without
->>>>> introducing a new format. The value of xattrs is placed in regular files
->>>>> having the same file name as the files xattrs are added to, plus a
->>>>> separator and the xattr name (<filename>.xattr-<xattr name>).
->>>>>
->>>>> Example:
->>>>>
->>>>> '/bin/cat.xattr-security.ima' is the name of a file containing the value of
->>>>> the security.ima xattr to be added to /bin/cat.
->>>>>
->>>>> At kernel initialization time, the kernel iterates over the rootfs
->>>>> filesystem, and if it encounters files with the '.xattr-' separator, it
->>>>> reads the content and adds the xattr to the file without the suffix.
->>>> No.
->>>>
->>>> Really, no.
->>>>
->>>> It would be incredibly easy to use this mechanism to break
->>>> into systems.
-> Assuming that the initramfs itself was signed, how?
+On 11/26/2018 4:56 AM, Roberto Sassu wrote:
+> On 11/23/2018 9:21 PM, Rob Landley wrote:
+>> On 11/22/18 9:49 AM, Roberto Sassu wrote:
+>>> Although rootfs (tmpfs) supports xattrs, they are not set due to the
+>>> limitation of the cpio format. A new format called 'newcx' was proposed to
+>>> overcome this limitation.
+>>
+>> I got email about that format the day before you posted this, by the way.
+>>
+>>> However, it looks like that adding a new format is not simple: 15 kernel
+>>> patches; user space tools must support the new format; mistakes made in the
+>>> past should be avoided; it is unclear whether the kernel should switch from
+>>> cpio to tar.
+>>
+>> The kernel _can't_ switch from cpio to tar without breaking backwards
+>> compatability, it could only add tar as a second format it supported (remember
+>> cpio images can be sideloaded so a new rootfs can be used with an existing
+>> initramfs, plus existing build systems generate them and would still need to if
+>> they wanted to keep supporting older kernels), and then once you've got two
+>> formats somebody will propose zip support, and let's just not go there please.
+>>
+>> The changes to the userspace tools are trivial (I say that as the maintainer of
+>> toybox, which has a cpio). The argument was about things like 64 bit timestamps
+>> (y2038 problem), nanosecond support, sparse files, etc. And I think the argument
+>> had largely died down?
+>>
+>> Keep in mind the squashfs guy spent 5 years trying to get his filesystem merged
+>> (https://lwn.net/Articles/563578/), I spent several years trying to get my perl
+>> removal patch merged (and only work up the enthusiasm to resubmit
+>> http://lists.busybox.net/pipermail/buildroot/2015-March/123385.html
+>> https://patchwork.kernel.org/patch/9193529/ https://lkml.org/lkml/2017/9/13/651
+>> about once a year because dealing with linux-kernel is just no fun for hobbyists
+>> anymore).
+>>
+>>> The aim of this patch is to provide the same functionality without
+>>> introducing a new format. The value of xattrs is placed in regular files
+>>> having the same file name as the files xattrs are added to, plus a
+>>> separator and the xattr name (<filename>.xattr-<xattr name>).
+>>
+>> I think you're solving the wrong problem, but that's just my opinion.
+>
+> Instead of iterating over rootfs, would it be better to detect files
+> with extended attributes (from the file name) when the cpio image is
+> parsed by the kernel, and call sys_lsetxattr() in do_copy()? This part
+> can be turned on by introducing a new type in the existing format (if
+> possible).
 
-I don't share your faith in signatures.
+A very similar approach was used in at least one MLS Unix
+system back in the day. It used tar, but would have worked
+just as well with CPIO. Any file with a specific name
+was assumed to contain the security attributes for the
+preceding file, and tar invoked a helper program to set
+them. No change to the tar format was required, and if
+you read an archive with a generic tar you just got multiple
+entries for the special name. No format or special types
+required.
 
->>>>> This proposal requires that LSMs and IMA allow the read and setxattr
->>>>> operations. This should not be a concern since: files with xattr values
->>>>> are not parsed by the kernel; user space processes are not yet executed.
->>>>>
->>>>> It would be possible to include all xattrs in the same file, but this
->>>>> increases the risk of the kernel being compromised by parsing the content.
->>>> The kernel mustn't do this.
->>> Mustn't do what?  Store the xattr as separate detached files, 
->>> include all the xattrs in a single or per security/LSM xattr attribute
->>> file(s), or either?
->> Any and all of the above. The proposed behavior is a kludge
->> around making the installation tools work correctly. Sure, it
->> may be easier to change the kernel than to change the utilities.
->> That's doesn't make it right.
-> Modifying userspace tools, as Rob Landley pointed out in terms of
-> toybox, isn't difficult.  The difficulty has been in reviewing and
-> upstreaming the kernel CPIO changes.
+>
+> The impact of this alternative is very low, and LSMs/IMA would be able,
+> with minimum effort, to enforce policies on files in the initial ram
+> disk.
 
-No sympathy from me there. And why wouldn't this scheme require
-just as much review?
-
-> This patch was posted in order to address the lack of xattr support in
-> the initramfs.  Before totally dismissing this or a similar solution,
-> is there a safe method for including the xattrs?
-
-The extension to CPIO sounds right to me.
-
-> Would defining an LSM hook here help?  Each LSM would define its own
-> method for storing and applying, or restoring, xattr labels.
-
-I'm more concerned about how this could be used with file capabilities
-than I am with access control attributes. I don't see how adding a hook
-for this special case would help.
-
-> Mimi
+True. And it worked. But it was still a kludge.
 
