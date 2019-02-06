@@ -1,92 +1,146 @@
-From: Roberto Sassu <roberto.sassu@huawei.com>
-Subject: Re: [RFC][PATCH] fs: set xattrs in initramfs from regular files
-Date: Mon, 26 Nov 2018 19:14:34 +0100
-Message-ID: <a343bbde-f27f-2c62-1843-5c86460e4352@huawei.com>
-References: <20181122154942.18262-1-roberto.sassu@huawei.com>
- <7f2b0288-a173-e2bb-70ee-d552610bfc1e@landley.net>
- <b907b5ca-1515-1ed4-d50d-28c1736c0eb8@huawei.com>
- <79a41125-0232-6f6e-6f38-f4c45a7b439e@landley.net>
+From: Ben Hutchings <ben@decadent.org.uk>
+Subject: initramfs-tools 0.133 release
+Date: Wed, 06 Feb 2019 21:06:08 +0000
+Message-ID: <dccccef98b69b72e617b14ad30fdfc2c559127f5.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <79a41125-0232-6f6e-6f38-f4c45a7b439e@landley.net>
-Content-Language: en-US
-Sender: linux-kernel-owner@vger.kernel.org
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: Rob Landley <rob@landley.net>, viro@zeniv.linux.org.uk
-Cc: linux-fsdevel@vger.kernel.org, linux-integrity@vger.kernel.org, linux-security-module@vger.kernel.org, initramfs@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, james.w.mcmechan@gmail.com
-
-On 11/26/2018 6:42 PM, Rob Landley wrote:
-> On 11/26/18 6:56 AM, Roberto Sassu wrote:
->> On 11/23/2018 9:21 PM, Rob Landley wrote:
->>>> The aim of this patch is to provide the same functionality without
->>>> introducing a new format. The value of xattrs is placed in regular files
->>>> having the same file name as the files xattrs are added to, plus a
->>>> separator and the xattr name (<filename>.xattr-<xattr name>).
->>>
->>> I think you're solving the wrong problem, but that's just my opinion.
->>
->> Instead of iterating over rootfs, would it be better to detect files
->> with extended attributes (from the file name) when the cpio image is
->> parsed by the kernel,
-> 
-> Huh, I thought at first glance that's what the new approach _was_ doing.
-> 
-> In band signaling in the archive is ugly, still requires new tools to create it,
-
-For SElinux, the changes would be minimal. Instead of adding the
-xattr, setfiles would create a regular file with the suffix, in the
-temporary directory containing the files to be added to the CPIO image.
-
-For IMA, I think there is also a tool to write file signatures. It
-shouldn't be a problem to do the same modification I proposed for
-SELinux.
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-wqpLfhUGhQwL9NZs7Rti"
+Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane.org@lists.debian.org>
+Resent-Message-ID: <26z69vaV0kP.A.GpF.Vx0WcB@bendel>
+List-Id: <initramfs.vger.kernel.org>
+List-URL: <https://lists.debian.org/debian-kernel/>
+List-Post: <mailto:debian-kernel@lists.debian.org>
+List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
+List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
+List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
+List-Archive: https://lists.debian.org/msgid-search/dccccef98b69b72e617b14ad30fdfc2c559127f5.camel@decadent.org.uk
+To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
 
 
-> doesn't address the y2038 issue... (Although we could cheat, treat the time
-> signature as unsigned, and buy another few decades.)
-> 
-> But doing that in the filesystem _after_ you extract the archive is beyond ugly.
-> 
->> and call sys_lsetxattr() in do_copy()? This part
->> can be turned on by introducing a new type in the existing format (if
->> possible).
->>
->> The impact of this alternative is very low, and LSMs/IMA would be able,
->> with minimum effort, to enforce policies on files in the initial ram
->> disk.
-> 
-> The cpio extension isn't a big deal, I was pondering doing it myself in toybox
-> (and submitting a kernel patch to consume the output) before Mimi approached me.
-> (I did the initmpfs stuff already, I've stomped around in this area before.) I
-> just didn't because mimi sent their patch first, so I waited for that to work
-> its way though.
-> 
-> Unfortunately, it's simple enough that there was a bit of bikeshedding. (You can
-> store time in milliseconds as a 64 bit number without worrying about the range,
-> but if you do it as nanoseconds you need two fields, but people spoke up and
-> said "but if you don't store the nanoseconds the rounding causes spurious time
-> differences when between filesystems and it confuses our build system about what
-> has and hasn't changed"...)
-> 
-> The new in-band signaling proposal is, at best, a hack. (Filename lengths are
-> capped at 255 in the VFS, can you strip the xattrs on a long filename by having
-> the extension fail to create in the filesystem? Or do you have an arbitrary max
-> length on filenames because you need to reserve room for the extension?)
+--=-wqpLfhUGhQwL9NZs7Rti
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Yes, that would be a limitation. Alternatively, files with xattrs could
-be placed in a subdir. For example:
+This release fixes a number of bugs reported to Debian, none of them
+particularly severe.  It addresses many errors and warnings emitted by
+the static checker shellcheck, thanks to Benjamin Drung.
 
-/bin/cat
-/bin/.xattr-<xattr name>/cat
+mkinitramfs now uses pigz as a substitute for gzip if it's installed,
+and initramfs-tools-core recommends it.  The man page synopses and
+usage messages have been made more consistent, and all commands now
+support the --help option.  The README has been updated for the first
+time in 13 years.
 
-Roberto
+Possible breaking changes:
+- The build process now includes running shellcheck over all shell
+  scripts.  Downstream packagers that change or add to the scripts may
+  need to update their changes or disable this check.
+- The update-initramfs -y option has been removed
+- lsinitramfs -l (with no filename) is now an error
+- The get_fstype function is now silent on failure
+- The render function has been removed
+- Checks for very old kernel (< 2.6.38) and dpkg (< 1.14.17) versions
+  have been removed
+
+Ben.
+
+Ben Hutchings (49):
+      unmkinitramfs, lsinitramfs: Avoid zcat compatibility issue by running=
+ gzip
+      mkinitramfs: Remove check for kernel version < 2.6.38
+      mkinitramfs; Stop setting both compress and COMPRESS variables
+      initramfs-tools: Change trigger declaration to "interest-await"
+      update-initramfs: Remove test for working dpkg-trigger
+      kernel hooks: Remove use of update-initramfs -t option
+      update-initramfs: Remove undocumented -y option
+      mkinitramfs: Warn if the compression command is not recognised
+      Merge branch 'benh/compression'
+      init: Always export the resume and noresume variables, as documented
+      Merge branch 'bdrung/initramfs-tools-master'
+      debian/rules: Use a more conservative "find" for shellcheck arguments
+      Change get_fstype to be silent on failure
+      scripts/functions: Abort _checkfs_once early if fs type is unknown
+      scripts/local: Explicitly check for missing root parameter and mount =
+failure
+      scripts/{local,nfs}: Remove redundant modprobe of filesystem modules
+      hook-functions: Remove an obsolete FIXME
+      hook-functions: Avoid symlinks that conflict with usr-merge in copy_f=
+ile
+      {hooks,scripts}/keymap: Use setupcon --setup-dir
+      scripts/local: Handle rootfstype=3Dauto the same as if type is unspec=
+ified
+      mkinitramfs: Use default compression level for lzop
+      README: Summarise what initramfs-tools does and point to manual pages
+      initramfs-tools(7): Document how to update the initramfs from another=
+ package
+      scripts/functions: Revert change to _log_msg and make callers format-=
+safe
+      scripts/local-premount/resume: Report when we are resuming
+      scripts/nfs: Use "sleep" instead of /bin/sleep
+      Print warnings and errors in initramfs generation consistently
+      hooks/fsck: If get_fstype fails, report which file system it failed f=
+or
+      mkinitramfs: Delete comment about an impossible deprecation
+      mkinitramfs: Change EXTRA_CONF to include directory names
+      mkinitramfs: Don't add directories to EXTRA_CONF
+      mkinitramfs: Use pigz if available instead of gzip
+      initramfs-tools-core: Recommend pigz
+      Remove descriptions of removed/deprecated options from man page synop=
+sises
+      mkinitramfs(8), update-initramfs(8): Fix over-indentation of options
+      update-initramfs(8): Fix formatting of mode options in the synopsis
+      Move usage function for mkinitramfs out of hook-functions
+      update-initramfs: Use getopt instead of getopts
+      update-initramfs: Make -h option return 0 and write usage to stdout
+      update-initramfs: Support --help option
+      Make all commands return 2 in case of a usage error
+      mkinitramfs: Support -h and --help options
+      unmkinitramfs(8): Abbreviate synopsis to avoid wrapping
+      Make manual pages and usage messages more consistent
+      squash! Make all commands return 2 in case of a usage error
+      lsinitramfs, mkinitramfs, unmkinitramfs: Show usage if getopt fails
+      lsinitramfs: Check for empty list of arguments after parsing options
+      hooks/resume: Report in excruciating detail if the -v option is used
+      Releasing version 0.133.
+
+Benjamin Drung (9):
+      scripts/functions: Fix syntax error: unexpected "(" on panic
+      mkinitramfs: Fix termination of gzip compression case
+      scripts/functions: Drop render function
+      Remove trailing newline from debian/changelog
+      Fix (nearly) all issues found by shellcheck
+      Disable shellcheck for desired behaviour
+      Replace 'echo -n' by printf
+      Run shellcheck on package build time
+      Add autopkgtest for shellcheck
+
+--=20
+Ben Hutchings
+Man invented language to satisfy his deep need to complain.
+                                                          - Lily Tomlin
 
 
-> Rob
-> 
 
--- 
-HUAWEI TECHNOLOGIES Duesseldorf GmbH, HRB 56063
-Managing Director: Bo PENG, Jian LI, Yanli SHI
+--=-wqpLfhUGhQwL9NZs7Rti
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAlxbTEAACgkQ57/I7JWG
+EQnvsA//YTUK2zAr7aRXQPrXNeq8wa3Sdi2euKjGlMLNBsbqPqUoFtnLBndknGsN
+N5WZW0/bSGVXMr6LtT749pYUVdOlaPgCpIWP2XRdVmqSXKGDtexYO3FFrHGx+rhA
+L2/XrEHuoZ4Etz7UlMKPCuy3JUVM3E8Y/WneK9q7oNqoFfL0JHtpf98kyCXTIgdx
+iGgtPXmkNaGDMUSRxqRWsuylwE4Si83a2adn96Au0z5T+gxKjgh8oTK2msxcfy8P
+oJGD9AfXrU+KuuKuaCWOBTTqiJy7ni5xkVmi8mjjZiOOWxUDpDkRKRwO4sbnEakx
+Cx7nxpfXGO9s5bmF0A8zeFlfSygN8XSqCdQCQQjYkQXSZWorGfm+jAS2GsCQkk0r
+VK8CsK1xrC8nJhqkodTDE9Jv+8kAsRDQjIUCJyLOgjICDPIgVLjW8uUY8FFFPuRY
+1vooGlP4IFYbkqyVKYgsMMtgXAW5esC/pa6MfB2WtACjNpx+SRpVSM8OsqOSjFXN
+QeK4LMPfo3U1RU3QUV0y13DBTuSLIKQdwBn3XbT4AEq3H5+ygG9sVCC+K2EkQ5aT
+gjyUH+TWjr4LkLJXIScQuITlvrtmnLwF7mPrxFv1hUSrny8axuO83YU2ZqKqdhE0
+jlFuMfhPSeDEnFbDKkw1ACGKPdWFpluxdUufVhSSyHhxlnIK9o4=
+=dS8p
+-----END PGP SIGNATURE-----
+
+--=-wqpLfhUGhQwL9NZs7Rti--
+
