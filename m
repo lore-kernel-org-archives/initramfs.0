@@ -1,61 +1,51 @@
-From: Mimi Zohar <zohar@linux.ibm.com>
+From: Andy Lutomirski <luto@kernel.org>
 Subject: Re: [PATCH v2 0/3] initramfs: add support for xattrs in the initial
  ram disk
-Date: Fri, 10 May 2019 18:38:44 -0400
-Message-ID: <1557527924.10635.157.camel@linux.ibm.com>
+Date: Sat, 11 May 2019 15:44:12 -0700
+Message-ID: <CALCETrXy7gqmmy37=nrMAisGadZ+qbjZjXtWFF8Crq86xNpsfA@mail.gmail.com>
 References: <20190509112420.15671-1-roberto.sassu@huawei.com>
-         <fca8e601-1144-1bb8-c007-518651f624a5@landley.net>
-         <bf0d02fc-d6ce-ef1d-bb7d-7ca14432c6fd@huawei.com>
-         <1557488971.10635.102.camel@linux.ibm.com>
-         <3a9d717e-0e12-9d62-a3cf-afb7a5dbf166@landley.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <3a9d717e-0e12-9d62-a3cf-afb7a5dbf166@landley.net>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1557614665;
+        bh=DBGXq/wo5eO+VqLPrQODgPeSLnJ8AW0XoIMolnMCp6Q=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=2T1xXzIyLDFtQqcxDJubuIMPoaEwT56pjInA0mlMgeInYHftrgyEJJ1vJcvv+Tkuf
+         eA8Y/MST6nLsAmwk6H3JEMwXXqquGK0WICtADAdRVPD2CSlR8kj0BwKZncxL4LGmv8
+         hdsfKVy1tsrMoucuy5dczDnqZPdjIjsc/GSodU54=
+In-Reply-To: <20190509112420.15671-1-roberto.sassu@huawei.com>
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Rob Landley <rob@landley.net>, Roberto Sassu <roberto.sassu@huawei.com>, viro@zeniv.linux.org.uk
-Cc: linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, james.w.mcmechan@gmail.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Roberto Sassu <roberto.sassu@huawei.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>, LSM List <linux-security-module@vger.kernel.org>, linux-integrity <linux-integrity@vger.kernel.org>, initramfs@vger.kernel.org, Linux API <linux-api@vger.kernel.org>, Linux FS Devel <linux-fsdevel@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Mimi Zohar <zohar@linux.vnet.ibm.com>, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, "H. Peter Anvin" <hpa@zytor.com>, Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>, james.w.mcmechan@gmail.com
 
-On Fri, 2019-05-10 at 15:46 -0500, Rob Landley wrote:
-> On 5/10/19 6:49 AM, Mimi Zohar wrote:
-> > On Fri, 2019-05-10 at 08:56 +0200, Roberto Sassu wrote:
-> >> On 5/9/2019 8:34 PM, Rob Landley wrote:
-> >>> On 5/9/19 6:24 AM, Roberto Sassu wrote:
-> > 
-> >>>> The difference with another proposal
-> >>>> (https://lore.kernel.org/patchwork/cover/888071/) is that xattrs can be
-> >>>> included in an image without changing the image format, as opposed to
-> >>>> defining a new one. As seen from the discussion, if a new format has to be
-> >>>> defined, it should fix the issues of the existing format, which requires
-> >>>> more time.
-> >>>
-> >>> So you've explicitly chosen _not_ to address Y2038 while you're there.
-> >>
-> >> Can you be more specific?
-> > 
-> > Right, this patch set avoids incrementing the CPIO magic number and
-> > the resulting changes required (eg. increasing the timestamp field
-> > size), by including a file with the security xattrs in the CPIO.  In
-> > either case, including the security xattrs in the initramfs header or
-> > as a separate file, the initramfs, itself, needs to be signed.
-> 
-> The /init binary in the initramfs runs as root and launches all other processes
-> on the system. Presumably it can write any xattrs it wants to, and doesn't need
-> any extra permissions granted to it to do so. But as soon as you start putting
-> xattrs on _other_ files within the initramfs that are _not_ necessarily running
-> as PID 1, _that's_ when the need to sign the initramfs comes in?
-> 
-> Presumably the signing occurs on the gzipped file. How does that affect the cpio
-> parsing _after_ it's decompressed? Why would that be part of _this_ patch?
+On Thu, May 9, 2019 at 4:27 AM Roberto Sassu <roberto.sassu@huawei.com> wrote:
+>
+> This patch set aims at solving the following use case: appraise files from
+> the initial ram disk. To do that, IMA checks the signature/hash from the
+> security.ima xattr. Unfortunately, this use case cannot be implemented
+> currently, as the CPIO format does not support xattrs.
+>
+> This proposal consists in marshaling pathnames and xattrs in a file called
+> .xattr-list. They are unmarshaled by the CPIO parser after all files have
+> been extracted.
+>
+> The difference from v1 (https://lkml.org/lkml/2018/11/22/1182) is that all
+> xattrs are stored in a single file and not per file (solves the file name
+> limitation issue, as it is not necessary to add a suffix to files
+> containing xattrs).
+>
+> The difference with another proposal
+> (https://lore.kernel.org/patchwork/cover/888071/) is that xattrs can be
+> included in an image without changing the image format, as opposed to
+> defining a new one. As seen from the discussion, if a new format has to be
+> defined, it should fix the issues of the existing format, which requires
+> more time.
 
-The signing and verification of the initramfs is a separate issue, not
-part of this patch set.  The only reason for mentioning it here was to
-say that both methods of including the security xattrs require the
-initramfs be signed.  Just as the kernel image needs to be signed and
-verified, the initramfs should be too.
+I read some of those emails.  ISTM that adding TAR support should be
+seriously considered.  Sure, it's baroque, but it's very, very well
+supported, and it does exactly what we need.
 
-Mimi
-
-
+--Andy
