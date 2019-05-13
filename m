@@ -1,8 +1,8 @@
-From: Arvind Sankar <nivedita@alum.mit.edu>
+From: Arvind Sankar <niveditas98@gmail.com>
 Subject: Re: [PATCH v2 0/3] initramfs: add support for xattrs in the initial
  ram disk
-Date: Mon, 13 May 2019 13:51:12 -0400
-Message-ID: <20190513175111.GB69717@rani.riverdale.lan>
+Date: Mon, 13 May 2019 13:52:50 -0400
+Message-ID: <20190513175250.GC69717@rani.riverdale.lan>
 References: <dca50ee1-62d8-2256-6fdb-9a786e6cea5a@landley.net>
  <20190512194322.GA71658@rani.riverdale.lan>
  <3fe0e74b-19ca-6081-3afe-e05921b1bfe6@huawei.com>
@@ -14,16 +14,16 @@ Content-Transfer-Encoding: quoted-printable
 Return-path: <linux-kernel-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=sender:from:date:to:cc:subject:message-id:references:mime-version
+        h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:content-transfer-encoding:in-reply-to
          :user-agent;
-        bh=B5lit/bpHedf80sYMuDGoqL+WRq05MQP3LUFocwmKj8=;
-        b=CRwAAJf3B+Jo51AmiQSTmmu3WgVp0umKtiWWhm4Zdu3fy2wFPHoSVZUGsizrpVaAIh
-         s/+98ifo0DoxHThLPk4bOL9ovM7HpqFUhXaFVzfx/QrCKsXrak8E09gN8+CE5uL8Dp9k
-         6B8fNz6u1rTw49VozW7Pb2GnBGpepAfJ32vmQ2Sbhq0CITX4WkpJAhCNLGDMK94eFpiK
-         jc/0fazbh4Xbfpo6zIoAJOGCSp1dgvFV20j8JtWbwHci4zmYQEH4mEETSqWdr9YCEOhg
-         otmS0DBS/EIxlza6hVC4g6yB8IL9YHawZiD8QWOtutuZsomFueyeNDV/HH7D5luHtEmM
-         /4yQ==
+        bh=LDbQfP6zFs00yM0BuuWdblWsKRTzaG/CBEDU7dZNmDs=;
+        b=O5I4PGBL5IzNYv6Bq/wm2zwG3SzvtCI2bDBMnnKtCWU0zVguqAGvTiJ9H4ctz0WqRh
+         4KziU4mHqSiT3VK5ukyN08yx59j3RYqONk0TPJLRrMIXEAFhx35GId04T+JshsoNnNXs
+         ubteBEW//t4bbkFCBV5zGY67+Z6gdacDMWmER+n0KV1C46NO4T8LVDx7O/LTqgpKk3EJ
+         xuNhwFmg9f0Qq3EjrwraZaKcniI9ZyalKzUU0B/hmBBgZ4L3ykSSTJ/+D4rs+avO+7g5
+         pZY4bZBPBUyq0Eh6vkpBM4qHmbmPulnD4CwSjneTocgEfWVvfhzQZlV21f/srvzi1Wlg
+         lSNg==
 Content-Disposition: inline
 In-Reply-To: <20190513172007.GA69717@rani.riverdale.lan>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -84,8 +84,8 @@ ould
 > just cannot be used on an IMA-enabled system, or it can but it leaves
 > the initramfs unverified and we're trying to fix that? I had assumed the
 > latter.
-Oooh, it's done not by starting IMA later, but by loading a default
-policy that ignores the initramfs?
+Oooh, it's done not by starting IMA appraisal later, but by loading a
+default policy to ignore initramfs?
 > > >=20
 > > > So you made broken infrastructure that's causing you problems. Sounds=
  unfortunate.
