@@ -1,70 +1,225 @@
-From: Arvind Sankar <nivedita@alum.mit.edu>
+From: Rob Landley <rob@landley.net>
 Subject: Re: [PATCH v2 0/3] initramfs: add support for xattrs in the initial
  ram disk
-Date: Tue, 14 May 2019 10:44:07 -0400
-Message-ID: <20190514144406.GA37109@rani.riverdale.lan>
-References: <20190512194322.GA71658@rani.riverdale.lan>
+Date: Tue, 14 May 2019 10:12:37 -0500
+Message-ID: <6dcf4759-de65-d427-03c7-4b3df361da18@landley.net>
+References: <dca50ee1-62d8-2256-6fdb-9a786e6cea5a@landley.net>
+ <20190512194322.GA71658@rani.riverdale.lan>
  <3fe0e74b-19ca-6081-3afe-e05921b1bfe6@huawei.com>
  <4f522e28-29c8-5930-5d90-e0086b503613@landley.net>
  <f7bc547c-61f4-1a17-735c-7e8df97d7965@huawei.com>
- <20190513172007.GA69717@rani.riverdale.lan>
- <20190513175250.GC69717@rani.riverdale.lan>
- <1557772584.4969.62.camel@linux.ibm.com>
- <20190513184744.GA12386@rani.riverdale.lan>
- <1557785351.4969.94.camel@linux.ibm.com>
- <66b57ae5-bb5a-c008-8490-2c90e050fc65@landley.net>
+ <49965ffd-dd57-ffe5-4a2f-73cdfb387848@landley.net>
+ <de91ef53-6bb3-b937-8773-5f6b34e1acb7@huawei.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=sender:from:date:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to
-         :user-agent;
-        bh=MK/EeSYeIjxF8YTDVcELY66892EK1YJmsPeFgAgfrjM=;
-        b=qFdfOb2sfefv9BKhBFjgSIS+uytVFyTYQ01SS/qtY0zqykm8VlTLnzSLtzv7QxzVth
-         Un7eDsop3VKZJC1EVd6XQpNfWig7m6h2m69LtD0Y5JLiiTr04ZS0LEWa7FjLql/o3qHl
-         O7HVDtrCJDu7HTU8+WIMJdMxzEreKcply4xEir4+Pv1PClq2/Gcu6WNG4NDBJuK3VSZa
-         2eWFbELeMgW2NQ06TCD4S95CPB0dl3sK1becx5Cf0gM8+0W5lLRqw6P2+vPwbQcqMgl8
-         W2lYGRotHkH389BRu9YrUNYuioMiZFGvkiJfKEBfRZBe5j/iZzUTy5QB/vcHsTWMgq5t
-         /OrA==
-Content-Disposition: inline
-In-Reply-To: <66b57ae5-bb5a-c008-8490-2c90e050fc65@landley.net>
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=FrpMwftM+Mr1Vog1ubFtZ/Eq4Iaee6jzdfGfMeP7N9s=;
+        b=pJmHxmx6dWkcghgKrC5HPlV8gxpzuFwGHMNwCUJPC0PmpEocXwk43PwXNOGP/Zuore
+         Mzg4B6hN0i1zDBRzZ6wiPlBU3Sqg8zyZ9m7eEmWFNj/RMGSJ75tEYa24hRm3M5rhcaZQ
+         sOV/dSTJMCCpduTyjh83RvfxFLSQl0uoMErJbnnICChcreDI+l2OBZ28+ax9c/3k1PET
+         +Ci8OHc6VhQgMa1phIs1yh0ddmWHTZysZDx9MwL//nKTf/IO9EsQL8Fq24/gY1DfPHX4
+         lfVobhVcqf3JcdHfND1D/KCa33MaF1cxMWFY+9wfcGVw91uCSBzOaDlQohfHx+v5HvSB
+         KI2w==
+In-Reply-To: <de91ef53-6bb3-b937-8773-5f6b34e1acb7@huawei.com>
+Content-Language: en-US
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Rob Landley <rob@landley.net>
-Cc: Mimi Zohar <zohar@linux.ibm.com>, Arvind Sankar <nivedita@alum.mit.edu>, Arvind Sankar <niveditas98@gmail.com>, Roberto Sassu <roberto.sassu@huawei.com>, linux-kernel@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+To: Roberto Sassu <roberto.sassu@huawei.com>, Arvind Sankar <niveditas98@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org
 
-On Tue, May 14, 2019 at 01:06:45AM -0500, Rob Landley wrote:
-> On 5/13/19 5:09 PM, Mimi Zohar wrote:
-> >> Ok, but wouldn't my idea still work? Leave the default compiled-in
-> >> policy set to not appraise initramfs. The embedded /init sets all the
-> >> xattrs, changes the policy to appraise tmpfs, and then exec's the real
-> >> init? Then everything except the embedded /init and the file with the
-> >> xattrs will be appraised, and the embedded /init was verified as part of
-> >> the kernel image signature. The only additional kernel change needed
-> >> then is to add a config option to the kernel to disallow overwriting the
-> >> embedded initramfs (or at least the embedded /init).
-> > 
-> > Yes and no.  The current IMA design allows a builtin policy to be
-> > specified on the boot command line ("ima_policy="), so that it exists
-> > from boot, and allows it to be replaced once with a custom policy.
-> >  After that, assuming that CONFIG_IMA_WRITE_POLICY is configured,
-> > additional rules may be appended.  As your embedded /init solution
-> > already replaces the builtin policy, the IMA policy couldn't currently
-> > be replaced a second time with a custom policy based on LSM labels.
+On 5/14/19 6:52 AM, Roberto Sassu wrote:
+> On 5/14/2019 8:06 AM, Rob Landley wrote:
+>> On 5/13/19 7:47 AM, Roberto Sassu wrote:
+>>> On 5/13/2019 11:07 AM, Rob Landley wrote:
+>>>>>> Wouldn't the below work even before enforcing signatures on external
+>>>>>> initramfs:
+>>>>>> 1. Create an embedded initramfs with an /init that does the xattr
+>>>>>> parsing/setting. This will be verified as part of the kernel image
+>>>>>> signature, so no new code required.
+>>>>>> 2. Add a config option/boot parameter to panic the kernel if an external
+>>>>>> initramfs attempts to overwrite anything in the embedded initramfs. This
+>>>>>> prevents overwriting the embedded /init even if the external initramfs
+>>>>>> is unverified.
+>>>>>
+>>>>> Unfortunately, it wouldn't work. IMA is already initialized and it would
+>>>>> verify /init in the embedded initial ram disk.
+>>>>
+>>>> So you made broken infrastructure that's causing you problems. Sounds
+>>>> unfortunate.
+>>>
+>>> The idea is to be able to verify anything that is accessed, as soon as
+>>> rootfs is available, without distinction between embedded or external
+>>> initial ram disk.
+>>
+>> If /init is in the internal one and you can't overwrite files with an external
+>> one, all your init has to be is something that applies the xattrs, enables your
+>> paranoia mode, and then execs something else.
 > 
-> So your design assumption you're changing other code to work around in that
-> instance is the policy can only be replaced once rather than having a "finalize"
-> option when it's set, making it immutable from then on.
-> 
-> Rob
-I agree it would be better to have a finalize option. Outside of my
-idea, it seems the current setup would make it so while developing an
-IMA policy you need to keep rebooting to test your changes?
+> Shouldn't file metadata be handled by the same code that extracts the
+> content? Instead, file content is extracted by the kernel, and we are
+> adding another step to the boot process, to execute a new binary with a
+> link to libc.
 
-I'd suggest having a knob that starts out unrestricted, and can be
-one-way changed to append-only or immutable. This seems like a good idea
-even if you decide the embedded image is too much trouble or unworkable
-for other reasons.
+I haven't made a dynamically linked initramfs in years (except a couple for
+testing purposes). But then I don't deploy glibc, so...
+
+> From the perspective of a remote verifier that checks the software
+> running on the system, would it be easier to check less than 150 lines
+> of code, or a CPIO image containing a binary + libc?
+
+https://github.com/torvalds/linux/blob/master/tools/include/nolibc/nolibc.h
+
+(I have a todo item to add sh4 and m68k and ppc and such sections to that, but
+see "I've needed to resubmit
+http://lkml.iu.edu/hypermail/linux/kernel/1709.1/03561.html for a couple years
+now but it works for me locally and dealing with linux-kernel is just no fun
+anymore"...)
+
+>> You can totally use initramfs for lots of purposes simultaneously.
+> 
+> Yes, I agree. However, adding an initramfs to initialize another
+> initramfs when you can simply extract file content and metadata with the
+> same parser, this for me it is difficult to justify.
+
+You just said it's simpler to modify the kernel than do a thing you can already
+do in userspace. You realize that, right?
+
+>>>>> The only reason why
+>>>>> opening .xattr-list works is that IMA is not yet initialized
+>>>>> (late_initcall vs rootfs_initcall).
+>>>>
+>>>> Launching init before enabling ima is bad because... you didn't think of it?
+>>>
+>>> No, because /init can potentially compromise the integrity of the
+>>> system.
+>>
+>> Which isn't a problem if it was statically linked in the kernel, or if your
+>> external cpio.gz was signed. You want a signed binary but don't want the
+>> signature _in_ the binary...
+> 
+> It is not just for binaries. How you would deal with arbitrary file
+> formats?
+
+I'm confused, are you saying that /init can/should be an arbitrary file format,
+or that a cpio statically linked into the kernel can't contain files in
+arbitrary formats?
+
+>> Which is why there's a cpio in the kernel and an external cpio loaded via the
+>> old initrd mechanism and BOTH files wind up in the cpio and there's a way to
+>> make it O_EXCL so it can't overwrite, and then the /init binary inside the
+>> kernel's cpio can do any other weird verification you need to do before anything
+>> else gets a chance to run so why are you having ring 0 kernel code read a file
+>> out of the filesystem and act upon it?
+> 
+> The CPIO parser already invokes many system calls.
+
+The one in the kernel doesn't call system calls, no. Once userspace is running
+it can do what it likes. The one statically linked into the kernel was set up by
+the same people who built the kernel; if you're letting arbitrary kernels run on
+your system it's kinda over already from a security context?
+
+>> If it's in the file's contents you get uniform behavior regardless of the
+>> filesystem used. And "mandatory access controls do that" is basically restating
+>> what _I_ said in the paragraph above.
+> 
+> As I said, that does not work with arbitrary file formats.
+
+an /init binary can parse your .inbandsignalling file to apply xattrs to
+arbitrary files before handing off to something else, and a cpio.gz statically
+linked into the kernel can contain arbitrary files.
+
+>> The "infrastructure you have that works a certain way" is called "mandatory
+>> access controls". Good to know. Your patch changes the rest of the system to
+>> match the assumptions of the new code, because changing those assumptions
+>> appears literally unthinkable.
+> 
+> All I want to do is to have the same behavior as if there is no initial
+> ram disk. And given that inode-based MACs read the labels from xattrs,
+> the assumption that the system provides xattrs even in the inital ram
+> disk seems reasonable.
+
+There was a previous proposal for a new revision of cpio that I don't remember
+particularly objecting to? Which did things that can't trivially be done in
+userspace?
+
+>>> What do you mean exactly?
+>>
+>> That you're not remotely the first person to do this?
+>>
+>> You're attempting to prevent anyone from running third party code on your system
+>> without buying a license from you first. You're creating a system with no user
+>> serviceable parts, that only runs authorized software from the Apple Store or
+>> other walled garden. No sideloading allowed.
+> 
+> This is one use case. The main purpose of IMA is to preserve the
+> integrity of the Trusted Computing Base (TCB, the critical part of the
+> system), or to detect integrity violations without enforcement. This is
+> done by ensuring that the software comes from the vendor. Applications
+> owned by users are allowed to run, as the Discrectionary Access Control
+> (DAC) prevents attacks to the TCB. I'm working on a more advanced scheme
+> that relies on MAC.
+
+Sure, same general idea as Apple's lobbying against "right to repair".
+
+https://appleinsider.com/articles/19/03/18/california-reintroduces-right-to-repair-bill-after-previous-effort-failed
+
+The vendor can prevent any unauthorized software from running on the device, or
+even retroactively remove older software to force upgrades:
+
+https://www.macrumors.com/2019/05/13/adobe-creative-cloud-legal-action-older-apps/
+
+Or anything else, of course:
+
+https://www.zdnet.com/article/why-amazon-is-within-its-rights-to-remove-access-to-your-kindle-books/
+
+*shrug* Your choice, of course...
+
+>> So you have _more_ assumptions tripping you up. Great. So add a signature in a
+>> format your bootloader doesn't recognize, since it's the kernel that should
+>> verify it, not your bootloader?
+>>
+>> It sounds like your problem is bureaucratic, not technical.
+> 
+> The boot loader verifies the CPIO image, when this is possible. The
+> kernel verifies individual files when the CPIO image is not signed.
+> 
+> If a remote verifier wants to verify the measurement of the CPIO image,
+> and he only has reference digests for each file, he has to build the
+> CPIO image with files reference digests were calculated from, and in the
+> same way it was done by the system target of the evaluation.
+
+And your init program can parse your .inbandsignaling file to put the xattrs on
+the files and then poke the "now enforce" button.
+
+>>>> Whatever happened to https://lwn.net/Articles/532778/ ? Modules are signed
+>>>> in-band in the file, but you need xattrs for some reason?
+>>>
+>>> Appending just the signature would be possible. It won't work if you
+>>> have multiple metadata for the same file.
+>>
+>> Call the elf sections SIG1 SIG2 SIG3, or have a section full of keyword=value
+>> strings? How is this a hard problem?
+>>
+>>> Also appending the signature alone won't solve the parsing issue. Still,
+>>> the kernel has to parse something that could be malformed.
+>>
+>> Your new in-band signaling file you're making xattrs from could be malformed,
+>> one of the xattrs you add could be "banana=aaaaaaaaaaaaaaaaaaaaaaaaaaa..." going
+>> on for 12 megabytes...
+> 
+> ksys_lsetxattr() checks the limits.
+
+Not if it caused an oom error extracting your .inbandsignaling file before it
+got consumed. (The kernel has to parse something that could be malformed and
+that's bad reading ELF information like linux has done loading binaries since
+1996, but it's ok for xattrs with a system call?)
+
+*shrug* I've made my opinion clear and don't think this thread is useful at this
+point, I'm not the maintainer with merge authority, so I'm gonna mute it now.
+
+Rob
