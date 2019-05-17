@@ -1,62 +1,85 @@
-From: Mimi Zohar <zohar@linux.ibm.com>
-Subject: Re: [PATCH v2 0/3] initramfs: add support for xattrs in the initial
- ram disk
-Date: Thu, 16 May 2019 09:31:32 -0400
-Message-ID: <1558013492.4581.97.camel@linux.ibm.com>
-References: <4f522e28-29c8-5930-5d90-e0086b503613@landley.net>
-         <f7bc547c-61f4-1a17-735c-7e8df97d7965@huawei.com>
-         <CALCETrV3b205L38xqPr6QqwGn6-vxQdPoJGUygJJpgM-JqqXfQ@mail.gmail.com>
-         <1557861511.3378.19.camel@HansenPartnership.com>
-         <4da3dbda-bb76-5d71-d5c5-c03d98350ab0@landley.net>
-         <1557878052.2873.6.camel@HansenPartnership.com>
-         <20190515005221.GB88615@rani.riverdale.lan>
-         <a138af12-d983-453e-f0b2-661a80b7e837@huawei.com>
-         <20190515160834.GA81614@rani.riverdale.lan>
-         <ce65240a-4df6-8ebc-8360-c01451e724f0@huawei.com>
-         <20190516052934.GA68777@rani.riverdale.lan>
+From: Roberto Sassu <roberto.sassu@huawei.com>
+Subject: [PATCH v3 0/2] initramfs: add support for xattrs in the initial ram disk
+Date: Fri, 17 May 2019 18:55:17 +0200
+Message-ID: <20190517165519.11507-1-roberto.sassu@huawei.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20190516052934.GA68777@rani.riverdale.lan>
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: Arvind Sankar <nivedita@alum.mit.edu>, Roberto Sassu <roberto.sassu@huawei.com>, Mehmet Kayaalp <mkayaalp@linux.ibm.com>
-Cc: James Bottomley <James.Bottomley@HansenPartnership.com>, Rob Landley <rob@landley.net>, Andy Lutomirski <luto@kernel.org>, Arvind Sankar <niveditas98@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Linux API <linux-api@vger.kernel.org>, Linux FS Devel <linux-fsdevel@vger.kernel.org>, linux-integrity <linux-integrity@vger.kernel.org>, initramfs@vger.kernel.org, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: viro@zeniv.linux.org.uk
+Cc: linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, niveditas98@gmail.com, Roberto Sassu <roberto.sassu@huawei.com>
 
-On Thu, 2019-05-16 at 01:29 -0400, Arvind Sankar wrote:
+This patch set aims at solving the following use case: appraise files from
+the initial ram disk. To do that, IMA checks the signature/hash from the
+security.ima xattr. Unfortunately, this use case cannot be implemented
+currently, as the CPIO format does not support xattrs.
 
-> I think that's a separate issue. If you want to allow people to be able
-> to put files onto the system that will be IMA verified, they need to
-> have some way to locally sign them whether it's inside an initramfs or
-> on a real root filesystem.
+This proposal consists in marshaling pathnames and xattrs in a file called
+.xattr-list. They are unmarshaled by the CPIO parser after all files have
+been extracted, or before the next ram disk is processed.
 
-Anyone building their own kernel can build their own key into the
-kernel image.  Another option is to build the kernel with  
-CONFIG_SYSTEM_EXTRA_CERTIFICATE enabled, allowing an additional
-certificate to be inserted into the kernel image post build.  The
-additional certificate will be loaded onto the builtin kernel keyring.
- Certificates signed with the private key can then be added to the IMA
-keyring.  By modifying the kernel image, the kernel image obviously
-needs to be resigned.  Additional patches "Certificate insertion
-support for x86 bzImages" were posted, but have not been upstreamed.
+The difference from v1 (https://lkml.org/lkml/2018/11/22/1182) is that all
+xattrs are stored in a single file and not per file (solves the file name
+limitation issue, as it is not necessary to add a suffix to files
+containing xattrs).
 
-This patch set adds the security xattrs needed by IMA.
+The difference with another proposal
+(https://lore.kernel.org/patchwork/cover/888071/) is that xattrs can be
+included in an image without changing the image format, as opposed to
+defining a new one. As seen from the discussion, if a new format has to be
+defined, it should fix the issues of the existing format, which requires
+more time.
 
-Mimi
+To fulfill both requirements, adding support for xattrs in a short time and
+defining a new image format properly, this patch set takes an incremental
+approach: it introduces a parser of xattrs that can be used either if
+xattrs are in a regular file or directly added to the image (this patch set
+reuses patch 9/15 of the existing proposal); in addition, it introduces a
+wrapper of the xattr parser, to read xattrs from a file.
+
+The changes introduced by this patch set don't cause any compatibility
+issue: kernels without the xattr parser simply extracts .xattr-list and
+don't unmarshal xattrs; kernels with the xattr parser don't unmarshal
+xattrs if .xattr-list is not found in the image.
+
+From the kernel space perspective, backporting this functionality to older
+kernels should be very easy. It is sufficient to add two calls to the new
+function do_readxattrs(). From the user space perspective, no change is
+required for the use case. A new dracut module (module-setup.sh) will
+execute:
+
+getfattr --absolute-names -d -h -R -e hex -m security.ima \
+    <file list> | xattr.awk -b > ${initdir}/.xattr-list
+
+where xattr.awk is the script that marshals xattrs (see patch 3/3). The
+same can be done with the initramfs-tools ram disk generator.
+
+Changelog
+
+v2:
+- replace ksys_lsetxattr() with kern_path() and vfs_setxattr()
+  (suggested by Jann Horn)
+- replace ksys_open()/ksys_read()/ksys_close() with
+  filp_open()/kernel_read()/fput()
+  (suggested by Jann Horn)
+- use path variable instead of name_buf in do_readxattrs()
+- set last byte of str to 0 in do_readxattrs()
+- call do_readxattrs() in do_name() before replacing an existing
+  .xattr-list
+- pass pathname to do_setxattrs()
 
 
- 
+Mimi Zohar (1):
+  initramfs: set extended attributes
 
+Roberto Sassu (1):
+  initramfs: introduce do_readxattrs()
 
+ init/initramfs.c | 170 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 168 insertions(+), 2 deletions(-)
 
-
-
-
-
-
-
-
-
-
+-- 
+2.17.1
 
