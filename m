@@ -1,33 +1,34 @@
-From: Rob Landley <rob@landley.net>
+From: "H. Peter Anvin" <hpa@zytor.com>
 Subject: Re: [PATCH v3 2/2] initramfs: introduce do_readxattrs()
-Date: Fri, 17 May 2019 16:17:31 -0500
-Message-ID: <591c0770-7a82-3d45-e5b2-7ed347db812a@landley.net>
+Date: Fri, 17 May 2019 14:41:56 -0700
+Message-ID: <69ef1f55-9fc1-7ee0-371f-3dbc77551dc0@zytor.com>
 References: <20190517165519.11507-1-roberto.sassu@huawei.com>
  <20190517165519.11507-3-roberto.sassu@huawei.com>
  <CD9A4F89-7CA5-4329-A06A-F8DEB87905A5@zytor.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=E2H9E8ynXEsa3QuvJM4S/38HaYT5LjHH75EOqiq4bas=;
-        b=HwpC4RrWhmVT2sRECgJy6qj4/VU5z3EioWa4gwjjVsUl7jx0XN/rPuOnEi6NhYrZ2p
-         F1zjTFDItG03H+5lRuQ6zyijuZDYz9b+wXrJyshH+ix8Vfmvxo5/vcTrWlI4n5tnBiWx
-         8LnqSWEna/zgdRZlB569dAnzMWBe1JzuL1m6C+p21hStLtZyu2JAiXnVe0VAQ7kn6LsK
-         E4WyjiheJBZrsyo2mI2o+hmJr4ceNC+4/Rs6tvPC4bweoNEYcXUXDGjVlJTy6mZKTHXu
-         jOucgFyRAwEUEsOPgwJcwAHcOsLwmGWLDUCDsO4Vr8KrVNIa7uplWoeTca22GrU9TLrt
-         GN+Q==
+DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com x4HLg1621520285
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zytor.com;
+        s=2019041745; t=1558129337;
+        bh=bxXMxaG3yomMejfA38U/OeM6jHqv8J+5dyCwLKAF2FU=;
+        h=Subject:From:To:Cc:References:Date:In-Reply-To:From;
+        b=ZeS6bMg0hxchVF1tgoFn6yE8wCqmZlRyMrHmk8o/e+pq/KQ5I/B28qqNjzVsoOD7U
+         DQYWEaBiOgbf+0gG9ks4a8NmplJ4/LiSNS7RtU0cPhv+tMObN4J8JC9is2q+fjK3JI
+         2H5MtDUR3Ifj9jfSwsi87PCafjbWKoB7LTqU4iASOGQNlc8DQgB3Z41Vt+fZ7CKdi4
+         MCkfffGFcvnRHug/Wn4KidawPjicjifNXBnVAZsajxOzIS5KsOQwX7fvchRAxbNb1a
+         UrSu0by2ylgKXiycuvnT/BS0HdTsmsVvePniRdbIAyXbBVomg6bAOlAEpEjRZBN8k0
+         fKHAeL6TgBvcg==
 In-Reply-To: <CD9A4F89-7CA5-4329-A06A-F8DEB87905A5@zytor.com>
 Content-Language: en-US
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: hpa@zytor.com, Roberto Sassu <roberto.sassu@huawei.com>, viro@zeniv.linux.org.uk
-Cc: linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, arnd@arndb.de, james.w.mcmechan@gmail.com, niveditas98@gmail.com
+To: Roberto Sassu <roberto.sassu@huawei.com>, viro@zeniv.linux.org.uk
+Cc: linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, niveditas98@gmail.com
 
-On 5/17/19 3:18 PM, hpa@zytor.com wrote:
+On 5/17/19 1:18 PM, hpa@zytor.com wrote:
+> 
 > Ok... I just realized this does not work for a modular initramfs, composed at load time from multiple files, which is a very real problem. Should be easy enough to deal with: instead of one large file, use one companion file per source file, perhaps something like filename..xattrs (suggesting double dots to make it less likely to conflict with a "real" file.) No leading dot, as it makes it more likely that archivers will sort them before the file proper.
 > 
 > A side benefit is that the format can be simpler as there is no need to encode the filename.
@@ -38,8 +39,17 @@ On 5/17/19 3:18 PM, hpa@zytor.com wrote:
  ent in most or all of the cpio formats for historical reasons. It might be accepted better by existing implementations to use one of these high bits combined with S_IFREG, I dont know.
 > 
 
-I'll happily modify toybox cpio to understand xattrs (compress and decompress),
-the android guys do a lot with xattrs already. I tapped out of _this_ discussion
-from disgust with the proposed encoding.
+Correction: it's just !!!TRAILER!!!.
 
-Rob
+I tested with GNU cpio, BSD cpio, scpio and pax.
+
+With a mode of 0:
+
+	- GNU cpio errors, but extracts all the other files.
+	- BSD cpio extracts them as regular files.
+	- scpio and pax abort.
+
+With a mode of 0x18000 (bit 16 + S_IFREG), all of them happily extracted
+the data as regular files.
+
+	-hpa
