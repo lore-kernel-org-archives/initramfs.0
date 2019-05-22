@@ -1,7 +1,7 @@
-From: Roberto Sassu <roberto.sassu@huawei.com>
+From: Rob Landley <rob@landley.net>
 Subject: Re: [PATCH v3 2/2] initramfs: introduce do_readxattrs()
-Date: Wed, 22 May 2019 19:22:37 +0200
-Message-ID: <2ceb1f01-88fb-d383-daee-e38348a2f075@huawei.com>
+Date: Wed, 22 May 2019 14:26:43 -0500
+Message-ID: <3839583c-5466-6573-3048-0da7e6778c88@landley.net>
 References: <20190517165519.11507-1-roberto.sassu@huawei.com>
  <20190517165519.11507-3-roberto.sassu@huawei.com>
  <CD9A4F89-7CA5-4329-A06A-F8DEB87905A5@zytor.com>
@@ -13,15 +13,28 @@ References: <20190517165519.11507-1-roberto.sassu@huawei.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=ewqKT8bg+GlNvY1OOB7hliqi09oPFaNl8uDtycn8IEs=;
+        b=XAvqPPZEoSxSai//AanqhMiByOerVUTFMO73VF3TBU/mQxESN3HSR5+8AFmpT1Fne/
+         5awv4yOF0Jjtj0irCoAW2zAZmqpXdykPyR9hf3GhWeWF//j9JuyFWMjHwJDxG/K2udT8
+         njAD5vUNkb+1XkiCPrEUKygr9MUdswUEUsqoRRmvjUCd4XaCWPEIvxbPNtrevCnVIchU
+         bFS2XIiaAHK616aAazWSdLCFwlMmu39L0xxxY/LjwPNNkIJT23VbgOHNpZZkwtqoX5RW
+         ZvbA9fDYAGlWWZDW9m//S37TJr/H+nR8pacFLxUbbofKyNkSBgG4XSFxKzFpRxrHDlVs
+         VKhQ==
 In-Reply-To: <9C5B9F98-2067-43D3-B149-57613F38DCD4@zytor.com>
 Content-Language: en-US
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: hpa@zytor.com, Arvind Sankar <nivedita@alum.mit.edu>
-Cc: viro@zeniv.linux.org.uk, linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, niveditas98@gmail.com
+Content-Type: text/plain; charset="us-ascii"
+To: hpa@zytor.com, Roberto Sassu <roberto.sassu@huawei.com>, Arvind Sankar <nivedita@alum.mit.edu>
+Cc: viro@zeniv.linux.org.uk, linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, arnd@arndb.de, james.w.mcmechan@gmail.com, niveditas98@gmail.com
 
-On 5/22/2019 6:17 PM, hpa@zytor.com wrote:
+
+
+On 5/22/19 11:17 AM, hpa@zytor.com wrote:
 > On May 20, 2019 2:39:46 AM PDT, Roberto Sassu <roberto.sassu@huawei.com> wrote:
 >> On 5/18/2019 12:17 AM, Arvind Sankar wrote:
 >>> On Fri, May 17, 2019 at 02:47:31PM -0700, H. Peter Anvin wrote:
@@ -100,7 +113,28 @@ On 5/22/2019 6:17 PM, hpa@zytor.com wrote:
 >> file with mode 0x18000, type of metadata encoded in the file name and
 >> metadata as file content. I don't know how easy it would be to modify
 >> cpio. Probably the amount of changes would be reasonable.
->>
+
+I could make toybox cpio do it in a weekend, and could probably throw a patch at
+usr/gen_init_cpio.c while I'm at it. I prototyped something like that a couple
+years ago, it's not hard.
+
+The real question is scripts/gen_initramfs_list.sh and the text format it
+produces. We can currently generate cpio files with different ownership and
+permissions than the host system can represent (when not building as root, on a
+filesystem that may not support xattrs or would get unhappy about conflicting
+selinux annotations). We work around it by having the metadata represented
+textually in the initramfs_list file gen_initramfs_list.sh produces and
+gen_init_cpio.c consumes.
+
+xattrs are a terrible idea the Macintosh invented so Finder could remember where
+you moved a file's icon in its folder without having to modify the file, and
+then things like OS/2 copied it and Windows picked it up from there and went "Of
+course, this is a security mechanism!" and... sigh.
+
+This is "data that is not data", it's metadata of unbounded size. It seems like
+it should go in gen_initramfs_list.sh but as what, keyword=value pairs that
+might have embedded newlines in them? A base64 encoding? Something else?
+
 >> The kernel will behave in a similar way. It will call do_readxattrs()
 >> in
 >> do_copy() for each file. Since the only difference between the current
@@ -111,58 +145,28 @@ On 5/22/2019 6:17 PM, hpa@zytor.com wrote:
 >> Roberto
 > 
 > The nice thing with explicit metadata is that it doesn't have to contain the filename per se, and each file is self-contained. There is a reason why each cpio header starts with the magic number: each cpio record is formally independent and can be processed in isolation.  The TRAILER!!! thing is a huge wart in the format, although in practice TRAILER!!! always has a mode of 0 and so can be distinguished from an actual file.
-> 
+
+Not adding the requirement that the cpio.gz must be generated as root from a
+filesystem with the same users and selinux rules as the target system would be nice.
+
 > The use of mode 0x18000 for metadata allows for optional backwards compatibility for extraction; for encoding this can be handled with very simple postprocessing.
-> 
+
+The representation within the cpio file was never a huge deal to me. 0x18000
+sounds fine for that.
+
 > So my suggestion would be to have mode 0x18000 indicate extended file metadata, with the filename of the form:
 > 
 > optional_filename!XXXXX!
 > 
 > ... where XXXXX indicates the type of metadata (e.g. !XATTR!). The optional_filename prefix allows an unaware decoder to extract to a well-defined name; simple postprocessing would be able to either remove (for size) or add (for compatibility) this prefix. It would be an error for this prefix, if present, to not match the name of the previous file.
 
-Actually, I defined '..metadata..' as special name to indicate that the
-file contains metadata. Then, the content of the file is a set of:
+I'd suggest METADATA!!! to look like TRAILER!!!. (METADATA!!!XXXXX! if you
+really think a keyword=value pair store is _not_ universal and we're going to
+invent entire new _categories_ of this side channel nonsense.)
 
-struct metadata_hdr {
-         char c_size[8];     /* total size including c_size field */
-         char c_version;     /* header version */
-         char c_type;        /* metadata type */
-         char c_metadata[];  /* metadata */
-} __packed;
+And extracting conflicting filenames is presumably already covered, it either
+replaces or the new one fails to create the file and the extractor moves on.
+(You need a working error recovery path that skips the right amount of data so
+you can handle the next file properly, but you should have that anyway.)
 
-init/initramfs.c now has a specific parser for c_type. Currently, I
-implemented a parser for xattrs, which expects data in the format:
-
-<xattr #N name>\0<xattr #N value>
-
-I checked if it is possible to use bit 17:16 to identify files with
-metadata, but both the cpio and the kernel use unsigned short.
-
-I already modified gen_init_cpio and cpio. I modify at run-time the list
-of files to be included in the image by adding a temporary file, that
-each time is set with the xattrs of the previously processed file.
-
-The output of cpio -t looks like:
-
---
-.
-..metadata..
-bin
-..metadata..
-dev
-..metadata..
-dev/console
-..metadata..
---
-
-Would it be ok? If you prefer that I add the format to the file name or
-you/anyone has a comment about this proposal, please let me know so that
-I make the changes before sending a new version of the patch set.
-
-Thanks
-
-Roberto
-
--- 
-HUAWEI TECHNOLOGIES Duesseldorf GmbH, HRB 56063
-Managing Director: Bo PENG, Jian LI, Yanli SHI
+Rob
