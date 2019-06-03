@@ -1,113 +1,57 @@
-From: Roberto Sassu <roberto.sassu@huawei.com>
+From: Rob Landley <rob@landley.net>
 Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
  ram disk
-Date: Mon, 3 Jun 2019 11:31:42 +0200
-Message-ID: <cf9d08ca-74c7-c945-5bf9-7c3495907d1e@huawei.com>
+Date: Mon, 3 Jun 2019 13:32:53 -0500
+Message-ID: <541e9ea1-024f-5c22-0b58-f8692e6c1eb1@landley.net>
 References: <20190523121803.21638-1-roberto.sassu@huawei.com>
+ <cf9d08ca-74c7-c945-5bf9-7c3495907d1e@huawei.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20190523121803.21638-1-roberto.sassu@huawei.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=JB7G7a3obPccO07RyvNY8mElks92DaU5NY5QKwWTZvQ=;
+        b=lE/gBTu5gNk+nG3gMkLC5L1qqMeFZke1tNjNI5xgMMMUPlBG3ZAzppxMiEuBOtKiMI
+         Y6xOk9eUEgPGAqGCVGFZpHU68PsLFNawXTBrG55HWus8sEfa/pbs2FkPH3l9y2eEvDvI
+         iGvFo6MBYyAPDhEBFQ/4NNauvhmdicFzBSZLXBRHikKFhbpLDxXobG2dm7zdUMcMLlR4
+         bLxdEBF7g9pTfKNAUVZBPWJPnMha7n3pUfVeRzY2e9a5BSDSaj0E6B5Lem8uEQQeVdh+
+         wXJNvLH9D4lzgEpF3Pu7V+6V4lfAyFJbr7/0knZSFvSon08cblLXIUE+SrdvBuzGJp3y
+         AyZQ==
+In-Reply-To: <cf9d08ca-74c7-c945-5bf9-7c3495907d1e@huawei.com>
 Content-Language: en-US
 Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: viro@zeniv.linux.org.uk
-Cc: linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, bug-cpio@gnu.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, niveditas98@gmail.com
+Content-Type: text/plain; charset="us-ascii"
+To: Roberto Sassu <roberto.sassu@huawei.com>, viro@zeniv.linux.org.uk
+Cc: linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, bug-cpio@gnu.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, james.w.mcmechan@gmail.com, niveditas98@gmail.com
 
-Any opinion on this patch set?
+On 6/3/19 4:31 AM, Roberto Sassu wrote:
+>> This patch set aims at solving the following use case: appraise files from
+>> the initial ram disk. To do that, IMA checks the signature/hash from the
+>> security.ima xattr. Unfortunately, this use case cannot be implemented
+>> currently, as the CPIO format does not support xattrs.
+>>
+>> This proposal consists in including file metadata as additional files named
+>> METADATA!!!, for each file added to the ram disk. The CPIO parser in the
+>> kernel recognizes these special files from the file name, and calls the
+>> appropriate parser to add metadata to the previously extracted file. It has
+>> been proposed to use bit 17:16 of the file mode as a way to recognize files
+>> with metadata, but both the kernel and the cpio tool declare the file mode
+>> as unsigned short.
+>
+> Any opinion on this patch set?
+> 
+> Thanks
+> 
+> Roberto
 
-Thanks
+Sorry, I've had the window open since you posted it but haven't gotten around to
+it. I'll try to build it later today.
 
-Roberto
+It does look interesting, and I have no objections to the basic approach. I
+should be able to add support to toybox cpio over a weekend once I've got the
+kernel doing it to test against.
 
-
-On 5/23/2019 2:18 PM, Roberto Sassu wrote:
-> This patch set aims at solving the following use case: appraise files from
-> the initial ram disk. To do that, IMA checks the signature/hash from the
-> security.ima xattr. Unfortunately, this use case cannot be implemented
-> currently, as the CPIO format does not support xattrs.
-> 
-> This proposal consists in including file metadata as additional files named
-> METADATA!!!, for each file added to the ram disk. The CPIO parser in the
-> kernel recognizes these special files from the file name, and calls the
-> appropriate parser to add metadata to the previously extracted file. It has
-> been proposed to use bit 17:16 of the file mode as a way to recognize files
-> with metadata, but both the kernel and the cpio tool declare the file mode
-> as unsigned short.
-> 
-> The difference from v2, v3 (https://lkml.org/lkml/2019/5/9/230,
-> https://lkml.org/lkml/2019/5/17/466) is that file metadata are stored in
-> separate files instead of a single file. Given that files with metadata
-> must immediately follow the files metadata will be added to, image
-> generators have to be modified in this version.
-> 
-> The difference from v1 (https://lkml.org/lkml/2018/11/22/1182) is that
-> all files have the same name. The file metadata are added to is always the
-> previous one, and the image generator in user space will make sure that
-> files are in the correct sequence.
-> 
-> The difference with another proposal
-> (https://lore.kernel.org/patchwork/cover/888071/) is that xattrs can be
-> included in an image without changing the image format. Files with metadata
-> will appear as regular files. It will be task of the parser in the kernel
-> to process them.
-> 
-> This patch set extends the format of data defined in patch 9/15 of the last
-> proposal. It adds header version and type, so that new formats can be
-> defined and arbitrary metadata types can be processed.
-> 
-> The changes introduced by this patch set don't cause any compatibility
-> issue: kernels without the metadata parser simply extract the special files
-> and don't process metadata; kernels with the metadata parser don't process
-> metadata if the special files are not included in the image.
-> 
->  From the kernel space perspective, backporting this functionality to older
-> kernels should be very easy. It is sufficient to add two calls to the new
-> function do_process_metadata() in do_copy(), and to check the file name in
-> do_name(). From the user space perspective, unlike the previous version of
-> the patch set, it is required to modify the image generators in order to
-> include metadata as separate files.
-> 
-> Changelog
-> 
-> v3:
-> - include file metadata as separate files named METADATA!!!
-> - add the possibility to include in the ram disk arbitrary metadata types
-> 
-> v2:
-> - replace ksys_lsetxattr() with kern_path() and vfs_setxattr()
->    (suggested by Jann Horn)
-> - replace ksys_open()/ksys_read()/ksys_close() with
->    filp_open()/kernel_read()/fput()
->    (suggested by Jann Horn)
-> - use path variable instead of name_buf in do_readxattrs()
-> - set last byte of str to 0 in do_readxattrs()
-> - call do_readxattrs() in do_name() before replacing an existing
->    .xattr-list
-> - pass pathname to do_setxattrs()
-> 
-> v1:
-> - move xattr unmarshaling to CPIO parser
-> 
-> 
-> Mimi Zohar (1):
->    initramfs: add file metadata
-> 
-> Roberto Sassu (2):
->    initramfs: read metadata from special file METADATA!!!
->    gen_init_cpio: add support for file metadata
-> 
->   include/linux/initramfs.h |  21 ++++++
->   init/initramfs.c          | 137 +++++++++++++++++++++++++++++++++++++-
->   usr/Kconfig               |   8 +++
->   usr/Makefile              |   4 +-
->   usr/gen_init_cpio.c       | 137 ++++++++++++++++++++++++++++++++++++--
->   usr/gen_initramfs_list.sh |  10 ++-
->   6 files changed, 305 insertions(+), 12 deletions(-)
->   create mode 100644 include/linux/initramfs.h
-> 
-
--- 
-HUAWEI TECHNOLOGIES Duesseldorf GmbH, HRB 56063
-Managing Director: Bo PENG, Jian LI, Yanli SHI
+Rob
