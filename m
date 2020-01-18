@@ -1,88 +1,115 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Subject: initramfs-tools 0.135 release
-Date: Wed, 21 Aug 2019 23:46:38 +0100
-Message-ID: <61bc54a992a27029bdb85734ea2c0002facb467b.camel@decadent.org.uk>
+From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
+Subject: initramfs-tools 0.136 release
+Date: Sat, 18 Jan 2020 19:20:07 +0000
+Message-ID: <b93b842c72db34c42f36cb4f807b3124ed9d9185.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7956773050661868502=="
-Return-path: <kernel-team-bounces@lists.ubuntu.com>
-List-Id: <initramfs.vger.kernel.org>
-List-Unsubscribe: <https://lists.ubuntu.com/mailman/options/kernel-team>,
- <mailto:kernel-team-request@lists.ubuntu.com?subject=unsubscribe>
-List-Archive: <https://lists.ubuntu.com/archives/kernel-team>
-List-Post: <mailto:kernel-team@lists.ubuntu.com>
-List-Help: <mailto:kernel-team-request@lists.ubuntu.com?subject=help>
-List-Subscribe: <https://lists.ubuntu.com/mailman/listinfo/kernel-team>,
- <mailto:kernel-team-request@lists.ubuntu.com?subject=subscribe>
-Errors-To: kernel-team-bounces@lists.ubuntu.com
-Sender: "kernel-team" <kernel-team-bounces@lists.ubuntu.com>
-To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
-
-
---===============7956773050661868502==
 Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-eZRRTBdb/E+gPzXnY/Qd"
+        protocol="application/pgp-signature"; boundary="=-gxzuL89RtVzpdr4NioPj"
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+List-ID: <initramfs.vger.kernel.org>
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
 
---=-eZRRTBdb/E+gPzXnY/Qd
+--=-gxzuL89RtVzpdr4NioPj
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-This is a pretty small release, and I've only done it now rather than
-collecting more changes because of the test failure.  Shortlog is
-below.
+This release fixes a number of bugs reported to Debian.  The most
+obvious of these was the appearance of error messages from kmod about
+missing modules.builtin.bin.
+
+mkinitramfs now enables multithreaded xz compression (this was already
+done for gzip/pigz).  It includes drivers in the initramfs that are
+needed by some ChromeOS devices and by PowerPC Macs, and includes the
+f2fs filesystem by default.
+
+Possible breaking changes:
+- I removed several workarounds and special cases that should no longer
+  be needed
+- The /run/initramfs directory is no longer world-readable
 
 Ben.
 
-Alper Nebi Yasak (1):
-      hook-functions: Handle spi-rockchip hidden dependency on pl330
+Alexander Volkov (1):
+      Don't require build dependency on shellcheck when nocheck profile is =
+enabled
 
-Ben Hutchings (4):
-      Merge branch 'fix-dev-and-run-mount-flags' into 'master'
-      autopkgtest: Only test hook and boot scripts from specific packages
-      Merge branch 'pl330-for-spi-rockchip' into 'master'
-      Releasing version 0.135.
+Alper Nebi Yasak (2):
+      hook-functions: Handle dw_mmc-rockchip hidden dependency on rockchip-=
+io-domain
+      hook-functions: Include modules for Chromebook Plus display
+
+Ben Hutchings (24):
+      Merge branch 'master' into 'master'
+      debian/tests/control: Mark shellcheck test as superficial
+      Merge branch 'cbp-display' into 'master'
+      Merge branch 'rockchip-io-domain-for-dwmmc' into 'master'
+      Merge branch 'master' into 'master'
+      Merge branch 'josch-master-patch-65772' into 'master'
+      mkinitramfs: Remove workaround for old udev versions
+      mkinitramfs: Remove special case for Arm OABI ports
+      mkinitramfs: Remove armhf dynamic linker hack
+      Merge branch 'f2fs' into 'master'
+      debian/rules: Suppress execution of dh_installinitramfs
+      Merge branch 'janitor-bot-guest/initramfs-tools-lintian-fixes'
+      Merge branch 'tighten-run-initramfs-perms' into 'master'
+      mkinitramfs: Use cp -p option for ld.so.conf* instead of -aZ
+      Merge branch 'cgzones-guest/initramfs-tools-selinux'
+      initramfs-tools(7): Change example to use copy_exec instead of cp
+      Revert "mkinitramfs: check if initramfs has a shell"
+      mkinitramfs: Copy modules.builtin.bin into initramfs
+      init: Remove special case for kernel parameter resume=3DUUID=3D...
+      update-initramfs: Make "-c -k all" options useful again
+      init: Mount /dev with "exec" option if v86d is present
+      hook-functions: Drop ext4dev from filesystem module list
+      mkinitramfs: Enable multihreaded xz compression
+      Releasing version 0.136.
+
+Christian G=C3=B6ttsche (1):
+      Do not copy SELinux context in mkinitramfs (Closes: #948365)
+
+Debian Janitor (2):
+      Bump debhelper from old 9 to 12.
+      Set debhelper-compat version in Build-Depends.
+
+Johannes 'josch' Schauer (1):
+      hook-functions: preloaded libraries should not end up in the initramf=
+s
+
+Mathieu Malaterre (1):
+      Update to new name for kernel module therm_pm72
+
+Romain Perier (1):
+      hook-functions: Add f2fs as base in auto_add_modules
 
 Topi Miettinen (1):
-      init: /dev can be noexec and /run nodev
+      Tighten permissions for /run/initramfs
 
 --=20
 Ben Hutchings
-Quantity is no substitute for quality, but it's the only one we've got.
+Humans are not rational beings; they are rationalising beings.
 
 
-
---=-eZRRTBdb/E+gPzXnY/Qd
+--=-gxzuL89RtVzpdr4NioPj
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAl1dyc4ACgkQ57/I7JWG
-EQm5OA//Q0gQMpcT9q6r6kDIoR6u01PB1V5BnqWR0nIRQIahp7j4L1qBi9SJZqIX
-3V+0Xh22HHwxIw2qqJjkmUelV8MEk9JxvJw0N6ZETGDLJwdK72kXtYo24yVjBIfS
-IopB4xQ3XnhbbPxvWiUSIpXtHrNhj5y1AX+F4oviN2n55ULzv7DWRq+1ujkCrWqs
-4K3MCJ8bYSXfsfFYKMG22OfxE1rtxCPrcMbFo2EAWny+WropqpyZDqO7lb9aOcKX
-POY99ZtSUV/Z3dkIRpwCHuCmC8NPRLcGoTG8jAdCicj14IdbQ2e67I2iBdX9AoLh
-veFPjof+XKjAM79mwRx5uGLx7/S0eQMdYLv4AtO6seMmk4OJ2SlairWDlDxtzMZl
-mONJp08vjgPxY+nbPRNBceKEvzVnHb0W3U6lpnNXXzwR+73a34zVmbSV1JDz+gT7
-4/w7G+I/xGq4GL8xzaqhsRfHaNahVEK/LxbllAE0a+g269ZGtzmi+Pj7QkMf1fst
-+Vgm3W7YRQodZNUQ4OfbvFA6SMYwCll+mfuB9w4SlkS3yip7ThsgFnCOtF7MLMbO
-QxRv6lpkDKrgioTT4A4G27OBLn0ViopGbzZTV1w62dnkDMn2bPQk9yzkPR/DQTUX
-M+KdgWdHtm5ijvBJEFIrzwjvgN7FduSYojUu586QbzLkpPxOl2w=
-=rbYF
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAl4jWmcACgkQ57/I7JWG
+EQkZmg/+PwxRIV3q5whAKHN9g1mrPG46QVPGj8p6vGB5btDY3I5Icch3nInAolED
+eEAtmhwroIPH8uooQw2Pw6wBuYxqX6jsyu4goqlr7KEbpJNrzXjmPLLCGchJ9EaR
+ksLsYoYmM8Mugi6z+Yr8ODfEY3vzN6hqWLs/oRkJ58imEc0OlLwPasRlQggj1c67
+lqxbDQPThLnr6iBH95OFAIw+sv65CcNbVXm/ONylPib+78z6zaluXI3LW67sacC/
+JmFYph56O5Uzs2q57csk2fN2vz1/f+MnPaRHJLtUPBUsEpPsvZsuToKOz0gHbYwl
+f6OYR9evVltZGFGe43+dD8VBIWqw9zDPJs5IL6tSpyZSVS6I+Wi5XBcZBkLJm2F7
+CDnw2B254dftdu4nbwgCwdmEW9AqQMwkMeO5BRKmIwwb5GAvtBZpRv7N0Xc5n+Sg
+QVVtDU2R+UDranVhtRCw6DT2L30SMAadoLDaFiDze0bHjwOjmqyQJtFArb2Bclqe
+2Wbpy1Lx5Z7Bh7B5sHUmB0iGfLd4vz8kq6TAEz+DqTLmlnVrUus637JDNRbZKq+T
+EiYlaGyHGGbuyvmvUE9W03MD7PJE6icoSzUJhDlTFavsBy9bqDPYWPhevuEl7F2m
+3gr/796twJpHLtMdBW8kbhScAag+JlQSjkD9qh9vEf9IqQ+qrtk=
+=eSWZ
 -----END PGP SIGNATURE-----
 
---=-eZRRTBdb/E+gPzXnY/Qd--
-
-
---===============7956773050661868502==
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: base64
-Content-Disposition: inline
-
-LS0gCmtlcm5lbC10ZWFtIG1haWxpbmcgbGlzdAprZXJuZWwtdGVhbUBsaXN0cy51YnVudHUuY29t
-Cmh0dHBzOi8vbGlzdHMudWJ1bnR1LmNvbS9tYWlsbWFuL2xpc3RpbmZvL2tlcm5lbC10ZWFtCg==
-
---===============7956773050661868502==--
-
+--=-gxzuL89RtVzpdr4NioPj--
