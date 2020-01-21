@@ -1,115 +1,63 @@
-From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: initramfs-tools 0.136 release
-Date: Sat, 18 Jan 2020 19:20:07 +0000
-Message-ID: <b93b842c72db34c42f36cb4f807b3124ed9d9185.camel@decadent.org.uk>
+From: "Milan P. Gandhi" <mgandhi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] dracut: Verify multipath config_dir option
+Date: Tue, 21 Jan 2020 17:38:34 +0530
+Message-ID: <20200121120834.GA23866@machine1>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-        protocol="application/pgp-signature"; boundary="=-gxzuL89RtVzpdr4NioPj"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1579608522;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type;
+        bh=PD1TFILxKy5kITv5WVCAiD+ogMob5z7Pc9fgJmwcKng=;
+        b=MiEABLXI1na13Y/imxy9oECVdnA1LZZHjdJ+b8tgg0Nl+q4Sv7z1xX4xhOLm3qxTJdVsuW
+        XkaH/SMQJJ6byh5baiGw8K42cavnefLrD0uTkhBwoc1Q0SIhRyEphyO0dlhlP8p76Q3MfW
+        LXB3gI40bR+1pMPm6aH3jgOf+r1Pcmc=
+Content-Disposition: inline
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 
+The 90multipath/module-setup.sh file currently does not check the
+dm-multipath config_dir option. This option in multipath.conf file is
+used to specify a custom directory/path that contains the multipath
+configuration files. It's default value is /etc/multipath/conf.d
 
---=-gxzuL89RtVzpdr4NioPj
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Currently install function of module-setup.sh has hardcoded the above
+path, but users could change it with config_dir option. So, adding a
+command to get the directory specified with config_dir option and add
+these configuration files to the initial ram disk image.
 
-This release fixes a number of bugs reported to Debian.  The most
-obvious of these was the appearance of error messages from kmod about
-missing modules.builtin.bin.
+Signed-off-by: Milan P. Gandhi <mgandhi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+ modules.d/90multipath/module-setup.sh | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-mkinitramfs now enables multithreaded xz compression (this was already
-done for gzip/pigz).  It includes drivers in the initramfs that are
-needed by some ChromeOS devices and by PowerPC Macs, and includes the
-f2fs filesystem by default.
+diff --git a/modules.d/90multipath/module-setup.sh b/modules.d/90multipath/module-setup.sh
+index 1f6a55ec..f7c521c1 100755
+--- a/modules.d/90multipath/module-setup.sh
++++ b/modules.d/90multipath/module-setup.sh
+@@ -78,6 +78,9 @@ install() {
+         }
+     }
+ 
++    # Include multipath configuration files from path specified with config_dir
++    config_dir=`/usr/sbin/multipath -t|grep -i config_dir|awk '{print $2}'|sed -e 's/^"//' -e 's/"$//'`/*
++
+     inst_multiple -o  \
+         dmsetup \
+         kpartx \
+@@ -90,7 +93,7 @@ install() {
+         /etc/xdrdevices.conf \
+         /etc/multipath.conf \
+         /etc/multipath/* \
+-        /etc/multipath/conf.d/*
++        $config_dir
+ 
+     [[ $hostonly ]] && [[ $hostonly_mode = "strict" ]] && {
+         for_each_host_dev_and_slaves_all add_hostonly_mpath_conf
+-- 
+2.20.1
 
-Possible breaking changes:
-- I removed several workarounds and special cases that should no longer
-  be needed
-- The /run/initramfs directory is no longer world-readable
-
-Ben.
-
-Alexander Volkov (1):
-      Don't require build dependency on shellcheck when nocheck profile is =
-enabled
-
-Alper Nebi Yasak (2):
-      hook-functions: Handle dw_mmc-rockchip hidden dependency on rockchip-=
-io-domain
-      hook-functions: Include modules for Chromebook Plus display
-
-Ben Hutchings (24):
-      Merge branch 'master' into 'master'
-      debian/tests/control: Mark shellcheck test as superficial
-      Merge branch 'cbp-display' into 'master'
-      Merge branch 'rockchip-io-domain-for-dwmmc' into 'master'
-      Merge branch 'master' into 'master'
-      Merge branch 'josch-master-patch-65772' into 'master'
-      mkinitramfs: Remove workaround for old udev versions
-      mkinitramfs: Remove special case for Arm OABI ports
-      mkinitramfs: Remove armhf dynamic linker hack
-      Merge branch 'f2fs' into 'master'
-      debian/rules: Suppress execution of dh_installinitramfs
-      Merge branch 'janitor-bot-guest/initramfs-tools-lintian-fixes'
-      Merge branch 'tighten-run-initramfs-perms' into 'master'
-      mkinitramfs: Use cp -p option for ld.so.conf* instead of -aZ
-      Merge branch 'cgzones-guest/initramfs-tools-selinux'
-      initramfs-tools(7): Change example to use copy_exec instead of cp
-      Revert "mkinitramfs: check if initramfs has a shell"
-      mkinitramfs: Copy modules.builtin.bin into initramfs
-      init: Remove special case for kernel parameter resume=3DUUID=3D...
-      update-initramfs: Make "-c -k all" options useful again
-      init: Mount /dev with "exec" option if v86d is present
-      hook-functions: Drop ext4dev from filesystem module list
-      mkinitramfs: Enable multihreaded xz compression
-      Releasing version 0.136.
-
-Christian G=C3=B6ttsche (1):
-      Do not copy SELinux context in mkinitramfs (Closes: #948365)
-
-Debian Janitor (2):
-      Bump debhelper from old 9 to 12.
-      Set debhelper-compat version in Build-Depends.
-
-Johannes 'josch' Schauer (1):
-      hook-functions: preloaded libraries should not end up in the initramf=
-s
-
-Mathieu Malaterre (1):
-      Update to new name for kernel module therm_pm72
-
-Romain Perier (1):
-      hook-functions: Add f2fs as base in auto_add_modules
-
-Topi Miettinen (1):
-      Tighten permissions for /run/initramfs
-
---=20
-Ben Hutchings
-Humans are not rational beings; they are rationalising beings.
-
-
---=-gxzuL89RtVzpdr4NioPj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAl4jWmcACgkQ57/I7JWG
-EQkZmg/+PwxRIV3q5whAKHN9g1mrPG46QVPGj8p6vGB5btDY3I5Icch3nInAolED
-eEAtmhwroIPH8uooQw2Pw6wBuYxqX6jsyu4goqlr7KEbpJNrzXjmPLLCGchJ9EaR
-ksLsYoYmM8Mugi6z+Yr8ODfEY3vzN6hqWLs/oRkJ58imEc0OlLwPasRlQggj1c67
-lqxbDQPThLnr6iBH95OFAIw+sv65CcNbVXm/ONylPib+78z6zaluXI3LW67sacC/
-JmFYph56O5Uzs2q57csk2fN2vz1/f+MnPaRHJLtUPBUsEpPsvZsuToKOz0gHbYwl
-f6OYR9evVltZGFGe43+dD8VBIWqw9zDPJs5IL6tSpyZSVS6I+Wi5XBcZBkLJm2F7
-CDnw2B254dftdu4nbwgCwdmEW9AqQMwkMeO5BRKmIwwb5GAvtBZpRv7N0Xc5n+Sg
-QVVtDU2R+UDranVhtRCw6DT2L30SMAadoLDaFiDze0bHjwOjmqyQJtFArb2Bclqe
-2Wbpy1Lx5Z7Bh7B5sHUmB0iGfLd4vz8kq6TAEz+DqTLmlnVrUus637JDNRbZKq+T
-EiYlaGyHGGbuyvmvUE9W03MD7PJE6icoSzUJhDlTFavsBy9bqDPYWPhevuEl7F2m
-3gr/796twJpHLtMdBW8kbhScAag+JlQSjkD9qh9vEf9IqQ+qrtk=
-=eSWZ
------END PGP SIGNATURE-----
-
---=-gxzuL89RtVzpdr4NioPj--
