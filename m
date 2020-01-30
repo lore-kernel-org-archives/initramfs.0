@@ -1,53 +1,67 @@
-From: Michael Stapelberg <michael+lkml-Ocq5V1Lzw0iVILNE37Xk8A@public.gmane.org>
-Subject: Re: distri: 20x faster initramfs (initrd) from scratch
-Date: Wed, 29 Jan 2020 13:59:24 +0100
-Message-ID: <CANnVG6nrehtmu9xdiR2eTdUsyEwO-43eP-DD9Fv=Wum49T5fbA@mail.gmail.com>
-References: <CANnVG6nFsnvva+qoQHJF+YY6Y3q46-C6tA742fMAkZFB3QFubg@mail.gmail.com>
- <7212371cedf396e118d6b1a712b7d5aa2e928afe.camel@suse.com>
+From: mwilck-IBi9RG/b67k@public.gmane.org
+Subject: [PATCH 1/2] Add module "90nvdimm" for NVDIMM support
+Date: Thu, 30 Jan 2020 16:18:20 +0100
+Message-ID: <20200130151821.24042-1-mwilck@suse.com>
 Mime-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=stapelberg-ch.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=d0D3rzeVurhpxlRD5yHC3F1gVFUVbRuXrGqiLH+pm8g=;
-        b=JDeWkj3RXcOM7dxCi9lSJ96wgEj7tyZ62fzNOw2N5EbjFxG2KMmS+OhV8Gz/KJ72+e
-         j2qZbgbYxMmiq74tZPB/q8TlmLtFCormah/0/h4boUccq5PkHMN5tEFUgF8+23sbzK5N
-         jhs0aXHDMGfyIL/bqJVAw6BMEvR3+79+p5tDwcSBfbu8YXUm+zqzrOlu5CeBnyzsrxRi
-         xLmG5PseqIwp56xclTdApukG76524tl6X2EvyNc6vzBIAYLJ0Xz5eAobLvaZmAJvcOXb
-         /HE+Ioteh5ZWzpOhs/oGuRnntirIoT3mRz2niLB5inZ3NXGT4TLrAQQiJ+SgxnEKqD73
-         I3ag==
-In-Reply-To: <7212371cedf396e118d6b1a712b7d5aa2e928afe.camel-IBi9RG/b67k@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Martin Wilck <mwilck-IBi9RG/b67k@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Hannes Reinecke <hare-l3A5Bk7waGM@public.gmane.org>, Daniel Molkentin <dmolkentin-l3A5Bk7waGM@public.gmane.org>, Thomas Blume <Thomas.Blume-IBi9RG/b67k@public.gmane.org>, Martin Wilck <mwilck-IBi9RG/b67k@public.gmane.org>, Kairui Song <kasong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-I agree, and getting minitramfs adopted anywhere is not my goal at all
-:) See section https://michael.stapelberg.ch/posts/2020-01-21-initramfs-from-scratch-golang/#minitrd-outside-of-distri
+From: Martin Wilck <mwilck-IBi9RG/b67k@public.gmane.org>
 
-On Wed, Jan 29, 2020 at 10:53 AM Martin Wilck <mwilck-IBi9RG/b67k@public.gmane.org> wrote:
->
-> On Tue, 2020-01-21 at 18:07 +0100, Michael Stapelberg wrote:
-> > Hey,
-> >
-> > I just published a blog post about a custom proof-of-concept
-> > initramfs
-> > generator (minitrd):
-> >
-> > https://michael.stapelberg.ch/posts/2020-01-21-initramfs-from-scratch-golang/
-> >
-> > This demonstrates that there is still a whole bunch of optimization
-> > potential in existing initramfs generators such as dracut :)
->
-> Cool, but I don't think it has big chances to be adopted in larger
-> mainstream distros unless you add some extension/plugin functionality,
-> like dracut's modules.d. Such plugins should be easy to write and
-> maintain.
->
-> Martin
->
->
->
+Detection of persistent memory devices works mostly out of the box
+already. Only the "provider" modules for ndbus devices, which are responsible
+to extract information of available NVDIMM devices and their configuration
+from system firmware, are only indirectly linked into the module stack.
+Examples for such modules are nfit.ko, nd_e820.ko, and virtio-pmem.ko.
+
+Add a module that resolves these dependencies.
+---
+ modules.d/90nvdimm/module-setup.sh | 31 ++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+ create mode 100755 modules.d/90nvdimm/module-setup.sh
+
+diff --git a/modules.d/90nvdimm/module-setup.sh b/modules.d/90nvdimm/module-setup.sh
+new file mode 100755
+index 0000000..98913a4
+--- /dev/null
++++ b/modules.d/90nvdimm/module-setup.sh
+@@ -0,0 +1,31 @@
++#!/bin/bash
++
++# called by dracut
++check() {
++    if [[ ! $hostonly ]]; then
++        return 0
++    fi
++    [[ $DRACUT_KERNEL_MODALIASES && -f "$DRACUT_KERNEL_MODALIASES" ]] && \
++        grep -q libnvdimm "$DRACUT_KERNEL_MODALIASES" && return 0
++    return 255
++}
++
++# called by dracut
++depends() {
++    return 0
++}
++
++# called by dracut
++installkernel() {
++    # Directories to search for NVDIMM "providers" (firmware drivers)
++    # These modules call "nvdimm_bus_register()".
++    local _provider_dirs='=drivers/nvdimm =drivers/acpi =arch/powerpc'
++
++    #instmods() will take care of hostonly
++    dracut_instmods -o -s nvdimm_bus_register $_provider_dirs
++}
++
++# called by dracut
++install() {
++    inst /usr/bin/ndctl
++}
+-- 
+2.25.0
+
