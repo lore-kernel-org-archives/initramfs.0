@@ -1,127 +1,56 @@
-From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 050
-Date: Wed, 4 Mar 2020 14:55:50 +0100
-Message-ID: <e838111c-697b-1073-4050-1ebe0c87a071@redhat.com>
+From: LAHAYE Olivier <olivier.lahaye-KCE40YydGKI@public.gmane.org>
+Subject: Dracut network on CentOS-8.1 (NetworkManager)
+Date: Wed, 4 Mar 2020 13:42:49 +0000
+Message-ID: <D840ECAC-1ECA-4F9D-A01C-136FCD7A467E@cea.fr>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1583330158;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding;
-        bh=eS4Q8pD7hyVygIMYJ4EYReJZIKqRK7cvzcLREMBNc/o=;
-        b=hwcX7CAbYBr1IRwFSXOZT+xe38Q4+/FwtFYJ6dmPSylg3F5yvO7cyIFNu4ztH/gVLvbupg
-        mG9RX0C03va8c15cSGZl1iVQDygeY64gQGT8w1pZyrk4qpz8et/J9QpcxSnyHhIwIAfrnW
-        oeAqpNk/sP4TzG7hQMWSzFqrb+ntYKk=
-Content-Language: en-US
+Content-Language: fr-FR
+Content-ID: <EE8E0A2FEB900B4C9BAFC004DF6974DC-KCE40YydGKI@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Long time, no release...
-
-Here comes a new dracut version. Thanks to all who have contributed to this
-release.
-
-The tarball can be found here:
-         http://www.kernel.org/pub/linux/utils/boot/dracut/
-         ftp://ftp.kernel.org/pub/linux/utils/boot/dracut/
-         https://github.com/dracutdevs/dracut/releases/
-
-Report Issues:
-         https://github.com/dracutdevs/dracut/issues
-
-File Pull Requests:
-         https://github.com/dracutdevs/dracut/pulls
-
-Git:
-         git-9UaJU3cA/F/QT0dZR+AlfA@public.gmane.org:dracutdevs/dracut.git
-         https://github.com/dracutdevs/dracut.git
-         git://git.kernel.org/pub/scm/boot/dracut/dracut.git
-         http://git.kernel.org/pub/scm/boot/dracut/dracut.git
-         https://git.kernel.org/pub/scm/boot/dracut/dracut.git
-
-Git Web:
-         https://github.com/dracutdevs/dracut
-         http://git.kernel.org/?p=boot/dracut/dracut.git
-
-Git Web RSS Feed:
-         http://git.kernel.org/?p=boot/dracut/dracut.git;a=rss
-
-Project Page:
-         http://www.kernel.org/pub/linux/utils/boot/dracut/dracut.html
-
-Project Wiki:
-         http://dracut.wiki.kernel.org
-
-The ChangeLog can be found here:
-         http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob_plain;f=NEWS
-
-
-dracut-050
-==========
-
-dracut:
-- support for running on a cross-compiled rootfs, see README.cross
-- add support for creating secureboot signed UEFI images
-- use microcode found in packed cpio images
-- `-k/--kmodir` must now contain "lib/modules/$KERNEL_VERSION"
-   use DRACUT_KMODDIR_OVERRIDE=1 to ignore this check
-- support the EFI Stub loader's splash image feature.
-   `--uefi-splash-image <FILE>`
-
-dracut modules:
-- remove bashism in various boot scripts
-- emergency mode: use sulogin
-
-fcoe:
-- add rd.nofcoe option to disable the FCoE module from the command line
-
-10i18n:
-- fix keymaps not getting included sometimes
-- use eurlatgr as default console font
-
-iscsi:
-- add option `rd.iscsi.testroute`
-
-multipath:
-- fix udev rules detection of multipath devices
-
-network:
-- support NetworkManager
-
-network-legacy:
-- fix classless static route parsing
-- ifup: fix typo when calling dhclient --timeout
-- ifup: nuke pid and lease files if dhclient failed
-- fix ip=dhcp,dhcp6
-- use $name instead of $env{INTERFACE} (systemd-udevd regression)
-
-shutdown:
-- fix for non-systemd reboot/halt/shutdown commands
-- set selinux labels
-- fix shutdown with console=null
-
-lsinitrd:
-- list squash content as well
-- handle UEFI created with dracut --uefi
-- make lsinitrd usable for images made with Debian mkinitramfs
-
-dracut-install:
-- fixed ldd parsing
-- install kernel module dependencies of dependencies
-- fixed segfault for hashing NULL pointers
-- add support for compressed firmware files
-- dracut_mkdir(): create parent directories as needed.
-
-test suite:
-- lots of cleanups
-- add github actions
-
-new modules:
-- rngd
-- network-manager
-- ppcmac - thermal/fan control modules on PowerPC based Macs
-
+SGksDQrCoA0KQXMgU3lzdGVtSW1hZ2VyIGRldmVsb3BlciBJ4oCZbSBoZWF2aWx5IHVzaW5nIGRy
+YWN1dCB0byBnZW5lcmF0ZSB0aGUgaW1hZ2VyLiAoU3lzdGVtSW1hZ2VyIGlzIGEgc29mdHdhcmUg
+YWltZWQgYXQgY2x1c3RlciBub2RlcyBpbWFnZXMgZGVwbG95bWVudCkNCsKgDQpJ4oCZdmUganVz
+dCBkaXNjb3ZlcmVkIHRoYXQgaW4gQ2VudE9TLTguMSwgdGhlIDQwbmV0d29yayBkcmFjdXQgbW9k
+dWxlIGlzIG5vdyBzcGxpdHRlZCBpbiAzNW5ldHdvcmstbGVnYWN5IGFuZCAzNW5ldHdvcmstbWFu
+YWdlci4NCsKgDQpNeSBzeXN0ZW1pbWFnZXIgZHJhY3V0IG1vZHVsZSB1c2VkIHRvIHJlcXVpcmVz
+IG5ldHdvcmssIGFuZCBkaWQgdXNlIG5ldC1saWIuc2ggdG8gcmV0cmlldmUgc29tZSBuZXR3b3Jr
+IGluZm9ybWF0aW9ucy4gSXQgZGlkIGFsc28gdXNlIC90bXAvbmV0LmlmYWNlcyB0aGF0IGlzIGFs
+c28gdXNlZCBieSBuZXQtbGliLnNoLiBJdCB3YXMgYWxzbyBoZWF2aWx5IHVzaW5nIC90bXAvZGhj
+bGllbnQuJERFVklDRS5kaGNwb3B0cyBvciAvdG1wL25ldC4kREVWSUNFLm92ZXJyaWRlIC90bXAv
+bGVhc2VpbmZvLiRERVZJQ0UuZGhjcC5pcHY0IGluIGEgaW5pdHF1ZXVlL29ubGluZSBob29rICgk
+REVWSUNFIGlzICQxIGluIHRoaXMgaG9vaykNCsKgDQpOb3cgdGhhdCA0MG5ldHdvcmsgdXNlcyBi
+eSBkZWZhdWx0IDM1bmV0d29yay1tYW5hZ2VyLCBhbGwgaXMgYnJva2VuOg0K4oCiIE5ldC1saWIu
+c2ggwqAoZnJvbSA0MG5ldHdvcmspIHRoYXQgdXNlcyAvdG1wL25ldC5pZmFjZXMgaXMgYnJva2Vu
+LiAoZS5nLiBjb25maWd1cmVkX2lmYWNlcygpIHJldHVybnMgbm90aGluZykuDQrigKIgL3RtcC9k
+aGNsaWVudC4kREVWSUNFLmRoY3BvcHRzIG9yIC90bXAvbmV0LiRERVZJQ0Uub3ZlcnJpZGUgZG9u
+4oCZdCBleGlzdHMgYW55bW9yZQ0KwqANCk15IHF1ZXN0aW9uIGlzIHRodXMgc2ltcGxlOg0K4oCi
+IFdpbGwgeW91IGZpeCBuZXQtbGliLnNoPyAob3Igd2lsbCBpdCBtb3ZlIHRvIDM1bmV0d29yay1s
+ZWdhY3k/KQ0K4oCiIEhvdyBkbyBJIHJldHJpZXZlIERIQ1Agc3BlY2lmaWMgY3VzdG9tIGZpZWxk
+cyBsaWtlICRuZXdfb3B0aW9uXzE0NCB0aGF0IHdhcyBwcmVzZW50IGluIC90bXAvZGhjbGllbnQu
+Ki5kaGNwb3B0cz8NCm8gTm90ZTogb24gU3VTRSwgSSB3YXMgdXNpbmcgL3RtcC9sZWFzZWluZm8u
+JERFVklDRS5kaGNwLmlwdjQpDQpvIElkZWFsbHksIGlzIHRoZXJlIGFuIGVxdWl2YWxlbnQgb2Yg
+L2V0Yy8qZGhjcG9wdHMgb3IgL2V0Yy8qb3ZlcnJpZGUgdGhhdCBjb3VsZCBiZSBzb3VyY2VkIGFu
+ZCB0aGF0IHdvdWxkIGRlZmluZSBkZXZpY2UgcmVsZXZhbnQgaW5mb3JtYXRpb25zPw0KwqANCk5v
+dGU6c8KgDQrigKIgwqBuZWVkIHRvIGtlZXAgY29tcGF0aWJpbGl0eSB3aXRoIENlbnRPUy02LCBD
+ZW50T1MtNywgU3VTRSwg4oCmDQrigKIgSeKAmWQgbGlrZSB0byBhdm9pZCAzNW5ldHdvcmstbGVn
+YWN5IGFzIGl0IHdvbuKAmXQgbGFzdCBmb3JldmVyIGFuZCBhZnRlciBpbWFnaW5nLCBJIGdpdmUg
+Y29udHJvbCBiYWNrIHRvIHN5c3RlbSBhbmQgZmluaXNoIHRvIGJvb3QgdGhlIGp1c3QgaW5zdGFs
+bGVkIE9TIHdpdGhvdXQgcmVib290aW5nLiBVc2luZyBsZWdhY3ktbmV0d29yayB3b3VsZCBwcmV2
+ZW50IGRvaW5nIGRpcmVjdCBib290Lg0K4oCiIEF0IG1pbmltdW0sIEkgbmVlZCB0byBnZXQgbmVl
+ZGVkIGluZm9zIGZvciBjcmVhdGluZyB0aGUgaWZjZmcgZmlsZS4gSSBhbHNvIG5lZWQgdG8ga25v
+dyB0aGUgZGhjcCBzZXJ2ZXIgaXAgKGlmIHVzaW5nIGRoY3ApIGFuZCBnZXR0aW5nIG9wdGlvbnMg
+d291bGQgbGV0IG1lZSBrZWVwIGNvbXBhdGliaWxpdHkgd2l0aCBvbGQgc3lzdGVtaW1hZ2VyLg0K
+wqANCkFueSBoZWxwIHdvdWxkIGJlIGdyZWF0bHkgYXBwcmVjaWF0ZWQgYXMgZm9yIG5vdyBJIGRv
+buKAmXQgc2VlIGEgY2xlYW4gd2F5IHRvIGhhbmRsZSB0aGUgY2hhbmdlLiAobm1jbGkgZG9lc27i
+gJl0IHdvcmsgYXMgaXQgZG9lc27igJl0IHJ1biBhcyBhIGRhZW1vbiB3aGVuIGluaXRxdWV1ZS9v
+bmxpbmUgaG9vayBpcyB0cmlnZ2VyZWQpDQrCoA0KU3lzdGVtSW1hZ2VyIGRyYWN1dCBtb2R1bGUg
+Y2FuIGJlIGZvdW5kIGhlcmU6wqBodHRwczovL2dpdGh1Yi5jb20vZmlubGV5L1N5c3RlbUltYWdl
+ci90cmVlL1N5c3RlbUltYWdlci1ORy9saWIvZHJhY3V0L21vZHVsZXMuZC81MXN5c3RlbWltYWdl
+cg0KwqANCkJlc3QgcmVnYXJkcywNCsKgDQpPbGl2aWVyLg0KDQpQUzogSSd2ZSBmb3VuZCB0aGlz
+IGh0dHBzOi8vYnVnemlsbGEucmVkaGF0LmNvbS9zaG93X2J1Zy5jZ2k/aWQ9MTcyNzkwNCBhbmQg
+SSdtIGFmcmFpZCB0byBiZSBzdHVjayA6LS8NCi0twqANCk9saXZpZXIgTEFIQVlFDQogDQoNCg==
