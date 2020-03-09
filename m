@@ -1,46 +1,46 @@
-From: Erik Moqvist <erik.moqvist-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: rootfs removed when opening a socket
-Date: Mon, 9 Mar 2020 08:44:28 +0100
-Message-ID: <CAPZf9tBFHTjnyV+fO61ppyt4cXurcnzedbgWJEsbSPb6zeKKdw@mail.gmail.com>
+From: LAHAYE Olivier <olivier.lahaye-KCE40YydGKI@public.gmane.org>
+Subject: HELP needed: dracut 049: initqueue/online hook never triggered?
+Date: Mon, 9 Mar 2020 13:02:44 +0000
+Message-ID: <D54C3CCB-D8A5-414E-876C-0FCE6AFCFFE4@cea.fr>
 Mime-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=J8BDkUviubuXHHp3nE1WUFa2w7R0tHMek/fh2Yll4mI=;
-        b=lkIC2vmZYVdI8KLl0b+oaJite4ef46HuGXEuh9hyRt+FnhuW+v0K2Pfv6mp2RvJxdn
-         kWBIYn+PC2p7WpRTT4CbHGONzaoLVzPO1vSVIoQhpEc6YoVv59OG+p+gygrKHtyP3OLn
-         CtDs6aDue8yi8AMwF+fTYjMF61KcB4PuKRXSSYoa6tmKA8YvRKYtldsEQj6C4cihPJba
-         l8oqxnNMTJtzLfEu0b8CrCw2huGLm5hW6LbN14yCZfN/iZKCef+mHDAJ6YkUTjPGJahd
-         XRZnqaOfY464yQxLzG+1TlseqWZRgXW0FRRLXPTkBerAVKCSK90dW8dqxGedHJVjBNLE
-         oOTQ==
+Content-Language: fr-FR
+Content-ID: <A638EC64A671E045BB4EE715DBBACA23-KCE40YydGKI@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hello!
-
-I'm working on a minimal embedded system where I intend to use the
-initramfs as rootfs with /init implementing the entire system. I have
-no need to mount another file system as rootfs.
-
-Yesterday I noticed that the rootfs was removed about 10 minutes after
-power on. It was just gone. After a few hours of debugging I noticed
-that inodes started to be evicted at the same time as the rootfs was
-removed. It turned out that my application periodically opens sockets
-which are never closed, and as each socket allocates an inode, the
-system eventually runs out of inodes (I think) and starts evicting old
-ones to be able to open another socket. Now, as I understand it, the
-evicted inodes were used by the rootfs, which could explain why the
-rootfs was removed.
-
-I am a bit surprised that opening a socket can result in removing the
-rootfs. Is this the intended behavior?
-
-I'm using kernel 5.5.7 with a minimal configuration on X86_64 QEMU.
-The configuration can be found here:
-https://github.com/eerimoq/monolinux-example-project/blob/master/app/linux-x86_64.config
-
-/ Erik
+SGksDQrCoA0KTXkgbW9kdWxlIHJlcXVpcmVzIGluaXRxdWV1ZS9vbmxpbmUgcXVldWUgdG8gYmUg
+cnVuLiBJdCB3b3JrcyBmaW5lIG9uIENlbnRPUy03LCBidXQgZmFpbHMgb24gQ2VudE9TLTguMSAo
+ZHJhY3V0LTA0OS0yNy5naXQyMDE5MDkwNi5lbDhfMS4xLng4Nl82NCkNCkluIGZhY3QgaXQgZmFp
+bHMgb24gYWxsIGRyYWN1dCB2ZXJzaW9uIHRoYXQgaGF2ZSB0aGUgNDBuZXR3b3JrIG1vZHVsZSBz
+cGxpdCB3aXRoIDM1bmV0d29yay1sZWdhY3kgYW5kIDM1bmV0d29yay1tYW5hZ2VyLg0KwqANCk9u
+IENlbnRPUy04LjEsIGJ5IGRlZmF1bHQsIDQwbmV0d29yayB1c2VzIDM1bmV0d29yay1tYW5hZ2Vy
+IHdoaWNoIGlzIGZpbmUsIGJ1dCB0aGVuLCBJIHNlZSBubyBjb2RlIHRoYXQgd291bGQgcnVuIHRo
+ZSBpbml0cXVldWUvb25saW5lIGhvb2sgaW4gZWl0aGVyIDQwbmV0d29yayBvciAzNW5ldHdvcmst
+bWFuYWdlciAobm9yIGluIDk4c3lzdGVtZCkuIEFtIEkgbWlzc2luZyBzb21ldGhpbmc/DQrCoA0K
+TXkgc3lzdGVtaW1hZ2VyIGRyYWN1dCBtb2R1bGUgc3VwcG9ydHMgZHJhY3V0IGZyb20gQ2VudE9T
+LTYgKHdoZXJlIEkgdXNlIHVkZXYgdG8gc2ltdWxhdGUgb25saW5lIGhvb2spIHRvIENlbnRPUy04
+LjAgd2hpY2ggc3RpbGwgcnVuIHRoZSBvbmxpbmUgaG9vay4NCsKgDQpJ4oCZZCBsaWtlIHRvIGF2
+b2lkIHJlcXVpcmluZyAzNW5ldHdvcmstbGVnYWN5IGZvciBtdWx0aXBsZSByZWFzb25zOg0K4oCi
+IEkgZG9u4oCZdCBrbm93IGhvdyB0byByZXF1aXJlIGl0IG9ubHkgb24gQ2VudE9TLTguMSAobWFr
+ZSBpdCBvcHRpb25hbCkNCuKAoiBJIGRvbuKAmXQga25vdyBob3cgdG8gZmluaXNoIGJvb3QgdXNp
+bmcgbmV0d29ya21hbmFnZXIgaWYgSSBzdGFydCB3aXRoIGxlZ2FjeSBtb2RlDQrigKIgVGhpcyBs
+ZWdhY3kgb3B0aW9uIHdvbuKAmXQgbGFzdCBmb3JldmVy4oCmDQpJ4oCZZCBhbHNvIGxpa2UgdG8g
+YXZvaWQgZG9pbmcgdGhlIHNhbWUgdHJpY2sgYXMgSSBkbyBvbiBDZW50T1MtNiwgcGxheWluZyB3
+aXRoIHVkZXYgcnVsZXMuDQrCoA0KSG93IGRvIEkgaGF2ZSBkcmFjdXQgZG8gdGhlIGZvbGxvd2lu
+ZyB3aGVuIHVzaW5nIDQ1bmV0d29yay1tYW5hZ2VyPyAobmVlZCBpbml0cXVldWUgaXMgdGhlcmUg
+YW5kIG1vZHVsZSBtb2R1bGUgZGVwZW5kcyBvbiBuZXR3b3JrIG9mIGNvdXJzZSkNCuKAoiBzb3Vy
+Y2VfaG9vayBpbml0cXVldWUvb25saW5lICRuZXRpZg0KwqANCkkgZGlkIGxvb2sgaW50byA4MGFu
+YWNvbmRhIG1vZHVsZSwgdGhhdCB1c2VzIC90bXAvbmV0LiouZGlkLXNldHVwIGluIG9ubGluZV9u
+ZXRkZXZzLCBidXQgSSB3b25kZXIgaG93IHRoaXMgZmlsZSBjYW4gZXhpc3RzIHdoZW4gMzVuZXR3
+b3JrLW1hbmFnZXIgaXMgdXNlZD8gKHdoZW4gdGltZW91dCBvY2N1cnMgYW5kIGRyb3BzIG1lIHRv
+IGEgc2hlbGwswqAgSSBzZWUgL3RtcCBhcyBhbG1vc3QgZW1wdHkgd2hpbGUgbXkgbmV0d29yayBp
+cyB1cOKApikNCsKgDQpNeSBtb2R1bGUgc291cmNlOsKgaHR0cHM6Ly9naXRodWIuY29tL2Zpbmxl
+eS9TeXN0ZW1JbWFnZXIvdHJlZS9TeXN0ZW1JbWFnZXItTkcvbGliL2RyYWN1dC9tb2R1bGVzLmQv
+NTFzeXN0ZW1pbWFnZXINCsKgDQpNYW55IHRoYW5rcyBmb3IgaGVscCBvbiB0aGF0IGFzIEnigJlt
+IHN0dWNrIGZvciBub3cgOi0vDQrCoA0KLS0NCk9saXZpZXIgTEFIQVlFDQpTeXN0ZW1JbWFnZXIg
+ZGV2ZWxvcHBlci4NCg0KDQotLSANCk9saXZpZXIgTEFIQVlFDQpDSUQgJiBBU1NJIC0gRFJUIFNh
+Y2xheQ0KIA0KDQo=
