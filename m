@@ -1,85 +1,79 @@
-From: Arvind Sankar <nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org>
-Subject: [PATCH 1/2] efi/x86: Move efi stub globals from .bss to .data
-Date: Mon,  6 Apr 2020 14:06:13 -0400
-Message-ID: <20200406180614.429454-1-nivedita@alum.mit.edu>
+From: Arvind Sankar <nivedita@alum.mit.edu>
+Subject: [PATCH 2/2] efi/x86: Always relocate the kernel for EFI handover entry
+Date: Mon,  6 Apr 2020 14:06:14 -0400
+Message-ID: <20200406180614.429454-2-nivedita@alum.mit.edu>
 References: <CAMj1kXEUkJ1XJ9OTsijeq8tNNYC00bXqEV44OMtX5ugo9WoLKA@mail.gmail.com>
+ <20200406180614.429454-1-nivedita@alum.mit.edu>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <CAMj1kXEUkJ1XJ9OTsijeq8tNNYC00bXqEV44OMtX5ugo9WoLKA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20200406180614.429454-1-nivedita@alum.mit.edu>
+Sender: linux-kernel-owner@vger.kernel.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Ard Biesheuvel <ardb-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Arvind Sankar <nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org>, Borislav Petkov <bp-Gina5bIWoIWzQB+pC5nmwQ@public.gmane.org>, Sergey Shatunov <me-fHUSW+XspFU@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-efi <linux-efi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Donovan Tremura <neurognostic-g/b1ySJe57IkP3XJZ0H8fw@public.gmane.org>, Harald Hoyer <harald-PnQE6hpDOpmlVyrhU4qvOw@public.gmane.org>
+To: Ard Biesheuvel <ardb@kernel.org>
+Cc: Arvind Sankar <nivedita@alum.mit.edu>, Borislav Petkov <bp@alien8.de>, Sergey Shatunov <me@prok.pw>, hpa@zytor.com, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, mingo@redhat.com, Thomas Gleixner <tglx@linutronix.de>, x86@kernel.org, linux-efi <linux-efi@vger.kernel.org>, initramfs@vger.kernel.org, Donovan Tremura <neurognostic@protonmail.ch>, Harald Hoyer <harald@hoyer.xyz>
 
 Commit
 
-  3ee372ccce4d ("x86/boot/compressed/64: Remove .bss/.pgtable from
-  bzImage")
+  d5cdf4cfeac9 ("efi/x86: Don't relocate the kernel unless necessary")
 
-removed the .bss section from the bzImage.
+tries to avoid relocating the kernel in the EFI stub as far as possible.
 
-However, while a PE loader is required to zero-initialize the .bss
-section before calling the PE entry point, the EFI handover protocol
-does not currently document any requirement that .bss be initialized by
-the bootloader prior to calling the handover entry.
+However, when systemd-boot is used to boot a unified kernel image [1],
+the image is constructed by embedding the bzImage as a .linux section in
+a PE executable that contains a small stub loader from systemd that will
+call the EFI stub handover entry, together with additional sections and
+potentially an initrd. When this image is constructed, by for example
+dracut, the initrd is placed after the bzImage without ensuring that at
+least init_size bytes are available for the bzImage. If the kernel is
+not relocated by the EFI stub, this could result in the compressed
+kernel's startup code in head_{32,64}.S overwriting the initrd.
 
-When systemd-boot is used to boot a unified kernel image [1], the image
-is constructed by embedding the bzImage as a .linux section in a PE
-executable that contains a small stub loader from systemd together with
-additional sections and potentially an initrd. As the .bss section
-within the bzImage is no longer explicitly present as part of the file,
-it is not initialized before calling the EFI handover entry.
-Furthermore, as the size of the embedded .linux section is only the size
-of the bzImage file itself, the .bss section's memory may not even have
-been allocated.
-
-In particular, this can result in efi_disable_pci_dma being true even
-when it was not specified via the command line or configuration option,
-which in turn causes crashes while booting on some systems.
-
-To avoid issues, place all EFI stub global variables into the .data
-section instead of .bss. As of this writing, only boolean flags for a
-few command line arguments and the sys_table pointer were in .bss and
-will now move into the .data section.
+To prevent this, unconditionally relocate the kernel if the EFI stub was
+entered via the handover entry point.
 
 [1] https://systemd.io/BOOT_LOADER_SPECIFICATION/#type-2-efi-unified-kernel-images
 
-Signed-off-by: Arvind Sankar <nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org>
-Reported-by: Sergey Shatunov <me-fHUSW+XspFU@public.gmane.org>
-Fixes: 3ee372ccce4d ("x86/boot/compressed/64: Remove .bss/.pgtable from bzImage")
+Signed-off-by: Arvind Sankar <nivedita@alum.mit.edu>
+Reported-by: Sergey Shatunov <me@prok.pw>
+Fixes: d5cdf4cfeac9 ("efi/x86: Don't relocate the kernel unless necessary")
 ---
- drivers/firmware/efi/libstub/efistub.h  | 2 +-
- drivers/firmware/efi/libstub/x86-stub.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/firmware/efi/libstub/x86-stub.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/firmware/efi/libstub/efistub.h b/drivers/firmware/efi/libstub/efistub.h
-index cc90a748bcf0..67d26949fd26 100644
---- a/drivers/firmware/efi/libstub/efistub.h
-+++ b/drivers/firmware/efi/libstub/efistub.h
-@@ -25,7 +25,7 @@
- #define EFI_ALLOC_ALIGN		EFI_PAGE_SIZE
- #endif
- 
--#ifdef CONFIG_ARM
-+#if defined(CONFIG_ARM) || defined(CONFIG_X86)
- #define __efistub_global	__section(.data)
- #else
- #define __efistub_global
 diff --git a/drivers/firmware/efi/libstub/x86-stub.c b/drivers/firmware/efi/libstub/x86-stub.c
-index 8d3a707789de..e7af6d2eddbf 100644
+index e7af6d2eddbf..7583e908852f 100644
 --- a/drivers/firmware/efi/libstub/x86-stub.c
 +++ b/drivers/firmware/efi/libstub/x86-stub.c
-@@ -20,7 +20,7 @@
- /* Maximum physical address for 64-bit kernel with 4-level paging */
- #define MAXMEM_X86_64_4LEVEL (1ull << 46)
+@@ -742,8 +742,15 @@ unsigned long efi_main(efi_handle_t handle,
+ 	 * now use KERNEL_IMAGE_SIZE, which will be 512MiB, the same as what
+ 	 * KASLR uses.
+ 	 *
+-	 * Also relocate it if image_offset is zero, i.e. we weren't loaded by
+-	 * LoadImage, but we are not aligned correctly.
++	 * Also relocate it if image_offset is zero, i.e. the kernel wasn't
++	 * loaded by LoadImage, but rather by a bootloader that called the
++	 * handover entry. The reason we must always relocate in this case is
++	 * to handle the case of systemd-boot booting a unified kernel image,
++	 * which is a PE executable that contains the bzImage and an initrd as
++	 * COFF sections. The initrd section is placed after the bzImage
++	 * without ensuring that there are at least init_size bytes available
++	 * for the bzImage, and thus the compressed kernel's startup code may
++	 * overwrite the initrd unless it is moved out of the way.
+ 	 */
  
--static efi_system_table_t *sys_table;
-+static efi_system_table_t *sys_table __efistub_global;
- extern const bool efi_is64;
- extern u32 image_offset;
- 
+ 	buffer_start = ALIGN(bzimage_addr - image_offset,
+@@ -753,8 +760,7 @@ unsigned long efi_main(efi_handle_t handle,
+ 	if ((buffer_start < LOAD_PHYSICAL_ADDR)				     ||
+ 	    (IS_ENABLED(CONFIG_X86_32) && buffer_end > KERNEL_IMAGE_SIZE)    ||
+ 	    (IS_ENABLED(CONFIG_X86_64) && buffer_end > MAXMEM_X86_64_4LEVEL) ||
+-	    (image_offset == 0 && !IS_ALIGNED(bzimage_addr,
+-					      hdr->kernel_alignment))) {
++	    (image_offset == 0)) {
+ 		status = efi_relocate_kernel(&bzimage_addr,
+ 					     hdr->init_size, hdr->init_size,
+ 					     hdr->pref_address,
 -- 
 2.24.1
 
