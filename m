@@ -1,60 +1,93 @@
-From: Harald Hoyer <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: HELP needed: dracut 049: initqueue/online hook never triggered?
-Date: Mon, 30 Mar 2020 15:32:13 +0200
-Message-ID: <45382e5d-0dbe-9761-2f99-ebb221b59a47@gmail.com>
-References: <D54C3CCB-D8A5-414E-876C-0FCE6AFCFFE4@cea.fr>
+From: Arvind Sankar <nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org>
+Subject: Re: [PATCH 1/2] x86/boot/compressed/64: Remove .bss/.pgtable from
+ bzImage
+Date: Sun, 5 Apr 2020 23:51:10 -0400
+Message-ID: <20200406035110.GA3241052@rani.riverdale.lan>
+References: <20200109150218.16544-1-nivedita@alum.mit.edu>
+ <20200405154245.11972-1-me@prok.pw>
+ <20200405231845.GA3095309@rani.riverdale.lan>
+ <c692eea9213172d8ef937322b02ff585b0dfea82.camel@prok.pw>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=Lm9zQt0/6tbS3DKeYMEFGwT/dzoeXNf99QnzleVfWJQ=;
-        b=kKoNGi1rhxFDgD9Srt3VqQOLC79KX1eXSHcZN7gdtmFhzanha4WjVC4cMz8YaQyvIh
-         bWaOJbvYERdO8jY6yEsyBDQHAXxm5AzjePJrhfok1AEN2nzclLo8cllJiVhrbjD/zcLM
-         MWgTtcleRyVjH+L160ocKdVjTALLKPpvuMQz3NflnXZP2X7H81Zy6VfiiM5IpYthS5IF
-         SRD8W7p5Xt+JsrNC/AFnHvV4VrHCRS3AQPcgMc+sTkM/CPnnudjcCR0Zg5vK1w0UnHgv
-         mQ62PsPb2S3Gu94NTNyOMQ+w9559lP4mfjB3+sSLMujDkTmLVE0nHH+5uWpXm4Xej7Im
-         6cJA==
-In-Reply-To: <D54C3CCB-D8A5-414E-876C-0FCE6AFCFFE4-KCE40YydGKI@public.gmane.org>
-Content-Language: en-US
+        h=sender:from:date:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=WV8R6FeJvyF9DBdnPAm34qcEm1BtCICmBxz3iuDazCI=;
+        b=vE41NK3RbjgCStbTVodJesrPs91H70K9nrdXIU8R6Lz+qqxgy43Hb+nYjVY+Mn06Oz
+         Uqjt3OhZqmLqmKdd6Hwi7V288FkfdueXA82Yq1t947f2Izwo0vexU09e8boozekSfWu7
+         ue5VgBGx+UkwDu2ivUv23NxGf5vmNeVLEzMcoy18XgURHmHC5vP+Vx2HfzABAAqL6me8
+         78QWPHRbZccoInJXFoD5xW6sT6nYoxX3RzTVi4K2Ot7IGQJICZykN1Yqw3ZbdlmhcsnY
+         8GcAqovW71pa5Lt+TKAto4SGw2BYgGqS3kXo+lZC/eBVG3g2R4lNHn6ww8/7JUaL0qvp
+         f3zQ==
+Content-Disposition: inline
+In-Reply-To: <c692eea9213172d8ef937322b02ff585b0dfea82.camel-fHUSW+XspFU@public.gmane.org>
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"
-To: LAHAYE Olivier <olivier.lahaye-KCE40YydGKI@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Sergey Shatunov <me-fHUSW+XspFU@public.gmane.org>
+Cc: Arvind Sankar <nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org>, bp-Gina5bIWoIWzQB+pC5nmwQ@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-efi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ard Biesheuvel <ardb-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Donovan Tremura <neurognostic-g/b1ySJe57IkP3XJZ0H8fw@public.gmane.org>, Harald Hoyer <harald-PnQE6hpDOpmlVyrhU4qvOw@public.gmane.org>
 
-Am 09.03.20 um 14:02 schrieb LAHAYE Olivier:
-> Hi,
->  
-> My module requires initqueue/online queue to be run. It works fine on CentOS-7, but fails on CentOS-8.1 (dracut-049-27.git20190906.el8_1.1.x86_64)
-> In fact it fails on all dracut version that have the 40network module split with 35network-legacy and 35network-manager.
->  
-> On CentOS-8.1, by default, 40network uses 35network-manager which is fine, but then, I see no code that would run the initqueue/online hook in either 40network or 35network-manager (nor in 98systemd). Am I missing something?
->  
-> My systemimager dracut module supports dracut from CentOS-6 (where I use udev to simulate online hook) to CentOS-8.0 which still run the online hook.
->  
-> I’d like to avoid requiring 35network-legacy for multiple reasons:
-> • I don’t know how to require it only on CentOS-8.1 (make it optional)
-> • I don’t know how to finish boot using networkmanager if I start with legacy mode
-> • This legacy option won’t last forever…
-> I’d also like to avoid doing the same trick as I do on CentOS-6, playing with udev rules.
->  
-> How do I have dracut do the following when using 45network-manager? (need initqueue is there and module module depends on network of course)
-> • source_hook initqueue/online $netif
->  
-> I did look into 80anaconda module, that uses /tmp/net.*.did-setup in online_netdevs, but I wonder how this file can exists when 35network-manager is used? (when timeout occurs and drops me to a shell,  I see /tmp as almost empty while my network is up…)
->  
-> My module source: https://github.com/finley/SystemImager/tree/SystemImager-NG/lib/dracut/modules.d/51systemimager
->  
-> Many thanks for help on that as I’m stuck for now :-/
->  
-> --
-> Olivier LAHAYE
-> SystemImager developper.
+On Mon, Apr 06, 2020 at 07:00:39AM +0700, Sergey Shatunov wrote:
+> On Sun, 2020-04-05 at 19:18 -0400, Arvind Sankar wrote:
+> > I'm not familiar with systemd-boot: when you say systemd-boot stub,
+> > is
+> > that something different from the kernel's EFI_STUB option? Or is it
+> > just a kernel with EFI_STUB enabled and with builtin initramfs +
+> > builtin
+> > cmdline?
+> Basicaly systemd-boot stub is efi application with packed EFI_STUB-
+> enabled kernel, initrd and cmdline into single file. Source can be
+> found here: 
+> https://github.com/systemd/systemd/blob/master/src/boot/efi/stub.c
 > 
+> It doesn't do anything unusual, just extracting data from sections and
+> calling efi handover.
 > 
+> Final image created by objcopy'ing precompiled stub and adding sections with that stuff:
+> 
+>     objcopy \
+>         --add-section .osrel=os_release --change-section-vma
+> '.osrel=0x20000' \
+>         --add-section .cmdline=cmdline --change-section-vma
+> '.cmdline=0x30000' \
+>         --add-section .linux=vmlinuz --change-section-vma
+> '.linux=0x2000000' \
+>         --add-section .initrd=initrd --change-section-vma
+> '.initrd=0x3000000' \
+>         /usr/lib/systemd/boot/efi/linuxx64.efi.stub output.efi
 
-This might be fixed with commit 3dcaa97ca4dcfa8092252a22df62c60941e59ce3
+So this embeds the bzImage which is a PE executable inside another PE
+executable. Before my patch, the bss section was explicitly part of the
+bzImage and so would have been zero, now it isn't any more and the PE
+loader is expected to zero it out before executing. systemd-boot's stub
+loader doesn't do that prior to jumping to the EFI handover entry, so
+the issue must be because bss contains garbage.  I'm not 100% sure why
+that leads to a crash, as the only variables in bss in the EFI stub are
+for some boolean EFI command line arguments, so it ought to still have
+worked, just as though it was invoked with random arguments. Anyway we
+need to handle an uninitialized bss to get this to work properly.
 
-You might want to try dracut-050-26.* from Fedora 31 or 32 or rawhide.
+I also see from systemd [0] and dracut source [1] that these VMA's seem
+to be hardcoded with no checking for how big the files actually are, and
+objcopy doesn't seem to complain if sections end up overlapping.
+
+So since [2] in dracut, the space available for the .linux section
+containing the bzImage shrank from ~48MiB to 16MiB. This will hopefully
+still fit the compressed kernel (although an allyesconfig bzImage is far
+bigger than even 48MiB), but in-place decompression is unlikely to be
+possible even for a normal config, which will break another patchset
+that got merged into mainline for 5.7 [3,4], which tries to avoid
+copying the kernel unless necessary, and has a good chance of triggering
+in-place decompression if kaslr is disabled.
+
+I'll get systemd-boot installed here so I can reproduce and implement
+some workarounds for both issues. I should hopefully have a fix in a day
+or two.
+
+[0] https://github.com/systemd/systemd/blob/9fac14980df8dcce922e1fe8856a88b09590d2c3/test/test-efi-create-disk.sh#L30
+[1] https://git.kernel.org/pub/scm/boot/dracut/dracut.git/tree/dracut.sh#n2039
+[2] https://git.kernel.org/pub/scm/boot/dracut/dracut.git/commit/?id=4237aeb040c276722b528001bdea31e6eb994d06
+[3] https://lore.kernel.org/linux-efi/20200303221205.4048668-1-nivedita-FrUbXkNCsVf2fBVCVOL8/A@public.gmane.org/
+[4] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=d5cdf4cfeac914617ca22866bd4685fd7f876dec
