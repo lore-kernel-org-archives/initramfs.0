@@ -1,68 +1,53 @@
-From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: initramfs-tools 0.137 release
-Date: Wed, 29 Apr 2020 19:57:03 +0100
-Message-ID: <adf50227e1ad1093b4ab5365344d609f63f7966e.camel@decadent.org.uk>
+From: Joseph Mullally <jwmullally-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: New dracut module: dracut-iscsi-target - testing and feedback
+Date: Mon, 4 May 2020 17:49:02 +0100
+Message-ID: <CAMTb+fNfqGzx0RuXB2oGV2=CEjWajzz0Y9CQWok+uKD9OnrOqQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-        protocol="application/pgp-signature"; boundary="=-zNWY5nl7po2idb2s0UlQ"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=mX2rG2dCTFZqSnRD+ZaFtvsDndg522x/oELL93twoVs=;
+        b=M/PUbCw9gpvM9wvHkfMMLeaBQ5NHioT1AdvrDXqzAa90PWTiXt7g6zxqR7dBbXTblJ
+         A0FSbl2eASph6bQzwCg4xYhXYUokfJgL9DUNKM/xLQJ9udvzAnOFFgbAMPbg3Ucvpuq/
+         yDgAcNSaNJrL7QkGpIckwCFD/kkffspOqnF5pSkhS1pWcTs3NqXr/ZASqWsU1eJirxBm
+         ZdEjqSFPnlSvPY7U6V92I5D0AXA6L/jnn4F17/DUQwE2ei6p79vB9LqdGWRx7FSecUrs
+         4tvQ2D8gJ1f7qPnZiSXFyyHXjwc1t605E6TmJy0ozUFvOuHsnzytdVOflFecD/44cKxW
+         m6Yg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Hello,
 
---=-zNWY5nl7po2idb2s0UlQ
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+I have put together a new dracut module:
+https://github.com/jwmullally/dracut-iscsi-target
 
-This release fixes a number of bugs reported to Debian, including a
-regression in 0.136 which can cause graphics drivers to be included in
-the initramfs unnecessarily.  The shortlog is below.  Note that the
-commit with a description referring to "libgcc_s.so.0" actually uses
-the correct filename, "libgcc_s.so.1".
+> This Dracut module enables the Fedora initramfs to start as an iSCSI Targ=
+et instead of doing a regular boot. This allows you to boot the OS of one h=
+ost on another connected via Ethernet using "netroot=3Discsi:" For example,=
+ you can run your laptop OS on your more powerful desktop while still havin=
+g access to all your laptop's files and programs.
 
-Ben.
+This is well outside of the intended use case of dracut, but works
+surprisingly well with little configuration or management.
+Essentially, it uses the Linux iSCSI/LIO target modules to create an
+iSCSI target for the specified local drives, and halts the regular
+boot process: https://github.com/jwmullally/dracut-iscsi-target/blob/master=
+/src/iscsi-target.sh
 
-AP (1):
-      hook-functions: Search for firmware under /lib/firmware/updates
+It's still in testing but should be usable - I use it myself quite a
+bit. If you have any suggestions and feedback on the package, or have
+tried it out, or I am using the wrong naming scheme and paths, kindly
+let me know!
 
-Ben Hutchings (7):
-      Document copy_exec as usable for shared libraries
-      hook-functions: copy_exec: Copy libgcc_s.so.0 along with libpthread.s=
-o
-      hook-functions: copy_exec: Correct verbose log message for symlinks
-      hook-functions: Factor out device class walking into a function
-      hook-functions: Don't add backlight modules if we have generic fb dev=
-ice
-      Fix new shellcheck warnings around unquoted parameter expansion
-      Releasing version 0.137.
+Right now I have only tested it on Fedora and haven't looked into how
+easy it would be to get it to work on other distros, but the scripts
+are simple enough that it might run with little change. The main
+requirements are BootLoaderSpec and dracut >=3D 50.
 
---=20
-Ben Hutchings
-Horngren's Observation:
-              Among economists, the real world is often a special case.
-
-
-
---=-zNWY5nl7po2idb2s0UlQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAl6pzgAACgkQ57/I7JWG
-EQmLPQ/+KdrNYDmMvsQEry24kiFjMEV4I+f0f09fvPhb2Rp/oJm3b5GyQXKK1MQY
-XfCzETDVnsaD0OuIqBedSIgPpaZdHAfvcH3yPjJjqJU0MzvGe1ZMcmsVUTWtuJS8
-rWEmbdzV7SWW1A+N20m4jh/0VzdQWP81V9f1SqXa2khCnPvJlRUrzgTwIWgOrDxT
-OUTFYU4lRo59Le4ucdQunZbqqLL2iwWpminks2U9+D2Qm2Dha/NQRoHgero+w8Mb
-aVBqbDTJaQhQyOnvsfryeWLcQvobHxVWbXfdzFwFe31mKynqKp7wXCKP9WWEQOkT
-n5s90GgNexSIrYmpRtsFAOdh4nD55IQiueR+/dEK4C5thGHjiPEqaG8IFCVHmg6J
-3DSQcjsJNYGUIVKIWtRCD7NPk4QKqStfMJDHZehk1MKmL24FI/UhibA6owPOfqj7
-YuUTzSD365Jj+8jciKvDu602J88Y710vnjPvpx4plPEH0+4FfR0Nv9sxQlE8FNaZ
-oyD/4SFayrPDLCPXXy7VoPalNXTw8koll86TPZ+bu9+TvDpCWSGDjexBqcqmD3I2
-oe2YBBL1u2ofWsZkXjIwsJc3n5kBR/cD6iN70nWTZ2I4v4+mrY2bxCNuPLQK5GCg
-ZXlh1CFkwNEXkqGh16MsoFdb4CLSOSvin9u3m/5kMUu5FipF3hw=
-=3F2A
------END PGP SIGNATURE-----
-
---=-zNWY5nl7po2idb2s0UlQ--
+Thanks,
+- Joe
