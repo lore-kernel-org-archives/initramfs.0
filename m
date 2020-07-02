@@ -1,15 +1,15 @@
 From: "Carlos Pinto" <pilltime-90e5XUkte7Zhl2p70BpVqQ@public.gmane.org>
 Subject: Bug in a resume module script
-Date: Thu, 02 Jul 2020 12:00:20 +0000
-Message-ID: <a4b9e734225d5e25ce7c2b2cd157bb2a@teknik.io>
+Date: Thu, 02 Jul 2020 11:23:52 +0000
+Message-ID: <175ba0b769057cf5e5ee444df124f3d9@teknik.io>
 Mime-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 dkim-signature: v=1; a=rsa-sha256; d=teknik.io; s=dkim;
         c=relaxed/relaxed; q=dns/txt; h=From:Subject:Date:Message-ID:To:MIME-Version:Content-Type:Content-Transfer-Encoding;
         bh=XrHYpaFHb/0Tlwnuz2z6gflB5uGO0U0aWo61qdIc0JI=;
-        b=MlHFdT2cC4itGkXcpGfp5wVvnlqiZfKxv8bPi/5jfYCDSl5ZaQCi+qWBujUmu5miy2kxZT0nFjYwFt+Vkn0A+cMA6Sa7tfZprVg/F5oEkoYq0cIi8aZNWrtMHiy7SUthOsYf51WGZwabpz3hRkVA7VkpYNRHx0evqys+bKrwg5TYVoXfEBY5Sc3HH06jRFMowtuAtGphlLdz9YyQN8SDVPoYApND6MqBz4T66y2sXtcGNLvcskt6NLaHS5
-        +E6JJOgBLTpNJwH+8PST55TkFob4BI4yGr32kQKjO4SkUzpvhRZSdDaEX5r+GKYYaSSQVltUyz54QNQGjLW4fL0ZCHTw==
+        b=M6NX30HZ3b9LFsVHGNJhojYRSDhIKxzL6O00kQWtHhBtuPEDyzWkVhDXSMmWXh49wZNC1a4f8avwPN0acb7fatzGrj6S1Vs75RMnL4PyioBq19ScjFS1vqQfUaehOSfHCku0GzpMPWUB0VLhVDPf1KrferzoSrwlXkYedStvzfnnrsUUKDznxeK6ra0fZc/szCCSS+riz8tZL9LpEaS6vAW3xZHd6HuVBrtlyyOCJJ/mtlqmn66irbCLTn
+        PjLtKOmBJbEYUz7mrb7PcLDQk8ybwWTo0jYKvfwsYux/6GGpFBqce5iWsWrFXgAVKlKGgfxliK77UIZh/MnFDiIAJRyg==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
