@@ -1,53 +1,26 @@
-From: Joseph Mullally <jwmullally-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: New dracut module: dracut-iscsi-target - testing and feedback
-Date: Mon, 4 May 2020 17:49:02 +0100
-Message-ID: <CAMTb+fNfqGzx0RuXB2oGV2=CEjWajzz0Y9CQWok+uKD9OnrOqQ@mail.gmail.com>
+From: "Carlos Pinto" <pilltime-90e5XUkte7Zhl2p70BpVqQ@public.gmane.org>
+Subject: Bug in a resume module script
+Date: Thu, 02 Jul 2020 12:00:20 +0000
+Message-ID: <a4b9e734225d5e25ce7c2b2cd157bb2a@teknik.io>
 Mime-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to
-         :content-transfer-encoding;
-        bh=mX2rG2dCTFZqSnRD+ZaFtvsDndg522x/oELL93twoVs=;
-        b=M/PUbCw9gpvM9wvHkfMMLeaBQ5NHioT1AdvrDXqzAa90PWTiXt7g6zxqR7dBbXTblJ
-         A0FSbl2eASph6bQzwCg4xYhXYUokfJgL9DUNKM/xLQJ9udvzAnOFFgbAMPbg3Ucvpuq/
-         yDgAcNSaNJrL7QkGpIckwCFD/kkffspOqnF5pSkhS1pWcTs3NqXr/ZASqWsU1eJirxBm
-         ZdEjqSFPnlSvPY7U6V92I5D0AXA6L/jnn4F17/DUQwE2ei6p79vB9LqdGWRx7FSecUrs
-         4tvQ2D8gJ1f7qPnZiSXFyyHXjwc1t605E6TmJy0ozUFvOuHsnzytdVOflFecD/44cKxW
-         m6Yg==
+dkim-signature: v=1; a=rsa-sha256; d=teknik.io; s=dkim;
+        c=relaxed/relaxed; q=dns/txt; h=From:Subject:Date:Message-ID:To:MIME-Version:Content-Type:Content-Transfer-Encoding;
+        bh=XrHYpaFHb/0Tlwnuz2z6gflB5uGO0U0aWo61qdIc0JI=;
+        b=MlHFdT2cC4itGkXcpGfp5wVvnlqiZfKxv8bPi/5jfYCDSl5ZaQCi+qWBujUmu5miy2kxZT0nFjYwFt+Vkn0A+cMA6Sa7tfZprVg/F5oEkoYq0cIi8aZNWrtMHiy7SUthOsYf51WGZwabpz3hRkVA7VkpYNRHx0evqys+bKrwg5TYVoXfEBY5Sc3HH06jRFMowtuAtGphlLdz9YyQN8SDVPoYApND6MqBz4T66y2sXtcGNLvcskt6NLaHS5
+        +E6JJOgBLTpNJwH+8PST55TkFob4BI4yGr32kQKjO4SkUzpvhRZSdDaEX5r+GKYYaSSQVltUyz54QNQGjLW4fL0ZCHTw==
 Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello,
+Hey everyone,=0A=0AI'm using Void Linux and if I have the resume module a=
+ctivated, I get a message early on boot saying:=0A  //lib/dracut/hooks/pr=
+e-mount/10-resume.sh: line 20: echo: write error: Invalid argument=0A=0AI=
+ managed to fix this with a small adjustment to /usr/lib/dracut/modules.d=
+/95resume/resume.sh:=0A  20c20=0A  < echo "${maj%,}:$min"> /sys/power/res=
+ume)=0A  ---=0A  > echo $maj:$min | tr -d , > /sys/power/resume)=0A=0ANev=
+er had to submit a bug to such a big project, so I'm not sure if this is =
+the place to do it.
 
-I have put together a new dracut module:
-https://github.com/jwmullally/dracut-iscsi-target
-
-> This Dracut module enables the Fedora initramfs to start as an iSCSI Targ=
-et instead of doing a regular boot. This allows you to boot the OS of one h=
-ost on another connected via Ethernet using "netroot=3Discsi:" For example,=
- you can run your laptop OS on your more powerful desktop while still havin=
-g access to all your laptop's files and programs.
-
-This is well outside of the intended use case of dracut, but works
-surprisingly well with little configuration or management.
-Essentially, it uses the Linux iSCSI/LIO target modules to create an
-iSCSI target for the specified local drives, and halts the regular
-boot process: https://github.com/jwmullally/dracut-iscsi-target/blob/master=
-/src/iscsi-target.sh
-
-It's still in testing but should be usable - I use it myself quite a
-bit. If you have any suggestions and feedback on the package, or have
-tried it out, or I am using the wrong naming scheme and paths, kindly
-let me know!
-
-Right now I have only tested it on Fedora and haven't looked into how
-easy it would be to get it to work on other distros, but the scripts
-are simple enough that it might run with little change. The main
-requirements are BootLoaderSpec and dracut >=3D 50.
-
-Thanks,
-- Joe
