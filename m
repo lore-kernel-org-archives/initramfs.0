@@ -1,124 +1,64 @@
-From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: initramfs-tools 0.139 release
-Date: Sun, 13 Sep 2020 20:21:34 +0100
-Message-ID: <e846559ec1c637d1e476f259b7d67425e80a439b.camel@decadent.org.uk>
+From: "Tkaczyk, Mariusz" <mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: RE: [PATCH] mdraid: add grow continue service.
+Date: Mon, 26 Oct 2020 09:37:31 +0000
+Message-ID: <SA0PR11MB45425BE932F6FAC71EE09BF2FF190@SA0PR11MB4542.namprd11.prod.outlook.com>
+References: <20200826075259.9416-1-mariusz.tkaczyk@intel.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-        protocol="application/pgp-signature"; boundary="=-uX/8s3iOuJKR74OytAD4"
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Sender: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-List-ID: <initramfs.vger.kernel.org>
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, debian-kernel-0aAXYlwwYIJuHlm7Suoebg@public.gmane.org, kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
-
-
---=-uX/8s3iOuJKR74OytAD4
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=intel.onmicrosoft.com;
+ s=selector2-intel-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=w5jmKj3nldx3WFmgmPo+jjtxTJvg0tKkxntXF9UTIQY=;
+ b=HuHsiGsejGzu0OALAFRMdmMKjI2s0NI5AOHysonXvWWNTi5cBgS8VF/n0q9OvMLnE15qu66GFgZeZxJumfI3J+BYYTRnqinFslAGtsVRZ5+RVVcschllHEU4cw3E7Ontif0z6dXMgC91j2RA7ZuuI+EiLv7oTYzYIGZQuuvWwlA=
+In-Reply-To: <20200826075259.9416-1-mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Content-Language: en-US
+List-ID: <initramfs.vger.kernel.org>
+To: "Tkaczyk, Mariusz" <mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: "harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org" <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-This announcement covers changes in both 0.138 and 0.139.
+Hi,
+Could someone guide me? Did I send patch correctly?
+Is there another place where dracut is maintained?
 
-This release fixes a number of bugs:
-- Regression in 0.137 for architectures where libgcc_s.so has soversion
-  > 1
-- Incorrect console parameter could lead to boot failure
-- The "panic" kernel parameter's value was not interpreted consistently
-  with the kernel
+TIA.
+Mariusz
 
-It adds several features:
-- zstd compression support
-- Automatic inclusion of firmware wanted by built-in drivers
-- Automatic inclusion of drivers for Pinebook LCD
+-----Original Message-----
+From: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org> On =
+Behalf Of Mariusz Tkaczyk
+Sent: Wednesday, August 26, 2020 9:53 AM
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Subject: [PATCH] mdraid: add grow continue service.
 
-It also adds functional tests that can be run by autopkgtests.
-Currently these are limited to the amd64 architecture.
+During raid assembly mdadm will call mdadm-grow-continue.service if reshape=
+ is in progress.
+If service doesn't exist then it is done via fork. But systemd will kill it=
+ unconditionally after processing all events.=20
 
-Possible breaking changes:
-- For compatibility with older kernel packages, update-initramfs used
-  to do nothing when invoked directly by a kernel package rather than
-  through its kernel hooks.  This check has been removed.
-- The state directory /var/lib/initramfs-tools, which was once used to
-  track which images were "owned" by update-initramfs, will be removed
-  on upgrade and no longer updated.  update-initramfs already ignored
-  its contents since version 0.132.
-- The kernel parameter "panic=3D0" used to result in an immediate reboot
-  on panic, and now results in a halt.
+Add proper service and allow systemd to manage reshape correctly.
 
-The shortlog is below.
+Signed-off-by: Mariusz Tkaczyk <mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+---
+ modules.d/90mdraid/module-setup.sh | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Ben.
-
-Ben Hutchings (27):
-      docs/maintainer-notes.md: Delete the horizontal rules
-      docs/maintainer-notes.md: Use Gitlab markup for table of contents
-      docs/maintainer-notes.md: Use Gitlab markup for definition table
-      docs/maintainer-notes.md: Use archive.org URL for Daniel Baumann doc
-      debian/control, docs/maintainer-notes.md: Use my @debian.org address
-      Merge branch 'master' into 'master'
-      Merge branch 'fix-return-printf' into 'master'
-      Merge branch 'add_zstd_format' into 'master'
-      update-initramfs: Remove test for direct invocation from kernel packa=
-ge
-      Remove obsolete update-initramfs state in /var/lib/initramfs-tools
-      hook-functions: copy_exec: Copy libgcc_s.so with any soversion up to =
-9
-      Add CI configuration for salsa.debian.org
-      initramfs.conf: Delete "NFS Section" comment
-      Add FSTYPE config parameter to allow overriding filesystem type detec=
-tion
-      Change "panic" parameter handling to work more like the kernel
-      debian/tests: Add common test preparation code
-      debian/tests: Add basic test for amd64 using klibc and not busybox
-      debian/tests: Add basic test for amd64 using busybox
-      debian/tests: Add basic tests for amd64 with only ata/virtio driver
-      debian/tests: Add test for separate /usr device
-      debian/tests: Add test of the panic shell and parameter handling
-      Merge branch 'builtin-firmware' into 'master'
-      Releasing version 0.138.
-      debian/tests: Run amd64 tests on either amd64 or generic flavour
-      debian/tests/control: Mark all amd64 tests as skip-not-installable
-      conf/initramfs.conf: Fix typo "filesytem"
-      Releasing version 0.139.
-
-Guilherme G. Piccoli (1):
-      scripts/functions: Prevents printf error carry over if wrong console =
-is set
-
-Jann Horn (1):
-      Add firmware for built-in drivers
-
-Norbert Lange (1):
-      un-,mkinitramfs: add support for zstd
-
-Unit 193 (1):
-      When overriding configured compressor, warn the user.
-
-Vagrant Cascadian (1):
-      hook-functions: Add modules needed for Pinebook LCD display.
-
---=20
-Ben Hutchings
-Humour is the best antidote to reality.
-
-
---=-uX/8s3iOuJKR74OytAD4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAl9ecT4ACgkQ57/I7JWG
-EQlpuw/9HPvizMbDnDT+Xl78pApmzTVdDdljNE3LiObW3JyweUHpf5nEo89E0tPS
-VOK2N2UAVT0zPiJxwooj2WG7Spmd0OXYOFVNHr2DI3JjlMKE/+/hPn0DMtPJ4fgK
-hhfZCUnz89bYa5mqr6y09LKaLNjBzRDErhLiFgMuf7zDQfJ+Y5YGzGbCFsbAd8b9
-SuO0ycWMzHU9qy0k09B4YL2fxRAZNG3DVGWREIfqtTds6/Ne0CtNDLKp1ZAZiG9h
-ioXJBfIOqhZFZZy0T1GBwpPRsVsy/M/gJwzttaJ9OOjBJlyyWqSp9UDg1jPU7Bnt
-ZVcianszMu3GoQP5lBd37oaClHWVxsKZIugeP7gLK7yRQONkrUk7G7V8iEvrip1i
-eTOGEuwpRlKNsU3Lh4gTADSMDKI3FqCTkbXoVB4aLRxFa+K79BlCCo0wldpFCxEK
-0dHjSaU5ue6V65YAjCAEDJityo7XXJVnTPhS0pRJimHGkqsLSnmRbB+BTjMzXd+e
-Tm6HGfKxaqAlR0gCw/Ws/feqG9TDy2fR14fD1XXkhVHRkXxMPrsBMLZ2qfFBti0G
-D5/+YsmeRXTVaSJNnY7+co3RIVljOHRJQWBQN0KUPnfyC6pH934kQldEVhHZc7Sq
-34fz41HZDjUQ7g8A4nrZgPS326QmkU2dmf+i9hZ6XTLvq4OrbxQ=
-=Ueh2
------END PGP SIGNATURE-----
-
---=-uX/8s3iOuJKR74OytAD4--
+diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module=
+-setup.sh
+index f59d84a8..67acb047 100755
+--- a/modules.d/90mdraid/module-setup.sh
++++ b/modules.d/90mdraid/module-setup.sh
+@@ -136,6 +136,9 @@ install() {
+         if [ -e $dracutsysrootdir$systemdsystemunitdir/mdadm-last-resort@.=
+timer ]; then
+             inst_simple $systemdsystemunitdir/mdadm-last-resort@.timer
+         fi
++        if [ -e $dracutsysrootdir$systemdsystemunitdir/mdadm-grow-continue=
+@.service ]; then
++            inst_simple $systemdsystemunitdir/mdadm-grow-continue@.service
++        fi
+     fi
+     inst_hook pre-shutdown 30 "$moddir/mdmon-pre-shutdown.sh"
+     dracut_need_initqueue
