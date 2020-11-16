@@ -1,64 +1,160 @@
-From: "Tkaczyk, Mariusz" <mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: RE: [PATCH] mdraid: add grow continue service.
-Date: Mon, 26 Oct 2020 09:37:31 +0000
-Message-ID: <SA0PR11MB45425BE932F6FAC71EE09BF2FF190@SA0PR11MB4542.namprd11.prod.outlook.com>
-References: <20200826075259.9416-1-mariusz.tkaczyk@intel.com>
+From: siarhei.liakh@concurrent-rt.com
+Subject: [PATCH] unlz4: Handle 0-size chunks, discard trailing padding/garbage
+Date: Mon, 16 Nov 2020 17:09:59 -0500
+Message-ID: <20201116220959.16593-1-siarhei.liakh@concurrent-rt.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=intel.onmicrosoft.com;
- s=selector2-intel-onmicrosoft-com;
+Return-path: <stable-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=concurrentrt.onmicrosoft.com; s=selector2-concurrentrt-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=w5jmKj3nldx3WFmgmPo+jjtxTJvg0tKkxntXF9UTIQY=;
- b=HuHsiGsejGzu0OALAFRMdmMKjI2s0NI5AOHysonXvWWNTi5cBgS8VF/n0q9OvMLnE15qu66GFgZeZxJumfI3J+BYYTRnqinFslAGtsVRZ5+RVVcschllHEU4cw3E7Ontif0z6dXMgC91j2RA7ZuuI+EiLv7oTYzYIGZQuuvWwlA=
-In-Reply-To: <20200826075259.9416-1-mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Content-Language: en-US
+ bh=I7unqnR35j05lmlQ0jZwf7HsGLlgeeboAXXKUlRNyg8=;
+ b=WrrfV3DpkJFiwXxcQU28NAdsVlyaIz1bwyWhHi9JYzFCg2UIVLlzdmoTONbijnpFny1AMcy6x8JNAXcTOX8rWIJtTjWCFNtC26ZQ5a5X4c2SEXt2poG7WDUm+Gwc95AOMcjj3o3sIdkaS16x4WbSjwwUBwt59Rizh+cEBMrOmuU=
 List-ID: <initramfs.vger.kernel.org>
-To: "Tkaczyk, Mariusz" <mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: "harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org" <harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: initramfs@vger.kernel.org, stable@vger.kernel.org, kyungsik.lee@lge.com, yinghai@kernel.org, 4sschmid@informatik.uni-hamburg.de, JBeulich@suse.com
 
-Hi,
-Could someone guide me? Did I send patch correctly?
-Is there another place where dracut is maintained?
+From: Siarhei Liakh <siarhei.liakh@concurrent-rt.com>
 
-TIA.
-Mariusz
+TL;DR:
 
------Original Message-----
-From: initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org> On =
-Behalf Of Mariusz Tkaczyk
-Sent: Wednesday, August 26, 2020 9:53 AM
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: harald.hoyer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: [PATCH] mdraid: add grow continue service.
+There are two places in unlz4() function where reads beyond the end of a buffer
+might happen under certain conditions which had been observed in real life on
+stock Ubuntu 20.04 x86_64 with several vanilla mainline kernels, including 5.10.
+As a result of this issue, the kernel fails to decompress LZ4-compressed
+initramfs with following message showing up in the logs:
 
-During raid assembly mdadm will call mdadm-grow-continue.service if reshape=
- is in progress.
-If service doesn't exist then it is done via fork. But systemd will kill it=
- unconditionally after processing all events.=20
+initramfs unpacking failed: Decoding failed
 
-Add proper service and allow systemd to manage reshape correctly.
+Note that in most cases the affected system is still able to proceed with the
+boot process to completion.
 
-Signed-off-by: Mariusz Tkaczyk <mariusz.tkaczyk-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+LONG STORY:
+
+Background.
+
+Not so long ago we've noticed that some of our Ubuntu 20.04 x86_64 test systems
+often fail to boot newly generated initramfs image. After extensive
+investigation we determined that a failure required the following combination
+for our 5.4.66-rt38 kernel with some additional custom patches:
+
+Real x86_64 hardware or QEMU
+UEFI boot
+Ubunutu 20.04 (or 20.04.1) x86_64
+CONFIG_BLK_DEV_RAM=y in .config
+COMPRESS=lz4 in initramfs.conf
+Freshly compiled and installed kernel
+Freshly generated and installed initramfs image
+
+In our testing, such a combination would often produce a non-bootable system. It
+is important to note that [un]bootability of the system was later tracked down
+to particular instances of initramfs images, and would follow them if they were
+to be switched around/transferred to other systems. What is even more important
+is that consecutive re-generations of initramfs images from the same source and
+binary materials would yield about 75% of "bad" images. Further, once the image
+is identified as "bad",it always stays "bad"; once one is "good" it always stays
+"good". Reverting CONFIG_BLK_DEV_RAM to "m" (default in Ubuntu), or changing
+COMPRESS to "gzip" yields a 100% bootable system. Decompressing "bad" initramfs
+image with "unmkinitramfs" yields *exactly* the same set of binaries, as
+verified by matching MD5 sums to those from "good" image.
+
+Speculation.
+
+Based on general observations, it appears that Ubuntu's userland toolchain
+cannot consistently generate exactly the same compressed initramfs image, likely
+due to some variations in timestamps between the runs. This causes variations in
+compressed lz4 data stream. Further, either initramfs tools or lz4 libraries
+appear to pad compressed lz4 output to closest 4-byte boundary. lz4 v1.9.2 that
+ships with Ubuntu 20.04 appears to be able to handle such padding just fine,
+while lz4 (supposedly v1.8.3) within Linux kernel cannot.
+Several reports of somewhat similar behavior had been recently circulation
+through different bug tracking systems and discussion forums [1-4].
+I also suspect only that systems which can mount permanent root directly (or
+with help of modules contained in first, supposedly uncompressed, part of
+initramfs, or the ones with statically linked modules) can actually complete the
+boot when LZ4 decompression fails. This would certainly explain why most of
+Ubuntu systems still manage to boot even after failing to decompress the image.
+
+The facts.
+
+Regardless of whether Ubuntu 20.04 toolchain produces a valid lz4-compressed
+initramfs image or not, current version of unlz4() function in kernel has two
+code paths which had been observed attempting to read beyond the buffer end when
+presented with one of the "padded"/"bad" initramfs images generated by stock
+Ubuntu 20.04 toolchain. Some configurations of some 5.4 kernels are known to
+fail to boot in such cases. This behavior also becomes evident on vanilla
+5.10.0-rc3 and 5.10.0-rc4 kernels with addition of two logging statements for
+corresponding edge cases, even though it does not prevent system from booting in
+most generic configurations.
+
+Further investigation is likely warranted to confirm whether userland toolchain
+contains any bugs and/or whether any of these cases constitute violation of LZ4
+and/or initramfs specification.
+
+References
+
+[1] https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1835660
+[2] https://github.com/linuxmint/mint20-beta/issues/90
+[3] https://askubuntu.com/questions/1245458/getting-the-message-0-283078-initramfs-unpacking-failed-decoding-failed-wh
+[4] https://forums.linuxmint.com/viewtopic.php?t=323152
+
+Signed-off-by: Siarhei Liakh <siarhei.liakh@concurrent-rt.com>
+
 ---
- modules.d/90mdraid/module-setup.sh | 3 +++
- 1 file changed, 3 insertions(+)
 
-diff --git a/modules.d/90mdraid/module-setup.sh b/modules.d/90mdraid/module=
--setup.sh
-index f59d84a8..67acb047 100755
---- a/modules.d/90mdraid/module-setup.sh
-+++ b/modules.d/90mdraid/module-setup.sh
-@@ -136,6 +136,9 @@ install() {
-         if [ -e $dracutsysrootdir$systemdsystemunitdir/mdadm-last-resort@.=
-timer ]; then
-             inst_simple $systemdsystemunitdir/mdadm-last-resort@.timer
-         fi
-+        if [ -e $dracutsysrootdir$systemdsystemunitdir/mdadm-grow-continue=
-@.service ]; then
-+            inst_simple $systemdsystemunitdir/mdadm-grow-continue@.service
-+        fi
-     fi
-     inst_hook pre-shutdown 30 "$moddir/mdmon-pre-shutdown.sh"
-     dracut_need_initqueue
+Please CC: me directly on all replies.
+
+ lib/decompress_unlz4.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/lib/decompress_unlz4.c b/lib/decompress_unlz4.c
+index c0cfcfd486be..a016643a6dc5 100644
+--- a/lib/decompress_unlz4.c
++++ b/lib/decompress_unlz4.c
+@@ -125,6 +125,21 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
+ 			continue;
+ 		}
+ 
++		if (chunksize == 0) {
++			/*
++			 * Nothing to decode...
++			 * FIXME: this could be an error condition due
++			 * to invalid or corrupt data. However, some
++			 * userspace tools had been observed producing
++			 * otherwise valid initramfs images which happen
++			 * to hit this condition.
++			 * TODO: need to figure out whether the latest
++			 * LZ4 and initramfs specifications allows for
++			 * zero-sized chunks.
++			 * See similar message below.
++			 */
++			break;
++		}
+ 
+ 		if (posp)
+ 			*posp += 4;
+@@ -179,6 +194,20 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
+ 			else if (size < 0) {
+ 				error("data corrupted");
+ 				goto exit_2;
++			} else if (size < 4) {
++				/*
++				 * Ignore any undesized junk/padding...
++				 * FIXME: this could be an error condition due
++				 * to invalid or corrupt data. However, some
++				 * userspace tools had been observed producing
++				 * otherwise valid initramfs images which happen
++				 * to hit this condition.
++				 * TODO: need to figure out whether the latest
++				 * LZ4 and initramfs specifications allows for
++				 * small padding at the end of the chunk.
++				 * See similar message above.
++				 */
++				break;
+ 			}
+ 			inp += chunksize;
+ 		}
+-- 
+2.17.1
+
