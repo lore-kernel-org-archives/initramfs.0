@@ -1,26 +1,27 @@
 From: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [ANNOUNCE] dracut 052
-Date: Tue, 16 Feb 2021 08:38:42 +0100
-Message-ID: <a7b095bf-8aca-3854-ba62-181b4587377c@redhat.com>
+Subject: [ANNOUNCE] dracut 053
+Date: Tue, 23 Feb 2021 16:22:20 +0100
+Message-ID: <e2eb2c36-7d2c-3628-9396-6e2e74d42c57@redhat.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1613461130;
+        s=mimecast20190719; t=1614093958;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding;
-        bh=be+deLT7H4U+XFQInxJYf/Q4RsdNNfB1+xpz+ag1jgs=;
-        b=iV3BqzclmHUPFbWgQ/DA2Lok+lqVl1aLUNuJFbecn0mz8JLp0C5q8VSyf+FlxypHRvWc5V
-        uK+VpAMiGkrXOtWXBcf6PooScyN1m50anQct8UM/a7+b+j2GWYibWYWubChmV5XJCATrD2
-        oCxuEFsI1rnbUt+hxKdNTeWGwcfcNMY=
+        bh=c2lcwgkxwQJwMevh0r3auDj5D1n63KTU5EMfUjfYaEc=;
+        b=S1spEgbnYV023Qm+SgBQr3bYS+ChlqWDjMCV9gXc2/umiu6AhSKqg44yOEQ71kpClr/1JM
+        oR6l3Yn5nI9aWacWa5NUfSU/YuL0g7URIeOnKPZ33juaaJl39C9MYpMUw6QZUmb707eHge
+        rml+bpUqPD9sG8wlttNzNIWLX9LJsF0=
 Content-Language: en-US
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="utf-8"
 To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Here comes a new dracut version. Thanks to all who have contributed to this
-release.
+Here comes a regression bug fix dracut version.
+
+Thanks to all who have contributed to this release.
 
 The tarball can be found here:
         http://www.kernel.org/pub/linux/utils/boot/dracut/
@@ -52,92 +53,41 @@ The ChangeLog can be found here:
 
 Rendered view: https://github.com/dracutdevs/dracut/blob/master/NEWS.md
 
-dracut-052
+dracut-053
 ==========
-
-#### Features
-
-- **dracut:**
-  - allow overriding the systemctl command for sysroot with `$SYSTEMCTL` for cross compilation
-  - add additional global variables
-
-     Variables like `dbusconfdir` or `systemdnetwork` are now exported
-     to the individual modules as global variables. If they are not set
-     in the distribution dracut config files, they are set via `pkg-config`
-
-  - A `--no-uefi` option as been added to the CLI options to disable a default `uefi=yes`
-    set by a configuration file.
-
-- **kernel-modules:**  add modules from `drivers/memory` for arm
-- **network-legacy:**  send dhcp in parallel on all devices via the `single-dhcp` option
-- **dbus:**  introduce a meta module for dbus
-- **dbus-broker:**  introduce the dbus-broker module
-- **dbus-daemon:**  introduce the dbus-daemon module
-- **systemd-ask-password:**  introduce the systemd-ask-password module
-- **systemd-coredump:**  introduce the systemd-coredump module
-- **systemd-modules-load:**  introduce the systemd-modules-load module
-- **systemd-repart:**  introduce the systemd-repart module
-- **systemd-sysctl:**  introduce the systemd-sysctl module
-- **systemd-sysusers:** introduce the systemd-sysuser module
 
 #### Bug Fixes
 
--   first round of shellcheck for all shell scripts
--   revise all module checks to not error out about missing dependencies
--   use the top-level `/efi` path to address the EFI partition
--   correct the squash quirk
--   use `find_binary` instead of other methods, because `find_binary` honors `dracutsysrootdir`
--   quote globbing in module-setup.sh for `inst_multiple`
--   move ldconfig after library workaround
--   do not set cmdline for uefi images unless asked
-- **dracut:**  don't override `PATH`, if `dracutsysrootdir` is set
-- **dracut-functions.sh:**  check kernel config from `dracutsysrootdir`
-- **dracut-init.sh:**  make inst_libdir_file work with `dracutsysrootdir` set
-- **dracut-install:**  allow globbing for multiple sources
-- **06dbus:**
-  -  do not hardcode path to dbus utils
-  -  do not hardcode path to systemd unit
-- **uefi**  use efivars fs over the deprecated sysfs entries
-- **keyring**  adding shared keyring mode to systemd unit `dracut-pre-pivot.service`
-- **35network-manager:**  avoid restarting NetworkManager
-- **90kernel-modules:**  install generic crypto modules with hostonly unset
-- **99squash:**  use kernel config instead of modprobe to check modules
-- **dbus-daemon:**  use uid/gid from sysroot if `dracutsysrootdir` is set
-- **kernel-modules:**  add reset controllers for arm
-- **kernel-network-modules:**  also install modules from mdio subdirectory
-- **mdraid:**
-  -  remove the `offroot` option (long deprecated)
-  -  add the grow continue service `mdadm-grow-continue`
-- **network-legacy:**  silent the check for dhcp leaseinfo
-- **network-manager:**  allow override network manager version
-- **plymouth:**  install binaries with dependencies
-- **shutdown:**  add timeout to umount calls
-- **watchdog:**  fix dependencies in `module-setup.sh`
+* **dracut.sh:**
+  *  unfreeze /boot on exit
+     ([d87ae137](https://github.com/dracutdevs/dracut/commit/d87ae13721d04a8a2192d896af224ac6965caf70))
+  *  proper return code for inst_multiple in dracut-init.sh
+     ([d437970c](https://github.com/dracutdevs/dracut/commit/d437970c013e3287de263a1e60a117b15239896c))
+* **fcoe:**
+  *  rename rd.nofcoe to rd.fcoe
+     ([6f7823bc](https://github.com/dracutdevs/dracut/commit/6f7823bce65dd4b52497dbb94892b637fd06471a))
+  *  rd.nofcoe=0 should disable fcoe
+     ([805b46c2](https://github.com/dracutdevs/dracut/commit/805b46c2a81e04d69fc3af912942568516d05ee7))
+* **i18n:**
+  *  get rid of `eval` calls
+     ([5387ed24](https://github.com/dracutdevs/dracut/commit/5387ed24c8b33da1214232d57ab1831e117aaba0))
+  *  create the keyboard symlinks again
+     ([9e1c7f3d](https://github.com/dracutdevs/dracut/commit/9e1c7f3deadd387adaa97b189593b4ba3d7c6d5a))
+* **network-manager:**
+  *  run as a service if systemd module is present
+     ([c17c5b76](https://github.com/dracutdevs/dracut/commit/c17c5b7604c8d61dd1c00ee22d44c3a5d7d6dfee))
+  *  rework how NM is started in debug mode
+     ([34c73b33](https://github.com/dracutdevs/dracut/commit/34c73b339baa025dfd8916379c4d191be34a8af5))
+* **drm:**  skip empty modalias files in drm module setup
+     ([c3f24184](https://github.com/dracutdevs/dracut/commit/c3f241849de6434d063ef92e6880f6b0335c1800))
 
 #### Contributors
 
-- Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-- Jóhann B. Guðmundsson <johannbg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-- Zoltán Böszörményi <zboszor-v1d7l9VOqKc@public.gmane.org>
-- Alexey Shabalin <shaba-u2l5PoMzF/Vg9hUCZPvPmw@public.gmane.org>
-- Daniel Molkentin <daniel.molkentin-IBi9RG/b67k@public.gmane.org>
-- Luiz Angelo Daros de Luca <luizluca-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-- Mariusz Tkaczyk <mariusz.tkaczyk-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-- Alexander Tsoy <alexander-EP/B3+myoZc@public.gmane.org>
-- Anjali Kulkarni <anjali.k.kulkarni-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-- Beniamino Galvani <bgalvani-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-- David Tardon <dtardon-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-- Javier Martinez Canillas <javierm-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-- Kairui Song <kasong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 - Lukas Nykryn <lnykryn-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-- Matthew Thode <mthode-sh12bNGkds0dnm+yROfE0A@public.gmane.org>
-- Nicolas Chauvet <kwizart-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-- Nicolas Saenz Julienne <nsaenzjulienne-l3A5Bk7waGM@public.gmane.org>
-- Ondrej Mosnacek <omosnace-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-- Peter Levine <plevine457-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-- Petr Pavlu <petr.pavlu-IBi9RG/b67k@public.gmane.org>
-- Vladius25 <vkorol2509-mVuRI66OGLPQT0dZR+AlfA@public.gmane.org>
-- Yang Liu <50459973+ly4096x-KJX8L1YACloTKYOLMXNBRxrm3jAUxWOA@public.gmane.org>
-- foopub <45460217+foopub-KJX8L1YACloTKYOLMXNBRxrm3jAUxWOA@public.gmane.org>
-- realtime-neil <neil-BUf1+7jZtJs@public.gmane.org>
+- Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+- Andrew J. Hesford <ajh-LfGgLkH2qHZg9hUCZPvPmw@public.gmane.org>
+- Evgeni Golov <evgeni-tXd1fo8541I@public.gmane.org>
+- Jóhann B. Guðmundsson <johannbg-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+- Sergei Iudin <tsipa740-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+- Tomasz Paweł Gajc <tpgxyz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
