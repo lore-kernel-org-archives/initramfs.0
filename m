@@ -1,262 +1,106 @@
-From: Hari Bathini <hbathini-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>
-Subject: [PATCH 2/2] dracut/99squash: make sqaush image setup flexible
-Date: Fri, 14 May 2021 02:27:57 +0530
-Message-ID: <162093947717.146305.16180379544252191121.stgit@hbathini>
+From: Kairui Song <kasong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/2] Add support to have multi-purpose builds into a
+ single initramfs image
+Date: Fri, 14 May 2021 17:10:06 +0800
+Message-ID: <CACPcB9ccTfD+NEH8Sj1=UWuvOkiMnmJqvaV9ic8m0-MbQxFwQA@mail.gmail.com>
 References: <162093940333.146305.6079089813493806819.stgit@hbathini>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=subject : from : to : cc
- : date : message-id : in-reply-to : references : mime-version :
- content-type : content-transfer-encoding; s=pp1;
- bh=+rrZ8B2RFNpiCRREWl3YZrTxPPtFjTYoaxeE3VT8Cfo=;
- b=YwH5wgncaSJiZsvro20GPRor62+Il/It7E0QhgjSL4CZXNOoBB5CAL7kkfTxoqvabhc4
- L6cIljECh6Lfwcc22B8iJzch+jQmoh7E9GqShZE6twcgiiOmZ4yOVyaj4wxeYmD8iL3X
- sOuOViFYb3qyKuioR0q6A+veayKP0GUYLTGS7FrfVEd9fm7kuYPDqJErWgxRvSqoIk4O
- r7I272nSdF8acjnQvzzjwMvco1J+ZGv0RtzbAWcpzQ2bCyKl0ETgcKUPWiFdQvzTY7tU
- 6aKu5gUA6NQNs+Z/tCi8N5dFAWXyiD8DtnX5cLaWMTyBrW4L35QeV4S0qpKyxbbEZr7n 4g== 
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1620983423;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=fvhOemmM+64gigccMdNmAlsoLLSYmhAjRjE7K3bcsRQ=;
+        b=hd3GTVzUW9Oen+Z81GWyA344197gt7shHMD7+34ELJ3lUKNmcn49u+glDcagLW3jOtQHdb
+        aZaCKeT0+6KPikeOoJ2Gy4FIdvCBYN/8KEPwH6z6hIh5IAlNI+UW7hKxHjj4qdO7Gpbgq0
+        yqhCJPG4mMBbECYmsncoBzalIzAKHl0=
 In-Reply-To: <162093940333.146305.6079089813493806819.stgit@hbathini>
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh J Salgaonkar <mahesh-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>, Sourabh Jain <sourabhjain-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>, Kairui Song <kasong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+To: Hari Bathini <hbathini-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>
+Cc: Harald Hoyer <harald-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh J Salgaonkar <mahesh-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>, Sourabh Jain <sourabhjain-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>, Dave Young <dyoung-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-So far, /squash/root.img was the only squash'ed file in the initramfs
-image. But with the introduction of '--squash-input-images' option,
-initramfs image can have more than one squash'ed images. Make squash
-image setup flexible to leverage the new option.
+Hi Hari,
 
-For that purpose, add 'setup-sqaush-conditional.sh' script which is
-same as 'setup-squash.sh' script except for a couple of changes.
+On Fri, May 14, 2021 at 4:57 AM Hari Bathini <hbathini-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org> wrote:
+>
+> With the addition of modules.d/99squash module, most of the files in
+> the initramfs image can now be squash'ed. While this saves space, this
+> can also be extended further to provide support for having different
+> initramfs images built into a single image, each squash'ed separately
+> & activated based on different boot scenarios.
+>
+> For that, introduce two dracut options. One, '--squash-input-images':
+> takes a space-separated list of input initramfs images to squash &
+> include in the initramfs image. Patch one adds this option.
+>
+> Two, '--squash-image-conditional': takes a script file that sets up
+> the appropriate squash image for every possible boot scenario. The
+> second patch introduces this option.
+>
+> ---
+>
+> Hari Bathini (2):
+>       dracut: add a new argument "--squash-input-images"
+>       dracut/99squash: make sqaush image setup flexible
+>
+>
+>  dracut.sh                                     | 26 +++++++-
+>  modules.d/99squash/module-setup.sh            | 17 ++++-
+>  .../99squash/setup-squash-conditional.sh      | 65 +++++++++++++++++++
+>  .../99squash/squash-image-conditional.sh      |  5 ++
+>  4 files changed, 109 insertions(+), 4 deletions(-)
+>  create mode 100755 modules.d/99squash/setup-squash-conditional.sh
+>  create mode 100755 modules.d/99squash/squash-image-conditional.sh
+>
+> --
+> 2.31.1
+>
 
-One, it sources 'squash-image-conditional.sh' script. Two, it calls
-setup_squash_image_conditional() function implemented in the sourced
-script before mounting the squash image (/squash/root.img).
+There are some major refactoring of the dracut squash module, see:
+https://github.com/dracutdevs/dracut/pull/1088
 
-'squash-image-conditional.sh' script here has a dummy implementation
-for setup_squash_image_conditional() function. Introduce a new dracut
-option '--squash-image-conditional' to overwrite the stock script
-(squash/squash-image-conditional.sh) with a custom script.
+With this refactor, now the whole initramfs is compressed in the
+squash image, no longer blended with the original initramfs.
+So the re-squash of the "input image content" in this series can be skipped.
 
-    Usage: dracut --squash-image-conditional custom-script.sh
+I think at least the series needs a rebase.
 
-The 'custom-script.sh' script file is expected to be implemented in
-such a way that /squash/root.img file is updated appropriately, on
-calling setup_squash_image_conditional() function, for every possible
-boot scenario.
+And I think maybe we can make things easier and flexible here to just
+add an argument like a `--custom-init` (or any other name, I'm bad at
+naming things), to allow user to use a custom init process, dracut can
+just move the old `init` to something like `init.dracut`, and custom
+init can either `exec init.dracut`, or do custom init in its own way.
 
-Signed-off-by: Hari Bathini <hbathini-tEXmvtCZX7AybS5Ee8rs3A@public.gmane.org>
----
- dracut.sh                                      |   26 ++++++++--
- modules.d/99squash/module-setup.sh             |   17 ++++++
- modules.d/99squash/setup-squash-conditional.sh |   65 ++++++++++++++++++++++++
- modules.d/99squash/squash-image-conditional.sh |    5 ++
- 4 files changed, 109 insertions(+), 4 deletions(-)
- create mode 100755 modules.d/99squash/setup-squash-conditional.sh
- create mode 100755 modules.d/99squash/squash-image-conditional.sh
+User can combine dracut's `--include` and new `--custom-init` to do
+things like this patch.
 
-diff --git a/dracut.sh b/dracut.sh
-index 1a84a707..5fdb4104 100755
---- a/dracut.sh
-+++ b/dracut.sh
-@@ -90,6 +90,14 @@ Creates initial ramdisk images for preloading modules
-                          /squash/root1.img, /squash/root2.img, etc., squash
-                          images are created, one each for each input initramfs
-                          image provided, in that order.
-+  --squash-image-conditional [FILE]
-+                        Install a custom script [FILE] in place of
-+                         '/squash/squash-image-conditional.sh' file to override
-+                         setup_squash_image_conditional() function's dummy
-+                         implementation with the one that updates squash image
-+                         appropriately for every possible boot scenario on the
-+                         given system. (Ideally, used in combination with
-+                        --squash-input-images option).
-   -m, --modules [LIST]  Specify a space-separated list of dracut modules to
-                          call when building the initramfs. Modules are located
-                          in /usr/lib/dracut/modules.d.
-@@ -382,6 +390,7 @@ rearrange_params()
-         --long prefix: \
-         --long rebuild: \
-         --long squash-input-images: \
-+        --long squash-image-conditional: \
-         --long force \
-         --long kernel-only \
-         --long no-kernel \
-@@ -588,7 +597,8 @@ eval set -- "$TEMP"
- 
- while :; do
-     if [[ $1 != "--" ]] && [[ $1 != "--rebuild" ]]; then
--        [[ $1 != "--squash-input-images" ]] && PARMS_TO_STORE+=" $1";
-+        [[ $1 != "--squash-input-images" ]] \
-+            && [[ $1 != "--squash-image-conditional" ]] && PARMS_TO_STORE+=" $1";
-     fi
-     case $1 in
-         --kver)        kernel="$2";                           PARMS_TO_STORE+=" '$2'"; shift;;
-@@ -627,6 +637,7 @@ while :; do
-                        shift
-                        ;;
-         --squash-input-images)     squash_input_images_l=("$2"); shift;;
-+	--squash-image-conditional)   squash_image_conditional="$2"; shift;;
-         -f|--force)    force=yes;;
-         --kernel-only) kernel_only="yes"; no_kernel="no";;
-         --no-kernel)   kernel_only="no"; no_kernel="yes";;
-@@ -728,7 +739,7 @@ while (($# > 0)); do
-     shift
- done
- 
--# error check --squash-input-images & prepare squash_input_images
-+# error check squash related options & get absolute paths for the files provided.
- unset squash_input_images
- for _input_file in $squash_input_images_l; do
-     if [[ ! -e "$_input_file" ]]; then
-@@ -739,6 +750,12 @@ for _input_file in $squash_input_images_l; do
-     squash_input_images+=("$_input_file ")
- done
- 
-+if [[ -n "$squash_image_conditional" ]] && [[ ! -e "$squash_image_conditional" ]]; then
-+    echo "dracut: script file '$squash_image_conditional' to setup squash image, does not exist!"
-+    exit 1
-+fi
-+_abs_sqsh_img_cond="$(readlink -f "$squash_image_conditional")" && squash_image_conditional="$_abs_sqsh_img_cond"
-+
- [[ $sysroot_l ]] && dracutsysrootdir="$sysroot_l"
- 
- if [[ $regenerate_all == "yes" ]]; then
-@@ -1704,7 +1721,7 @@ export initdir dracutbasedir \
-     systemdutildir systemdutilconfdir systemdcatalog systemdntpunits \
-     systemdntpunitsconfdir systemdsystemunitdir systemdsystemconfdir \
-     hostonly_cmdline loginstall \
--    squash_input_images \
-+    squash_input_images squash_image_conditional \
-     tmpfilesdir
- 
- mods_to_load=""
-@@ -2133,6 +2150,9 @@ if dracut_module_included "squash"; then
-     # We have moved them inside the squashed image, but they need to be
-     # accessible before mounting the image.
-     inst_multiple "echo" "sh" "mount" "modprobe" "mkdir"
-+    if [[ -n "$squash_input_images" ]] || [[ -f "$squash_image_conditional" ]]; then
-+        inst_multiple "mv" "rm"
-+    fi
-     hostonly="" instmods "loop" "squashfs" "overlay"
-     # Only keep systemctl outsite if we need switch root
-     if [[ ! -f "$initdir/lib/dracut/no-switch-root" ]]; then
-diff --git a/modules.d/99squash/module-setup.sh b/modules.d/99squash/module-setup.sh
-index 9f973bda..a5d356ba 100644
---- a/modules.d/99squash/module-setup.sh
-+++ b/modules.d/99squash/module-setup.sh
-@@ -10,6 +10,11 @@ check() {
-         fi
-     done
- 
-+    # Include if '--squash-input-images' or '--squash-image-conditional' is used.
-+    if [[ -n "$squash_input_images" ]] || [[ -f "$squash_image_conditional" ]]; then
-+        return 0
-+    fi
-+
-     return 255
- }
- 
-@@ -24,7 +29,17 @@ installkernel() {
- 
- install() {
-     inst_multiple kmod modprobe mount mkdir ln echo
--    inst "$moddir"/setup-squash.sh /squash/setup-squash.sh
-+    if [[ -n "$squash_input_images" ]] || [[ -f "$squash_image_conditional" ]]; then
-+        inst $moddir/setup-squash-conditional.sh /squash/setup-squash.sh
-+        if [[ -f "$squash_image_conditional" ]]; then
-+            inst "$squash_image_conditional" /squash/squash-image-conditional.sh
-+            chmod 0755 "$initdir/squash/squash-image-conditional.sh"
-+        else
-+            inst $moddir/squash-image-conditional.sh /squash/squash-image-conditional.sh
-+        fi
-+    else
-+        inst $moddir/setup-squash.sh /squash/setup-squash.sh
-+    fi
-     inst "$moddir"/clear-squash.sh /squash/clear-squash.sh
-     inst "$moddir"/init.sh /squash/init.sh
- 
-diff --git a/modules.d/99squash/setup-squash-conditional.sh b/modules.d/99squash/setup-squash-conditional.sh
-new file mode 100755
-index 00000000..41616756
---- /dev/null
-+++ b/modules.d/99squash/setup-squash-conditional.sh
-@@ -0,0 +1,65 @@
-+#!/bin/bash
-+PATH=/bin:/sbin
-+
-+SQUASH_IMG=/squash/root.img
-+SQUASH_MNT=/squash/root
-+SQUASH_MNT_REC=/squash/mounts
-+
-+. /squash/squash-image-conditional.sh
-+
-+echo $SQUASH_MNT > $SQUASH_MNT_REC
-+
-+# Following mount points are neccessary for mounting a squash image
-+
-+[ ! -d /proc/self ] && \
-+    mount -t proc -o nosuid,noexec,nodev proc /proc
-+
-+[ ! -d /sys/kernel ] && \
-+    mount -t sysfs -o nosuid,noexec,nodev sysfs /sys
-+
-+[ ! -e /dev/loop-control ] && \
-+    mount -t devtmpfs -o mode=0755,noexec,nosuid,strictatime devtmpfs /dev
-+
-+# Need a loop device backend, overlayfs, and squashfs module
-+modprobe loop
-+if [ $? != 0 ]; then
-+    echo "Unable to setup loop module"
-+fi
-+
-+modprobe squashfs
-+if [ $? != 0 ]; then
-+    echo "Unable to setup squashfs module"
-+fi
-+
-+modprobe overlay
-+if [ $? != 0 ]; then
-+    echo "Unable to setup overlay module"
-+fi
-+
-+setup_squash_image_conditional
-+
-+[ ! -d "$SQUASH_MNT" ] && \
-+	mkdir -m 0755 -p $SQUASH_MNT
-+
-+# Mount the squashfs image
-+mount -t squashfs -o ro,loop $SQUASH_IMG $SQUASH_MNT
-+
-+if [ $? != 0 ]; then
-+    echo "Unable to mount squashed initramfs image"
-+fi
-+
-+for file in $SQUASH_MNT/*; do
-+	file=${file#$SQUASH_MNT/}
-+	lowerdir=$SQUASH_MNT/$file
-+	workdir=/squash/overlay-work/$file
-+	upperdir=/$file
-+	mntdir=/$file
-+
-+	mkdir -m 0755 -p $workdir
-+	mkdir -m 0755 -p $mntdir
-+
-+	mount -t overlay overlay -o\
-+		lowerdir=$lowerdir,upperdir=$upperdir,workdir=$workdir $mntdir
-+
-+	echo $mntdir >> $SQUASH_MNT_REC
-+done
-diff --git a/modules.d/99squash/squash-image-conditional.sh b/modules.d/99squash/squash-image-conditional.sh
-new file mode 100755
-index 00000000..2097b767
---- /dev/null
-+++ b/modules.d/99squash/squash-image-conditional.sh
-@@ -0,0 +1,5 @@
-+#!/bin/bash
-+
-+setup_squash_image_conditional() {
-+    return 0
-+}
+I know this patch series will benefit fadump, so use that as an
+example. The initarmfs can be generated with `dracut --custom-init
+/path/fadump-init.sh --include /path/fadump-squash.img ... <other
+args>`. fadump-init.sh here will judge if it's fadump boot, and
+switch_root into fadump-squash.img if it is, or `exec /init.dracut` if
+it's not. fadump-squash.img is just the image extracted from a normal
+kdump initramfs with `lsinitrd /path/initramfs-kdump.img
+squash-root.img` (after the squash refactor, the squash-root.img is a
+complete environment so it can be used directly).
 
+And I also have another idea about this. Since linux's initramfs can
+be simply contacted together, user can just create it's own overlay
+initramfs and append into the original initramfs. The later appended
+initramfs content will just override the original, any custom
+modifications can be done that way, no need to rebuild the original
+initramfs. Still use fadump as an example, create a `fadump.img`,
+which contain three parts: a custom init, dracut's default init
+(extracted from the original initramfs), and fadump-squash.img
+(extracted from kdump initramfs). Then just `cat fadump.img >>
+original-initramfs.img`.
 
+And perhaps you can use Github PR to submit patch updates? Most dracut
+related patches are processed using Github PR workflow.
+
+--
+Best Regards,
+Kairui Song
