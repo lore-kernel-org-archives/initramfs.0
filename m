@@ -1,39 +1,47 @@
-From: Federico Vaga <federico.vaga-vJEk5272eHo@public.gmane.org>
-Subject: dracut: 98syslog auto-detect feature
-Date: Tue, 3 Aug 2021 17:24:56 +0200
-Message-ID: <20210803152456.lkpnzijjy7pojmnw@cwe-513-vol689.cern.ch>
+From: Zack Freeman <zacharyfreeman-g/b1ySJe57IN+BqQ9rBEUg@public.gmane.org>
+Subject: Subtle misconfiguration in initramfs after dnf upgrade; boot breaks under some circumstances
+Date: Sun, 29 Aug 2021 08:13:28 +0000
+Message-ID: <ckX49YX87gc1MbVjSpLp7asHnEU2UwA4FnOqkRdoKBJ0fAZ1lqWb7DQO4brmZYuFN4kwXVJwHnQkAj3mfCgVSunpB2MIe-tE7VOSyZOOD5E=@protonmail.com>
+Reply-To: Zack Freeman <zacharyfreeman-g/b1ySJe57IN+BqQ9rBEUg@public.gmane.org>
 Mime-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=cern.onmicrosoft.com;
- s=selector2-cern-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=nnc7QrjpAY/wzlo35s1eA8Xv2Lal3LC5B84oIQgHihE=;
- b=mnVF4crxVFbp/9+4j5oIQt2pGVNVGLud7X+iQ3JnKjWRuRKayYrURSRh2hb8QWpQ3bkiBegtq7qrdBkK2hiaiNd3j/IqYGe8/8zdEhdCgCPn+8mOyVqn6si0z8qalXbzxZ7SpTFU/xRcNwMybpajByEP3k2pk0YYbHNBvM19Ad4=
-Content-Disposition: inline
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
+        s=protonmail; t=1630224812;
+        bh=uNOLAuXu6uroanwW/bCeUKLvqU6vNcGW4hshlKsB8T8=;
+        h=Date:To:From:Reply-To:Subject:From;
+        b=fdK4QXNbpdqQvLSpfI5vHQAprng+NzI7JK1WQb+uaM9NPgIYRlo58p+uDawRX+Unz
+         spWVPQ58gDdfsRoKzXlu2stF0zBT6uI/LrsnsKxS1ov7yyC90pATDMxalB3P920Bce
+         bYDfal8jzALXTsV9pnJ5UZgRXZhqTNFGA26ECTv0=
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-Content-Transfer-Encoding: 7bit
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hello,
+I recently installed a fresh minimal copy of Fedora 34 using Anaconda and t=
+his fairly simple Kickstart file (see below). To save you some reading, the=
+ Kickstart file creates 3 software RAID1 arrays (/, /boot, and swap) and in=
+stalls Fedora 34 on top.
 
-I had a look to the dracut syslog module and I've notice that, despite
-the code parses the syslog.type argument, it does not actually run
-anything but `rsyslogd`.
+When Anaconda completes, I'm presented with a working system running on top=
+ of a bootable software RAID1. So long as I continue to use the initramfs t=
+hat was created for me by the installer, I can unplug a drive (thus degradi=
+ng the RAID1 array), and continue to still boot the system.
 
-It's like this since its introduction, the code seems ready to run
-`syslogd` or `syslog-ng` but it does not do it.  The
-`rsyslogd-start.sh`, despite the name, is written to start any of the
-three services, only that at the end it runs only `rsyslogd` (so,
-perhaps the name is indeed correct). Then, `syslog-cleanup.sh`
-executes the stop service `"${syslogtype}"-stop`, but the only
-"*-stop" script available is for rsyslogd.
+But, as soon as I run dnf upgrade and pull in a new kernel (updating 5.11 t=
+o 5.13), the new initramfs that gets generated will lose the above function=
+ality (booting off a degraded array). The system will still boot when all R=
+AID1 members are present, but as soon as a single member of the RAID1 is lo=
+st, I get dropped into a dracut emergency shell and then need to manually t=
+urn all the inactive arrays active via a series of mdadm --run /dev/md[X] a=
+nd mdadm --readwrite /dev/md[X] commands.
 
-Am I missing something? If not, I see the following options:
+Any idea why Anaconda+Kickstart can create a working initramfs that support=
+s booting off of a degraded software RAID1 array, but dracut can't when it'=
+s automatically invoked by dnf update?
 
-1 clarify that this module supports only "rsyslogd":
-1.a by adding "warn" when syslog or syslog-ng are selected
-1.b by documenting it
-1.c by renaming the module 98rsyslog and removing the auto selection
-
-2 add support for syslog and syslog-ng (even though, nobody complained in 10 years)
+For additional information see:
+Kickstart file:  https://gist.github.com/zacharyfreeman70/ead4c8a9d2fec5875=
+3d7c295f39cfc00
+GitHub issue: https://github.com/dracutdevs/dracut/issues/1593
+Reddit post: https://old.reddit.com/r/Fedora/comments/pdqw3v/initramfs_buil=
+t_incorrectly_after_dnf_upgrade/
