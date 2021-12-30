@@ -1,52 +1,89 @@
-From: Tree Davies <tree-T6ihzTOBfThe2x7YuqFggA@public.gmane.org>
-Subject: FATAL: Don't know how to handle 'root=live
-Date: Sun, 29 Aug 2021 11:17:02 -0700
-Message-ID: <950d6672-888e-ef1c-0df8-c803944c231f@darkphysics.net>
-References: <28baa9ad-072c-d086-d7ff-e00fb4ea2e65@darkphysics.net>
+From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
+Subject: [ANNOUNCE] klibc 2.0.10
+Date: Thu, 30 Dec 2021 16:29:43 +0100
+Message-ID: <f62bebd13c95321c23cf982dd03c54d6bb57fb35.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg="pgp-sha512";
+        protocol="application/pgp-signature"; boundary="=-Hf2S+WB/2+sg2ji09OpQ"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed; d=pobox.com; h=subject
-        :references:to:from:message-id:date:mime-version:in-reply-to
-        :content-type:content-transfer-encoding; s=sasl; bh=l0Tvfqe4QHfY
-        Vbfo+OZzZE+93QWhM8/P6N6uc7LI7sw=; b=F8efpdhLZRYe7qwC6+WJ/j8izCKt
-        /cIQZtxebOPDEOPcfI/RwjFgrSaX57JyTQA7Ltvrj8ho97SsGi+nzTQKUsfSYTme
-        NWJx0YkXQPJ1wNe3Y8x+p624UTM+9emQ2o9iQA2Yh9sVh30VbSFtMTkLfDtA8dlH
-        y5IAAQZLvnnx0ws=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed; d=darkphysics.net;
- h=subject:references:to:from:message-id:date:mime-version:in-reply-to:content-type:content-transfer-encoding; s=2019-09.pbsmtp; bh=l0Tvfqe4QHfYVbfo+OZzZE+93QWhM8/P6N6uc7LI7sw=; b=LknFvuYXsajYvFrlIMQYfjMhmI4s9yKac2ehWSo29c9QvETh68qO51wO0CYoLCMRFxj3QHVBp9A75N9C4If9mgzDWD8Oa8r22O2A0bz1iAEfFPRxlZgAUOlxDtFPvXaxcqWKIKES8liDGbRj+lhC7OjbEpfwyTf8Gq+VqDAW33I=
-In-Reply-To: <28baa9ad-072c-d086-d7ff-e00fb4ea2e65-T6ihzTOBfThe2x7YuqFggA@public.gmane.org>
-Content-Language: en-US
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"; format="flowed"
-To: "initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: klibc mailing list <klibc-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Everyone,
 
-I am attempting to boot from USB using syslinux/isolinux with a
-squashfs image as my root filesystem.
+--=-Hf2S+WB/2+sg2ji09OpQ
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-My kernel command line like looks like:
-linux /LiveOS/vmlinuz.x86_64 root=live:CDLABEL=Physix-Project rd.live.image
-APPEND initrd=/LiveOS/initramfs-img.x86_64
+I have released version 2.0.10.=C2=A0 This is available in the git
+repository at:
 
-At boot, the system halts soon after the following message.
-dracut: FATAL: Don't know how to handle 'root=live:Physix-Project
+=C2=A0=C2=A0=C2=A0 https://git.kernel.org/pub/scm/libs/klibc/klibc.git
 
-I got the impression from dracut docs that I needed dmsquash-live and 
-livenet module included in the initramfs, but when I define them in my 
-/etc/dracut.conf and run make install on the kernel tree I get the 
-following messages:
-`dracut: dracut module 'livenet' depends on 'dmsquash-live', which can't 
-be installed
-dracut: dracut module 'dmsquash-live' cannot be found or installed.`
+and as a tarball at:
 
-Question 1: Will including these 2 modules solve the "FATAL: Don't know 
-how to handle 'root=...." issue?
+=C2=A0=C2=A0=C2=A0 https://mirrors.kernel.org/pub/linux/libs/klibc/2.0/
 
-Question 2: If so, how do I get these modules installed (on 
-Debian/Fedora) so I can build the initramfs?
+New features:
+- s390x and sparc64 ports can now be compiled using Clang
+- arm port can now be linked using LLD
 
-best regards,
-Tree
+Bug fixes:
+- sig{set,long}jmp now honour the savesigs flag
+- s390x: {set,long}jmp now save and restore correct FP registers
+- utimes used to set incorrect mtime on architectures which do not
+  have a utimes systtem call
+- Fixed build failure in dash when using Clang 13
+- arm64,x86_64: Fixed address collision when using LLD 13
+- Headers consistently use definitions from <sys/types.h> instead of
+  <linux/types.h>
 
+A git shortlog of changes since version 2.0.9 follows.
+
+Ben.
+
+Ben Hutchings (8):
+      [klibc] 2.0.9 released, next version is 2.0.10
+      [klibc] Kbuild: Fix include path for Clang builds
+      [klibc] Use bounded array parameter types consistently
+      [klibc] include: Always include <sys/types.h> instead of <linux/types=
+.h>
+      [klibc] arm: Remove redundant/unsupported linker option --thumb-entry
+      [klibc] s390: mmap: Change inline assembly to work with Clang
+      [klibc] sparc64: Remove redundant/unsupported compiler option -mptr64
+      [klibc] arm64,x86_64: Fix address collision when using LLD
+
+Benjamin Gwin (1):
+      [klibc] Fix implementation of utimes
+
+mirabilos (2):
+      sig{set,long}jmp: do not ignore sigsetjmp's second argument
+      {set,long}jmp [s390x]: save/restore the correct registers
+
+--=20
+Ben Hutchings
+Experience is directly proportional to the value of equipment destroyed
+                                                    - Carolyn Scheppner
+
+--=-Hf2S+WB/2+sg2ji09OpQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmHN0GcACgkQ57/I7JWG
+EQnsNRAAogHb/ikXoFTRvFb4XXRWRqOw3AGUyZs/XUYzwCc0AHHzFOW/zXvSS8iw
+4dfPzjb4mehydBDOaRqHEokGT5alBbF2rKzN9nw6IX0e0ySlpeKzsVFAIgJAeIgk
+rlCGwhjJXWUeWpyQ+msUotXI1PGYVG9LmTNYsA7LYVY4+qTetjyCR8p6Eejt4VeP
+T2TO1JhKEc8qmW7rpNbYZqx9zChuKQHpE2gptpg5Xe8wZLQBPMGeF1DzfTi9QX5H
+XLhGycqoEHtArHCmmQfMTCs7atTiO4gzLqs23LjbST1Kgr+dfvHviPKJ65SoZufn
+Qwa+4Rptoe2f8ORYierLLIdYvIMq4q5Rs0mkD0zI6MsarWLuS1JaJf2krtXEth9y
+FgbCsv2+yDGKtHEvRf13U0e0DzX0IUV3dWeS8+OqGJN324m5kzRGuHRVIdvAm3ar
+X5EWIx3gLab7t2qls05oblhmwmNHJG6wLdM3IgSXZuCvS3s1SnftuHDEJGPbWEoX
+/3uBX+JICDwmn+dvVC3PhPjEV9Sl7JBW64CznYvhF+hAr+yrET/EdvQVkGJRVDst
+UMm4syJmt+3Z54QKnw0+bOpol+Dq8Q3gY6oVz32AIBFC77yVkEe570DprqieAbNG
+5XKCLR8z/rMm59mXrlIeYC3l62/0Yrj795wQ5QnG774YjMKvGG4=
+=b/LN
+-----END PGP SIGNATURE-----
+
+--=-Hf2S+WB/2+sg2ji09OpQ--
