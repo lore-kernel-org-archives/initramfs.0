@@ -1,19 +1,16 @@
-From: Scott Moser <ssmoser-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Scott Moser <smoser-tZfQ4l0FZIvk1uMJSBkQmQ@public.gmane.org>
 Subject: Exit non-zero on error / how to detect failure?
-Date: Thu, 24 Feb 2022 12:45:33 -0500
-Message-ID: <CAKxE60y5gUKDy8KFgv3rwKsFPDMq6xDK7VD26xe3UtqrzG7AcA@mail.gmail.com>
+Date: Thu, 24 Feb 2022 12:57:35 -0500
+Message-ID: <CAKxE60w22VmhWMrfN2y=MTEH+EniWn02R6a3+ynE6vPK5GjyBA@mail.gmail.com>
 Mime-Version: 1.0
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:from:date:message-id:subject:to;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=brickies.net;
+        s=dreamhost; t=1645725466;
         bh=HaAA9qcUSbH45dSi2RZtCXYeWc6qnoEs/1L5Qm3331A=;
-        b=URe5mdHeUyEt+hO/XLDkey3ghLKfLAHxfkxm9xL8Wsb2boY0TvI1UhgNKaU5573LZn
-         Kcs3ZUoOHdekSMN62gAYRyPDFVFsZEQjJPhTIbx5jwmrLfrr1pXJEltymrWHFVtMSQg5
-         MNbAWhDNnao1ppay3o81yyKx/F9fodn1Ayvji15ugvc3arYRwVlrlnMyGhzuCDg6jPfG
-         mzXi29zoJZsRAZvIhD/HjKPuZZeP5U8zM+NLFBpXnGF4JMthblgE8RWh9U7lWUVE9sZT
-         /KnkKSbM27CSyXG7Gbv+76/gCtjh+lmPRvMIFGEiAk7uVCirSwjmuAHF34YqEoDg4RgB
-         MOpA==
+        h=From:Date:Subject:To:Content-Type;
+        b=MIH7QSH8vGdZNsI5FEW+EH0tg2m74kS8LEByd+QP11Jp0v1Y5AU2D3Yz5JuSHaE5R
+         pxG2GdAdYRaKXlmBaJfrderrxXf0L/RM24zdsZbuAM5R8eH/dZOM9Sh7X4lRaQgtil
+         zvpSHT7eFkYhHcfVc/F9R9V008DaJoCn++WBPdCg=
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
