@@ -1,48 +1,45 @@
-From: Federico Vaga <federico.vaga-vJEk5272eHo@public.gmane.org>
-Subject: [PATCH v2] dracut: dmsquash-live: overlay module can be built-in the kernel
-Date: Wed, 18 May 2022 11:47:07 +0200
-Message-ID: <20220518094707.943732-1-federico.vaga@cern.ch>
+From: Eugeniu Rosca <erosca@de.adit-jv.com>
+Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
+ ram disk
+Date: Thu, 9 Jun 2022 12:26:27 +0200
+Message-ID: <20220609102627.GA3922@lxhi-065>
+References: <20190523121803.21638-1-roberto.sassu@huawei.com>
+ <cf9d08ca-74c7-c945-5bf9-7c3495907d1e@huawei.com>
+ <541e9ea1-024f-5c22-0b58-f8692e6c1eb1@landley.net>
+ <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
+ <1561909199.3985.33.camel@linux.ibm.com>
+ <45164486-782f-a442-e442-6f56f9299c66@huawei.com>
+ <1561991485.4067.14.camel@linux.ibm.com>
+ <f85ed711-f583-51cd-34e2-80018a592280@huawei.com>
+ <0c17bf9e-9b0b-b067-cf18-24516315b682@huawei.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=cern.onmicrosoft.com;
- s=selector2-cern-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=hr7AleePNhw8E/8Jj/GY6Fy+1cElKsUwmSMx89DyOR4=;
- b=CpBCN1RZsJVCAajb3NT1g28XqSkdoCQ00Hhzm8A7YwEAU7E9pQAv461fH0+U62nfbkGfZgv7N47AevOaDJMRTtgVc3mEsi/L9TrbY5SJ8oyl5IhcR3E9EJ+C+WkRr4gI7m94THIPTFmHHBU0L2nGqrcJC9uV05i3AelLngCTF8E=
-List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: German Maglione <gmaglione-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Federico Vaga <federico.vaga-vJEk5272eHo@public.gmane.org>
+Return-path: <linux-kbuild-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <0c17bf9e-9b0b-b067-cf18-24516315b682@huawei.com>
+List-ID: <initramfs.vger.kernel.org>
+Content-Transfer-Encoding: 7bit
+To: Roberto Sassu <roberto.sassu@huawei.com>
+Cc: Rob Landley <rob@landley.net>, hpa@zytor.com, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, viro@zeniv.linux.org.uk, linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, bug-cpio@gnu.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, arnd@arndb.de, james.w.mcmechan@gmail.com, linux-kbuild@vger.kernel.org, Dirk Behme <dirk.behme@de.bosch.com>, Eugeniu Rosca <erosca@de.adit-jv.com>, Eugeniu Rosca <roscaeugeniu@gmail.com>
 
-The dmsquash-live module assumes that `overlay` is always a module.
-Therefore, when `overlay` is built-in the kernel, this module will fail
-to detect the presence of such a feature.
+Dear Roberto,
+Cc: Yamada-san, linux-kbuild
 
-This patch adds a fallback mechanism to check also `/proc/filesystem`.
-This is also what happens with the dracut NSF module when loading the
-kernel module `rpc_pipefs`.
+On Mi, Jul 24, 2019 at 05:34:53 +0200, Roberto Sassu wrote:
+> Is there anything I didn't address in this patch set, that is delaying
+> the review? I would appreciate if you can give me a feedback, positive
+> or negative.
+> 
+> Thanks a lot!
+> 
+> Roberto
 
-Signed-off-by: Federico Vaga <federico.vaga-vJEk5272eHo@public.gmane.org>
----
- v1 -> v2: do not use unnecessary sub-shell in the if statement
+Some of our users have recently asked for this patch series.
 
- modules.d/90dmsquash-live/dmsquash-live-root.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Could you please feedback if this is the latest revision available or
+maybe there is a newer one developed and potentially not shared on LKML?
 
-diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-index fd8a858a..f68a979c 100755
---- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
-+++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
-@@ -170,7 +170,7 @@ do_live_overlay() {
-         fi
-     fi
-     if [ -n "$overlayfs" ]; then
--        if ! modprobe overlay; then
-+        if ! { modprobe overlay || strstr "$(cat /proc/filesystems)" overlay; }; then
-             if [ "$overlayfs" = required ]; then
-                 die "OverlayFS is required but not available."
-                 exit 1
--- 
-2.27.0
+Appreciate your time.
 
+Thanks and Best Regards,
+Eugeniu
