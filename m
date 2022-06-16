@@ -1,80 +1,58 @@
 From: Eugeniu Rosca <erosca@de.adit-jv.com>
-Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
- ram disk
-Date: Thu, 16 Jun 2022 15:24:08 +0200
-Message-ID: <20220616132408.GA4018@lxhi-065>
+Subject: Re: [PATCH v4 3/3] gen_init_cpio: add support for file metadata
+Date: Thu, 16 Jun 2022 16:47:59 +0200
+Message-ID: <20220616144759.GA3967@lxhi-065>
 References: <20190523121803.21638-1-roberto.sassu@huawei.com>
+ <20190523121803.21638-4-roberto.sassu@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20190523121803.21638-1-roberto.sassu@huawei.com>
+In-Reply-To: <20190523121803.21638-4-roberto.sassu@huawei.com>
 List-ID: <initramfs.vger.kernel.org>
 Content-Transfer-Encoding: 7bit
-To: Masahiro Yamada <masahiroy@kernel.org>
-Cc: viro@zeniv.linux.org.uk, linux-security-module@vger.kernel.org, Roberto Sassu <roberto.sassu@huawei.com>, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, bug-cpio@gnu.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, niveditas98@gmail.com, Eugeniu Rosca <erosca@de.adit-jv.com>, Eugeniu Rosca <roscaeugeniu@gmail.com>
+To: Roberto Sassu <roberto.sassu@huawei.com>
+Cc: viro@zeniv.linux.org.uk, linux-security-module@vger.kernel.org, linux-integrity@vger.kernel.org, initramfs@vger.kernel.org, linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, bug-cpio@gnu.org, zohar@linux.vnet.ibm.com, silviu.vlasceanu@huawei.com, dmitry.kasatkin@huawei.com, takondra@cisco.com, kamensky@cisco.com, hpa@zytor.com, arnd@arndb.de, rob@landley.net, james.w.mcmechan@gmail.com, niveditas98@gmail.com, Eugeniu Rosca <erosca@de.adit-jv.com>, Eugeniu Rosca <roscaeugeniu@gmail.com>
 
-Dear Yamada-san,
+Hello Roberto,
 
-On Do, Mai 23, 2019 at 02:18:00 +0200, Roberto Sassu wrote:
-> This patch set aims at solving the following use case: appraise files from
-> the initial ram disk. To do that, IMA checks the signature/hash from the
-> security.ima xattr. Unfortunately, this use case cannot be implemented
-> currently, as the CPIO format does not support xattrs.
+On Do, Mai 23, 2019 at 02:18:03 +0200, Roberto Sassu wrote:
+> This patch adds support for file metadata (only TYPE_XATTR metadata type).
+> gen_init_cpio has been modified to read xattrs from files that will be
+> added to the image and to include file metadata as separate files with the
+> special name 'METADATA!!!'.
 > 
-> This proposal consists in including file metadata as additional files named
-> METADATA!!!, for each file added to the ram disk. The CPIO parser in the
-> kernel recognizes these special files from the file name, and calls the
-> appropriate parser to add metadata to the previously extracted file. It has
-> been proposed to use bit 17:16 of the file mode as a way to recognize files
-> with metadata, but both the kernel and the cpio tool declare the file mode
-> as unsigned short.
+> This behavior can be selected by setting the desired file metadata type as
+> value for CONFIG_INITRAMFS_FILE_METADATA.
 > 
-> The difference from v2, v3 (https://lkml.org/lkml/2019/5/9/230,
-> https://lkml.org/lkml/2019/5/17/466) is that file metadata are stored in
-> separate files instead of a single file. Given that files with metadata
-> must immediately follow the files metadata will be added to, image
-> generators have to be modified in this version.
+> Signed-off-by: Roberto Sassu <roberto.sassu@huawei.com>
+> ---
+>  usr/Kconfig               |   8 +++
+>  usr/Makefile              |   4 +-
+>  usr/gen_init_cpio.c       | 137 ++++++++++++++++++++++++++++++++++++--
+>  usr/gen_initramfs_list.sh |  10 ++-
+>  4 files changed, 150 insertions(+), 9 deletions(-)
 > 
-> The difference from v1 (https://lkml.org/lkml/2018/11/22/1182) is that
-> all files have the same name. The file metadata are added to is always the
-> previous one, and the image generator in user space will make sure that
-> files are in the correct sequence.
-> 
-> The difference with another proposal
-> (https://lore.kernel.org/patchwork/cover/888071/) is that xattrs can be
-> included in an image without changing the image format. Files with metadata
-> will appear as regular files. It will be task of the parser in the kernel
-> to process them.
-> 
-> This patch set extends the format of data defined in patch 9/15 of the last
-> proposal. It adds header version and type, so that new formats can be
-> defined and arbitrary metadata types can be processed.
-> 
-> The changes introduced by this patch set don't cause any compatibility
-> issue: kernels without the metadata parser simply extract the special files
-> and don't process metadata; kernels with the metadata parser don't process
-> metadata if the special files are not included in the image.
-> 
-> >From the kernel space perspective, backporting this functionality to older
-> kernels should be very easy. It is sufficient to add two calls to the new
-> function do_process_metadata() in do_copy(), and to check the file name in
-> do_name(). From the user space perspective, unlike the previous version of
-> the patch set, it is required to modify the image generators in order to
-> include metadata as separate files.
+> diff --git a/usr/gen_init_cpio.c b/usr/gen_init_cpio.c
+> index 03b21189d58b..e93cb1093e77 100644
+> --- a/usr/gen_init_cpio.c
+> +++ b/usr/gen_init_cpio.c
 
-Since this patch series most likely falls under your jurisdiction and
-also given your recent commits [*] in the same area, I am curious if
-there are any early signs which would prevent your final acceptance
-and would potentially result in a no-Go?
+[..]
 
-Can we have an early confirmation that, upon rebasing and handling of
-all the review comments, you would be willing to accept the patches?
+> +static int write_xattrs(const char *path)
+> +{
 
-[*] Most recent commits touching usr/gen_initramfs.sh
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=7168965ec7b10b8a2c7dea1f82f1ebadf44d64ba
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=65e00e04e5aea34b256814cfa21b32e3b94a2402
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=469e87e89fd61de804bd29f6dd0380a399b567a7
+[..]
 
-Thanks,
-Eugeniu.
+> +
+> +		snprintf(str, sizeof(str), "%.8lx",
+> +			 sizeof(hdr) + name_len + 1 + value_len);
+
+Cppcheck 2.7 reports at this line:
+
+usr/gen_init_cpio.c:107,portability,invalidPrintfArgType_uint,%lx in format string (no. 1) requires 'unsigned long' but the argument type is 'size_t {aka unsigned long}'.
+
+This can be addressed via 's/lx/zx/', according to https://www.kernel.org/doc/Documentation/printk-formats.txt .
+
+BR, Eugeniu
