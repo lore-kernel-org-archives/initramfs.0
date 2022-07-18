@@ -1,105 +1,86 @@
-From: Ben Hutchings <ben@decadent.org.uk>
-Subject: initramfs-tools 0.142 release
-Date: Wed, 13 Jul 2022 00:54:40 +0200
-Message-ID: <db21dad89390442010de6b4520a311791a58b764.camel@decadent.org.uk>
+From: Jim Baxter <jim_baxter@mentor.com>
+Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
+ ram disk
+Date: Mon, 18 Jul 2022 17:36:06 +0100
+Message-ID: <032ade35-6eb8-d698-ac44-aa45d46752dd@mentor.com>
+References: <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
+ <1561909199.3985.33.camel@linux.ibm.com>
+ <45164486-782f-a442-e442-6f56f9299c66@huawei.com>
+ <1561991485.4067.14.camel@linux.ibm.com>
+ <f85ed711-f583-51cd-34e2-80018a592280@huawei.com>
+ <0c17bf9e-9b0b-b067-cf18-24516315b682@huawei.com>
+ <20220609102627.GA3922@lxhi-065>
+ <21b3aeab20554a30b9796b82cc58e55b@huawei.com>
+ <20220610153336.GA8881@lxhi-065>
+ <4bc349a59e4042f7831b1190914851fe@huawei.com>
+ <20220615092712.GA4068@lxhi-065>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-Xf31lXDInca+jV+or1FF"
-Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane-mx.org@lists.debian.org>
-Resent-Message-ID: <ValxkU4w5hJ.A.5RE.FvfziB@bendel>
-List-Id: <initramfs.vger.kernel.org>
-List-URL: <https://lists.debian.org/debian-kernel/>
-List-Post: <mailto:debian-kernel@lists.debian.org>
-List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
-List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
-List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
-List-Archive: https://lists.debian.org/msgid-search/db21dad89390442010de6b4520a311791a58b764.camel@decadent.org.uk
-To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, kernel-team@lists.ubuntu.com
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kbuild-owner@vger.kernel.org>
+Content-Language: en-GB
+In-Reply-To: <20220615092712.GA4068@lxhi-065>
+List-ID: <initramfs.vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+To: Eugeniu Rosca <erosca@de.adit-jv.com>, Roberto Sassu <roberto.sassu@huawei.com>
+Cc: Rob Landley <rob@landley.net>, "hpa@zytor.com" <hpa@zytor.com>, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>, "linux-security-module@vger.kernel.org" <linux-security-module@vger.kernel.org>, "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>, "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "bug-cpio@gnu.org" <bug-cpio@gnu.org>, "zohar@linux.vnet.ibm.com" <zohar@linux.vnet.ibm.com>, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>, Dmitry
+
+On 15/06/2022 10:27, Eugeniu Rosca wrote:
+> Hello Roberto,
+> 
+> On Fr, Jun 10, 2022 at 03:38:24 +0000, Roberto Sassu wrote:
+>> I would be happy to address the remaining concerns, or take more
+>> suggestions, and then develop a new version of the patch set.
+> I face a number of conflicts when I try to rebase the latest openEuler
+> commits against vanilla master (v5.19-rc2). Do you think it is possible
+> to submit the rebased version to ML?
+> 
+> In addition, I can also see some open/unresolved points from Mimi [*].
+> Did you by chance find some mutual agreement offline or do you think
+> they would still potentially need some attention?
+> 
+> Maybe we can resume the discussion once you submit the rebased series?
+> 
+> Many thanks and looking forward to it.
+> 
+> [*] Potentially comments which deserve a reply/clarification/resolution
+> 
+> https://lore.kernel.org/lkml/1561985652.4049.24.camel@linux.ibm.com/#t
+> https://lore.kernel.org/lkml/1561908456.3985.23.camel@linux.ibm.com/
+> 
+> BR, Eugeniu.
+> 
 
 
---=-Xf31lXDInca+jV+or1FF
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Hello,
 
-This release fixes a number of bugs and compatibility issues:
-- Swap devices on zvols could be automatically selected as resume
-  devices, even though they can't be used as such
-- modules.builtin.modinfo was not included in the initramfs, which
-  depmod now complains about
-- UFS drivers would not be included in an initramfs built with
-  MODULES=3Dmost for Linux 5.19 onward
+I have been testing these patches and do not see the xattr information when
+trying to retrieve it within the initramfs, do you have an example of how
+you tested this originally?
 
-New features in this release:
-- Compressed kernel modules are decompressed in the initramfs image,
-  which should reduce the image size and boot time
-- Compression level can be overridden in initramfs.conf or on the
-  mkinitramfs command line
-- The fsck binary is always included, so that it can be used in the
-  initramfs shell
-- Drivers needed for a working display on the MNT Reform 2 are
-  included with MODULES=3Dmost
 
-The shortlog is below.
+So far I have set the xattr in the rootfs before creating the cpio file like this:
+$ setfattr -n user.comment -v "this is a comment" test.txt
+If I access the data here it works:
+$ getfattr test.txt 
+# file: test.txt
+user.comment
 
-Ben.
 
-Ben Hutchings (8):
-      Merge branch 'szubersk-resume' into 'master'
-      Merge branch 'decompress-modules' into 'master'
-      Merge branch 'always_include_fsck' into 'master'
-      Merge branch 'compresslevel' into 'master'
-      hook-functions: Remove support for ieee1394 and i2o
-      hook-functions: auto_add_modules: Include UFS drivers from drivers/uf=
-s/
-      Merge branch 'bug-1014319' into 'master'
-      Releasing version 0.142.
+Then I package it and try to verify it with this command:
+$getfattr /test.txt
 
-Dan Streetman (1):
-      hooks/fsck: always include fsck binary
+Which returns to the command line without the data.
 
-Dimitri John Ledkov (1):
-      mkinitramfs: decompress compressed kernel modules
 
-Johannes Schauer Marin Rodrigues (1):
-      hook-functions: Add pwm-imx27, nwl-dsi, ti-sn65dsi86, imx-dcss, mxsfb=
-, mux-mmio and imx8mq-interconnect for MNT Reform 2 panel/backlight.
 
-Rich Ercolani (1):
-      Add support for specifying compression level
+I believe the cpio is working because I see the file /METADATA\!\!\! in
+the target root filesystem, which shows the following when viewed with cat -e:
+00000028^A^Auser.comment^@this is a comment
 
-Sven Joachim (1):
-      Copy modules.builtin.modinfo into initramfs
+This matches the data I fed in at the start, so I believe the data is being
+transferred correctly but I am accessioning it with the wrong tools.
 
-Vagrant Cascadian (1):
-      Merge branch 'reform2-di-modules' into 'master'
+Thank you for any help.
 
-szubersk (1):
-      resume: Don't resume from a swap device on a ZVOL
-
---=20
-Ben Hutchings
-friends: People who know you well, but like you anyway.
-
---=-Xf31lXDInca+jV+or1FF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmLN+7AACgkQ57/I7JWG
-EQnOshAAxwHn33KULvpuNk6A03LCkTcwP9bj0OJLAlcSO/T3hN4hVq6RtjOewZPi
-bmgvTu+zFJW3SWRogCiq2XYV5vLOOSr2iE+FMYIlsxhpRa9zqrJOP2bmjZnoPTc3
-gXK0X5LqfSkScI1osM/AZ07TD7ie354HEzeAyuc3g8iYAEXDCGXy85VzrzX8wwu0
-7pXN9FE/gS8os6ERT+1zmDK3Z5JiV/8rjS2bEBL0CKWw00y0+QRXCzrjj+VpscpY
-3ptGnx1fg1PnXX+mJePYrtGSJsuIKjuVxQS3i3KM9ke9ho/Gmu6rIla9SD05czub
-/IhYV/7c94eJNYG6a2F3e76Yc4ffNUYv/++Ek1e+qmNaL3Vw0d2Mszel5pb9bRs8
-fYss0ud919aOqZjhMyQQfutS+TtyK07sNYzDXH9hiURHW7xnrdnWc/B/eZtoN//o
-wEZrCeTY+s6RGfNdV702GmSa52IS2uHMiNwefZ2qsXTuA5so/tLt470R/FnKzant
-1MZ/Erp6sxNbZ9qQqYy8CQ7cmG78lU9gfQ3zJVEcvYaLR9QE8YuAGfTyJWeG5uy5
-d1kw6ADHyIr5W0Mq53mwL/UZbFN06b5szr/pG82cnTFuACiHKXD+U0WakNj34LOi
-OO0baRlSvZQKL4o9GX5/l0ZMoLvkhCBaWnj87fqMMw3nOuZrzdk=
-=lD9d
------END PGP SIGNATURE-----
-
---=-Xf31lXDInca+jV+or1FF--
-
+Best regards,
+Jim
