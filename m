@@ -1,8 +1,8 @@
-From: Roberto Sassu <roberto.sassu@huawei.com>
-Subject: RE: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
+From: Rob Landley <rob@landley.net>
+Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
  ram disk
-Date: Tue, 19 Jul 2022 06:55:50 +0000
-Message-ID: <8e6a723874644449be99fcebb0905058@huawei.com>
+Date: Tue, 19 Jul 2022 06:00:04 -0500
+Message-ID: <99ae4aa6-b55a-55a9-e836-b0b483a358d6@landley.net>
 References: <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
  <1561909199.3985.33.camel@linux.ibm.com>
  <45164486-782f-a442-e442-6f56f9299c66@huawei.com>
@@ -16,43 +16,73 @@ References: <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
  <20220615092712.GA4068@lxhi-065>
  <032ade35-6eb8-d698-ac44-aa45d46752dd@mentor.com>
  <f82d4961986547b28b6de066219ad08b@huawei.com>
- <737ddf72-05f4-a47e-c901-fec5b1dfa7a6@mentor.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: base64
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kbuild-owner@vger.kernel.org>
-In-Reply-To: <737ddf72-05f4-a47e-c901-fec5b1dfa7a6@mentor.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=ra5x2/muxSeeSQ3tlCgpeqbladVRxJnxCPl4bJq3p34=;
+        b=2lKKxFzSTFfoAqHkPQJOZzk9NSwhvMVfz9AI6037udC8exCOdgmjJTCzLfGNh8TiZR
+         juF5/5iF/lwpY0I4eBxOM7ch26XEY1pzvru00V28d56VKmfDdmUC/dvbNUXfD/GneoTj
+         e62bDsHZKQ06qjQfN6BdAPe8q7wMqzTya9y9Oxq/85+9tv+FEcRChm48xzwJ+vVtJutJ
+         ocu7WYAHxW+9letk5IuqILyJfJ0omA9TYCGqGI3ZW12BP0J1uMrdUw4g3mf6Dnq9iC2d
+         KIoG/xTswyWySLrhFnRZ2Qa4cNrCubzn949cy5pGWP6ba+vFmgIdE/fnF+KPaKPeGBQd
+         k/Zw==
 Content-Language: en-US
+In-Reply-To: <f82d4961986547b28b6de066219ad08b@huawei.com>
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Jim Baxter <jim_baxter@mentor.com>, Eugeniu Rosca <erosca@de.adit-jv.com>
-Cc: Rob Landley <rob@landley.net>, "hpa@zytor.com" <hpa@zytor.com>, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>, "linux-security-module@vger.kernel.org" <linux-security-module@vger.kernel.org>, "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>, "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "bug-cpio@gnu.org" <bug-cpio@gnu.org>, "zohar@linux.vnet.ibm.com" <zohar@linux.vnet.ibm.com>, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>, Dmitry
+To: Roberto Sassu <roberto.sassu@huawei.com>, Jim Baxter <jim_baxter@mentor.com>, Eugeniu Rosca <erosca@de.adit-jv.com>
+Cc: "hpa@zytor.com" <hpa@zytor.com>, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>, "linux-security-module@vger.kernel.org" <linux-security-module@vger.kernel.org>, "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>, "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "bug-cpio@gnu.org" <bug-cpio@gnu.org>, "zohar@linux.vnet.ibm.com" <zohar@linux.vnet.ibm.com>, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>, Dmitry Kasatkin <dmitry.kasatkin@huawei.co>
 
-PiBGcm9tOiBKaW0gQmF4dGVyIFttYWlsdG86amltX2JheHRlckBtZW50b3IuY29tXQ0KPiBTZW50
-OiBNb25kYXksIEp1bHkgMTgsIDIwMjIgODowOCBQTQ0KPiANCj4gDQo+IA0KPiBCZXN0IHJlZ2Fy
-ZHMsDQo+IA0KPiAqSmltIEJheHRlcioNCj4gDQo+IFNpZW1lbnMgRGlnaXRhbCBJbmR1c3RyaWVz
-IFNvZnR3YXJlDQo+IEF1dG9tb3RpdmUgQnVzaW5lc3MgVW5pdA0KPiBESSBTVyBTVFMgQUJVDQo+
-IFVLDQo+IFRlbC46ICs0NCAoMTYxKSA5MjYtMTY1Ng0KPiBtYWlsdG86amltLmJheHRlckBzaWVt
-ZW5zLmNvbSA8bWFpbHRvOmppbS5iYXh0ZXJAc2llbWVucy5jb20+DQo+IHN3LnNpZW1lbnMuY29t
-IDxodHRwczovL3N3LnNpZW1lbnMuY29tLz4NCj4gDQo+IE9uIDE4LzA3LzIwMjIgMTc6NDksIFJv
-YmVydG8gU2Fzc3Ugd3JvdGU6DQo+ID4+IEZyb206IEppbSBCYXh0ZXIgW21haWx0bzpqaW1fYmF4
-dGVyQG1lbnRvci5jb21dDQo+ID4+IFNlbnQ6IE1vbmRheSwgSnVseSAxOCwgMjAyMiA2OjM2IFBN
-DQo+ID4+DQo+ID4+DQo+ID4+IEhlbGxvLA0KPiA+Pg0KPiA+PiBJIGhhdmUgYmVlbiB0ZXN0aW5n
-IHRoZXNlIHBhdGNoZXMgYW5kIGRvIG5vdCBzZWUgdGhlIHhhdHRyIGluZm9ybWF0aW9uIHdoZW4N
-Cj4gPj4gdHJ5aW5nIHRvIHJldHJpZXZlIGl0IHdpdGhpbiB0aGUgaW5pdHJhbWZzLCBkbyB5b3Ug
-aGF2ZSBhbiBleGFtcGxlIG9mIGhvdw0KPiA+PiB5b3UgdGVzdGVkIHRoaXMgb3JpZ2luYWxseT8N
-Cj4gPg0KPiA+IEhpIEppbSwgYWxsDQo+ID4NCj4gPiBhcG9sb2dpZXMsIEkgZGlkbid0IGZpbmQg
-eWV0IHRoZSB0aW1lIHRvIGxvb2sgYXQgdGhpcy4NCj4gDQo+IEhlbGxvIFJvYmVydG8sDQo+IA0K
-PiBUaGFuayB5b3UgZm9yIHlvdXIgcmVzcG9uc2UsIEkgY2FuIHdhaXQgdW50aWwgeW91IGhhdmUg
-bG9va2VkIGF0IHRoZSBwYXRjaGVzLA0KPiBJIGFza2VkIHRoZSBxdWVzdGlvbiB0byBtYWtlIHN1
-cmUgaXQgd2FzIG5vdCBzb21ldGhpbmcgd3JvbmcgaW4gbXkNCj4gY29uZmlndXJhdGlvbi4NCj4g
-DQo+ID4NCj4gPiBVaG0sIEkgZ3Vlc3MgdGhpcyBjb3VsZCBiZSBzb2x2ZWQgd2l0aDoNCj4gPg0K
-PiA+IGh0dHBzOi8vZ2l0aHViLmNvbS9vcGVuZXVsZXItDQo+IG1pcnJvci9rZXJuZWwvY29tbWl0
-LzE4YTUwMmY3ZTNiMWRlN2I5YmEwYzcwODk2Y2UwOGVlMTNkMDUyZGENCj4gPg0KPiA+IGFuZCBh
-ZGRpbmcgaW5pdHJhbXRtcGZzIHRvIHRoZSBrZXJuZWwgY29tbWFuZCBsaW5lLiBZb3UgYXJlDQo+
-ID4gcHJvYmFibHkgdXNpbmcgcmFtZnMsIHdoaWNoIGRvZXMgbm90IGhhdmUgeGF0dHIgc3VwcG9y
-dC4NCj4gPg0KPiANCj4gDQo+IFRoYW5rIHlvdSwgSSBoYXZlIHRlc3RlZCB0aGF0IHBhdGNoIGJ1
-dCB0aGUgcHJvYmxlbSByZW1haW5lZC4gSGVyZSBpcyBteQ0KPiBjb21tYW5kIGxpbmUsIEkgd29u
-ZGVyIGlmIHRoZXJlIGlzIHNvbWV0aGluZyB3cm9uZy4NCj4gDQo+IEtlcm5lbCBjb21tYW5kIGxp
-bmU6IHJ3IHJvb3Rmc3R5cGU9aW5pdHJhbXRtcGZzIHJvb3Q9L2Rldi9yYW0wDQo+IGluaXRyZD0w
-eDUwMDAwMDAwMCByb290d2FpdA0KDQpJdCBpcyBqdXN0IGluaXRyYW10bXBmcywgd2l0aG91dCBy
-b290ZnN0eXBlPS4NCg0KUm9iZXJ0bw0K
+On 7/18/22 11:49, Roberto Sassu wrote:
+> Uhm, I guess this could be solved with:
+> 
+> https://github.com/openeuler-mirror/kernel/commit/18a502f7e3b1de7b9ba0c70896ce08ee13d052da
+> 
+> and adding initramtmpfs to the kernel command line.
+
+It's initmpfs. You can argue about whether it should have two t's (I was
+consistent naming it in the patch series adding it), but ramfs and tmpfs are two
+different things and saying "initramtmpfs" is like saying "mount -t ext4btrfs".
+
+> You are probably using ramfs, which does not have xattr support.
+
+Do not specify root= in your kernel command line. If you specify root= you're
+saying "switch off of initramfs to a different root filesystem", so it doesn't
+make the overmounted filesystem tmpfs because you told it you wouldn't be using it.
+
+(The decision of what to mount has to be made before it examines the cpio.gz
+contents, so root= is used to signal "we are not keeping this initramfs" because
+that's literally what root= means. Your root filesystem is not initramfs, it is
+instead this thing to be mounted over initramfs.)
+
+You can tell which you're using via /proc/mounts having a line:
+
+rootfs / rootfs rw,size=121832k,nr_inodes=30458 0 0
+
+If it's got the size= then it's tmpfs: ramfs basically doesn't have bounds
+checking and "cat /dev/null > filename" on ramfs will lock your system solid due
+to unpinnable memory exhaustion.
+
+If you don't have a "rootfs" line at ALL then root= was used to overmount and
+part of the gratuitously magic behavior of root= is it hides the rootfs line
+from /proc/mounts even though the filesystem is actually still there, which is
+not something it does for ANY OTHER OVERMOUNT:
+
+  $ mkdir sub
+  $ mount -t proc proc sub
+  $ mount -t ramfs sub sub
+  $ grep sub /proc/mounts
+  proc /sub proc rw,relatime 0 0
+  sub /sub ramfs rw,relatime 0 0
+
+I've never understood why they added that gratuitous special case to hide how
+the system actually works, but it's a land mine you have to be told about after
+you've stepped on it in order to understand what's going on. Part of the reason
+people think initramfs is so "magic" when PID 1 isn't, we don't HIDE the fact
+that PID 1 is always there but we hide the fact initramfs is...
+
+Rob
