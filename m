@@ -1,8 +1,8 @@
-From: Jim Baxter <jim_baxter@mentor.com>
+From: Rob Landley <rob@landley.net>
 Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
  ram disk
-Date: Fri, 29 Jul 2022 11:37:49 +0100
-Message-ID: <d6af7f7e-7f8c-a6a7-7a09-84928fd69774@mentor.com>
+Date: Sat, 30 Jul 2022 04:39:13 -0500
+Message-ID: <e850477a-6dd8-0a76-cfa0-bf78951f7281@landley.net>
 References: <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
  <1561909199.3985.33.camel@linux.ibm.com>
  <45164486-782f-a442-e442-6f56f9299c66@huawei.com>
@@ -18,81 +18,111 @@ References: <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
  <f82d4961986547b28b6de066219ad08b@huawei.com>
  <737ddf72-05f4-a47e-c901-fec5b1dfa7a6@mentor.com>
  <8e6a723874644449be99fcebb0905058@huawei.com>
+ <d6af7f7e-7f8c-a6a7-7a09-84928fd69774@mentor.com>
 Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kbuild-owner@vger.kernel.org>
-Content-Language: en-GB
-In-Reply-To: <8e6a723874644449be99fcebb0905058@huawei.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=VQvaSdst3GlNtIz5gSEbzEWnw6iJp0dnfjX2/uw4Pi0=;
+        b=WwZeLQPHVZMv7Tf/yzouYMy/N8ncJHBvNxrLWXHyVtWxdZ1PxHorwX/QP+bQZFNbY1
+         rFwGJtpccThotO8bEaWew5690F3KBLjHib7+tV2wpgxvsFLNez3D6LNChyTXqofSjLSL
+         3t6mL4NZhitq1h4tRWJkYont7aB4p6WDw3W2nbHcvT//xibau8r6KMdHFoQnG+SQ/3rI
+         3j0ybuxX0FIf2CU4lpJxYEwnn2Qs8McUF9hZQ8kDHVp4HHibCyHITaH7wbRaDD6Z8BOI
+         nolUx7bNdTsURyp6dA0MSYRIyofqMVotGVXSojpI8bVNj+lPXZDKpcXfE/3CmYrakb10
+         Apmw==
+Content-Language: en-US
+In-Reply-To: <d6af7f7e-7f8c-a6a7-7a09-84928fd69774@mentor.com>
 List-ID: <initramfs.vger.kernel.org>
 Content-Type: text/plain; charset="us-ascii"
-To: Roberto Sassu <roberto.sassu@huawei.com>, Eugeniu Rosca <erosca@de.adit-jv.com>
-Cc: Rob Landley <rob@landley.net>, "hpa@zytor.com" <hpa@zytor.com>, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>, "linux-security-module@vger.kernel.org" <linux-security-module@vger.kernel.org>, "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>, "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "bug-cpio@gnu.org" <bug-cpio@gnu.org>, "zohar@linux.vnet.ibm.com" <zohar@linux.vnet.ibm.com>, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>, Dmitry
+To: Jim Baxter <jim_baxter@mentor.com>, Roberto Sassu <roberto.sassu@huawei.com>, Eugeniu Rosca <erosca@de.adit-jv.com>
+Cc: "hpa@zytor.com" <hpa@zytor.com>, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>, "linux-security-module@vger.kernel.org" <linux-security-module@vger.kernel.org>, "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>, "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "bug-cpio@gnu.org" <bug-cpio@gnu.org>, "zohar@linux.vnet.ibm.com" <zohar@linux.vnet.ibm.com>, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>, Dmitry Kasatkin <dmitry.kasatkin@huawei.co>
 
-
-On 19/07/2022 07:55, Roberto Sassu wrote:
->> From: Jim Baxter [mailto:jim_baxter@mentor.com]
->> Sent: Monday, July 18, 2022 8:08 PM
->>
->>
->>
->> Best regards,
->>
->> *Jim Baxter*
->>
->> Siemens Digital Industries Software
->> Automotive Business Unit
->> DI SW STS ABU
->> UK
->> Tel.: +44 (161) 926-1656
->> mailto:jim.baxter@siemens.com <mailto:jim.baxter@siemens.com>
->> sw.siemens.com <https://sw.siemens.com/>
->>
->> On 18/07/2022 17:49, Roberto Sassu wrote:
->>>> From: Jim Baxter [mailto:jim_baxter@mentor.com]
->>>> Sent: Monday, July 18, 2022 6:36 PM
+On 7/29/22 05:37, Jim Baxter wrote:
+>>>> Uhm, I guess this could be solved with:
 >>>>
+>>>> https://github.com/openeuler-
+>>> mirror/kernel/commit/18a502f7e3b1de7b9ba0c70896ce08ee13d052da
 >>>>
->>>> Hello,
+>>>> and adding initramtmpfs to the kernel command line. You are
+>>>> probably using ramfs, which does not have xattr support.
 >>>>
->>>> I have been testing these patches and do not see the xattr information when
->>>> trying to retrieve it within the initramfs, do you have an example of how
->>>> you tested this originally?
->>>
->>> Hi Jim, all
->>>
->>> apologies, I didn't find yet the time to look at this.
->>
->> Hello Roberto,
->>
->> Thank you for your response, I can wait until you have looked at the patches,
->> I asked the question to make sure it was not something wrong in my
->> configuration.
->>
->>>
->>> Uhm, I guess this could be solved with:
->>>
->>> https://github.com/openeuler-
->> mirror/kernel/commit/18a502f7e3b1de7b9ba0c70896ce08ee13d052da
->>>
->>> and adding initramtmpfs to the kernel command line. You are
->>> probably using ramfs, which does not have xattr support.
->>>
 
-Can I clarify which filesystem type is supported with this patch series?
-Is it tmpfs or perhaps a ramdisk?
+Oh, here's the actual tested version of the patch wiring up rootfstype=tmpfs to
+force rootfs to be tmpfs even when you specify root=
 
+diff --git a/init/do_mounts.c b/init/do_mounts.c
+index 7058e14ad5f7..dedf27fe9044 100644
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -665,7 +665,7 @@ struct file_system_type rootfs_fs_type = {
 
->>
->>
->> Thank you, I have tested that patch but the problem remained. Here is my
->> command line, I wonder if there is something wrong.
->>
->> Kernel command line: rw rootfstype=initramtmpfs root=/dev/ram0
->> initrd=0x500000000 rootwait
-> 
-> It is just initramtmpfs, without rootfstype=.
-> 
-> Roberto
+ void __init init_rootfs(void)
+ {
+-	if (IS_ENABLED(CONFIG_TMPFS) && !saved_root_name[0] &&
+-		(!root_fs_names || strstr(root_fs_names, "tmpfs")))
++	if (IS_ENABLED(CONFIG_TMPFS) && (!root_fs_names ? !saved_root_name[0] :
++		!!strstr(root_fs_names, "tmpfs")))
+ 		is_tmpfs = true;
+ }
 
-Best regards,
-Jim
+Signed-in-triplicate-by: Rob Landley <rob@landley.net>
+
+No idea why nobody else has fixed that bug in the past 9 years, seems obvious?
+
+Anyway, here's the testing I did using mkroot (ala
+https://landley.net/toybox/faq.html#mkroot):
+
+$ (cd root/x86_64; KARGS='quiet root=potato HANDOFF="/bin/head -n 1
+/proc/mounts"' ./run-qemu.sh) | tail -n 3
+rootfs / rootfs rw 0 0
+reboot: Restarting system
+
+$ (cd root/x86_64; KARGS='quiet HANDOFF="/bin/head -n 1 /proc/mounts"'
+./run-qemu.sh) | tail -n 3
+rootfs / rootfs rw,size=121828k,nr_inodes=30457 0 0
+reboot: Restarting system
+
+$ (cd root/x86_64; KARGS='quiet rootfstype=tmpfs root=potato HANDOFF="/bin/head
+-n 1 /proc/mounts"' ./run-qemu.sh) | tail -n 3
+rootfs / rootfs rw,size=121828k,nr_inodes=30457 0 0
+reboot: Restarting system
+
+I.E. rootfstype=tmpfs neutralized the root= so it was still tmpfs despite the
+kernel being explicitly told you weren't going to stay on initramfs (which is
+still what root= means). With just root= it's still ramfs, with all the "my log
+file got too big and the system livelocked" and "querying available space always
+returns zero" that entails.
+
+> Can I clarify which filesystem type is supported with this patch series?
+> Is it tmpfs or perhaps a ramdisk?
+
+I believe both tmpfs and ramfs support xattrs? (I know tmpfs does, and
+fs/ramfs/file-mmu.c plugs simple_getattr() into ramfs_file_operations.setattr so
+it looks like that would too? Haven't tried it.)
+
+This isn't a modification to the filesystem code (ramfs/tmpfs), this is a
+modification to the boot-time loader (initramfs) that extracts a cpio.gz file
+into the filesystem.
+
+Ramdisks have supported xattrs for years: they fake up a block device out of a
+chunk of memory and them format it and mount some other filesystem on it,
+meaning the driver for the other filesystem handles the xattr support.
+
+But ramdisks don't use initramfs, they load an image of the preformatted
+filesystem into the ramdisk block device. Completely separate mechanism, sharing
+no code with initramfs, depending on the block layer, etc.
+
+>>> Thank you, I have tested that patch but the problem remained. Here is my
+>>> command line, I wonder if there is something wrong.
+>>>
+>>> Kernel command line: rw rootfstype=initramtmpfs root=/dev/ram0
+>>> initrd=0x500000000 rootwait
+>> 
+>> It is just initramtmpfs, without rootfstype=.
+
+The above patch does not go on top of that patch, it's instead of.
+
+Rob
