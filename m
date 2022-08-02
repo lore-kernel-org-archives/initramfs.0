@@ -1,128 +1,62 @@
-From: Rob Landley <rob@landley.net>
-Subject: Re: [PATCH v4 0/3] initramfs: add support for xattrs in the initial
- ram disk
-Date: Sat, 30 Jul 2022 04:39:13 -0500
-Message-ID: <e850477a-6dd8-0a76-cfa0-bf78951f7281@landley.net>
-References: <33cfb804-6a17-39f0-92b7-01d54e9c452d@huawei.com>
- <1561909199.3985.33.camel@linux.ibm.com>
- <45164486-782f-a442-e442-6f56f9299c66@huawei.com>
- <1561991485.4067.14.camel@linux.ibm.com>
- <f85ed711-f583-51cd-34e2-80018a592280@huawei.com>
- <0c17bf9e-9b0b-b067-cf18-24516315b682@huawei.com>
- <20220609102627.GA3922@lxhi-065>
- <21b3aeab20554a30b9796b82cc58e55b@huawei.com>
- <20220610153336.GA8881@lxhi-065>
- <4bc349a59e4042f7831b1190914851fe@huawei.com>
- <20220615092712.GA4068@lxhi-065>
- <032ade35-6eb8-d698-ac44-aa45d46752dd@mentor.com>
- <f82d4961986547b28b6de066219ad08b@huawei.com>
- <737ddf72-05f4-a47e-c901-fec5b1dfa7a6@mentor.com>
- <8e6a723874644449be99fcebb0905058@huawei.com>
- <d6af7f7e-7f8c-a6a7-7a09-84928fd69774@mentor.com>
+From: Federico Vaga <federico.vaga-vJEk5272eHo@public.gmane.org>
+Subject: Re: [PATCH v2] dracut: dmsquash-live: overlay module can be built-in
+ the kernel
+Date: Tue, 2 Aug 2022 15:51:40 +0200
+Message-ID: <20220802135140.lxdgwvqkp56j6t4m@pcbe17027.cern.ch>
+References: <20220518094707.943732-1-federico.vaga@cern.ch>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20210112.gappssmtp.com; s=20210112;
-        h=message-id:date:mime-version:user-agent:subject:content-language:to
-         :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=VQvaSdst3GlNtIz5gSEbzEWnw6iJp0dnfjX2/uw4Pi0=;
-        b=WwZeLQPHVZMv7Tf/yzouYMy/N8ncJHBvNxrLWXHyVtWxdZ1PxHorwX/QP+bQZFNbY1
-         rFwGJtpccThotO8bEaWew5690F3KBLjHib7+tV2wpgxvsFLNez3D6LNChyTXqofSjLSL
-         3t6mL4NZhitq1h4tRWJkYont7aB4p6WDw3W2nbHcvT//xibau8r6KMdHFoQnG+SQ/3rI
-         3j0ybuxX0FIf2CU4lpJxYEwnn2Qs8McUF9hZQ8kDHVp4HHibCyHITaH7wbRaDD6Z8BOI
-         nolUx7bNdTsURyp6dA0MSYRIyofqMVotGVXSojpI8bVNj+lPXZDKpcXfE/3CmYrakb10
-         Apmw==
-Content-Language: en-US
-In-Reply-To: <d6af7f7e-7f8c-a6a7-7a09-84928fd69774@mentor.com>
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=cern.onmicrosoft.com;
+ s=selector2-cern-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=2CcLw99xsKJ7u898rvQOb8/0TOFnRM7GMuhdR1DXous=;
+ b=MDpg8vLRRtWFmSwdMHAWFz0Np1Ybm+GCAbBAifE5eSB0jGTaJWhLANVfkhvxb+7DG7Zk3FprMc9BNT46ZeUjs0YxPTqOZSnlwP3cnJJQWv9BMHeVlQ+IJk+JnZR4fJ+EL26yeSdwMMvuXqj7bqBmeIvGjv917DvdKAieza3lpf4=
+Content-Disposition: inline
+In-Reply-To: <20220518094707.943732-1-federico.vaga-vJEk5272eHo@public.gmane.org>
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-To: Jim Baxter <jim_baxter@mentor.com>, Roberto Sassu <roberto.sassu@huawei.com>, Eugeniu Rosca <erosca@de.adit-jv.com>
-Cc: "hpa@zytor.com" <hpa@zytor.com>, Masahiro Yamada <masahiroy@kernel.org>, Arvind Sankar <nivedita@alum.mit.edu>, Mimi Zohar <zohar@linux.ibm.com>, "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>, "linux-security-module@vger.kernel.org" <linux-security-module@vger.kernel.org>, "linux-integrity@vger.kernel.org" <linux-integrity@vger.kernel.org>, "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>, "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "bug-cpio@gnu.org" <bug-cpio@gnu.org>, "zohar@linux.vnet.ibm.com" <zohar@linux.vnet.ibm.com>, Silviu Vlasceanu <Silviu.Vlasceanu@huawei.com>, Dmitry Kasatkin <dmitry.kasatkin@huawei.co>
+Content-Type: text/plain; charset="us-ascii"; format="flowed"
+Content-Transfer-Encoding: 7bit
+To: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 7/29/22 05:37, Jim Baxter wrote:
->>>> Uhm, I guess this could be solved with:
->>>>
->>>> https://github.com/openeuler-
->>> mirror/kernel/commit/18a502f7e3b1de7b9ba0c70896ce08ee13d052da
->>>>
->>>> and adding initramtmpfs to the kernel command line. You are
->>>> probably using ramfs, which does not have xattr support.
->>>>
+Hello,
 
-Oh, here's the actual tested version of the patch wiring up rootfstype=tmpfs to
-force rootfs to be tmpfs even when you specify root=
+I've never got a feedback on this patch. Will it be integrated?
 
-diff --git a/init/do_mounts.c b/init/do_mounts.c
-index 7058e14ad5f7..dedf27fe9044 100644
---- a/init/do_mounts.c
-+++ b/init/do_mounts.c
-@@ -665,7 +665,7 @@ struct file_system_type rootfs_fs_type = {
+Thanks
 
- void __init init_rootfs(void)
- {
--	if (IS_ENABLED(CONFIG_TMPFS) && !saved_root_name[0] &&
--		(!root_fs_names || strstr(root_fs_names, "tmpfs")))
-+	if (IS_ENABLED(CONFIG_TMPFS) && (!root_fs_names ? !saved_root_name[0] :
-+		!!strstr(root_fs_names, "tmpfs")))
- 		is_tmpfs = true;
- }
+On Wed, May 18, 2022 at 11:47:07AM +0200, Federico Vaga wrote:
+>The dmsquash-live module assumes that `overlay` is always a module.
+>Therefore, when `overlay` is built-in the kernel, this module will fail
+>to detect the presence of such a feature.
+>
+>This patch adds a fallback mechanism to check also `/proc/filesystem`.
+>This is also what happens with the dracut NSF module when loading the
+>kernel module `rpc_pipefs`.
+>
+>Signed-off-by: Federico Vaga <federico.vaga-vJEk5272eHo@public.gmane.org>
+>---
+> v1 -> v2: do not use unnecessary sub-shell in the if statement
+>
+> modules.d/90dmsquash-live/dmsquash-live-root.sh | 2 +-
+> 1 file changed, 1 insertion(+), 1 deletion(-)
+>
+>diff --git a/modules.d/90dmsquash-live/dmsquash-live-root.sh b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+>index fd8a858a..f68a979c 100755
+>--- a/modules.d/90dmsquash-live/dmsquash-live-root.sh
+>+++ b/modules.d/90dmsquash-live/dmsquash-live-root.sh
+>@@ -170,7 +170,7 @@ do_live_overlay() {
+>         fi
+>     fi
+>     if [ -n "$overlayfs" ]; then
+>-        if ! modprobe overlay; then
+>+        if ! { modprobe overlay || strstr "$(cat /proc/filesystems)" overlay; }; then
+>             if [ "$overlayfs" = required ]; then
+>                 die "OverlayFS is required but not available."
+>                 exit 1
+>-- 
+>2.27.0
+>
 
-Signed-in-triplicate-by: Rob Landley <rob@landley.net>
-
-No idea why nobody else has fixed that bug in the past 9 years, seems obvious?
-
-Anyway, here's the testing I did using mkroot (ala
-https://landley.net/toybox/faq.html#mkroot):
-
-$ (cd root/x86_64; KARGS='quiet root=potato HANDOFF="/bin/head -n 1
-/proc/mounts"' ./run-qemu.sh) | tail -n 3
-rootfs / rootfs rw 0 0
-reboot: Restarting system
-
-$ (cd root/x86_64; KARGS='quiet HANDOFF="/bin/head -n 1 /proc/mounts"'
-./run-qemu.sh) | tail -n 3
-rootfs / rootfs rw,size=121828k,nr_inodes=30457 0 0
-reboot: Restarting system
-
-$ (cd root/x86_64; KARGS='quiet rootfstype=tmpfs root=potato HANDOFF="/bin/head
--n 1 /proc/mounts"' ./run-qemu.sh) | tail -n 3
-rootfs / rootfs rw,size=121828k,nr_inodes=30457 0 0
-reboot: Restarting system
-
-I.E. rootfstype=tmpfs neutralized the root= so it was still tmpfs despite the
-kernel being explicitly told you weren't going to stay on initramfs (which is
-still what root= means). With just root= it's still ramfs, with all the "my log
-file got too big and the system livelocked" and "querying available space always
-returns zero" that entails.
-
-> Can I clarify which filesystem type is supported with this patch series?
-> Is it tmpfs or perhaps a ramdisk?
-
-I believe both tmpfs and ramfs support xattrs? (I know tmpfs does, and
-fs/ramfs/file-mmu.c plugs simple_getattr() into ramfs_file_operations.setattr so
-it looks like that would too? Haven't tried it.)
-
-This isn't a modification to the filesystem code (ramfs/tmpfs), this is a
-modification to the boot-time loader (initramfs) that extracts a cpio.gz file
-into the filesystem.
-
-Ramdisks have supported xattrs for years: they fake up a block device out of a
-chunk of memory and them format it and mount some other filesystem on it,
-meaning the driver for the other filesystem handles the xattr support.
-
-But ramdisks don't use initramfs, they load an image of the preformatted
-filesystem into the ramdisk block device. Completely separate mechanism, sharing
-no code with initramfs, depending on the block layer, etc.
-
->>> Thank you, I have tested that patch but the problem remained. Here is my
->>> command line, I wonder if there is something wrong.
->>>
->>> Kernel command line: rw rootfstype=initramtmpfs root=/dev/ram0
->>> initrd=0x500000000 rootwait
->> 
->> It is just initramtmpfs, without rootfstype=.
-
-The above patch does not go on top of that patch, it's instead of.
-
-Rob
+-- 
+-------------------------------
+Federico Vaga - CERN BE-CEM-EDL
