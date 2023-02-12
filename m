@@ -1,61 +1,75 @@
-From: Masahiro Yamada <masahiroy@kernel.org>
-Subject: [PATCH] hook-functions: dep_add_modules_mount: kill unreadable eval
-Date: Mon, 23 Jan 2023 13:55:23 +0900
-Message-ID: <20230123045523.697916-1-masahiroy@kernel.org>
+From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
+Subject: [ANNOUNCE] klibc 2.0.12
+Date: Sun, 12 Feb 2023 19:06:41 +0100
+Message-ID: <fb40bf5835b0f28eab8f3f0b37dc9846218747f1.camel@decadent.org.uk>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Return-path: <bounce-debian-kernel=glddk-debian-kernel=m.gmane-mx.org@lists.debian.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1674449739;
-	bh=rUi3g66D5AqkwsAKNyi4K91gjylKNNT4euy6NgcrAnE=;
-	h=From:To:Cc:Subject:Date:From;
-	b=XPOZs+86R6lmGxU0xGYgaSaVV/PM4dzYjgZgzlpIU5hRY22HSB5LdJMBokeQ46Qmw
-	 6fSZcn0770s7PN+/W9Gs/EHRHYZVxqPS+kGY3R7jCcS/jxFHnXd+YoWyFUqjCIoK1b
-	 DnItDBBFdl95jXjYrtgKy442EzwXAhPaCHqBNTkT+g9BTEf3IzyZiWWutRK75MpGeU
-	 Ij4Uq1Us45OTDO9uDOLquhaFWKsADsKpIJqOsxBp62fftxsXJRVnD6LS1ll+f2LsXH
-	 zP23f/75MHYJJr55+85N2zVvreAfxw6WJ67qqzQXK6eOaCQCqknma16SM4C3gMhhB3
-	 9a7r82lOmlIXw==
-Resent-Message-ID: <hhKTwGkHD7B.A.olC.yNhzjB@bendel>
-List-Id: <initramfs.vger.kernel.org>
-List-URL: <https://lists.debian.org/debian-kernel/>
-List-Post: <mailto:debian-kernel@lists.debian.org>
-List-Help: <mailto:debian-kernel-request@lists.debian.org?subject=help>
-List-Subscribe: <mailto:debian-kernel-request@lists.debian.org?subject=subscribe>
-List-Unsubscribe: <mailto:debian-kernel-request@lists.debian.org?subject=unsubscribe>
-List-Archive: https://lists.debian.org/msgid-search/20230123045523.697916-1-masahiroy@kernel.org
-Content-Type: text/plain; charset="us-ascii"
-To: initramfs-tools@packages.debian.org
-Cc: debian-kernel@lists.debian.org, initramfs@vger.kernel.org, Ben Hutchings <benh@debian.org>, Masahiro Yamada <masahiroy@kernel.org>
+Content-Type: multipart/signed; micalg="pgp-sha512";
+        protocol="application/pgp-signature"; boundary="=-Ml0c5W3QfEZ/GP9UbOzW"
+Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+List-ID: <initramfs.vger.kernel.org>
+To: klibc mailing list <klibc-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-The 'eval' is here because we evaluated the code returned by AWK.
 
-Commit 9249db649ced ("MODULES=dep: awk free version for root dev search")
-stopped using AWK, so 'eval' is unneeded.
+--=-Ml0c5W3QfEZ/GP9UbOzW
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
----
- hook-functions | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+I have released version 2.0.12.=C2=A0 This is available in the git
+repository at:
 
-diff --git a/hook-functions b/hook-functions
-index 95bd584..fa49990 100644
---- a/hook-functions
-+++ b/hook-functions
-@@ -416,10 +416,13 @@ dep_add_modules_mount()
- 
- 	# find out block device + fstype
- 	# shellcheck disable=SC2034
--	eval "$(while read -r dev mp fs opts rest ; do \
--		[ "$mp" = "$dir" ] && [ "$fs" != "rootfs" ] \
--		&& printf "dev_node=%s\\nFSTYPE=%s" "$dev" "$fs"\
--		&& break; done < /proc/mounts)"
-+	while read -r dev mp fs opts rest; do \
-+		if [ "$mp" = "$dir" ] && [ "$fs" != "rootfs" ]; then
-+			dev_node=$dev
-+			FSTYPE=$fs
-+			break;
-+		fi
-+	done < /proc/mounts
- 
- 	# Only the root mountpoint has to exist; do nothing if any other
- 	# directory is not a mountpoint.
+=C2=A0=C2=A0=C2=A0 https://git.kernel.org/pub/scm/libs/klibc/klibc.git
+
+and as a tarball at:
+
+=C2=A0=C2=A0=C2=A0 https://mirrors.kernel.org/pub/linux/libs/klibc/2.0/
+
+Bug fixes:
+- Fixed return value for strrchr() with c =3D=3D 0.
+- Fixed return value for strstr() and memem() with zero-length
+  needle.
+- Fixed ls command handling of relative directory names.
+- Fixed struct stat layout, specifically the times and following
+  fields, on 64-bit MIPS architectures.
+
+A git shortlog of changes since version 2.0.11 follows.
+
+Ben.
+
+Ben Hutchings (6):
+      [klibc] 2.0.11 released, next version is 2.0.12
+      [klibc] tests: Add test program for string search functions
+      [klibc] strrchr: Handle c =3D=3D 0 correctly
+      [klibc] strstr, memmem: Handle zero-length needle correctly
+      [klibc] ls: Handle relative directory names correctly
+      [klibc] mips64: Fix struct stat layout
+=20
+Jiaxun Yang (1):
+      [klibc] mips/mips64: Get rid of delay slot hacks
+
+--=20
+Ben Hutchings
+If you seem to know what you are doing, you'll be given more to do.
+
+--=-Ml0c5W3QfEZ/GP9UbOzW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmPpKrIACgkQ57/I7JWG
+EQnaNQ/+JRqOOcdikaJn9Sd3q/bkBeyLCRoEye84LutOiojZArtmOjqKPdmeQi8J
+l39/hUBjYx6ZIXkuBTEcf0mNCEtN6PQdXsWzBiE0uqNZ2/qMA5zulYSTCtOvupHU
+mLGSOvbZ4PoSqNaSIgpf3nMd3GggTwBS+A4dTEaHRrIyGMLtfPYovlCgVgOwcOgV
+D48KtHrAvi06HBY9h1cXkRbztroGNiYI8EtD6CcUo3P20khjiDZIGK2Y+M7pkOfY
+DYEo6Q2tThlERri2ScR5u2jywsNDUshY0Uv3KKwPIlXIqoCujJLSnFI8vfEYCH8t
+MiEyzNtE5vcmsTLJTB4txttSsjk8h/1k4l5NTzuo8H1YqlOuGkNAB/QtJFfZS4B2
+s6buQO3LRkOiu1yF/csFyeiV9Wel+btLjxwV9DGekSUKE8OAAOjkomRq8k9Vtlz8
+m6FB56wUzO7ppwfjNX5RvdTrJnuB5I1EneoVO825CO5zHHtnTRoroDlMJYbm+x9p
+M3hplmKEqpDWB1Tf463uloGI+M3jihxFRgt0r9edxJ4NmAYjgO8EFC0dGST870pJ
+ibTRgtd0qn/rQWJz4E63a2qgRk/qvG79K3Exsne8aE++qohmLeBlVhF7lv+UAamh
+oSgyvUnnDlrV92/9qI98qQoLC29+kVKujILvFi0NJlcRQC39G24=
+=D20y
+-----END PGP SIGNATURE-----
+
+--=-Ml0c5W3QfEZ/GP9UbOzW--
