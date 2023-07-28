@@ -1,21 +1,21 @@
 From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: [ANNOUNCE] klibc 2.0.12
-Date: Sun, 12 Feb 2023 19:06:41 +0100
-Message-ID: <fb40bf5835b0f28eab8f3f0b37dc9846218747f1.camel@decadent.org.uk>
+Subject: [ANNOUNCE] klibc 2.0.13
+Date: Fri, 28 Jul 2023 03:00:40 +0200
+Message-ID: <688a7863c7023794bb8e93b6d526e8fab4336fb2.camel@decadent.org.uk>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg="pgp-sha512";
-        protocol="application/pgp-signature"; boundary="=-Ml0c5W3QfEZ/GP9UbOzW"
+        protocol="application/pgp-signature"; boundary="=-IYf0GuNvETFHCDPdwvuU"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-ID: <initramfs.vger.kernel.org>
 To: klibc mailing list <klibc-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
---=-Ml0c5W3QfEZ/GP9UbOzW
+--=-IYf0GuNvETFHCDPdwvuU
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-I have released version 2.0.12.=C2=A0 This is available in the git
+I have released version 2.0.13.=C2=A0 This is available in the git
 repository at:
 
 =C2=A0=C2=A0=C2=A0 https://git.kernel.org/pub/scm/libs/klibc/klibc.git
@@ -24,52 +24,84 @@ and as a tarball at:
 
 =C2=A0=C2=A0=C2=A0 https://mirrors.kernel.org/pub/linux/libs/klibc/2.0/
 
-Bug fixes:
-- Fixed return value for strrchr() with c =3D=3D 0.
-- Fixed return value for strstr() and memem() with zero-length
-  needle.
-- Fixed ls command handling of relative directory names.
-- Fixed struct stat layout, specifically the times and following
-  fields, on 64-bit MIPS architectures.
+New features:
+- The statx() and clock_{gettime,settime,nanosleep}() system calls are
+  supported.
+- time_t is 64-bit on all architectures.
+- The LoongArch64 architecture is supported.
+- kinit supports kernel parameter root=3DPARTLABEL=3D...
 
-A git shortlog of changes since version 2.0.11 follows.
+Bug fixes:
+- select() with a NULL timeout works correctly when select() is a
+  wrapper function.
+- ipconfig no longer busy-polls in certain conditions.
+- It's possible to build for MIPS64 R6 with newer gcc versions.
+- The command aliases of gzip and halt are installed as links instead
+  of copies.
+
+Other changes:
+- All architectures use the RT signals API (i386, m68k, and s390(x)
+  previously did not).
+- The address layout for arm and riscv64 has been changed to work
+  around a QEMU bug.
+- ipconfig retries failed sends after 1 second instead of 10 seconds.
+
+A git shortlog of changes since version 2.0.12 follows.
 
 Ben.
 
-Ben Hutchings (6):
-      [klibc] 2.0.11 released, next version is 2.0.12
-      [klibc] tests: Add test program for string search functions
-      [klibc] strrchr: Handle c =3D=3D 0 correctly
-      [klibc] strstr, memmem: Handle zero-length needle correctly
-      [klibc] ls: Handle relative directory names correctly
-      [klibc] mips64: Fix struct stat layout
+Ben Hutchings (20):
+      [klibc] 2.0.12 released, next version is 2.0.13
+      [klibc] m68k,s390,x86: signal: Stop using broken <asm/signal.h>
+      [klibc] i386,m68k,s390: signal: Switch to RT signal API
+      [klibc] signal: Make RT signals mandatory
+      [klibc] resource: Avoid using <linux/resource.h>
+      [klibc] stat: Make all stat calls wrappers for statx()
+      [klibc] utimes: Make all utimes calls wrappers for utimensat()
+      [klibc] select: Remove support for pselect7() syscall
+      [klibc] select: Fix handling of NULL timeout when wrapping pselect()
+      [klibc] select: Make all select calls wrappers for pselect6()
+      [klibc] time: Use clock_* system calls for time-of-day and sleep
+      [klibc] time: Use 64-bit time types on all architectures
+      Merge branch 'time64'
+      [klibc] ipconfig: Do not poll sockets we don't intend to read from
+      [klibc] ipconfig: Handle error events from poll
+      [klibc] ipconfig: Retry failed send after 1 second
+      [klibc] mips64: Compatibility with R6 compact branches
+      [klibc] arm: Move shared library below executables
+      [klibc] riscv64: Move shared library below executables
+      [klibc] Install command links as appropriate
 =20
-Jiaxun Yang (1):
-      [klibc] mips/mips64: Get rid of delay slot hacks
+Feiyang Chen (1):
+      [klibc] Add LoongArch64 port
+=20
+Rob Vandermeulen (1):
+      [klibc] kinit: Support specifying root with PARTLABEL
 
 --=20
 Ben Hutchings
-If you seem to know what you are doing, you'll be given more to do.
+Design a system any fool can use, and only a fool will want to use it.
 
---=-Ml0c5W3QfEZ/GP9UbOzW
+
+--=-IYf0GuNvETFHCDPdwvuU
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmPpKrIACgkQ57/I7JWG
-EQnaNQ/+JRqOOcdikaJn9Sd3q/bkBeyLCRoEye84LutOiojZArtmOjqKPdmeQi8J
-l39/hUBjYx6ZIXkuBTEcf0mNCEtN6PQdXsWzBiE0uqNZ2/qMA5zulYSTCtOvupHU
-mLGSOvbZ4PoSqNaSIgpf3nMd3GggTwBS+A4dTEaHRrIyGMLtfPYovlCgVgOwcOgV
-D48KtHrAvi06HBY9h1cXkRbztroGNiYI8EtD6CcUo3P20khjiDZIGK2Y+M7pkOfY
-DYEo6Q2tThlERri2ScR5u2jywsNDUshY0Uv3KKwPIlXIqoCujJLSnFI8vfEYCH8t
-MiEyzNtE5vcmsTLJTB4txttSsjk8h/1k4l5NTzuo8H1YqlOuGkNAB/QtJFfZS4B2
-s6buQO3LRkOiu1yF/csFyeiV9Wel+btLjxwV9DGekSUKE8OAAOjkomRq8k9Vtlz8
-m6FB56wUzO7ppwfjNX5RvdTrJnuB5I1EneoVO825CO5zHHtnTRoroDlMJYbm+x9p
-M3hplmKEqpDWB1Tf463uloGI+M3jihxFRgt0r9edxJ4NmAYjgO8EFC0dGST870pJ
-ibTRgtd0qn/rQWJz4E63a2qgRk/qvG79K3Exsne8aE++qohmLeBlVhF7lv+UAamh
-oSgyvUnnDlrV92/9qI98qQoLC29+kVKujILvFi0NJlcRQC39G24=
-=D20y
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmTDEzgACgkQ57/I7JWG
+EQlk2BAA091Z4tt6ywuBGC8d5PQwXU5hL89y6le5aOdJb8mNEThwC3s5viSNoYv+
+g1rrzp57fporhFntr/2ngYTEvxOe8qlaPBAO6p8hFwMrUy/YIK1j470EzbjhqvJs
+EBHMDe0+SXefx4GjCC/tQMoGNw44wiCHuDyW9vC1+L2qL5wiSRpG/QztIxrACBAt
+yFhyqvLr5Jj0ztg6m1/Ln/UdFyDmXpqBA7JliZr0xt3I6AwbFA9/GPN56NQnrhem
+z+XZGCySxtvaM77OH69iupHFePaSSCB6Hh81LdXEoB+JGqxrSAp+ZL1TlfYBhnpK
+YqeIS1Fc+5FF43r7u0S+jvwXjMEchPXgEbv+4lalyBIQTt/nfSenejqcVTUQBf66
+Bc4OQ8bEyEaJawduIQiVIy3SfMom7u4eWpRxnzr4bN4s05KfZALhMy8YbZT/GSng
+VJhCRDqGy1U32e+bFyP1B5xYr/EyRRM4WejuiMeEtpBWuE8H0T1a2lly2yXpn9Gh
+5/2QZQ62rCj2cpGYD+FOkv2Rzb/CAA5Rd3Trs+hB/ueHpqKhQgl/bOyW1DeAe2kV
+w/Ej+75buSouZEu+tp8K//kYmE/jsRWJZiSMVzMWxOsXM35D/PnFQczrWd62jEq0
+ILP4vr98a5Vy61TUgQJy6hwexYUUpKI0bvrtxdEWcQTh3bgsEvY=
+=9NsA
 -----END PGP SIGNATURE-----
 
---=-Ml0c5W3QfEZ/GP9UbOzW--
+--=-IYf0GuNvETFHCDPdwvuU--
