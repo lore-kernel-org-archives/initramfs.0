@@ -1,94 +1,59 @@
-From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
 Subject: Re: [klibc] [ANNOUNCE] klibc 2.0.13
-Date: Sun, 30 Jul 2023 22:29:20 -0700
-Message-ID: <xr93edko8x8v.fsf@gthelen-cloudtop.c.googlers.com>
+Date: Mon, 31 Jul 2023 14:58:26 +0200
+Message-ID: <2179500f1c35299452d1e1dc04e85145bb6f5fed.camel@decadent.org.uk>
 References: <688a7863c7023794bb8e93b6d526e8fab4336fb2.camel@decadent.org.uk>
+         <xr93edko8x8v.fsf@gthelen-cloudtop.c.googlers.com>
 Mime-Version: 1.0
-Content-Transfer-Encoding: base64
+Content-Type: multipart/signed; micalg="pgp-sha512";
+        protocol="application/pgp-signature"; boundary="=-RngNnuO5yBe+KtkqhWb7"
 Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20221208; t=1690781362; x=1691386162;
-        h=content-transfer-encoding:cc:to:from:subject:message-id:references
-         :mime-version:in-reply-to:date:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=UUdUtMOecXJjdqdoVg85VtDLmx9SNx2LLdj04CfKzFk=;
-        b=ZXiIY6LNDrrNUwRFMHbX6r4kG0fPp24PXAjK0YC5V2ZeburE/Y9vzVG6dOuCJCwKX6
-         PQxg9Q+6hQm9j/HRbl7deE1kz7xrLS66pzoxdAoB3VMGcJlOaNPiQ3+2kSHd/gACV+UW
-         CS2Ylrs/n45nPY1Pii3La9++aOzexle5iYsa/xD6DUlmMF2y4aVJRnjh8mCMMl1lu92q
-         1TUakXu5JXW+SiRoVMJEXPal2U+JV8Xiheczu5cKXnmXh868sWQfrQLu/M/Dz7JbJmVt
-         WzWRmS8/uS957Ky8nGNpWh9jCxHXkAOzre0Op45VObWNfmkITK3wHUJnDW2Ouzq3VdWz
-         n+sw==
-In-Reply-To: <688a7863c7023794bb8e93b6d526e8fab4336fb2.camel-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
+In-Reply-To: <xr93edko8x8v.fsf-70RgUwATE2L0OAmNFB7Q3HdI/KCU8OHYLMHrShElKjA@public.gmane.org>
 List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="utf-8"; format="flowed"; delsp="yes"
-To: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>, klibc mailing list <klibc-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, klibc mailing list <klibc-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-QmVuIEh1dGNoaW5ncyA8YmVuQGRlY2FkZW50Lm9yZy51az4gd3JvdGU6DQoNCj4gSSBoYXZlIHJl
-bGVhc2VkIHZlcnNpb24gMi4wLjEzLsKgIFRoaXMgaXMgYXZhaWxhYmxlIGluIHRoZSBnaXQNCj4g
-cmVwb3NpdG9yeSBhdDoNCg0KPiDCoMKgwqAgaHR0cHM6Ly9naXQua2VybmVsLm9yZy9wdWIvc2Nt
-L2xpYnMva2xpYmMva2xpYmMuZ2l0DQoNCj4gYW5kIGFzIGEgdGFyYmFsbCBhdDoNCg0KPiDCoMKg
-wqAgaHR0cHM6Ly9taXJyb3JzLmtlcm5lbC5vcmcvcHViL2xpbnV4L2xpYnMva2xpYmMvMi4wLw0K
-DQo+IE5ldyBmZWF0dXJlczoNCj4gLSBUaGUgc3RhdHgoKSBhbmQgY2xvY2tfe2dldHRpbWUsc2V0
-dGltZSxuYW5vc2xlZXB9KCkgc3lzdGVtIGNhbGxzIGFyZQ0KPiAgICBzdXBwb3J0ZWQuDQo+IC0g
-dGltZV90IGlzIDY0LWJpdCBvbiBhbGwgYXJjaGl0ZWN0dXJlcy4NCj4gLSBUaGUgTG9vbmdBcmNo
-NjQgYXJjaGl0ZWN0dXJlIGlzIHN1cHBvcnRlZC4NCj4gLSBraW5pdCBzdXBwb3J0cyBrZXJuZWwg
-cGFyYW1ldGVyIHJvb3Q9UEFSVExBQkVMPS4uLg0KDQo+IEJ1ZyBmaXhlczoNCj4gLSBzZWxlY3Qo
-KSB3aXRoIGEgTlVMTCB0aW1lb3V0IHdvcmtzIGNvcnJlY3RseSB3aGVuIHNlbGVjdCgpIGlzIGEN
-Cj4gICAgd3JhcHBlciBmdW5jdGlvbi4NCj4gLSBpcGNvbmZpZyBubyBsb25nZXIgYnVzeS1wb2xs
-cyBpbiBjZXJ0YWluIGNvbmRpdGlvbnMuDQo+IC0gSXQncyBwb3NzaWJsZSB0byBidWlsZCBmb3Ig
-TUlQUzY0IFI2IHdpdGggbmV3ZXIgZ2NjIHZlcnNpb25zLg0KPiAtIFRoZSBjb21tYW5kIGFsaWFz
-ZXMgb2YgZ3ppcCBhbmQgaGFsdCBhcmUgaW5zdGFsbGVkIGFzIGxpbmtzIGluc3RlYWQNCj4gICAg
-b2YgY29waWVzLg0KDQo+IE90aGVyIGNoYW5nZXM6DQo+IC0gQWxsIGFyY2hpdGVjdHVyZXMgdXNl
-IHRoZSBSVCBzaWduYWxzIEFQSSAoaTM4NiwgbTY4aywgYW5kIHMzOTAoeCkNCj4gICAgcHJldmlv
-dXNseSBkaWQgbm90KS4NCj4gLSBUaGUgYWRkcmVzcyBsYXlvdXQgZm9yIGFybSBhbmQgcmlzY3Y2
-NCBoYXMgYmVlbiBjaGFuZ2VkIHRvIHdvcmsNCj4gICAgYXJvdW5kIGEgUUVNVSBidWcuDQo+IC0g
-aXBjb25maWcgcmV0cmllcyBmYWlsZWQgc2VuZHMgYWZ0ZXIgMSBzZWNvbmQgaW5zdGVhZCBvZiAx
-MCBzZWNvbmRzLg0KDQo+IEEgZ2l0IHNob3J0bG9nIG9mIGNoYW5nZXMgc2luY2UgdmVyc2lvbiAy
-LjAuMTIgZm9sbG93cy4NCg0KPiBCZW4uDQoNCj4gQmVuIEh1dGNoaW5ncyAoMjApOg0KPiAgICAg
-ICAgW2tsaWJjXSAyLjAuMTIgcmVsZWFzZWQsIG5leHQgdmVyc2lvbiBpcyAyLjAuMTMNCj4gICAg
-ICAgIFtrbGliY10gbTY4ayxzMzkwLHg4Njogc2lnbmFsOiBTdG9wIHVzaW5nIGJyb2tlbiA8YXNt
-L3NpZ25hbC5oPg0KPiAgICAgICAgW2tsaWJjXSBpMzg2LG02OGssczM5MDogc2lnbmFsOiBTd2l0
-Y2ggdG8gUlQgc2lnbmFsIEFQSQ0KPiAgICAgICAgW2tsaWJjXSBzaWduYWw6IE1ha2UgUlQgc2ln
-bmFscyBtYW5kYXRvcnkNCj4gICAgICAgIFtrbGliY10gcmVzb3VyY2U6IEF2b2lkIHVzaW5nIDxs
-aW51eC9yZXNvdXJjZS5oPg0KPiAgICAgICAgW2tsaWJjXSBzdGF0OiBNYWtlIGFsbCBzdGF0IGNh
-bGxzIHdyYXBwZXJzIGZvciBzdGF0eCgpDQo+ICAgICAgICBba2xpYmNdIHV0aW1lczogTWFrZSBh
-bGwgdXRpbWVzIGNhbGxzIHdyYXBwZXJzIGZvciB1dGltZW5zYXQoKQ0KPiAgICAgICAgW2tsaWJj
-XSBzZWxlY3Q6IFJlbW92ZSBzdXBwb3J0IGZvciBwc2VsZWN0NygpIHN5c2NhbGwNCj4gICAgICAg
-IFtrbGliY10gc2VsZWN0OiBGaXggaGFuZGxpbmcgb2YgTlVMTCB0aW1lb3V0IHdoZW4gd3JhcHBp
-bmcgcHNlbGVjdCgpDQo+ICAgICAgICBba2xpYmNdIHNlbGVjdDogTWFrZSBhbGwgc2VsZWN0IGNh
-bGxzIHdyYXBwZXJzIGZvciBwc2VsZWN0NigpDQo+ICAgICAgICBba2xpYmNdIHRpbWU6IFVzZSBj
-bG9ja18qIHN5c3RlbSBjYWxscyBmb3IgdGltZS1vZi1kYXkgYW5kIHNsZWVwDQo+ICAgICAgICBb
-a2xpYmNdIHRpbWU6IFVzZSA2NC1iaXQgdGltZSB0eXBlcyBvbiBhbGwgYXJjaGl0ZWN0dXJlcw0K
-PiAgICAgICAgTWVyZ2UgYnJhbmNoICd0aW1lNjQnDQo+ICAgICAgICBba2xpYmNdIGlwY29uZmln
-OiBEbyBub3QgcG9sbCBzb2NrZXRzIHdlIGRvbid0IGludGVuZCB0byByZWFkIGZyb20NCj4gICAg
-ICAgIFtrbGliY10gaXBjb25maWc6IEhhbmRsZSBlcnJvciBldmVudHMgZnJvbSBwb2xsDQo+ICAg
-ICAgICBba2xpYmNdIGlwY29uZmlnOiBSZXRyeSBmYWlsZWQgc2VuZCBhZnRlciAxIHNlY29uZA0K
-PiAgICAgICAgW2tsaWJjXSBtaXBzNjQ6IENvbXBhdGliaWxpdHkgd2l0aCBSNiBjb21wYWN0IGJy
-YW5jaGVzDQo+ICAgICAgICBba2xpYmNdIGFybTogTW92ZSBzaGFyZWQgbGlicmFyeSBiZWxvdyBl
-eGVjdXRhYmxlcw0KPiAgICAgICAgW2tsaWJjXSByaXNjdjY0OiBNb3ZlIHNoYXJlZCBsaWJyYXJ5
-IGJlbG93IGV4ZWN1dGFibGVzDQo+ICAgICAgICBba2xpYmNdIEluc3RhbGwgY29tbWFuZCBsaW5r
-cyBhcyBhcHByb3ByaWF0ZQ0KDQo+IEZlaXlhbmcgQ2hlbiAoMSk6DQo+ICAgICAgICBba2xpYmNd
-IEFkZCBMb29uZ0FyY2g2NCBwb3J0DQoNCj4gUm9iIFZhbmRlcm1ldWxlbiAoMSk6DQo+ICAgICAg
-ICBba2xpYmNdIGtpbml0OiBTdXBwb3J0IHNwZWNpZnlpbmcgcm9vdCB3aXRoIFBBUlRMQUJFTA0K
-DQpJcyB0aGVyZSBhIG1pbmltdW0ga2VybmVsIHRoYXQga2xpYmMgaXMgZXhwZWN0ZWQgdG8gYnVp
-bGQgYWdhaW5zdD8gSSBhc2sNCmJlY2F1c2Uga2xpYmMtMi4wLjEzIGluY2x1ZGVzIGEgY2hhbmdl
-IHRoYXQgcmVxdWlyZXMga2VybmVsIDUuMTErLg0KDQpLbGliYyBrbGliYy0yLjAuMTMgaW50cm9k
-dWNlcyBidWlsZCBlcnJvcnMgd2hlbiBidWlsdCBhZ2FpbnN0IDUuMTANCmtlcm5lbDoNCiAgIElu
-IGZpbGUgaW5jbHVkZWQgZnJvbSB1c3Iva2xpYmMvc3lzdl9zaWduYWwuYzo1Og0KICAgdXNyL2ts
-aWJjL3N5c3Zfc2lnbmFsLmM6IEluIGZ1bmN0aW9uIOKAmHN5c3Zfc2lnbmFs4oCZOg0KICAgIA0K
-L3Vzci9sb2NhbC9nb29nbGUvaG9tZS9ndGhlbGVuL3NyYy8xMC50d2QuMjAyMy0wNy0zMC91c3Iv
-a2xpYmMvLi4vaW5jbHVkZS9zaWduYWwuaDoyNDoyMzogIA0KZXJyb3I6IOKAmFNBX09ORVNIT1Ti
-gJkgdW5kZWNsYXJlZCAoZmlyc3QgdXNlIGluIHRoaXMgZnVuY3Rpb24pDQogICAgICAyNCB8ICMg
-ZGVmaW5lIFNBX1JFU0VUSEFORCBTQV9PTkVTSE9UDQogICAgICAgICB8ICAgICAgICAgICAgICAg
-ICAgICAgICBefn5+fn5+fn5+DQogICB1c3Iva2xpYmMvc3lzdl9zaWduYWwuYzoxMDo0Mjogbm90
-ZTogaW4gZXhwYW5zaW9uIG9mIG1hY3JvIOKAmFNBX1JFU0VUSEFOROKAmQ0KICAgICAgMTAgfCAg
-ICAgICAgIHJldHVybiBfX3NpZ25hbChzaWdudW0sIGhhbmRsZXIsIFNBX1JFU0VUSEFORCk7DQog
-ICAgICAgICB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgXn5+fn5+
-fn5+fn5+DQoNCkJpc2VjdGluZyBrZXJuZWwgdjUuMTAuLnY1LjExIHZzIGtsaWJjLTIuMC4xMyBp
-bmRpY2F0ZXMgNS4xMSBjb21taXQNCjFkODJiNzg5OGYyYSAoImFyY2g6IG1vdmUgU0FfKiBkZWZp
-bml0aW9ucyB0byBnZW5lcmljIGhlYWRlcnMiKSBpcw0KcmVxdWlyZWQgdG8gYnVpbGQga2xpYmMt
-Mi4wLjEzLg0KDQpCaXNlY3Rpbmcga2xpYmMtMi4wLjEyLi5rbGliYy0yLjAuMTMgdnMgNS4xMCBp
-bmRpY2F0ZXMga2xpYmMtMi4wLjEzDQpjb21taXQgZWE4ZTkxYTdkYjA2ICgiW2tsaWJjXSBtNjhr
-LHMzOTAseDg2OiBzaWduYWw6IFN0b3AgdXNpbmcgYnJva2VuDQo8YXNtL3NpZ25hbC5oPiIpIGlz
-IHdoZXJlIDUuMTErIGlzIHJlcXVpcmVkLg0K
+
+--=-RngNnuO5yBe+KtkqhWb7
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Sun, 2023-07-30 at 22:29 -0700, Greg Thelen wrote:
+[...]
+> Is there a minimum kernel that klibc is expected to build against? I ask
+> because klibc-2.0.13 includes a change that requires kernel 5.11+.
+[...]
+
+I don't currently keep track of what the minimum version is.  But in
+general, you should expect it to require a recent version at both
+compile- and run-time.
+
+Ben.
+
+--=20
+Ben Hutchings
+Design a system any fool can use, and only a fool will want to use it.
+
+
+--=-RngNnuO5yBe+KtkqhWb7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmTHr/MACgkQ57/I7JWG
+EQnS4Q//ePZ7kggN7I/VBywtaJwAmGkiUXuyzQ7ujfYFh1VaYSh8N5Ib1Ynlzp7K
+6Iu4NJ7fiKz/YASqPK3vPyER9oMaRXeYy08JHabDyYezcFM4VcpfopFzUcDmSOLy
+4Kc0K9BXoB0jzY1Ui+ScOhrZd9Nrrnq7MGxnwMBCuA0MnI39bpgTOu6eqlIGXYmY
+z1aGKdT5WypI5rXfMGM3lfW6GRgQNPWhhNYvf6qh4rqB7/aHI7aAi/CQoXJMljOc
+oQzc1RHFmG0907K1ybFsZUy6z7wvXo5kY3fddcSDX/c/9SjNM99GQ4iv1xh6qsM6
++zi+u1byxFLpPih4mTZaYbcHKDgYFsmzE/UrMrhO/eZTQDEtrLVs/gXwy+gldO3J
+ACCHSoSZvE/07gfTjljBWnfYPBqIyQn7NWPX9Y5rkyJyzNXKKJGKAyxxKOOInFkT
+vnkz2PDgx7RrIEz+GwggtqcdCBCRwzpdW7UZZ2X2o2zarmEL3VM5O7cx/bq58c3w
+n2xwY5/s38lUePy7N9Jqt2AN9UMvcZZle9yNggsIAjFen69knNDREL7DI+yUDXRF
+kHEAn0oHmIAezOgvwcNL247MfbR2kVcwZm+f7IU88tLtCPVZArlrWeEeR2n9ZQNl
+8nJFI+w9Qb7yN+Loa3JwntugkyuYu+8zSnlgXcJfXUXRIs7AKH4=
+=pmj5
+-----END PGP SIGNATURE-----
+
+--=-RngNnuO5yBe+KtkqhWb7--
