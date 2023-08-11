@@ -1,59 +1,73 @@
-From: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Subject: Re: [klibc] [ANNOUNCE] klibc 2.0.13
-Date: Mon, 31 Jul 2023 14:58:26 +0200
-Message-ID: <2179500f1c35299452d1e1dc04e85145bb6f5fed.camel@decadent.org.uk>
-References: <688a7863c7023794bb8e93b6d526e8fab4336fb2.camel@decadent.org.uk>
-         <xr93edko8x8v.fsf@gthelen-cloudtop.c.googlers.com>
+From: Borislav Petkov <bp@alien8.de>
+Subject: Re: [patch 02/30] x86/microcode: Hide the config knob
+Date: Fri, 11 Aug 2023 13:22:36 +0200
+Message-ID: <20230811112236.GFZNYZ/Ndw1/Us+X2e@fat_crate.local>
+References: <20230810153317.850017756@linutronix.de>
+ <20230810160805.081212701@linutronix.de>
+ <ZNVLh38eq8TWHFra@araj-mobl.amr.corp.intel.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha512";
-        protocol="application/pgp-signature"; boundary="=-RngNnuO5yBe+KtkqhWb7"
-Return-path: <initramfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <xr93edko8x8v.fsf-70RgUwATE2L0OAmNFB7Q3HdI/KCU8OHYLMHrShElKjA@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=alien8;
+        t=1691752966; bh=h/v55CWAwzTy+KrxdcUWkvzhq3Ar1s60l7WUk5aCdxY=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=Ngm2EUFx70cJ1VJpTqYKAbdQ27g25CIXKcjK0kYaxbWZLruz79Eedfj1ireUU9ykY
+         NBgdYWeXnSQmgMch7n3MzmG47tAYmRwLLxujOdtc5wi9pJH6ziJQiX/eDmE2BB1j2U
+         EXWUi16cH3YCC8TO+4PMD9J2P1XJVtdaE5g56DJqG/aNbFl1cMWPmehW8Aj4/h0vzs
+         4y8+rArAcns7Lf9/VM2Y1RN4empcmb/sAgLMH6sP8lBOO6I6E4J5t+KHhks5FPqjAO
+         KqqdjTGIpTu1tpN2g31sD6uWRB32SyEXSxvRISjPE8wtLFPk855/862ijBZX57PGQs
+         L/fSn7wY9x+hDsW/aOJtFzrJDrvpU4JgaX/ZaXUbnoG7fD2QbH7xGWy+iAjqWJb4lJ
+         sbQpoLXESRAUxPu8URYysjsb53iuwjeqgj5qdx1UXNl7fiHgeRGYz1RM4nx2lue2je
+         9u+TSVhgJNmOmuuGUU8igCoS0WQf109cjRqZLPYNZ2v153iD60X6qIHJG83XgluaN2
+         /oYmE36Dto0zLjyZzjUra62s9y7sCLHIdCtBrVFTEtaJtbAadEnck7uUwWHyjRjxpW
+Content-Disposition: inline
+In-Reply-To: <ZNVLh38eq8TWHFra@araj-mobl.amr.corp.intel.com>
 List-ID: <initramfs.vger.kernel.org>
-To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, klibc mailing list <klibc-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Cc: initramfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ashok Raj <ashok.raj@intel.com>, initramfs@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, LKML <linux-kernel@vger.kernel.org>, x86@kernel.org, Arjan van de Ven <arjan@linux.intel.com>
 
++ dracut ML (I hope this is the right one).
 
---=-RngNnuO5yBe+KtkqhWb7
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Dracut folks, you can drop this check soon - microcode loader will be
+unconditionally built in.
 
-On Sun, 2023-07-30 at 22:29 -0700, Greg Thelen wrote:
-[...]
-> Is there a minimum kernel that klibc is expected to build against? I ask
-> because klibc-2.0.13 includes a change that requires kernel 5.11+.
-[...]
+On Thu, Aug 10, 2023 at 01:41:43PM -0700, Ashok Raj wrote:
+> On Thu, Aug 10, 2023 at 08:37:29PM +0200, Thomas Gleixner wrote:
+> > In reality CONFIG_MICROCODE is enabled in any reasonable configuration when
+> > Intel or AMD support is enabled. Accomodate to reality.
+> > 
+> > Requested-by: Borislav Petkov <bp@alien8.de>
+> > Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+> > ---
+> >  arch/x86/Kconfig                       |   38 ---------------------------------
+> >  arch/x86/include/asm/microcode.h       |    6 ++---
+> >  arch/x86/include/asm/microcode_amd.h   |    2 -
+> >  arch/x86/include/asm/microcode_intel.h |    2 -
+> >  arch/x86/kernel/cpu/microcode/Makefile |    4 +--
+> >  5 files changed, 8 insertions(+), 44 deletions(-)
+> > 
+> > --- a/arch/x86/Kconfig
+> > +++ b/arch/x86/Kconfig
+> > @@ -1308,44 +1308,8 @@ config X86_REBOOTFIXUPS
+> >  	  Say N otherwise.
+> >  
+> >  config MICROCODE
+> > -	bool "CPU microcode loading support"
+> > -	default y
+> > +	def_bool y
+> >  	depends on CPU_SUP_AMD || CPU_SUP_INTEL
+> 
+> Seems like there is a dracut dependency that checks for either of these to
+> be present.
+> 
+> dracut: Generating /boot/initrd.img-6.5.0-rc3-ucode-minrev+
+> dracut: Disabling early microcode, because kernel does not support it. CONFIG_MICROCODE_[AMD|INTEL]!=y
+> 
+> Just a tool fix. 
 
-I don't currently keep track of what the minimum version is.  But in
-general, you should expect it to require a recent version at both
-compile- and run-time.
+-- 
+Regards/Gruss,
+    Boris.
 
-Ben.
-
---=20
-Ben Hutchings
-Design a system any fool can use, and only a fool will want to use it.
-
-
---=-RngNnuO5yBe+KtkqhWb7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmTHr/MACgkQ57/I7JWG
-EQnS4Q//ePZ7kggN7I/VBywtaJwAmGkiUXuyzQ7ujfYFh1VaYSh8N5Ib1Ynlzp7K
-6Iu4NJ7fiKz/YASqPK3vPyER9oMaRXeYy08JHabDyYezcFM4VcpfopFzUcDmSOLy
-4Kc0K9BXoB0jzY1Ui+ScOhrZd9Nrrnq7MGxnwMBCuA0MnI39bpgTOu6eqlIGXYmY
-z1aGKdT5WypI5rXfMGM3lfW6GRgQNPWhhNYvf6qh4rqB7/aHI7aAi/CQoXJMljOc
-oQzc1RHFmG0907K1ybFsZUy6z7wvXo5kY3fddcSDX/c/9SjNM99GQ4iv1xh6qsM6
-+zi+u1byxFLpPih4mTZaYbcHKDgYFsmzE/UrMrhO/eZTQDEtrLVs/gXwy+gldO3J
-ACCHSoSZvE/07gfTjljBWnfYPBqIyQn7NWPX9Y5rkyJyzNXKKJGKAyxxKOOInFkT
-vnkz2PDgx7RrIEz+GwggtqcdCBCRwzpdW7UZZ2X2o2zarmEL3VM5O7cx/bq58c3w
-n2xwY5/s38lUePy7N9Jqt2AN9UMvcZZle9yNggsIAjFen69knNDREL7DI+yUDXRF
-kHEAn0oHmIAezOgvwcNL247MfbR2kVcwZm+f7IU88tLtCPVZArlrWeEeR2n9ZQNl
-8nJFI+w9Qb7yN+Loa3JwntugkyuYu+8zSnlgXcJfXUXRIs7AKH4=
-=pmj5
------END PGP SIGNATURE-----
-
---=-RngNnuO5yBe+KtkqhWb7--
+https://people.kernel.org/tglx/notes-about-netiquette
