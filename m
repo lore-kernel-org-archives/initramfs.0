@@ -1,73 +1,65 @@
-From: Borislav Petkov <bp@alien8.de>
-Subject: Re: [patch 02/30] x86/microcode: Hide the config knob
-Date: Fri, 11 Aug 2023 13:22:36 +0200
-Message-ID: <20230811112236.GFZNYZ/Ndw1/Us+X2e@fat_crate.local>
-References: <20230810153317.850017756@linutronix.de>
- <20230810160805.081212701@linutronix.de>
- <ZNVLh38eq8TWHFra@araj-mobl.amr.corp.intel.com>
-Mime-Version: 1.0
-Return-path: <linux-kernel-owner@vger.kernel.org>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=alien8;
-        t=1691752966; bh=h/v55CWAwzTy+KrxdcUWkvzhq3Ar1s60l7WUk5aCdxY=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=Ngm2EUFx70cJ1VJpTqYKAbdQ27g25CIXKcjK0kYaxbWZLruz79Eedfj1ireUU9ykY
-         NBgdYWeXnSQmgMch7n3MzmG47tAYmRwLLxujOdtc5wi9pJH6ziJQiX/eDmE2BB1j2U
-         EXWUi16cH3YCC8TO+4PMD9J2P1XJVtdaE5g56DJqG/aNbFl1cMWPmehW8Aj4/h0vzs
-         4y8+rArAcns7Lf9/VM2Y1RN4empcmb/sAgLMH6sP8lBOO6I6E4J5t+KHhks5FPqjAO
-         KqqdjTGIpTu1tpN2g31sD6uWRB32SyEXSxvRISjPE8wtLFPk855/862ijBZX57PGQs
-         L/fSn7wY9x+hDsW/aOJtFzrJDrvpU4JgaX/ZaXUbnoG7fD2QbH7xGWy+iAjqWJb4lJ
-         sbQpoLXESRAUxPu8URYysjsb53iuwjeqgj5qdx1UXNl7fiHgeRGYz1RM4nx2lue2je
-         9u+TSVhgJNmOmuuGUU8igCoS0WQf109cjRqZLPYNZ2v153iD60X6qIHJG83XgluaN2
-         /oYmE36Dto0zLjyZzjUra62s9y7sCLHIdCtBrVFTEtaJtbAadEnck7uUwWHyjRjxpW
+Return-Path: <initramfs+bounces-1-initramfs=archiver.kernel.org@vger.kernel.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from sv.mirrors.kernel.org (sv.mirrors.kernel.org [139.178.88.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id 7ADE9C25B6F
+	for <initramfs@archiver.kernel.org>; Fri, 27 Oct 2023 22:56:57 +0000 (UTC)
+Received: from smtp.subspace.kernel.org (wormhole.subspace.kernel.org [52.25.139.140])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by sv.mirrors.kernel.org (Postfix) with ESMTPS id 335F62826DE
+	for <initramfs@archiver.kernel.org>; Fri, 27 Oct 2023 22:56:57 +0000 (UTC)
+Received: from localhost.localdomain (localhost.localdomain [127.0.0.1])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id E9D6D3E016;
+	Fri, 27 Oct 2023 22:56:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="Ud4zKv8L"
+Received: from lindbergh.monkeyblade.net (lindbergh.monkeyblade.net [23.128.96.19])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0763038BAC;
+	Fri, 27 Oct 2023 22:56:50 +0000 (UTC)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 37BA8E1;
+	Fri, 27 Oct 2023 15:56:49 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B2144C433C8;
+	Fri, 27 Oct 2023 22:56:48 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+	s=korg; t=1698447408;
+	bh=O3zoGBXVfb5WJW2MwxE5HShF9ljYkHcSyGRQbT2KEb8=;
+	h=Date:From:To:Subject:From;
+	b=Ud4zKv8LSo/nrQt/CvxDP4m3ZdOPMrp7tUsSESflhyo08sv10KMAHeGmErEDvX5Wv
+	 X1u6ZpuVUVrc6Xzu0in75RDb1nGIibEKbzfpwR01csDb27MAkb+LeK4Jgt5q379YnJ
+	 1hUFAH97aE4h7ltSnhuO/qZhxpYqsdOIXxgC3zd0=
+Date: Fri, 27 Oct 2023 18:56:47 -0400
+From: Konstantin Ryabitsev <konstantin@linuxfoundation.org>
+To: dccp@vger.kernel.org, dmaengine@vger.kernel.org, 
+	ecryptfs@vger.kernel.org, fio@vger.kernel.org, fstests@vger.kernel.org, 
+	initramfs@vger.kernel.org, io-uring@vger.kernel.org, kernel-janitors@vger.kernel.org, 
+	keyrings@vger.kernel.org, kvm-ppc@vger.kernel.org, kvm@vger.kernel.org
+Subject: This list is being migrated to the new vger infra (no action
+ required)
+Message-ID: <20231027-strange-debonair-basilisk-cecdab@meerkat>
+Precedence: bulk
+X-Mailing-List: initramfs@vger.kernel.org
+List-Id: <initramfs.vger.kernel.org>
+List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <ZNVLh38eq8TWHFra@araj-mobl.amr.corp.intel.com>
-List-ID: <initramfs.vger.kernel.org>
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ashok Raj <ashok.raj@intel.com>, initramfs@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, LKML <linux-kernel@vger.kernel.org>, x86@kernel.org, Arjan van de Ven <arjan@linux.intel.com>
 
-+ dracut ML (I hope this is the right one).
+Hello:
 
-Dracut folks, you can drop this check soon - microcode loader will be
-unconditionally built in.
+This list is being migrated to the new vger infrastructure. This should be a
+fully transparent process and you don't need to change anything about how you
+participate with the list or how you receive mail.
 
-On Thu, Aug 10, 2023 at 01:41:43PM -0700, Ashok Raj wrote:
-> On Thu, Aug 10, 2023 at 08:37:29PM +0200, Thomas Gleixner wrote:
-> > In reality CONFIG_MICROCODE is enabled in any reasonable configuration when
-> > Intel or AMD support is enabled. Accomodate to reality.
-> > 
-> > Requested-by: Borislav Petkov <bp@alien8.de>
-> > Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-> > ---
-> >  arch/x86/Kconfig                       |   38 ---------------------------------
-> >  arch/x86/include/asm/microcode.h       |    6 ++---
-> >  arch/x86/include/asm/microcode_amd.h   |    2 -
-> >  arch/x86/include/asm/microcode_intel.h |    2 -
-> >  arch/x86/kernel/cpu/microcode/Makefile |    4 +--
-> >  5 files changed, 8 insertions(+), 44 deletions(-)
-> > 
-> > --- a/arch/x86/Kconfig
-> > +++ b/arch/x86/Kconfig
-> > @@ -1308,44 +1308,8 @@ config X86_REBOOTFIXUPS
-> >  	  Say N otherwise.
-> >  
-> >  config MICROCODE
-> > -	bool "CPU microcode loading support"
-> > -	default y
-> > +	def_bool y
-> >  	depends on CPU_SUP_AMD || CPU_SUP_INTEL
-> 
-> Seems like there is a dracut dependency that checks for either of these to
-> be present.
-> 
-> dracut: Generating /boot/initrd.img-6.5.0-rc3-ucode-minrev+
-> dracut: Disabling early microcode, because kernel does not support it. CONFIG_MICROCODE_[AMD|INTEL]!=y
-> 
-> Just a tool fix. 
+There will be a brief delay with archives on lore.kernel.org. I will follow up
+once the archive migration has been completed.
 
--- 
-Regards/Gruss,
-    Boris.
+Best regards,
+Konstantin
 
-https://people.kernel.org/tglx/notes-about-netiquette
