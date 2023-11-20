@@ -1,60 +1,56 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="DlYKwozc"
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C69DAD8;
-	Sun, 19 Nov 2023 06:13:01 -0800 (PST)
-Received: from pps.filterd (m0360083.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 3AJEBDhi005344;
-	Sun, 19 Nov 2023 14:12:59 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
- from : to : cc : date : in-reply-to : references : content-type :
- content-transfer-encoding : mime-version; s=pp1;
- bh=t6/LH3DJPxANC0T8RNJ8m5HT/bXXnVCsCpC3L0JD3e0=;
- b=DlYKwozcZKAFOQwZzY7EJ/7iXUyteSoX4QoU1t/VetJG2g/zrwA507i5UYO9jOwE0lue
- ix6KZNc1z3mPZXgT1RaPEiXSZ3iBsUXr8mpmVlocSD1TA8iZ1VC6Y8ROJ3iLegyXqngQ
- 4ZaAMGOV7f4KGbckyUDSMFLEhlVWYWXv/Pbo9b+/wi+M7X+8gVrHW6XMa7khrODv4HJq
- QmIVjIREaS0efzWnPGVwklVrGVuHwlRc+OFFGaRng291yDdAhAx9D4w4GxkCXPpnPMIF
- KLd6GmzOcKkFyWnyjsLrMVNpTNNn0VqZvkjZrGI01fhbNqBUs1lelSwobF0q4u5GB/uh dw== 
-Received: from ppma22.wdc07v.mail.ibm.com (5c.69.3da9.ip4.static.sl-reverse.com [169.61.105.92])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3uf7kh1q0p-1
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="eVyOuf3r"
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 473D0115;
+	Sun, 19 Nov 2023 17:13:01 -0800 (PST)
+Received: from pps.filterd (m0356516.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 3AJNINxM025177;
+	Mon, 20 Nov 2023 01:12:59 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=from : to : cc : subject
+ : date : message-id : content-transfer-encoding : mime-version; s=pp1;
+ bh=DT0NjgV5bxTqZenYJx9JCksF59hQvQ1XZaCB+iwtkUA=;
+ b=eVyOuf3rxoTn8YNF+cZzvSmbbgcMosqKP1zoewRN9gprgpOchxUw6BnIqg6j6X9RaFRQ
+ d+x31Jo7WoBxvzIBYG1w0+PDc4AHe5mtYtO1wjXViKhIWp6yVs73B//fwciYRy6gtHXE
+ sW8PYsuZ+zbpOJTa1tewYWxYSVDPaoMKwRSaKb3D41w072AERjgYJxfk8Y1U2eGaT6Pd
+ Ugpsp0Eq8MzXYcg0nL2wQQrg0jChGYtASN2hgBWi31b4OzL6o2vf54r6nS+cEHhUi6qd
+ 69aGI+8iRvtsqy5OLzNX1Fnl34J0uyRZh2EHBIZ0E8FNutCWO1unhJxf28PUnx40dQKS WA== 
+Received: from ppma23.wdc07v.mail.ibm.com (5d.69.3da9.ip4.static.sl-reverse.com [169.61.105.93])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3ufuwrseka-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Sun, 19 Nov 2023 14:12:59 +0000
-Received: from pps.filterd (ppma22.wdc07v.mail.ibm.com [127.0.0.1])
-	by ppma22.wdc07v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 3AJBJQRZ002185;
-	Sun, 19 Nov 2023 14:12:58 GMT
-Received: from smtprelay01.wdc07v.mail.ibm.com ([172.16.1.68])
-	by ppma22.wdc07v.mail.ibm.com (PPS) with ESMTPS id 3uf7yy3gj0-1
+	Mon, 20 Nov 2023 01:12:58 +0000
+Received: from pps.filterd (ppma23.wdc07v.mail.ibm.com [127.0.0.1])
+	by ppma23.wdc07v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 3AJM1s7F026556;
+	Mon, 20 Nov 2023 01:12:58 GMT
+Received: from smtprelay06.wdc07v.mail.ibm.com ([172.16.1.73])
+	by ppma23.wdc07v.mail.ibm.com (PPS) with ESMTPS id 3uf93kdv9q-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Sun, 19 Nov 2023 14:12:58 +0000
-Received: from smtpav01.wdc07v.mail.ibm.com (smtpav01.wdc07v.mail.ibm.com [10.39.53.228])
-	by smtprelay01.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 3AJECvE557803150
+	Mon, 20 Nov 2023 01:12:58 +0000
+Received: from smtpav01.dal12v.mail.ibm.com (smtpav01.dal12v.mail.ibm.com [10.241.53.100])
+	by smtprelay06.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 3AK1CvEc26542732
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Sun, 19 Nov 2023 14:12:57 GMT
-Received: from smtpav01.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id A6D2E58055;
-	Sun, 19 Nov 2023 14:12:57 +0000 (GMT)
-Received: from smtpav01.wdc07v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 16E555804B;
-	Sun, 19 Nov 2023 14:12:57 +0000 (GMT)
-Received: from li-f45666cc-3089-11b2-a85c-c57d1a57929f.ibm.com (unknown [9.61.145.128])
-	by smtpav01.wdc07v.mail.ibm.com (Postfix) with ESMTP;
-	Sun, 19 Nov 2023 14:12:56 +0000 (GMT)
-Message-ID: <bbb29d8a51b1c686c9fa708aeba5d7a8fd5621af.camel@linux.ibm.com>
-Subject: Re: [PATCH v2] rootfs: Fix support for rootfstype= when root= is
- given
-From: Mimi Zohar <zohar@linux.ibm.com>
-To: Stefan Berger <stefanb@linux.ibm.com>, linux-kernel@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, initramfs@vger.kernel.org,
-        stable@vger.kernel.org, Rob Landley <rob@landley.net>
-Date: Sun, 19 Nov 2023 09:12:56 -0500
-In-Reply-To: <20231114141030.219729-1-stefanb@linux.ibm.com>
-References: <20231114141030.219729-1-stefanb@linux.ibm.com>
-Content-Type: text/plain; charset="ISO-8859-15"
-X-Mailer: Evolution 3.28.5 (3.28.5-22.el8) 
+	Mon, 20 Nov 2023 01:12:57 GMT
+Received: from smtpav01.dal12v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 413FF58057;
+	Mon, 20 Nov 2023 01:12:57 +0000 (GMT)
+Received: from smtpav01.dal12v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id C5D7058058;
+	Mon, 20 Nov 2023 01:12:56 +0000 (GMT)
+Received: from sbct-3.pok.ibm.com (unknown [9.47.158.153])
+	by smtpav01.dal12v.mail.ibm.com (Postfix) with ESMTP;
+	Mon, 20 Nov 2023 01:12:56 +0000 (GMT)
+From: Stefan Berger <stefanb@linux.ibm.com>
+To: linux-kernel@vger.kernel.org
+Cc: zohar@linux.ibm.com, gregkh@linuxfoundation.org, initramfs@vger.kernel.org,
+        Stefan Berger <stefanb@linux.ibm.com>, stable@vger.kernel.org,
+        Rob Landley <rob@landley.net>
+Subject: [PATCH v3] rootfs: Fix support for rootfstype= when root= is given
+Date: Sun, 19 Nov 2023 20:12:48 -0500
+Message-ID: <20231120011248.396012-1-stefanb@linux.ibm.com>
+X-Mailer: git-send-email 2.41.0
 X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: StZ-f78JR0cXDRCjCRV4M-pUi_xO2dcZ
-X-Proofpoint-GUID: StZ-f78JR0cXDRCjCRV4M-pUi_xO2dcZ
-Content-Transfer-Encoding: 7bit
+X-Proofpoint-ORIG-GUID: fLdhSeQwbeQka2ezh3TsY4brwYxLYmKq
+X-Proofpoint-GUID: fLdhSeQwbeQka2ezh3TsY4brwYxLYmKq
+Content-Transfer-Encoding: 8bit
 X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
@@ -64,101 +60,82 @@ List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.272,Aquarius:18.0.987,Hydra:6.0.619,FMLib:17.11.176.26
- definitions=2023-11-19_13,2023-11-17_01,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 suspectscore=0 spamscore=0
- lowpriorityscore=0 malwarescore=0 phishscore=0 adultscore=0 mlxscore=0
- priorityscore=1501 clxscore=1011 bulkscore=0 impostorscore=0
- mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2311060000 definitions=main-2311190108
+ definitions=2023-11-19_21,2023-11-17_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0 phishscore=0
+ adultscore=0 priorityscore=1501 lowpriorityscore=0 mlxlogscore=999
+ spamscore=0 clxscore=1015 suspectscore=0 mlxscore=0 bulkscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2311060000 definitions=main-2311200007
 
-On Tue, 2023-11-14 at 09:10 -0500, Stefan Berger wrote:
-> Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
-> 
->   If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
->   default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
->   line.
-> 
-> This currently does not work when root= is provided since then
-> saved_root_name contains a string and initfstype= is ignored. Therefore,
-> ramfs is currently always chosen when root= is provided.
-> 
-> The current behavior for rootfs's filesystem is:
-> 
->    root=       | initfstype= | chosen rootfs filesystem
+Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
 
-^rootfstype=
+  If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
+  default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
+  line.
 
->    ------------+-------------+--------------------------
->    unspecified | unspecified | tmpfs
->    unspecified | tmpfs       | tmpfs
->    unspecified | ramfs       | ramfs
->     provided   | ignored     | ramfs
-> 
-> initfstype= should be respected regardless whether root= is given,
-> as shown below:
+This currently does not work when root= is provided since then
+saved_root_name contains a string and rootfstype= is ignored. Therefore,
+ramfs is currently always chosen when root= is provided.
 
-^rootfstype=
+The current behavior for rootfs's filesystem is:
 
-> 
->    root=       | initfstype= | chosen rootfs filesystem
+   root=       | rootfstype= | chosen rootfs filesystem
+   ------------+-------------+--------------------------
+   unspecified | unspecified | tmpfs
+   unspecified | tmpfs       | tmpfs
+   unspecified | ramfs       | ramfs
+    provided   | ignored     | ramfs
 
-^rootfstype=
+rootfstype= should be respected regardless whether root= is given,
+as shown below:
 
->    ------------+-------------+--------------------------
->    unspecified | unspecified | tmpfs  (as before)
->    unspecified | tmpfs       | tmpfs  (as before)
->    unspecified | ramfs       | ramfs  (as before)
->     provided   | unspecified | ramfs  (compatibility with before)
->     provided   | tmpfs       | tmpfs  (new)
->     provided   | ramfs       | ramfs  (new)
-> 
-> This table represents the new behavior.
-> 
-> Fixes: 6e19eded3684 ("initmpfs: use initramfs if rootfstype= or root=  specified")
-> Cc: <stable@vger.kernel.org>
-> Reviewed-by: Stefan Berger <stefanb@linux.ibm.com>
+   root=       | rootfstype= | chosen rootfs filesystem
+   ------------+-------------+--------------------------
+   unspecified | unspecified | tmpfs  (as before)
+   unspecified | tmpfs       | tmpfs  (as before)
+   unspecified | ramfs       | ramfs  (as before)
+    provided   | unspecified | ramfs  (compatibility with before)
+    provided   | tmpfs       | tmpfs  (new)
+    provided   | ramfs       | ramfs  (new)
 
-As the patch author,  "Reviewed-by" is unnecessary.
+This table represents the new behavior.
 
-Please add a reference to the original patch on which this is based.
-Link:  https://lore.kernel.org/lkml/8244c75f-445e-b15b-9dbf-266e7ca666e2@landley.net/
+Fixes: 6e19eded3684 ("initmpfs: use initramfs if rootfstype= or root=  specified")
+Cc: <stable@vger.kernel.org>
+Signed-off-by: Rob Landley <rob@landley.net>
+Link: https://lore.kernel.org/lkml/8244c75f-445e-b15b-9dbf-266e7ca666e2@landley.net/
+Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 
-> Signed-off-by: Rob Landley <rob@landley.net>
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
-> ---
+---
 
-Add Changelog as requested.
+v3:
+ - Changed initfstype= to rootfstype=
+ - Remove my R-b
 
->  init/do_mounts.c | 9 ++++++---
->  1 file changed, 6 insertions(+), 3 deletions(-)
-> 
-> diff --git a/init/do_mounts.c b/init/do_mounts.c
-> index 5fdef94f0864..279ad28bf4fb 100644
-> --- a/init/do_mounts.c
-> +++ b/init/do_mounts.c
-> @@ -510,7 +510,10 @@ struct file_system_type rootfs_fs_type = {
->  
->  void __init init_rootfs(void)
->  {
-> -	if (IS_ENABLED(CONFIG_TMPFS) && !saved_root_name[0] &&
-> -		(!root_fs_names || strstr(root_fs_names, "tmpfs")))
-> -		is_tmpfs = true;
-> +	if (IS_ENABLED(CONFIG_TMPFS)) {
-> +		if (!saved_root_name[0] && !root_fs_names)
-> +			is_tmpfs = true;
-> +		else if (root_fs_names && !!strstr(root_fs_names, "tmpfs"))
-> +			is_tmpfs = true;
-> +	}
->  }
+v2:
+ - Cc'ing stable mailing list now
+---
+ init/do_mounts.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-Please change all "initfstype" references to "rootfstype" in the patch
-description.
-
-Otherwise,
-Reviewed-and-Tested-by: Mimi Zohar <zohar@linux.ibm.com>
-
+diff --git a/init/do_mounts.c b/init/do_mounts.c
+index 5fdef94f0864..279ad28bf4fb 100644
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -510,7 +510,10 @@ struct file_system_type rootfs_fs_type = {
+ 
+ void __init init_rootfs(void)
+ {
+-	if (IS_ENABLED(CONFIG_TMPFS) && !saved_root_name[0] &&
+-		(!root_fs_names || strstr(root_fs_names, "tmpfs")))
+-		is_tmpfs = true;
++	if (IS_ENABLED(CONFIG_TMPFS)) {
++		if (!saved_root_name[0] && !root_fs_names)
++			is_tmpfs = true;
++		else if (root_fs_names && !!strstr(root_fs_names, "tmpfs"))
++			is_tmpfs = true;
++	}
+ }
 -- 
-Thanks,
-
-Mimi
+2.41.0
 
