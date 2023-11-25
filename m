@@ -1,136 +1,180 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (4096-bit key) header.d=alien8.de header.i=@alien8.de header.b="KRv4Cs7Y"
-Received: from mail.alien8.de (mail.alien8.de [IPv6:2a01:4f9:3051:3f93::2])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75E861B3;
-	Wed, 22 Nov 2023 13:35:42 -0800 (PST)
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by mail.alien8.de (SuperMail on ZX Spectrum 128k) with ESMTP id 7A13340E024E;
-	Wed, 22 Nov 2023 21:35:40 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at mail.alien8.de
-Authentication-Results: mail.alien8.de (amavisd-new); dkim=pass (4096-bit key)
-	header.d=alien8.de
-Received: from mail.alien8.de ([127.0.0.1])
-	by localhost (mail.alien8.de [127.0.0.1]) (amavisd-new, port 10026)
-	with ESMTP id cQA6Yt3kkE3Q; Wed, 22 Nov 2023 21:35:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=alien8;
-	t=1700688937; bh=z94RA74bNsUX4SJmAqCyVFYkvEgangMOaCkKCrTng50=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=KRv4Cs7YZsoQdhd42XU1ujPPrGTwfG3gwG7XSj9zizVrvlHx98vye+NGI3jeXK3MV
-	 OXFMBdqyNPIat04QWi1Y5DlU+xBXChWu8KGEhuO7k5gEw+6Q4MsW4Cn9zmxfrbo3CM
-	 5KjyQEtUydmvsf0KcioK8TUj4122KhKlQAFEG5i0c+c9Ww1RjoJ6kHIEOg2LN2hdYl
-	 flGMoT4w37rAACz1DZY+hm+P4ANjKHT1S6AYouK9wWqcmkNbcK1qcbQr+D5rZEO637
-	 +7EnlqGvu8ela1EmgB9ZRE1e0fadd0+sFNXJ5Qml94Ik2F1en5MEGXgMyHFXZVkUD0
-	 pikkZ1Gn2wRIZF8iF7zm6lga8V0VxnMHGkNWumezBOGdyO/J1bXXrfEUVgjGszydHR
-	 WJxz05QOJIK2owCQVCYCa+Q2DVbTYfLc89sKSCP77cOHPQIhgRHHP0M7gfIrDuicLI
-	 YcQB9Q6Ilka5ztyQyG8KdiyVy8y2cH4aR84+JeNGSDeNDIivHEeKcY97c1Z41rg3xI
-	 Nwvghf7H6TDofpLb4LXmeD/Sti+oyfYRNWC1lZJJpvcseWK/kZ9XO5MGJDXOBt4os4
-	 bTF0nsc9DSSng8gslCPY04473lRudPlAJ63cLLeS7zBYHa5rh1Ti0tztjFJxa72Zjh
-	 erNoxtm6ii1ZTBH9LEoQ1l+w=
-Received: from zn.tnic (pd95304da.dip0.t-ipconnect.de [217.83.4.218])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (P-256) server-signature ECDSA (P-256) server-digest SHA256)
-	(No client certificate requested)
-	by mail.alien8.de (SuperMail on ZX Spectrum 128k) with ESMTPSA id 9300340E014B;
-	Wed, 22 Nov 2023 21:35:26 +0000 (UTC)
-Date: Wed, 22 Nov 2023 22:35:22 +0100
-From: Borislav Petkov <bp@alien8.de>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Linux regressions mailing list <regressions@lists.linux.dev>,
-	lukas.bulwahn@gmail.com, dave.hansen@linux.intel.com, hpa@zytor.com,
-	kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org,
-	mingo@redhat.com, tglx@linutronix.de, x86@kernel.org,
-	initramfs@vger.kernel.org
-Subject: Re: [regression] microcode files missing in initramfs imgages from
- dracut (was Re: [PATCH] x86: Clean up remaining references to
- CONFIG_MICROCODE_AMD)
-Message-ID: <20231122213522.GHZV50GqXHU35R+tkK@fat_crate.local>
-References: <20230825141226.13566-1-lukas.bulwahn@gmail.com>
- <c67bd324-cec0-4fe4-b3b1-fc1d1e4f2967@leemhuis.info>
- <20231112181036.GBZVEVHIIj/Oos1cx4@fat_crate.local>
- <0e9cbe6f-ac6c-47f2-b663-a22568799eca@leemhuis.info>
- <20231122115826.GAZV3s4krKXI002KQ0@fat_crate.local>
- <e1ca042c-de1d-4fe3-ad69-51d147b1fe0b@leemhuis.info>
- <20231122155758.GEZV4lBgtZyzsP5Z4V@fat_crate.local>
- <CAHk-=wiV+NM+jLKbSj_Ej9RaXpu4akWV03G_wXyTSHZhArq1tg@mail.gmail.com>
- <20231122205135.GGZV5p157mBi6RYUNs@fat_crate.local>
- <CAHk-=wh03jMZRAxHFTkv0h9dZ6TmiqukzcHd4RTx7ijia_prsg@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=redcoat-dev.20230601.gappssmtp.com header.i=@redcoat-dev.20230601.gappssmtp.com header.b="Fcpv2gMO"
+Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CA7B8FD
+	for <initramfs@vger.kernel.org>; Sat, 25 Nov 2023 07:40:51 -0800 (PST)
+Received: by mail-pj1-x1035.google.com with SMTP id 98e67ed59e1d1-285b3a14b12so124149a91.1
+        for <initramfs@vger.kernel.org>; Sat, 25 Nov 2023 07:40:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redcoat-dev.20230601.gappssmtp.com; s=20230601; t=1700926851; x=1701531651; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=nsUkgjmoq7Byvwvy8w0huFW1rDVMsLxiY79yljXPu0c=;
+        b=Fcpv2gMOd3LOl8eb1BBjocC/5LgFeovUBDrITJp+ix5u4wKJxjDEeho++8za5a8yux
+         eRCqWxRBSu76Rtx9Eye0OC8ZuNcIb/HiqhqQAB01WBsKiK6oqDr2eLjKVE5gtn3mzjkF
+         /5W0CiOjt0DMSjWca0lEKiDIinu0m6xgd51cf8eo1xcNjwQcOlDxbhgceQZ9lZ1QGpNc
+         ofm7/j9y9zWHIC+F7MWtTqIrV+gmbNZg/TtolggosZ7Ec7SMrb5C7PnbrEZZaxjQsQOv
+         5e+uqjAp0rTbyjaWH2wWMw3SwGVm6LHosGggUdbyM6pAfe/hD7+pRg5zwsdieX81kZoN
+         xxUA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1700926851; x=1701531651;
+        h=cc:to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=nsUkgjmoq7Byvwvy8w0huFW1rDVMsLxiY79yljXPu0c=;
+        b=xHtT+CMz8skX1AikTfKpvWT1XyiGbheLJz3s2nFDtpathe+wE1IEnDRHcgnuFsRNOV
+         6q76DfTjrXcNJ6vEN0WdbThQ4R3mDggMJPvpYIzMI/sR+57t1mrYQWc43wxbR9of+zwF
+         5oE1R5MBRX9E+pOaUGrwu4aaJeG49QmLqhJ8KsD6aSSS0DR+rz0SOCfym3D9W3RzAS95
+         ivupE83rFAM3UcCOAe76T/SQ+L/76VGijsrTiNSuwUEDs2T/lsFL9tBAOYHZnP1gDblH
+         6hHa1Xn/4DGVuQ+lTve0CY/smKWSbz7/e0WyYgmLh0AVqAaUw2wLh8tTlnIWrZbS8upN
+         o5HQ==
+X-Gm-Message-State: AOJu0YxDjTPNEoHPQjGQt/uqu3zjM1o8iLKkKKHU/x+ivz9TMiatnNKA
+	SLOdS2gDalwqfjW0Y4gZOmUvSLB9e6wjewhGJgDdEjXY4TOv20vu
+X-Google-Smtp-Source: AGHT+IFM1UFGJgYHOmDygSHTm+O2WvOfWKksWlBbu2kfy0ge4zdIo3R5OVKw7snqky7tibezMloZUpMGHvyUZ9PPNrw=
+X-Received: by 2002:a17:90b:3504:b0:280:5b33:d30 with SMTP id
+ ls4-20020a17090b350400b002805b330d30mr6641850pjb.44.1700926851215; Sat, 25
+ Nov 2023 07:40:51 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wh03jMZRAxHFTkv0h9dZ6TmiqukzcHd4RTx7ijia_prsg@mail.gmail.com>
+From: Emily Shepherd <emily@redcoat.dev>
+Date: Sat, 25 Nov 2023 15:40:40 +0000
+Message-ID: <CACHV8XpuC=RsvCqB3LMzxQFRnQB15-0fb4gr7b_EzUpOisrLsA@mail.gmail.com>
+Subject: [PATCH] initramfs: Support unpacking directly to tmpfs
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: initramfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Lemme add initramfs@vger.kernel.org to Cc again. I hope that's the
-correct ML dracut folks use.
+For systems which run directly from initramfs, it is not possible to use
+pivot_root without first changing root. This is because of the
+intentional design choice that rootfs, which is where initramfs is
+unpacked to, cannot be unmounted.
 
-On Wed, Nov 22, 2023 at 01:08:41PM -0800, Linus Torvalds wrote:
-> Yes, I agree that it's not optimal, but I would hate to have some odd
-> "let's add another ELF note" churn too, for (presumably) increasingly
-> obscure reasons.
+pivot_root is an important feature for creating containers and the
+alternative (mounting the new root over the top of the old with MS_MOVE
+and then calling chroot) is not favoured by most container runtimes
+[1][2].
 
-Right, my angle with the ELF note is that it is at least something well
-establshed and other things use it too (Xen, BUILD_SALT, other arches
-too).
+The general work around, when running directly from initramfs, is to
+have init mount a new tmpfs, copy everything out of rootfs, and then
+switch_root [3]. This is only required when running directly from the
+initramfs as all other methods of acquiring a root device (having the
+kernel mount a root device directly via the root= parameter, or using
+initramfs to mount and then switch_root to a new root) leave an empty
+rootfs at the top of the mount stack.
 
-> It looks like dracut has been doing this forever, and in fact back in
-> 2015 apparently had the exact same issue (that never made it to kernel
-> developers, or at least not to me), when the kernel
-> CONFIG_MICROCODE_xyz_EARLY config went away, and became just
-> CONFIG_MICROCODE_xyz.
+This commit adds a new build option - EMPTY_ROOTFS, available when
+initrd/initramfs is enabled. When selected, rather than unpacking the
+in-built / bootloader provided initramfs directly into rootfs, the kernel
+will mount a new tmpfs/ramfs over the top of the rootfs and unpack to
+that instead, leaving an empty rootfs at the top of the stack. This
+removes the need to have init copy everything as a workaround.
 
-Yap, that was me. I merged the early loader because it didn't make any
-sense to have a separate thing.
+[1]: https://github.com/opencontainers/runc/blob/95a93c132cf179a017312e22a954f137e8237c4e/man/runc-create.8.md?plain=1#L27
+[2]: https://github.com/containers/crun/blob/8e8d7972f738f28294cd5c16091d136ca278759e/crun.1.md?plain=1#L103
+[3]: https://github.com/tinycorelinux/Core-scripts/blob/dbb24bf42a0a9935b18e66a0b936266b2244251b/init#L13
 
-> The whole "check kernel config" in dracut seems to go back to 2014, so
-> it's been that way for almost a decade by now.
-> 
-> Honestly, I think the right approach may be to just remove the check
-> again from dracut entirely - the intent seems to be to make the initrd
-> smaller when people don't support microcode updates, but does that
-> ever actually *happen*?
+Signed-off-by: Emily Shepherd <emily@redcoat.dev>
+---
+ init/Kconfig     | 13 +++++++++++++
+ init/do_mounts.c | 24 ++++++++++++++++++++++++
+ init/do_mounts.h |  6 ++++++
+ init/initramfs.c |  4 ++++
+ 4 files changed, 47 insertions(+)
 
-That thought also crossed my mind. With the mitigations sh*te, you
-basically must build in microcode. Lemme cook up a dracut patch for this
-tomorrow and see what happens.
+diff --git a/init/Kconfig b/init/Kconfig
+index 6d35728b94b2b..bf15bd08abdc2 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1299,6 +1299,19 @@ config BLK_DEV_INITRD
 
-> There are dracut command lines, like "--early-microcode" and
-> "--no-early-microcode", so people who really want to save space could
-> just force it that way. Doing the CONFIG_xyz check seems broken.
+ if BLK_DEV_INITRD
 
-Yap, exactly.
++config EMPTY_ROOTFS
++    bool "Mount initramfs over empty rootfs"
++    help
++        Normally initramfs is unpacked directly into the rootfs. When this
++        option is enabled, initramfs is instead unpacked into a tmpfs
++        mounted on top of a permanently empty rootfs.
++
++        This is mostly useful for embedded operating systems, running
++        directly from initramfs, which need to make use of pivot_root (for
++        example systems running containers).
++
++        If unsure, say N.
++
+ source "usr/Kconfig"
 
-> I guess we on the kernel side could help with "make install" etc, but
-> we've (intentionally) tried to insulate us from distros having
-> distro-specific installkernel scripts, so we don't really haev a good
-> way to pass information down to the installkernel side.
-> 
-> It *would* make sense if we just had some actual arguments we might
-> pass down. Right now we just do
-> 
->         exec "${file}" "${KERNELRELEASE}" "${KBUILD_IMAGE}" System.map
-> "${INSTALL_PATH}"
-> 
-> so basically the only argument we pass down is that INSTALL_PATH
-> (which is just "/boot" by default).
+ endif
+diff --git a/init/do_mounts.c b/init/do_mounts.c
+index 5dfd30b13f485..86008635b5098 100644
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -514,3 +514,27 @@ void __init init_rootfs(void)
+         (!root_fs_names || strstr(root_fs_names, "tmpfs")))
+         is_tmpfs = true;
+ }
++
++#ifdef CONFIG_EMPTY_ROOTFS
++int __init overmount_rootfs() {
++    int err;
++
++    err = init_mkdir("/root", 0700);
++    if (err != 0)
++        goto out;
++
++    err = init_mount("rootfs", "/root", is_tmpfs ? "tmpfs" : "ramfs", 0, NULL);
++    if (err != 0)
++        goto out;
++
++    init_chdir("/root");
++    init_mount(".", "/", NULL, MS_MOVE, NULL);
++    init_chroot(".");
++
++    return 0;
++
++out:
++    printk(KERN_WARNING "Failed to mount over rootfs\n");
++    return err;
++}
++#endif /* CONFIG_EMPTY_ROOTFS */
+diff --git a/init/do_mounts.h b/init/do_mounts.h
+index 15e372b00ce70..7cbb8af460f22 100644
+--- a/init/do_mounts.h
++++ b/init/do_mounts.h
+@@ -41,3 +41,9 @@ static inline bool initrd_load(char *root_device_name)
+     }
 
-Right, and on debian they run initramfs-tools as part of
-a post-installation step at the end of /sbin/installkernel which could
-then pass in more configuration info.
+ #endif
++
++#ifdef CONFIG_EMPTY_ROOTFS
++int __init overmount_rootfs(void);
++#else
++static inline int __init overmount_rootfs(void) { return 0; }
++#endif
+diff --git a/init/initramfs.c b/init/initramfs.c
+index 8d0fd946cdd2b..76525108a39d2 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -19,6 +19,8 @@
+ #include <linux/task_work.h>
+ #include <linux/umh.h>
 
-Yap, that could be one way to do it. We could document it in
-scripts/install.sh or somewhere more prominent so that tools can look it
-up.
++#include "do_mounts.h"
++
+ static __initdata bool csum_present;
+ static __initdata u32 io_csum;
 
-Yap, all better ideas than parsing .config.
+@@ -688,6 +690,8 @@ static void __init populate_initrd_image(char *err)
 
-Thx.
-
--- 
-Regards/Gruss,
-    Boris.
-
-https://people.kernel.org/tglx/notes-about-netiquette
+ static void __init do_populate_rootfs(void *unused, async_cookie_t cookie)
+ {
++    overmount_rootfs();
++
+     /* Load the built in initramfs */
+     char *err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
+     if (err)
+--
+2.42.0
