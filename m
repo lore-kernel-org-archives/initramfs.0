@@ -1,83 +1,131 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E997C4B5D2;
-	Tue, 28 Nov 2023 09:54:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="1wjBmdoL"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C879CC433C7;
-	Tue, 28 Nov 2023 09:54:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1701165244;
-	bh=n+Ar5X9JSbp0izchwv6/lFQCJOtaNSaVKuhBCyJ0pnA=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=1wjBmdoLl7hA6XpxnkWmlyKxAiYTdui/gybppPOw7NS+DRXo6/xBDKX/6If3IIf0+
-	 WGL5S78lFOV5BeHSOlVSI37fD5lory5sZTs8rL1trKebejjW+DFd8RzMrYykR/hl2f
-	 hKfMpDdYQyGqZ1Azxcv+rKHq1Jz2Y+OTHbl5XLoE=
-Date: Tue, 28 Nov 2023 09:54:01 +0000
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Stefan Berger <stefanb@linux.ibm.com>
-Cc: linux-kernel@vger.kernel.org, zohar@linux.ibm.com,
-	initramfs@vger.kernel.org, stable@vger.kernel.org,
-	Rob Landley <rob@landley.net>
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="GEL8QTyC"
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96688A3;
+	Tue, 28 Nov 2023 04:18:13 -0800 (PST)
+Received: from pps.filterd (m0356516.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 3ASBCugr004876;
+	Tue, 28 Nov 2023 12:18:11 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : subject :
+ from : to : cc : date : in-reply-to : references : content-type :
+ content-transfer-encoding : mime-version; s=pp1;
+ bh=M0R7sT0yHbVLSs9KlT1UhPFGTZrBwQe0mpt3AA0irHU=;
+ b=GEL8QTyC3NK1msYD5mFAokLAV9OWesv5g9qO52CKWjWnnXHQZKHvfKArVGl0uuZTi74X
+ jTCnzw6wCtlDjWSuEJd7FrJ5njxoMVLuDd3PmxS9FFxdtZ39boRYuwUTk5ab8eX68arS
+ njyNCSVeFKLsqxohNspWSVJqfoBBpPbUwNw/ugfKNyqWeGRxdn/qUZaTdjmUHifmQMdh
+ wfd0TGgh4uN5vWTLaZfWCzP1SbrC7p6BNo3xTLVKNnVXlPZN4X7lXP7lFLfasdCNWyE2
+ /8vFxr29Yt/tx5QygOKniXlbXFo7m1rxRKSWDzoT9Pyoy1NcT9Cn6CaR2pzqZuxg0qDt ww== 
+Received: from ppma12.dal12v.mail.ibm.com (dc.9e.1632.ip4.static.sl-reverse.com [50.22.158.220])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3unf4t9v2t-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 28 Nov 2023 12:18:10 +0000
+Received: from pps.filterd (ppma12.dal12v.mail.ibm.com [127.0.0.1])
+	by ppma12.dal12v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 3ASAWfDl031072;
+	Tue, 28 Nov 2023 12:18:09 GMT
+Received: from smtprelay06.wdc07v.mail.ibm.com ([172.16.1.73])
+	by ppma12.dal12v.mail.ibm.com (PPS) with ESMTPS id 3uku8sys7f-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 28 Nov 2023 12:18:09 +0000
+Received: from smtpav06.dal12v.mail.ibm.com (smtpav06.dal12v.mail.ibm.com [10.241.53.105])
+	by smtprelay06.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 3ASCI8fe21037600
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Tue, 28 Nov 2023 12:18:09 GMT
+Received: from smtpav06.dal12v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id A951058055;
+	Tue, 28 Nov 2023 12:18:08 +0000 (GMT)
+Received: from smtpav06.dal12v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 3D04758043;
+	Tue, 28 Nov 2023 12:18:08 +0000 (GMT)
+Received: from li-f45666cc-3089-11b2-a85c-c57d1a57929f.ibm.com (unknown [9.61.23.127])
+	by smtpav06.dal12v.mail.ibm.com (Postfix) with ESMTP;
+	Tue, 28 Nov 2023 12:18:08 +0000 (GMT)
+Message-ID: <10660ec7032cf66a772ecd0b7cfdbba88849929a.camel@linux.ibm.com>
 Subject: Re: [PATCH v3] rootfs: Fix support for rootfstype= when root= is
  given
-Message-ID: <2023112826-cesspool-cabbie-06c5@gregkh>
+From: Mimi Zohar <zohar@linux.ibm.com>
+To: Greg KH <gregkh@linuxfoundation.org>,
+        Stefan Berger
+ <stefanb@linux.ibm.com>
+Cc: linux-kernel@vger.kernel.org, initramfs@vger.kernel.org,
+        stable@vger.kernel.org, Rob Landley <rob@landley.net>
+Date: Tue, 28 Nov 2023 07:18:07 -0500
+In-Reply-To: <2023112826-cesspool-cabbie-06c5@gregkh>
 References: <20231120011248.396012-1-stefanb@linux.ibm.com>
+	 <2023112826-cesspool-cabbie-06c5@gregkh>
+Content-Type: text/plain; charset="ISO-8859-15"
+X-Mailer: Evolution 3.28.5 (3.28.5-22.el8) 
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: zE4Nml1FFyToPOchE1F8OrpMNtyMU7T0
+X-Proofpoint-ORIG-GUID: zE4Nml1FFyToPOchE1F8OrpMNtyMU7T0
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20231120011248.396012-1-stefanb@linux.ibm.com>
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.272,Aquarius:18.0.997,Hydra:6.0.619,FMLib:17.11.176.26
+ definitions=2023-11-28_12,2023-11-27_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 mlxlogscore=963
+ malwarescore=0 priorityscore=1501 suspectscore=0 clxscore=1015 mlxscore=0
+ phishscore=0 bulkscore=0 impostorscore=0 lowpriorityscore=0 spamscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2311060000
+ definitions=main-2311280098
 
-On Sun, Nov 19, 2023 at 08:12:48PM -0500, Stefan Berger wrote:
-> Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
+On Tue, 2023-11-28 at 09:54 +0000, Greg KH wrote:
+> On Sun, Nov 19, 2023 at 08:12:48PM -0500, Stefan Berger wrote:
+> > Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
+> > 
+> >   If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
+> >   default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
+> >   line.
+> > 
+> > This currently does not work when root= is provided since then
+> > saved_root_name contains a string and rootfstype= is ignored. Therefore,
+> > ramfs is currently always chosen when root= is provided.
+> > 
+> > The current behavior for rootfs's filesystem is:
+> > 
+> >    root=       | rootfstype= | chosen rootfs filesystem
+> >    ------------+-------------+--------------------------
+> >    unspecified | unspecified | tmpfs
+> >    unspecified | tmpfs       | tmpfs
+> >    unspecified | ramfs       | ramfs
+> >     provided   | ignored     | ramfs
+> > 
+> > rootfstype= should be respected regardless whether root= is given,
+> > as shown below:
+> > 
+> >    root=       | rootfstype= | chosen rootfs filesystem
+> >    ------------+-------------+--------------------------
+> >    unspecified | unspecified | tmpfs  (as before)
+> >    unspecified | tmpfs       | tmpfs  (as before)
+> >    unspecified | ramfs       | ramfs  (as before)
+> >     provided   | unspecified | ramfs  (compatibility with before)
+> >     provided   | tmpfs       | tmpfs  (new)
+> >     provided   | ramfs       | ramfs  (new)
+> > 
+> > This table represents the new behavior.
+> > 
+> > Fixes: 6e19eded3684 ("initmpfs: use initramfs if rootfstype= or root=  specified")
+> > Cc: <stable@vger.kernel.org>
+> > Signed-off-by: Rob Landley <rob@landley.net>
+> > Link: https://lore.kernel.org/lkml/8244c75f-445e-b15b-9dbf-266e7ca666e2@landley.net/
+> > Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
 > 
->   If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
->   default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
->   line.
+> Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 > 
-> This currently does not work when root= is provided since then
-> saved_root_name contains a string and rootfstype= is ignored. Therefore,
-> ramfs is currently always chosen when root= is provided.
-> 
-> The current behavior for rootfs's filesystem is:
-> 
->    root=       | rootfstype= | chosen rootfs filesystem
->    ------------+-------------+--------------------------
->    unspecified | unspecified | tmpfs
->    unspecified | tmpfs       | tmpfs
->    unspecified | ramfs       | ramfs
->     provided   | ignored     | ramfs
-> 
-> rootfstype= should be respected regardless whether root= is given,
-> as shown below:
-> 
->    root=       | rootfstype= | chosen rootfs filesystem
->    ------------+-------------+--------------------------
->    unspecified | unspecified | tmpfs  (as before)
->    unspecified | tmpfs       | tmpfs  (as before)
->    unspecified | ramfs       | ramfs  (as before)
->     provided   | unspecified | ramfs  (compatibility with before)
->     provided   | tmpfs       | tmpfs  (new)
->     provided   | ramfs       | ramfs  (new)
-> 
-> This table represents the new behavior.
-> 
-> Fixes: 6e19eded3684 ("initmpfs: use initramfs if rootfstype= or root=  specified")
-> Cc: <stable@vger.kernel.org>
-> Signed-off-by: Rob Landley <rob@landley.net>
-> Link: https://lore.kernel.org/lkml/8244c75f-445e-b15b-9dbf-266e7ca666e2@landley.net/
-> Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+> Who should take this patch?  Me?  Or someone else?
 
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Reviewed-and-Tested-by: Mimi Zohar <zohar@linux.ibm.com>
 
-Who should take this patch?  Me?  Or someone else?
+Thanks, Greg.  As there is no initramfs maintainer, I'd appreciate your
+picking it up.
 
+-- 
 thanks,
 
-greg k-h
+Mimi
+
