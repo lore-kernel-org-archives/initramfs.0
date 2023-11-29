@@ -1,199 +1,166 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=redcoat-dev.20230601.gappssmtp.com header.i=@redcoat-dev.20230601.gappssmtp.com header.b="uoSFseTq"
-Received: from mail-lj1-x231.google.com (mail-lj1-x231.google.com [IPv6:2a00:1450:4864:20::231])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 300D2F5
-	for <initramfs@vger.kernel.org>; Wed, 29 Nov 2023 01:00:37 -0800 (PST)
-Received: by mail-lj1-x231.google.com with SMTP id 38308e7fff4ca-2c6b30aca06so80215731fa.3
-        for <initramfs@vger.kernel.org>; Wed, 29 Nov 2023 01:00:37 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="yc0peZh0"
+Received: from mail-oi1-x22a.google.com (mail-oi1-x22a.google.com [IPv6:2607:f8b0:4864:20::22a])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F2EE1D5E
+	for <initramfs@vger.kernel.org>; Wed, 29 Nov 2023 08:33:27 -0800 (PST)
+Received: by mail-oi1-x22a.google.com with SMTP id 5614622812f47-3b84e328327so3828033b6e.2
+        for <initramfs@vger.kernel.org>; Wed, 29 Nov 2023 08:33:27 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redcoat-dev.20230601.gappssmtp.com; s=20230601; t=1701248435; x=1701853235; darn=vger.kernel.org;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1701275607; x=1701880407; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :from:to:cc:subject:date:message-id:reply-to;
-        bh=XJhSDilczB5Njps3/+KlXnzMsWxpXs596km+TxKB3QA=;
-        b=uoSFseTqhbjy08HgZIV+b303JLrOkD/Ngo2PuM1vl/IC4e5NWheG3GkrYPBtuipRC7
-         r9UzG9WuOYzToPrjS7iwAU4T7ef1npZ8uQX0hl1u/KeemtSBKGuL5SbJR1bD4GbYB70P
-         yBhlDTqSB+yMbh/bY+mC1fPoN78fQ02RlaMmuasd7aGCb6h9dKnFNQ79pkdA0Vgg6Taj
-         XwVHQkIsO2lw5cPK1M3IW5Kj3ME81hb/D7uAJiiOqO7d8zgNhW+be2I9wD5nLMvQIoXS
-         puoHlNW8gBDpOLx+ewUDdGmaSWmf3AOsoSEAfdxKXf/yZ4xTtoyh9q5FXCty+mDLNH+w
-         PBlQ==
+        bh=IgVLi9wz2v7Dv5QW6wz6r5V/I0koY5gXa7xm0mXVocM=;
+        b=yc0peZh0FznR91nSmGJdqnUo43JCeTr3jN5N312tIyop0unOm4JYODR9wDYlno9uTA
+         eoRucWSSJSD1gMutNQRV4Fo5PDgNZRlfTzZfWqrf0gjlck9wt40UPboOGi3wnY8nain/
+         61Fh7RkKSGlpV94y6/GyagvGrDTeWN0DUUd1IV4stnYHBMD89WUk1Leb811KKFRmSBaY
+         rIEgXtPefiDI2O4StxVMk2DsSs41EdBRIyl6e7MeIr9bQKZeo7jDGrgXpmcs/GAcIVTQ
+         vuY8nLYAIkv1Kh3ru385+1bHkvJOV4RwYFCOfEFP17o7j+zuWY5Cp4cDK2xinUizgAEX
+         BzEQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701248435; x=1701853235;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+        d=1e100.net; s=20230601; t=1701275607; x=1701880407;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=XJhSDilczB5Njps3/+KlXnzMsWxpXs596km+TxKB3QA=;
-        b=CJcLIzvk7ZPSoPd0EmfLPTqFgNhadXX9QGGK8XNL/uJWc5R6hUe1hvmEcOkhj5Ssfl
-         g/MzOnoGQ36LNuUKOSRoOfTXbpKCK3gLwqSC8cDZpp9T27rnd52W7MPzT6b5bEUD1xYW
-         zaQ0FE7oN0+rCQErlwM3a83fWe8sBblzho60gq/kGIQ8h94ZtYm94Ktwm5qXoKcJkPhs
-         gFGFJNhcLi2tuZAdEANkvm2SEZN99VbQji/ZT9PdU1Qqr07InEC0pow0/chdqaNoBnc0
-         8b81yPQUM3yUeJG6TcE9hENUTho5i6GTnpgI7rOcVOpPlT46IUl9ROfYC5VsqtugjGVl
-         V/Vw==
-X-Gm-Message-State: AOJu0YxWXvRCZ856kswzk3NwoJcn8VOFHRszuizNSgXKD714nmFSx0kM
-	zcLF8keW4JSgK7Ipq3S6o0FnuQ==
-X-Google-Smtp-Source: AGHT+IFTCbb8RLIHpvoNHcK2kIKbcZRdcU7xXhZpJldc4J8M4HbL5tXtV7BeLV64yoFJGS1/PqPUHw==
-X-Received: by 2002:a05:651c:210f:b0:2c9:98b5:c285 with SMTP id a15-20020a05651c210f00b002c998b5c285mr9175809ljq.19.1701248435352;
-        Wed, 29 Nov 2023 01:00:35 -0800 (PST)
-Received: from test ([2a00:23c7:1fab:4e01:c2b7:df94:a888:e053])
-        by smtp.gmail.com with ESMTPSA id j11-20020a05600c190b00b0040b47c69d08sm1413410wmq.18.2023.11.29.01.00.33
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 29 Nov 2023 01:00:34 -0800 (PST)
-Date: Wed, 29 Nov 2023 09:00:33 +0000
-From: Emily Shepherd <emily@redcoat.dev>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: initramfs@vger.kernel.org, 
-	Thomas =?utf-8?Q?Str=C3=B6mberg?= <t+github@chainguard.dev>, Anders =?utf-8?Q?Bj=C3=B6rklund?= <anders.f.bjorklund@gmail.com>, 
-	Giuseppe Scrivano <giuseppe@scrivano.org>, Al Viro <viro@zeniv.linux.org.uk>, 
-	Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>, Rob Landley <rob@landley.net>
-Subject: [PATCH v2] initramfs: Support unpacking directly to tmpfs
-Message-ID: <pkyfrfofquliqqxpylzzn5kdnfk4tewo6gx25d5m6pm2femvin@dkxlxm6leegu>
+        bh=IgVLi9wz2v7Dv5QW6wz6r5V/I0koY5gXa7xm0mXVocM=;
+        b=YfylQA/1JOiF36gFlS3ggAQKrAJTUc0JTpgp4E1iGh3k6TwhjyVj0h2nxoHqOCxPoB
+         G3SH8zp29oD/j1aMDyEBwibUfjHYi3ZfsCmut1+M/w1zIwKeVIq/IpG5l+RYpiOTcL3U
+         BlQ6LKOW0Xf6M6lYnCt5E5Cpt1ePA43x/V4JcRlFd+eu6xNVl1G1u0g5S8UGxLI0iuSJ
+         eoYzNkYCx5ZFQL+9qpPS+7gBoIn93sxxpXX6yZD4Y80xt0hfBh+okm5eCHj2WhJHofD6
+         s37eS1vptsap8QC3qGfD9beL8+dIkhWT/kFP9+uQSJaQCl2IJzgGy9E2wrZAi7PXziDX
+         Tkew==
+X-Gm-Message-State: AOJu0YzddjJ15E86gnGU27iV0a7OYiDUnvr3CahIdnlHPKDRLTrM4OvB
+	Mvw0VIGjBbZ7xRSmK561v37Evg==
+X-Google-Smtp-Source: AGHT+IH5jntLWIxMc5064mX2kaq/5gLtXVTvyXt/0MPbjZYvIeR6zF9+OR/FZzsVIsqgJiKxunDaFw==
+X-Received: by 2002:a05:6808:189c:b0:3b8:4482:16f4 with SMTP id bi28-20020a056808189c00b003b8448216f4mr27362088oib.52.1701275607158;
+        Wed, 29 Nov 2023 08:33:27 -0800 (PST)
+Received: from [192.168.1.4] ([136.62.51.249])
+        by smtp.gmail.com with ESMTPSA id s27-20020a0568080b1b00b003a3860b375esm2288708oij.34.2023.11.29.08.33.26
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 29 Nov 2023 08:33:26 -0800 (PST)
+Message-ID: <fc35ab36-c722-1102-36c5-6a2c015b2620@landley.net>
+Date: Wed, 29 Nov 2023 10:38:48 -0600
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH v2] initramfs: Support unpacking directly to tmpfs
+Content-Language: en-US
+To: Emily Shepherd <emily@redcoat.dev>,
+ Andrew Morton <akpm@linux-foundation.org>
+Cc: initramfs@vger.kernel.org, =?UTF-8?Q?Thomas_Str=c3=b6mberg?=
+ <t+github@chainguard.dev>, =?UTF-8?Q?Anders_Bj=c3=b6rklund?=
+ <anders.f.bjorklund@gmail.com>, Giuseppe Scrivano <giuseppe@scrivano.org>,
+ Al Viro <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@lst.de>,
+ Jens Axboe <axboe@kernel.dk>
+References: <pkyfrfofquliqqxpylzzn5kdnfk4tewo6gx25d5m6pm2femvin@dkxlxm6leegu>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <pkyfrfofquliqqxpylzzn5kdnfk4tewo6gx25d5m6pm2femvin@dkxlxm6leegu>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-For systems which run directly from initramfs, it is not possible to use
-pivot_root without first changing root. This is because of the
-intentional design choice that rootfs, which is where initramfs is
-unpacked to, cannot be unmounted.
+On 11/29/23 03:00, Emily Shepherd wrote:
+> For systems which run directly from initramfs, it is not possible to use
+> pivot_root without first changing root. This is because of the
+> intentional design choice that rootfs, which is where initramfs is
+> unpacked to, cannot be unmounted.
+> 
+> pivot_root is an important feature for creating containers
 
-pivot_root is an important feature for creating containers and the
-alternative (mounting the new root over the top of the old with MS_MOVE
-and then calling chroot) is not favoured by most container runtimes
-[1][2] as it does not completely remove the host system mounts from the
-mount namespace.
+Because nobody's ever wanted to fix chroot() so mkdir("sub", 0777);
+chroot("sub"); chdir("../../../../.."); chroot("."); wouldn't escape it, so they
+repurposed a syscall intended to dispose of initial ramdisks that does things
+like traverse the process list and close/reopen all the open files pointing to
+the old filesystem (including "." and "/") so they point to the new filesystem.
 
-The general work around, when running directly from initramfs, is to
-have init mount a new tmpfs, copy everything out of rootfs, and then
-switch_root [3][4]. This is only required when running directly from the
-initramfs as all other methods of acquiring a root device (having the
-kernel mount a root device directly via the root= parameter, or using
-initramfs to mount and then switch_root to a new root) leave an empty
-rootfs at the top of the mount stack.
+Personally, I always found THAT a bit awkward, but there wasn't a "clean" system
+call that _only_ did what the container guys wanted (patch the mount tree). I
+would have thought you could use "mount --move . /" to nerf the cd ../../.. but
+for some reason it didn't work (I forget why) and nobody wanted to fix that either.
 
-This commit adds a new build option - EMPTY_ROOTFS, available when
-initrd/initramfs is enabled. When selected, rather than unpacking the
-inbuilt / bootloader provided initramfs directly into rootfs, the kernel
-will mount a new tmpfs/ramfs over the top of the rootfs and unpack to
-that instead, leaving an empty rootfs at the top of the stack. This
-removes the need to have init copy everything as a workaround.
+(By the way, I used pivot_root() on ramfs back when it DID move it, which then
+allowed you to unmount it, at which point the kernel locked up as the doubly
+linked list traversal kept going until they hit the initramfs entry that was
+"always there" and thus reliably terminated the list... Yeah, that got fixed,
+now the pivot_root returns an error. Being an initramfs early adopter was
+"interesting"...)
 
-[1]: https://github.com/opencontainers/runc/blob/95a93c132cf179a017312e22a954f137e8237c4e/man/runc-create.8.md?plain=1#L27
-[2]: https://github.com/containers/crun/blob/8e8d7972f738f28294cd5c16091d136ca278759e/crun.1.md?plain=1#L103
-[3]: https://github.com/tinycorelinux/Core-scripts/blob/dbb24bf42a0a9935b18e66a0b936266b2244251b/init#L13
-[4]: https://github.com/kubernetes/minikube/blob/master/deploy/iso/minikube-iso/board/minikube/x86_64/rootfs-overlay/init#L6
+> and the
+> alternative (mounting the new root over the top of the old with MS_MOVE
+> and then calling chroot) is not favoured by most container runtimes
+> [1][2] as it does not completely remove the host system mounts from the
+> mount namespace.
+> 
+> The general work around, when running directly from initramfs, is to
+> have init mount a new tmpfs, copy everything out of rootfs, and then
+> switch_root [3][4].
 
-Signed-off-by: Emily Shepherd <emily@redcoat.dev>
----
-v2:
-  - Fix formatting error in patch
-  - Update overmount_rootfs() return type to void
-  - cc relevant kernel devs based on blame of init files
-  - cc OCI container runtime devs who have supported no-pivot options
-  - cc small / embedded linux devs who have mitigated this by copying 
-    root
-  - tweak to changelog: clarify why no-pivot is not recommended
-  - tweak to changelog: include missing reference to minikube's rootfs 
-    mitigation
----
- init/Kconfig     | 13 +++++++++++++
- init/do_mounts.c | 23 +++++++++++++++++++++++
- init/do_mounts.h |  6 ++++++
- init/initramfs.c |  4 ++++
- 4 files changed, 46 insertions(+)
+Which is why I added switch_root to busybox 18 years ago, yes. (I thought I got
+the idea from klibc but I'm not finding it in their git repo. I didn't invent
+it, there was an existing one somewhere, my 2005 busybox commit comment credits
+run_init.c from "kconfig" which can't be right. I did rename it to be more
+obviously analogous to pivot_root...)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 6d35728b94b2b..bf15bd08abdc2 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1299,6 +1299,19 @@ config BLK_DEV_INITRD
- 
- if BLK_DEV_INITRD
- 
-+config EMPTY_ROOTFS
-+	bool "Mount initramfs over empty rootfs"
-+	help
-+		Normally initramfs is unpacked directly into the rootfs. When this
-+		option is enabled, initramfs is instead unpacked into a tmpfs
-+		mounted on top of a permanently empty rootfs.
-+
-+		This is mostly useful for embedded operating systems, running
-+		directly from initramfs, which need to make use of pivot_root (for
-+		example systems running containers).
-+
-+		If unsure, say N.
-+
- source "usr/Kconfig"
- 
- endif
-diff --git a/init/do_mounts.c b/init/do_mounts.c
-index 5dfd30b13f485..7cf106cf976db 100644
---- a/init/do_mounts.c
-+++ b/init/do_mounts.c
-@@ -514,3 +514,26 @@ void __init init_rootfs(void)
- 		(!root_fs_names || strstr(root_fs_names, "tmpfs")))
- 		is_tmpfs = true;
- }
-+
-+#ifdef CONFIG_EMPTY_ROOTFS
-+void __init overmount_rootfs(void) {
-+	int err;
-+
-+	err = init_mkdir("/root", 0700);
-+	if (err != 0)
-+		goto out;
-+
-+	err = init_mount("rootfs", "/root", is_tmpfs ? "tmpfs" : "ramfs", 0, NULL);
-+	if (err != 0)
-+		goto out;
-+
-+	init_chdir("/root");
-+	init_mount(".", "/", NULL, MS_MOVE, NULL);
-+	init_chroot(".");
-+
-+	return;
-+
-+out:
-+	printk(KERN_WARNING "Failed to mount over rootfs\n");
-+}
-+#endif /* CONFIG_EMPTY_ROOTFS */
-diff --git a/init/do_mounts.h b/init/do_mounts.h
-index 15e372b00ce70..3a261f1ae0d64 100644
---- a/init/do_mounts.h
-+++ b/init/do_mounts.h
-@@ -41,3 +41,9 @@ static inline bool initrd_load(char *root_device_name)
- 	}
- 
- #endif
-+
-+#ifdef CONFIG_EMPTY_ROOTFS
-+void __init overmount_rootfs(void);
-+#else
-+static inline void __init overmount_rootfs(void) { return; }
-+#endif
-diff --git a/init/initramfs.c b/init/initramfs.c
-index 8d0fd946cdd2b..76525108a39d2 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -19,6 +19,8 @@
- #include <linux/task_work.h>
- #include <linux/umh.h>
- 
-+#include "do_mounts.h"
-+
- static __initdata bool csum_present;
- static __initdata u32 io_csum;
- 
-@@ -688,6 +690,8 @@ static void __init populate_initrd_image(char *err)
- 
- static void __init do_populate_rootfs(void *unused, async_cookie_t cookie)
- {
-+	overmount_rootfs();
-+
- 	/* Load the built in initramfs */
- 	char *err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
- 	if (err)
--- 2.42.0
+> This is only required when running directly from the
+> initramfs as all other methods of acquiring a root device (having the
+> kernel mount a root device directly via the root= parameter, or using
+> initramfs to mount and then switch_root to a new root) leave an empty
+> rootfs at the top of the mount stack.
 
+If you don't use rootfs you don't have to empty it, yes.
+
+You could use an old-style initrd which would be mounted over the root
+filesystem and which you could switch_root away from and then unmount. Then
+pivot_root() could actually perform its as-designed function, although last I
+checked it wasn't fully container-aware so tended to have fairly awkward global
+impact if you ran it inside a container without being VERY careful. (Maybe it's
+been fixed since?)
+
+You could also have your own tar.xz in rootfs with a tiny busybox/toybox root to
+extract it into the subdir so "cp -ax" didn't have a 2X memory high water mark.
+You could even have a little static binary to call so you don't even need a
+shell. Off the top of my head:
+
+void main(void)
+{
+  mkdir("blah", 0777);
+  mount("newroot", "blah", "tmpfs", 0, "noswap,size=37%,huge=within_size");
+  if (!fork()) exec("tar", "tar", "xpC", "blah", "blah.txz", NULL);
+  else wait();
+  if (!fork()) exec("rm", "rm", "blah.txz", "init", "tar", "xzcat", NULL);
+  else wait();
+  if (chdir("/blah") || chroot(".") || exec("/init")) complain_and_hang();
+}
+
+Statically linked against musl-libc that's not likely to be more than 32k, it's
+all syscalls. The tar and xzcat binaries are a bit bigger, but not unreasonable
+in either busybox or toybox...
+
+Or you could petition to add -x to mv I suppose. I could add it to toybox
+tomorrow if you like? (And probably send a patch to Denys for busybox?)
+
+> This commit adds a new build option - EMPTY_ROOTFS, available when
+> initrd/initramfs is enabled. When selected, rather than unpacking the
+> inbuilt / bootloader provided initramfs directly into rootfs, the kernel
+> will mount a new tmpfs/ramfs over the top of the rootfs and unpack to
+> that instead, leaving an empty rootfs at the top of the stack. This
+> removes the need to have init copy everything as a workaround.
+
+How is it a "workaround"? The userspace tool is as old as initramfs.
+
+Your real complaint seems to be that a single ramfs instance is shared between
+container instances, even when the PID 1 init process isn't. What you're
+"working around" is incomplete container namespace separation, and you're doing
+so by adding yet another kernel config option. You are _adding_ a workaround to
+the kernel.
+
+If you still need to complicate the kernel, wouldn't it make more sense to add a
+runtime check for rootfstype=redundant or some such, and have _that_ do the
+overmount (without needing a config symbol to micromanage a weird corner case
+behavior)? If it's _init code it should be freed before launching PID 1...
+
+Rob
