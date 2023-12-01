@@ -1,268 +1,528 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=redcoat-dev.20230601.gappssmtp.com header.i=@redcoat-dev.20230601.gappssmtp.com header.b="uwpCyGp6"
-Received: from mail-wm1-x32c.google.com (mail-wm1-x32c.google.com [IPv6:2a00:1450:4864:20::32c])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D3911B3
-	for <initramfs@vger.kernel.org>; Wed, 29 Nov 2023 19:31:42 -0800 (PST)
-Received: by mail-wm1-x32c.google.com with SMTP id 5b1f17b1804b1-40b30308c67so3775865e9.0
-        for <initramfs@vger.kernel.org>; Wed, 29 Nov 2023 19:31:42 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="ML1jsL75"
+Received: from mail-oi1-x234.google.com (mail-oi1-x234.google.com [IPv6:2607:f8b0:4864:20::234])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D821FF4
+	for <initramfs@vger.kernel.org>; Fri,  1 Dec 2023 13:57:28 -0800 (PST)
+Received: by mail-oi1-x234.google.com with SMTP id 5614622812f47-3b2f4a5ccebso667788b6e.3
+        for <initramfs@vger.kernel.org>; Fri, 01 Dec 2023 13:57:28 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redcoat-dev.20230601.gappssmtp.com; s=20230601; t=1701315101; x=1701919901; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=eIN8iA6iBqyuGM6E5QDFbM+HzGRmBvz35Suk2LdeXbI=;
-        b=uwpCyGp6M8PLHnIi4lLbTyYu+s90TTykAAia6LYE+vHi2ESIsAl2JOlMX5oQizGs8M
-         gF6NK6bWEsspChCxxxWpET1LceeHpMVk8AGOuscl3KG7pIYjU4y8tN6eYRfeGJWjZO1D
-         DnvccQffTb8U5UODgfdfWjdVZAI1O43viEKf6u0eAxMfLyUWKWMQfVYNQIjGK7RfynrH
-         +IWbVM3BwkQYH/JzquvCqloT9fXZAk8teGzu29eoqOSFTJtPNyEKe20/sJ90jn3EJmsH
-         m0S2t6hlAeFmHfPomRedl1wheAR04hzaoij1IBx6Vdin8bv4HRAYzCHvbGjZgMCCwz4t
-         5S5w==
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1701467848; x=1702072648; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=9KDCWdNh4+3/EW/4SDdBX7WaHWg8sAI5TINhdc41b/U=;
+        b=ML1jsL758rTLiJC2QmRlXOTr4TWDs2TtOPwTVEx7A7Wqf/lFf971REh0vqmCbW8kTj
+         7Rv9lChG9CYg80n/q8QPQrgk7wo3u4CMsgjMi6t15NCvjq63E1lF8hInnVBrZBAlMRpa
+         WINqG1EFowyytEpmUFgg0PlZx2759vdc3/Z88jKQtWIffllQbmMBozbkS8jK+60KlEd4
+         fj3n6OSdup390xnfRBDyZw3JClT/ru2LcocHxw0Sb/AFV2oJ7RjFnmU3t4atmMrQTgXg
+         XKUHwCB24BF3a7pGUSp19v6YQEQOWyrmICVB07fpNOc22dvIcRNH35oP2rnunfgOozfm
+         DTWg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701315101; x=1701919901;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=eIN8iA6iBqyuGM6E5QDFbM+HzGRmBvz35Suk2LdeXbI=;
-        b=B3toHN1BzYKwxDYQdTVUHP4TYUH/f54UBqQHorE75DLz0zPZtbvaKhQqs/MBn4wT4G
-         hNf/jnb7gVP/Fj1jguaKJVvOOEw3H72qpbYcBd2XEjCBhzGBX5EN9R/ip9gkzPD5N9wQ
-         QpllCDj6ECrTRxsvexHj1qAmxWOmbuT5/63mdO2aw5jXxWiQPbEYKm6PtG/N3l477Wyg
-         iQ42c/ymKCLuj3j2XIRl9th9yWJ6iQuS6Ta2Nolwc0w1rtFe0fJfD2VquNXNVXhiOpTb
-         DB60j6+YG7DGIA9EGAVX7OM/eGoskSh06+G/oTE/koaHBo+Klq7/CPgsp/BpVotZmzfW
-         bqOw==
-X-Gm-Message-State: AOJu0YxC7ORHT8ekDye+3r9vNZus4tt4iUe7dqN132vHEWTtNuq2T5iP
-	lSdp72wI9nDSk2jCLf5Sb0Iu9g==
-X-Google-Smtp-Source: AGHT+IGrygtMR/F/gp95k9bZ4UBPLKWUW7VTjTmwVBv1+yNE3vFByXQPVoduryQ2hBYQrwga/eqElA==
-X-Received: by 2002:a05:600c:1f91:b0:40b:578d:2496 with SMTP id je17-20020a05600c1f9100b0040b578d2496mr551602wmb.27.1701315100474;
-        Wed, 29 Nov 2023 19:31:40 -0800 (PST)
-Received: from test ([2a00:23c7:1fab:4e01:4915:193d:c8fb:a42c])
-        by smtp.gmail.com with ESMTPSA id m40-20020a05600c3b2800b004042dbb8925sm4085275wms.38.2023.11.29.19.31.39
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 29 Nov 2023 19:31:39 -0800 (PST)
-Date: Thu, 30 Nov 2023 03:31:38 +0000
-From: Emily Shepherd <emily@redcoat.dev>
-To: Rob Landley <rob@landley.net>
-Cc: Andrew Morton <akpm@linux-foundation.org>, initramfs@vger.kernel.org, 
-	Thomas =?utf-8?Q?Str=C3=B6mberg?= <t+github@chainguard.dev>, Anders =?utf-8?Q?Bj=C3=B6rklund?= <anders.f.bjorklund@gmail.com>, 
-	Giuseppe Scrivano <giuseppe@scrivano.org>, Al Viro <viro@zeniv.linux.org.uk>, 
-	Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>
-Subject: Re: [PATCH v2] initramfs: Support unpacking directly to tmpfs
-Message-ID: <37yuynohcuve46jhgzbz24ip6yb2lqvwcn6gpxwxpw6msgtk4b@7dgqfkdtjngb>
-References: <pkyfrfofquliqqxpylzzn5kdnfk4tewo6gx25d5m6pm2femvin@dkxlxm6leegu>
- <fc35ab36-c722-1102-36c5-6a2c015b2620@landley.net>
- <rxh6knvencwjajhgvdgzmrkwmyxwotu3itqyreun3h2pmaujhr@snhuqoq44kkf>
- <cec90924-e7ec-377c-fb02-e0f25ab9db73@landley.net>
+        d=1e100.net; s=20230601; t=1701467848; x=1702072648;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=9KDCWdNh4+3/EW/4SDdBX7WaHWg8sAI5TINhdc41b/U=;
+        b=ElCi4ej34CIv9eAkheMeHyN6ZVI/E+TexiF4C7WLiyUIIolKMEVTosUcLwqls7uzNL
+         mIzftmoGELkFWsSYFzs7XZ6rivaLcfJHk694nwOSFXjdw7jcgEhz6QbdQ9c+2+0bUmGz
+         sx4uE0U0ZmRXDtQPWERfsK4V6YLTXWdaUNI/Z1yt8kvETomLvIZcHTMAJi0+H1wLZqVh
+         IcZmJauCGjf1us7j++FLm+Jb+qmMZrwTORd+whddyc8ckCiU0NxaHc78O2pEOlydWXkb
+         MtFWpPuzkrjfZE3PcyhnpyjD9Wwv3ACcNwijM8dfFK1f/wWvdczegThZZvPeAcPtM8jb
+         cDQA==
+X-Gm-Message-State: AOJu0YxCFBEBJonsejo96VenXVr35f+54HBuI160gtYQzjRHeVwwQQsM
+	vlQ42gnnt05JT1tmBkct1PKjPbItTwWw0qL0qCK8Hw==
+X-Google-Smtp-Source: AGHT+IHGeq2NzPybgz6V4ZbNiMrdeyZePA2+mhVw8rVBD+VRPvNQIktX4MMBlrKH/nwL/I548yp0Kw==
+X-Received: by 2002:a05:6808:118d:b0:3b5:8586:b17e with SMTP id j13-20020a056808118d00b003b58586b17emr232988oil.52.1701467847874;
+        Fri, 01 Dec 2023 13:57:27 -0800 (PST)
+Received: from [192.168.1.4] ([136.62.51.249])
+        by smtp.gmail.com with ESMTPSA id b5-20020a056808010500b003af642cf646sm689938oie.37.2023.12.01.13.57.26
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 01 Dec 2023 13:57:27 -0800 (PST)
+Message-ID: <dbeb7b4b-b5e6-15ba-7e74-f9ffdd07059b@landley.net>
+Date: Fri, 1 Dec 2023 16:02:50 -0600
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-In-Reply-To: <cec90924-e7ec-377c-fb02-e0f25ab9db73@landley.net>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH v2] initramfs: Support unpacking directly to tmpfs
+Content-Language: en-US
+To: Emily Shepherd <emily@redcoat.dev>
+Cc: Andrew Morton <akpm@linux-foundation.org>, initramfs@vger.kernel.org,
+ =?UTF-8?Q?Thomas_Str=c3=b6mberg?= <t+github@chainguard.dev>,
+ =?UTF-8?Q?Anders_Bj=c3=b6rklund?= <anders.f.bjorklund@gmail.com>,
+ Giuseppe Scrivano <giuseppe@scrivano.org>, Al Viro
+ <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@lst.de>,
+ Jens Axboe <axboe@kernel.dk>
+References: <pkyfrfofquliqqxpylzzn5kdnfk4tewo6gx25d5m6pm2femvin@dkxlxm6leegu>
+ <fc35ab36-c722-1102-36c5-6a2c015b2620@landley.net>
+ <rxh6knvencwjajhgvdgzmrkwmyxwotu3itqyreun3h2pmaujhr@snhuqoq44kkf>
+ <cec90924-e7ec-377c-fb02-e0f25ab9db73@landley.net>
+ <37yuynohcuve46jhgzbz24ip6yb2lqvwcn6gpxwxpw6msgtk4b@7dgqfkdtjngb>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <37yuynohcuve46jhgzbz24ip6yb2lqvwcn6gpxwxpw6msgtk4b@7dgqfkdtjngb>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Wed, Nov 29, 2023 at 02:53:49PM -0600, Rob Landley wrote:
->I'm assuming you can do process-local unmounts to prune what you'd be
->overmounting? (switch_root didn't _have_ to delete the old initramfs contents,
->it did it to free space. Containers similarly would remove privileges as part of
->their setup, and that includes mounts the new context shouldn't have.)
+On 11/29/23 21:31, Emily Shepherd wrote:
+> On Wed, Nov 29, 2023 at 02:53:49PM -0600, Rob Landley wrote:
+>>I'm assuming you can do process-local unmounts to prune what you'd be
+>>overmounting? (switch_root didn't _have_ to delete the old initramfs contents,
+>>it did it to free space. Containers similarly would remove privileges as part of
+>>their setup, and that includes mounts the new context shouldn't have.)
+> 
+> I think we are talking at cross purposes here, let's get back on track: 
+> The aim is to do a pivot_root within a container's mount namespace.
 
-I think we are talking at cross purposes here, let's get back on track: 
-The aim is to do a pivot_root within a container's mount namespace. In 
-order to do this, we need at least two layers of "root" in the host 
-mount namespaces. If there is just one (ie rootfs), we can't pivot_root, 
-because rootfs cannot be removed.
+Your aim is. You are starting from your conclusion and reasoning backwards.
 
-Yes, you can switch_root or chroot or do any number of things, but that 
-is not relevant. That is not the way container runtimes tend to work. 
-The desirable outcome is pivot_root.
+> In 
+> order to do this, we need at least two layers of "root" in the host 
+> mount namespaces. If there is just one (ie rootfs), we can't pivot_root, 
+> because rootfs cannot be removed.
+> 
+> Yes, you can switch_root or chroot or do any number of things, but that 
+> is not relevant.
 
->From reading the link's summary, it seems like "unmount the old 
->inherited /proc
->and /sys before you "mount --move newfs /" seems like it would have been a fix?
+Those approaches have worked fine for many people for many years.
 
-It was the patch that was made in the container runtimes at the time, 
-yes. This does not change the fact that the _desirable_ path is 
-pivot_root.
+Possibly I'm biased, I thought using pivot_root was silly when I learned
+containers were doing it back in 2011:
 
->Lazy unmount it (which never affects a process's open files, including 
->the "/"
->and "." symlinks in each process), then mount --move so the visibility hides it,
->then teach the kernel that "overmounted" lets lazy unmounts go. (Which it
->_might_ already do if the reference count falls to 0 because of "." and "/"
->leaving, although you'd have to make sure no other open file descriptors
->referenced it in your current namespace from /dev entries and just plain
->inherited filehandles...)
->
->But it seems doable?
+  https://landley.net/notes-2011.html#02-06-2011
 
-You can unmount child mounts, sure, but if your root is rootfs, you 
-can't unmount it. The aim of this change is to make unmounting the host 
-root more convenient, by ensuring there is a blank rootfs below it.
+(It's a pity the sourceforge link doesn't work anymore. Cloud rot.)
 
->Lemme guess, the child does something like:
->
->for (i = 0; i<32767; i++) close(i);
->mkdir("sub/blah")
->mount("sub", "sub", "tmpfs");
->chdir("sub");
->umount(".", MNT_DETACH);
->chroot("blah");
->chdir("../../../..");
->chroot(".")
->readdir();
+> That is not the way container runtimes tend to work. 
+> The desirable outcome is pivot_root.
 
-I have told you already that the chroot, chdir .. trick does not work 
-within containers. This code snippet has nothing to do with this patch 
-or this discussion at all.
+Still reasoning backwards from your conclusion. But sure, let's accept for the
+sake of argument that you're stuck with a bad legacy decision in userspace. Is a
+kernel config option the best way to compensate vs checking root=tmpfs?
 
->
->> This would not occur with pivot_root.
->
->It would not occur if the filesystem had been removed from the current mount
->namespace by other means, either. (Or if the kernel got the test right, which
->you're saying it does now.)
+>>From reading the link's summary, it seems like "unmount the old 
+>>inherited /proc
+>>and /sys before you "mount --move newfs /" seems like it would have been a fix?
+> 
+> It was the patch that was made in the container runtimes at the time, 
+> yes. This does not change the fact that the _desirable_ path is 
+> pivot_root.
 
-You can't remove it if it's rootfs. If your host's root is rootfs, as it 
-would be if you run directly from initramfs, you can't unmount it.
+https://en.wikipedia.org/wiki/Proof_by_assertion
 
->Back when I was trying to get /dev/console to work properly with 
->init=/bin/sh I
->didn't ask for a kconfig option to make the initial task be PID 2 with PID 1
->(and its magic signal-blocking properties and inability to call reboot() and
->session ID 0 and orphaned zombies reparented to it so on) being a second idle
->task. I figured out how to make my userspace do the right thing.
->
->This really seems like an "init starts as PID 2" solution, which is a weird
->thing to have a dedicated build-time kernel config option for.
+>>> This would not occur with pivot_root.
+>>
+>>It would not occur if the filesystem had been removed from the current mount
+>>namespace by other means, either. (Or if the kernel got the test right, which
+>>you're saying it does now.)
+> 
+> You can't remove it if it's rootfs. If your host's root is rootfs, as it 
+> would be if you run directly from initramfs, you can't unmount it.
 
-I am afraid I do not understand this point at all. This change is not 
-requesting anything like this.
+You can't remove rootfs even if you do overmount something on top of it. You can
+only delete its contents, it's still a writeable filesystem shared between all
+container instances. A userspace tool was provided to delete its contents many
+years ago. Said tool has been in util-linux since 2009
+(https://github.com/util-linux/util-linux/commit/711ea7307d54) and they copied
+the name from https://git.busybox.net/busybox/commit/?id=0f34a821ab99 from 2005.
 
->You want to use rootfs but not use rootfs. It's very zen.
+If "the same rootfs is potentially exposed into every container namespace, which
+is a problem even after it's been emptied" is the issue, your patch doesn't
+address it. If it's NOT the issue, userspace has been able to achieve the state
+you want without your patch since initramfs was created.
 
-No, I want an initramfs, I just don't want it on rootfs. If I mount a 
-block device as root, that wouldn't be rootfs either.
+Your argument is "I don't want to". Which isn't a deal-breaker, but is the
+context in which I'm reacting to the design change.
 
->If you'd like to go "I want to have the kernel automatically mount a 
->freshly
->formatted ext4 filesystem and then have the kernel extract the cpio archive into
->that instead, because it's more convenient for me to have the kernel do this for
->me than doing it in userspace"...
+>>Back when I was trying to get /dev/console to work properly with 
+>>init=/bin/sh I
+>>didn't ask for a kconfig option to make the initial task be PID 2 with PID 1
+>>(and its magic signal-blocking properties and inability to call reboot() and
+>>session ID 0 and orphaned zombies reparented to it so on) being a second idle
+>>task. I figured out how to make my userspace do the right thing.
+>>
+>>This really seems like an "init starts as PID 2" solution, which is a weird
+>>thing to have a dedicated build-time kernel config option for.
+> 
+> I am afraid I do not understand this point at all. This change is not 
+> requesting anything like this.
 
-Not what this patch is suggesting.
+If I wanted the kernel to launch an init task for me, but I didn't want that
+init task to be on PID 1, and I said that PID 1 has a bunch of strange
+properties so it's inappropriate for that to run my code, and I proposed a patch
+with a dedicated config option to do that, this would be analogous to the patch
+you've presented.
 
-The kernel already supports mounting a block device, in lieu of a 
-userspace init doing it, via the root= parameter. Are you suggesting its 
-support of that is inappropriate?
+If someone responded "you can call fork()" and I tried to come up with reasons
+other than "I don't want to"... at that point we're in a Jim Jeffries routine.
 
->If you fix the mount --move issues you could bind mount your current 
->directory,
->cd $PWD, and then --move mount it to /
->
->I think you're addressing the wrong issue.
+And no this isn't an entirely hypothetical case, this was me scratching my head
+for more than a year back in the busybox days, pestering people on IRC while
+working out out to write oneit.c:
 
-No, I'm fixing the fact that container runtimes want to pivot_root, and 
-can't when running directly from initramfs, as this extracts to rootfs.
+http://lists.busybox.net/pipermail/busybox/2008-November/067722.html
 
->As with the trivial patch to have init= launch PID 2, the cognitive 
->load of
->explaining to people WHY the config option exists and when somebody might have
->wanted to use it in the kernel you're trying to forward port in a design you
->inherited from somebody who isn't around anymore is itself a form of design
->complexity. It's a special case _adding_ a design wart.
+>>You want to use rootfs but not use rootfs. It's very zen.
+> 
+> No, I want an initramfs, I just don't want it on rootfs.
 
-Is it possible that the reasoning of why this important would be much 
-more apparent to people in the container space?
+There's ways of dealing with that. Have been for a while. I would respond to a
+dedicated CONFIG_INIT_ADJUST to have PID 1 be a second idle task and put init=
+on PID 2 fairly similarly.
 
-I disagree that this introduces a design wart. On the contrary, I 
-believe it adds the option to make initramfs more consistent with the 
-other root setup methods:
+> If I mount a 
+> block device as root, that wouldn't be rootfs either.
 
-1. kernel mounted block device via root= results in a nominally empty 
-rootfs and a block device on top with the root file system in it. 
-pivot_root can be used.
-2. initramfs which performs some init, mounts a block device, then 
-switches root to it. This results in a nominally empty rootfs and a 
-block device on top with the root file system in it. pivot_root can be 
-used.
-3. initramfs which contains an embedded root filesystem to be used 
-directly. Results in a rootfs with the root file system in it with 
-nothing on top. pivot_root cannot be used.
+I am aware of that, yes. I think I suggested it.
 
-This patch simply changes point 3, to be more in line with the others:
+You are reasoning backwards from your solution and not thinking about the
+design. I don't think you're addressing the real issue.
 
-3. initramfs which contains an embedded root filesystem to be used 
-directly. Would result in a nominally empty rootfs with tmpfs on top 
-with the root filesystem in it. pivot_root can be used.
+Right now "separate" container namespaces all share a common rootfs instance.
+They do NOT share a common init task, even though before containers that was
+universal. You can have your own PID namespace, which starts _empty_.
 
->You're asking the kernel to create a second empty ramfs or tmpfs 
->instance, and
->instead of checking an existing argument like "root=tmpfs" you're changing the
->kernel's behavior with a dedicated config option that does a specific thing.
+Your mount tree in a container does NOT start empty. From the clone(2) man page:
 
-If we want to set this behaviour via a kernel parameter, we can do that 
-:)
+  If  CLONE_NEWNS  is  set,  the  cloned child is started in a new
+  mount namespace, initialized with a copy of the namespace of the parent.
 
->What happens if somebody sets that config option and then goes 
->root=/dev/sda2
->
->In theory making the rootfs directory neither readable nor executable to the PID
->you've mapped root to in the container is anther approach.
+Defaulting to having everything in it and removing what you don't want to keep
+is very different from what PID or UID namespaces do, and is causing you
+problems. Doing a chroot is basically an overmount, the other mount points are
+still there in your tree and accessable if you try hard enough, and rootfs is
+common to all containers. Mitigating this requires cleanup work that isn't
+always even possible to fully do (ala rootfs actually being used, which does
+happen a lot today and it's always accessible if a static process forking its
+own mount namespace does enough umounts, which can then act as a
+cifs/nfs/9p/rsync server out to the parent or some such).
 
-Incorrect, please reread the patch.
+Logically, extending the kernel to have a CLONE_NEWROOTFS where it gets a _new_
+ramfs or tmpfs instance, unique to that namespace, at the root of a new empty
+mount tree, is the logical fix. There is then design work around "so what API do
+you use to populate it" which could range from "the first int below child_stack
+is the fd of a cpio.gz to extract into it and then it launches an /init out of
+there the way the host linux boots" through "the new child starts suspended ala
+vfork/ptrace and then the parent process initializes it and unblocks it" to "the
+init task is running the executable from the host context that called clone and
+has inherited the existing open filehandles from the host context, although
+despite the openat() family being in posix-2008 we sadly don't appear to have a
+mountat()...". I dunno. That's design work to properly fix the issue.
 
->Your "one and only time" is an awful lot of embedded systems. It's a 
->common use
->case. The point of having initramfs be tmpfs is you can _persist_ in using it as
->your root filesystem without an errant log file filling up memory and hanging
->the system (a problem with ramfs).
+You don't want to address the design problem, you want to add a special case
+workaround for your current issue. You see doing that as a "design fix". I do not.
 
-We are not in disagreement on this point. In fact the irony is that we 
-are actually in strong agreement here. Leaving the root in the initramfs 
-_is_ a useful and commonly used flow - this change simply means to make 
-that flow more compatible with container runtimes.
+>>If you'd like to go "I want to have the kernel automatically mount a 
+>>freshly
+>>formatted ext4 filesystem and then have the kernel extract the cpio archive into
+>>that instead, because it's more convenient for me to have the kernel do this for
+>>me than doing it in userspace"...
+> 
+> Not what this patch is suggesting.
 
->Whatever your container stuff is
+Yes, I've noticed.
 
-Love it or hate it, lots of stuff runs on containers now. The kernel has 
-made plenty of changes to better facilitate containers.
+My objection is "that may not be not the right fix at the design level" and your
+response is "my patch didn't implement what you're talking about".
 
->it won't be
->able to run on any of those existing systems that keeps initramfs populated with
->files. So again why have it be a config option: if you're going to change the
->behavior, change it for EVERYBODY or your stuff will need a special kernel
->configuration in order to run.
+> The kernel already supports mounting a block device, in lieu of a 
+> userspace init doing it, via the root= parameter. Are you suggesting its 
+> support of that is inappropriate?
+> 
+>>If you fix the mount --move issues you could bind mount your current 
+>>directory,
+>>cd $PWD, and then --move mount it to /
+>>
+>>I think you're addressing the wrong issue.
+> 
+> No, I'm fixing the fact that container runtimes want to pivot_root, and 
+> can't when running directly from initramfs, as this extracts to rootfs.
 
-Sure, if we think its more appropriate to just do this always (not via a 
-build option) or gated behind a kernel parameter, we can do that.
+Which you can already do with switch_root, with initrd, with a static binary
+calling mount/mv/chroot, and probably other ways none of which would be you
+exclusively reasoning backwards from your conclusion. You don't seem to want to
+do that, and only want to talk about your solution not talk about the problem.
 
->
->Heck, Debian populates initramfs with a cpio.gz file as part of its normal boot
->process:
->
->$ zcat /boot/initrd.img-4.19.0-22-amd64  | toybox file -
->-: ASCII cpio archive (SVR4 with no CRC)
->
->Has done for over a decade. You're saying debian can clean up but your stuff
->can't be expected to.
+Fine. Moving on. I still think a dedicated CONFIG entry is a bad way to do the
+silly thing. Specifying the silly thing on the kernel command line seems less bad.
 
-No, that is not what I'm saying.
+>>As with the trivial patch to have init= launch PID 2, the cognitive 
+>>load of
+>>explaining to people WHY the config option exists and when somebody might have
+>>wanted to use it in the kernel you're trying to forward port in a design you
+>>inherited from somebody who isn't around anymore is itself a form of design
+>>complexity. It's a special case _adding_ a design wart.
+> 
+> Is it possible that the reasoning of why this important would be much 
+> more apparent to people in the container space?
 
->If you want a NULLFS, that is a design change. Maybe ask for the design 
->change
->so THAT can be discussed. Your config option seems like a partial fix at best,
->and the kernel has enough abandoned partial fixes needing legacy support.
+Are you suggesting I don't understand because I'm not "one of us"?
 
-We already have what you call a nullfs. It's defined in 
-init/noinitramfs.c and usr/default_cpio_list, and its what you get if 
-you call switch_root within the initramfs.
+Personally I think the problem is more likely that I _predate_ you, and had a
+small hand in creating this entire area, and thus don't have the same hardwired
+assumptions about this being the only possible way it could ever have been done.
 
-In most runtime situations, rootfs _is_ what you'd call a nullfs. So 
-yes, sure: I want a nullfs when my root filesystem lives inside the 
-initramfs too. Like I'd get if I'm mounting with root= and like I'd get 
-if initramfs calls switch_root.
+In 2011 while working the OpenVZ booth at Scale along with Kir Kolyshkin (the
+OpenVZ userspace maintainer, we were coworkers when I did a contract at
+Parallels), I came up with the phrase "chroot on steroids" as part of my 30
+second pitch explaining the conceptual difference between virtualization and
+containerization to attendees who stopped at the booth to ask what we offered.
+(I wrote down "chroot on steroids" back in
+https://landley.net/notes-2011.html#19-04-2011 and got con crud at scale in
+https://landley.livejournal.com/53863.html . Yeah, sometimes I do marketing on
+the side. Startups need everybody to do everything. Containers were just SO COOL
+and nobody KNEW about them back then.) I also wrote various documentation like
+https://landley.net/lxc/ while adding adding container support to things like
+CIFS in commit f1d0c998653f.
 
--- 
-Emily Shepherd
+The team I worked with at at Parallels was porting container technology from
+OpenVZ into Linux, which is how vanilla Linux got containers. (The line of
+development dated back to a Russian bank moving from mainframes to linux in 1999
+and writing in-house mainframe-like extensions to Linux. I asked Kir, who had
+worked for said bank before the tech was spun out. Don't ask me the details of
+the 12 year old conversation, but he's still around if you want to ask him. He
+works at Red Hat these days.)
 
-Red Coat Development Limited
+Later I attended the https://github.com/Fewbytes/rubber-docker talk live at
+linuxconf.au in 2017 and have collected links like
+https://blog.lizzie.io/linux-containers-in-500-loc.html ever since. I've meant
+to add basic container support to toybox but it's been fairly far down on my
+todo list, partly because I talked the android developers' ears off about
+containers back when they merged toybox in 2015 (ala
+http://lists.landley.net/pipermail/toybox-landley.net/2015-February/015135.html)
+and a year later they wrote minijail (ala https://lwn.net/Articles/700557/) so
+they've got their own plumbing now that I'd have to be compatible with. And once
+I implemented unshare+nsenter in toybox and I've mostly just done stuff like
+"sudo env -i USER=root TERM=linux SHELL=/bin/bash LANG=$LANG
+PATH=/bin:/sbin:/usr/bin:/usr/sbin unshare -Cimnpuf chroot debootstrap" which is
+usually good enough for my personal quick and dirty use cases.
+
+I watched the rise of docker, was in the audience at ELC when the systemd guys
+announced rocket, still think the initial cgroup filesystem had a better design
+than cgroup2 (it could NEST, and why they don't properly instance devtmpfs in
+containers I still don't understand). I vaguely followed the multiple variants
+of flatpak that emerged because Ulrich Drepper hated static linking and too many
+people swallowed that line of nonsense. I remember when /proc/self/exe being
+inherited from the host became an exploit vector (an area I had previous
+interest in for different reasons ala https://lkml.org/lkml/2017/9/12/175)...
+
+But mostly what I was paying attention to was the checkpoint/restore stuff in
+case that was reasonable to implement in toybox, largely because of prior
+interest: back in 2002
+https://lkml.iu.edu/hypermail/linux/kernel/0206.2/0610.html and
+https://lkml.iu.edu/hypermail/linux/kernel/0206.2/0835.html got reblogged a lot
+by various lwn.net competitors, so people would ask _me_ about it and it was so
+nice when we finally got plumbing that let people _implement_ it. I mean OpenVZ
+already had live migration working great at the 2011 SCALE demo, that's what Kir
+was showing people at the other end of the table (and what I handed to them to
+when I got them spun up on the basic "containers are cool and it's not the same
+as VMs, all this 'cloud' stuff they're building from beowulf should pivot from
+VM to container ASAP", but it took a LOT of redesign to chip off pieces and get
+them into vanilla. (For one thing OpenVZ had added a bunch of new syscalls and
+Linus wanted to use synthetic filesystems instead.)
+
+You can argue that I'm _out_of_date_ if you like. (Probably true, on most
+things. Jack of all trades, master of none. Usually I know who to ask.) But I
+have some familiarity with, and reason to care about, both container
+infrastructure and Linux early boot.
+
+> I disagree that this introduces a design wart. On the contrary, I 
+> believe it adds the option to make initramfs more consistent with the 
+> other root setup methods:
+
+A think it's silly, and think having a dedicated build-time CONFIG option
+dedicated to doing something silly is not ideal.
+
+Checking for "root=tmpfs" to trigger the silly thing seems less bad to me,
+although I note that init/do_mounts.c function init_rootfs() already _is_
+checking for that (and there's a pending patch to tweak it), so... be aware.
+
+> 1. kernel mounted block device via root= results in a nominally empty 
+> rootfs and a block device on top with the root file system in it. 
+> pivot_root can be used.
+> 2. initramfs which performs some init, mounts a block device, then 
+> switches root to it. This results in a nominally empty rootfs and a 
+> block device on top with the root file system in it. pivot_root can be 
+> used.
+> 3. initramfs which contains an embedded root filesystem to be used 
+> directly. Results in a rootfs with the root file system in it with 
+> nothing on top. pivot_root cannot be used.
+> 
+> This patch simply changes point 3, to be more in line with the others:
+
+I believe I have basic context for Linux early boot.
+
+>>You're asking the kernel to create a second empty ramfs or tmpfs 
+>>instance, and
+>>instead of checking an existing argument like "root=tmpfs" you're changing the
+>>kernel's behavior with a dedicated config option that does a specific thing.
+> 
+> If we want to set this behaviour via a kernel parameter, we can do that 
+> :)
+
+As a convenience feature, a kernel parameter makes more sense to me. I still
+think it's a silly thing to want to do, but it means I don't have to teach
+people to fish it out of analogous defconfigs when they're learning to do board
+bringup. (The hardware vendor usually has a Linux BSP on some variant of a demo
+board, otherwise the people speccing the product wouldn't have selected that
+chipset for a Linux project. There are exceptions, but sane management doesn't
+throw newbies at them.)
+
+>>Whatever your container stuff is
+> 
+> Love it or hate it, lots of stuff runs on containers now. The kernel has 
+> made plenty of changes to better facilitate containers.
+
+Yes. I was there. Helping make that happen was, briefly, my day job.
+
+>>it won't be
+>>able to run on any of those existing systems that keeps initramfs populated with
+>>files. So again why have it be a config option: if you're going to change the
+>>behavior, change it for EVERYBODY or your stuff will need a special kernel
+>>configuration in order to run.
+> 
+> Sure, if we think its more appropriate to just do this always (not via a 
+> build option) or gated behind a kernel parameter, we can do that.
+
+I think doing it unconditionally will break existing users. And be unnecessary
+for 95% of the existing users of initramfs.
+
+Heck, I didn't expect the CONFIG_DEVTMPFS_MOUNT patch above would break debian's
+init ala https://lkml.iu.edu/hypermail/linux/kernel/1705.2/05813.html because
+they had a broken error handling path in their init script that had never
+triggered before, and when it did trigger it did something stupid and crashed
+the system. And yet that blocked the patch, and then adding a workaround for
+debian hit
+https://lore.kernel.org/linux-input/d6a5ba05-5de2-24e0-49ae-437058001b37@landley.net/
+and even though
+https://lkml.iu.edu/hypermail/linux/kernel/1709.2/02400.html has almost
+certainly happened by now the patch is still maintained out of tree...
+
+Also, my inittmpfs patches in 2013 only used tmpfs instead of ramfs under
+specific circumstances, and left it as ramfs in others (mostly determined by the
+root= and rootfstype= arguments). Despite that, I got email from somebody who
+switched their system to tmpfs and had it break because the cpio.gz they were
+extracting ate about 60% of the kernel's memory (which worked fine in their use
+case) and the tmpfs mounts default to size=50%, so it worked for ramfs but not
+tmpfs. And since ramfs takes no arguments rootflags= was never wired up to be
+passed through there to override the size=, and I _still_ haven't bothered to do
+it (the bug reporter went back to ramfs, and it's a static variable in
+init/do_mounts.c and exporting it over through rootfs_init_fs_context() requires
+touching header files so wasn't a 5 minute job... If somebody else wants to,
+feel free.)
+
+>>Heck, Debian populates initramfs with a cpio.gz file as part of its normal boot
+>>process:
+>>
+>>$ zcat /boot/initrd.img-4.19.0-22-amd64  | toybox file -
+>>-: ASCII cpio archive (SVR4 with no CRC)
+>>
+>>Has done for over a decade. You're saying debian can clean up but your stuff
+>>can't be expected to.
+> 
+> No, that is not what I'm saying.
+
+That's the part I don't understand. It _seems_ like what you were saying. Not
+"this hasn't been working fine for everyone else for the past 15 years already",
+but "I think it should have been designed a different way 20 years ago, and
+would like to change it to match my opinion".
+
+You're not unlocking a new capability you can't do without this patch. You just
+think it should always have worked differently than it does.
+
+I've submitted a few convenience patches myself over the years. Commit
+595a22acee26 eventually made it in, and I've maintained
+https://lkml.iu.edu/hypermail/linux/kernel/2302.2/05597.html out of tree since
+https://lkml.iu.edu/hypermail/linux/kernel/1606.2/05686.html . I am not
+conceptually opposed to convenience patches. (Nor am I the final decision maker
+here, by the way...)
+
+I'm just not seeing how the old way is _hard_ when the tool for it is in
+util-linux (as I said, I may be biased), and I don't think this addresses the
+underlying issue of the same rootfs being globally visible in all containers
+when the same init task isn't (and is similarly "kernel panics if this exits"
+important).
+
+>>If you want a NULLFS, that is a design change. Maybe ask for the design 
+>>change
+>>so THAT can be discussed. Your config option seems like a partial fix at best,
+>>and the kernel has enough abandoned partial fixes needing legacy support.
+> 
+> We already have what you call a nullfs. It's defined in 
+> init/noinitramfs.c and usr/default_cpio_list, and its what you get if 
+> you call switch_root within the initramfs.
+
+I mean a filesystem type that maintains no state and _cannot_ be written to,
+which your patch doesn't get because the rootfs that's there _can_ still be
+written to if you try.
+
+Hiding stuff in undermounts is classic 1970's student shenanigans, at best
+you're making it less obvious. The ramfs instance that's always mounted and
+never written to is still mapped into every container namespace, and the fact it
+_can_ be written to is non-obvious.
+
+Note: that's basically what Linux had before initramfs was invented. The root=
+mount was mandatory and there was nothing under it. There _being_ a rootfs
+instead was a design decision made 20 years ago by other people, which you seem
+to be trying to revert.
+
+> In most runtime situations, rootfs _is_ what you'd call a nullfs.
+
+Where "most" apparently does not include the category of "routers", which are
+one of the most numerous types of Linux system in the world. (According to
+https://www.bitdefender.com/blog/hotforsecurity/current-routers-use-eol-linux-kernel-chock-full-vulnerabilities/
+91% of the routers they tested ran linux, just the residential router market was
+$11 billion in 2023, which assuming an average sale price of $200 is 50 million
+units. The PC market shipped 68 million units but most of those run windows or
+macos.)
+
+LOTS of embedded people have used the existing initramfs, and it's accumulated a
+BUNCH of weirdness over the years. Did you know you can concatenate multiple
+cpio.gz files and the kernel loader will accept them as one big archive? Except
+gnu cpio adds runs of NUL bytes to the end, which broke the parser at one point,
+and then the android guys used a tool that reproduced the gnu behavior, and then
+I got added to the bug report...
+
+http://lists.landley.net/pipermail/toybox-landley.net/2021-April/028464.html
+
+Every one of those archives was extracted into the initramfs we have now.
+
+There have also been multiple threads about adding xattr support to cpio and the
+initramfs extractor (without which selinux bringup is WAY more awkward, and yes
+I get cc'd on them ala
+https://lkml.iu.edu/hypermail/linux/kernel/1905.2/06559.html), which so far keep
+petering out without resolution...
+
+You are not the first person to use this plumbing. "Everybody _really_ wants
+what I think it should always have been like, but nobody's mentioned it in the
+past 20 years" is a strange position to take. Earlier you said "the fact that
+the desirable path is" as a universal statement rather than a personal opinion.
+Desirable to who? Judged as "fact" by who?
+
+> So 
+> yes, sure: I want a nullfs when my root filesystem lives inside the 
+> initramfs too.
+
+You didn't understand what I meant by nullfs, I tried to clarify above.
+
+> Like I'd get if I'm mounting with root= and like I'd get 
+> if initramfs calls switch_root.
+
+I.E. like you can already get in multiple ways from userspace without this patch.
+
+A special root=tmpfs or similar workaround to change the behavior is small and
+ignoreable enough that I personally wouldn't object to it, if it didn't break
+anything else. I still don't think it's the right approach, but you do you.
+
+(For one thing, I can just NOT document "root=tmpfs" and it's invisible, and
+doesn't cause a problem. Where CONFIG_THINGY is a thing people see in menuconfig
+and I have to explain why they DON'T need it. In a previous life I was (again
+briefly) linux-kernel documentation maintainer, and still produce a lot of it in
+other contexts. My "oh goddess, not another variant to explain during early
+boot" reaction may be unique, I dunno, but... sigh. It is not entirely without
+cost.)
+
+Rob
