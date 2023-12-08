@@ -1,140 +1,185 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=redcoat-dev.20230601.gappssmtp.com header.i=@redcoat-dev.20230601.gappssmtp.com header.b="mlK8j83P"
-Received: from mail-wm1-x332.google.com (mail-wm1-x332.google.com [IPv6:2a00:1450:4864:20::332])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BD76FD
-	for <initramfs@vger.kernel.org>; Sat,  2 Dec 2023 15:27:42 -0800 (PST)
-Received: by mail-wm1-x332.google.com with SMTP id 5b1f17b1804b1-40b427507b7so27712425e9.2
-        for <initramfs@vger.kernel.org>; Sat, 02 Dec 2023 15:27:42 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redcoat-dev.20230601.gappssmtp.com; s=20230601; t=1701559661; x=1702164461; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=p1xdE4ovzj76sAVqJy//t2Hu6Y4a/OJtI3z/XB4Wugc=;
-        b=mlK8j83Pp3sw3ofd5VcmFIsCcmwokcIvK36Sk9yTw1UmBZSNTtEgOwa03HAIT5ADpL
-         PJRZWoyUYaCirtaN0lvr4npXa/hSluRj9BrfXyqDPryDgYNM4RpxX4Kg4DlC/1OCimQj
-         S33aDPYR+7XYk1q5yYldnoS3rmV4ZQkPWaQms/vMKthGg2/loh85PPWzoq+AYKaImqEU
-         T2RPQKsFcgdeG2kGSsEqameopfBPffKDk8D7zd7NIbm502wrZ57wmrcug5fAgAqmloEq
-         D9DePxYsXbGhW79j6xgYBb+vxclSKet8PlZQhknJHKVaWshHdB9U5Xl9A2V9QxQlBi4T
-         lbJg==
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="PXfRMHCd"
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78C791729
+	for <initramfs@vger.kernel.org>; Fri,  8 Dec 2023 10:00:26 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1702058425;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type;
+	bh=z7/gKUMIQni2L/YjQRD2H+ogKzYsa+9ghxNOOnRe2+0=;
+	b=PXfRMHCdnK+MmwDTkuIuMYnSduLtcCBHbcoES3RngFgsn6cGQOHQXDZ4APc8W3do8swFrd
+	3Kf6j30cA/S5t/Nu/rBxUZX+us3fT9/Lq/O9uOtKRP7CA7+4fH7rilndS7Gy1GAKcQXMfX
+	vpcCs4YSoFu91nkXR74aek+M+zXSik8=
+Received: from mail-pg1-f200.google.com (mail-pg1-f200.google.com
+ [209.85.215.200]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-216-wd1c10wsPJuitowWOirR5Q-1; Fri, 08 Dec 2023 13:00:23 -0500
+X-MC-Unique: wd1c10wsPJuitowWOirR5Q-1
+Received: by mail-pg1-f200.google.com with SMTP id 41be03b00d2f7-5c5d72fb5e6so1631325a12.1
+        for <initramfs@vger.kernel.org>; Fri, 08 Dec 2023 10:00:23 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701559661; x=1702164461;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=p1xdE4ovzj76sAVqJy//t2Hu6Y4a/OJtI3z/XB4Wugc=;
-        b=kKxQbPXiK9lNpgcVjJk7wd9G6s+fhHT6eOucUdD0I23QpXZCVw57hqJB0yQp8x2uJC
-         7hc5P+fhBydpA6Q7JB+yH4vXTxa/Eg3dFEBJhqsYUvmdPVyndz4wVFVARF83UhMw/a22
-         qoPIP2wZpO55BUf348GAdf6UP0cIZIFo71G/F3laurSusEdbtyYCcN3FQySkguhU0yOu
-         jPJ2vrj+NAFcy2WEJZjGIq8OTejnDT7nJ4as82bz9Sycfuaeb8+BeHfi6p/6oswW/zYm
-         un4zE4eZAXzuhIg+mBYkvLLBLzLUej9tRHdc0oMrmOMRpwIidY2Wp9cPi66LFngnKqtG
-         neMw==
-X-Gm-Message-State: AOJu0YzoXEqcOSc15GSiIcLis6iwWPMN+zdJHiiZezXxlRBw5X1a45T3
-	AhY8E5EcKNtuw7Swv/DsllSMDbdZwowKUDXNrvU++w==
-X-Google-Smtp-Source: AGHT+IHlGkZ6KDlDZ5fYpqdV9rLGNch8JdeFVmF3AGvPlW3ITTT2bSHGxrBif21B3jjZRk0OtiwxVQ==
-X-Received: by 2002:a05:600c:468a:b0:40a:5b3c:403 with SMTP id p10-20020a05600c468a00b0040a5b3c0403mr1304579wmo.14.1701559660693;
-        Sat, 02 Dec 2023 15:27:40 -0800 (PST)
-Received: from test ([2a00:23c7:1fab:4e01:4915:193d:c8fb:a42c])
-        by smtp.gmail.com with ESMTPSA id iv7-20020a05600c548700b00405959469afsm10056301wmb.3.2023.12.02.15.27.39
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 02 Dec 2023 15:27:39 -0800 (PST)
-Date: Sat, 2 Dec 2023 23:27:38 +0000
-From: Emily Shepherd <emily@redcoat.dev>
-To: Rob Landley <rob@landley.net>
-Cc: Andrew Morton <akpm@linux-foundation.org>, initramfs@vger.kernel.org, 
-	Thomas =?utf-8?Q?Str=C3=B6mberg?= <t+github@chainguard.dev>, Anders =?utf-8?Q?Bj=C3=B6rklund?= <anders.f.bjorklund@gmail.com>, 
-	Giuseppe Scrivano <giuseppe@scrivano.org>, Al Viro <viro@zeniv.linux.org.uk>, 
-	Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>
-Subject: Re: [PATCH v2] initramfs: Support unpacking directly to tmpfs
-Message-ID: <27lpybxaozczmjd6hrfkkch7ttjioenqngynoyqji6c3pt6ati@rfabur7kygwc>
-References: <pkyfrfofquliqqxpylzzn5kdnfk4tewo6gx25d5m6pm2femvin@dkxlxm6leegu>
- <fc35ab36-c722-1102-36c5-6a2c015b2620@landley.net>
- <rxh6knvencwjajhgvdgzmrkwmyxwotu3itqyreun3h2pmaujhr@snhuqoq44kkf>
- <cec90924-e7ec-377c-fb02-e0f25ab9db73@landley.net>
- <37yuynohcuve46jhgzbz24ip6yb2lqvwcn6gpxwxpw6msgtk4b@7dgqfkdtjngb>
- <dbeb7b4b-b5e6-15ba-7e74-f9ffdd07059b@landley.net>
- <l6s4ngxtj6v7n5z6npcj4gmvr6x6vrvldwsfmyufovrj6teu3r@vajcufu3lltc>
- <ec6d7c0f-8408-ba51-f2ed-2bd068a6f673@landley.net>
+        d=1e100.net; s=20230601; t=1702058423; x=1702663223;
+        h=cc:to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=z7/gKUMIQni2L/YjQRD2H+ogKzYsa+9ghxNOOnRe2+0=;
+        b=fittIop2zkRtspX3cOdUeyP9xLqrg7X/sS4NLtweFBtCnxvQbXHy41ZtE7YEXTnaff
+         FawObJlZ3VepOb2eoDObtbhgVySIAMPT0Eb4tyAT5terMNG4yqfX4WAAPoW1XfXTiPkw
+         LluHxVjGcF4X4o+qzoK2/crAjhkWnptoINLmT/Zg5zCxilrEJ4YQmn3wkoyXIHF9NeW/
+         jJP8H6x8tPlA5UkVd4py7oBeJEnT3tRlKtBiJiifw6TW//pvUN7HXc22NTsaS8RSMlWi
+         K4A2bFO2a9H3XtZ77qEwmeGQ7KQ3JEQCgUv18N6uXEB3pvN2sml/VO7YhAfzN8C5XC6X
+         AGcw==
+X-Gm-Message-State: AOJu0YyuSsoI5WUgw8jAGyCzje1x2Yy28WyF0PmGGAJ3DwTk5z5kptPD
+	s16CRf2/RF2tgDZ56851CmTlP+bAys/9RKc7I13WXeOc6o7CzPJ4PPAJVfuQCmg5ThQkqbZayIV
+	4Yqm+gZdHMy/qQ4AMd8HYI6CVjo0uRt4E0zfW
+X-Received: by 2002:a05:6a20:9711:b0:18f:97c:825b with SMTP id hr17-20020a056a20971100b0018f097c825bmr382639pzc.101.1702058422727;
+        Fri, 08 Dec 2023 10:00:22 -0800 (PST)
+X-Google-Smtp-Source: AGHT+IEPG1l3Yi7hZg7/PsRql4Ko851hPBYdbLbn/WH0DnFaFnQnxUdvR4ROSvPbnig+eeFmsSl9BUe9npXebRUwVOs=
+X-Received: by 2002:a05:6a20:9711:b0:18f:97c:825b with SMTP id
+ hr17-20020a056a20971100b0018f097c825bmr382629pzc.101.1702058422416; Fri, 08
+ Dec 2023 10:00:22 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-In-Reply-To: <ec6d7c0f-8408-ba51-f2ed-2bd068a6f673@landley.net>
+From: Eric Curtin <ecurtin@redhat.com>
+Date: Fri, 8 Dec 2023 17:59:46 +0000
+Message-ID: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
+Subject: [RFC] initoverlayfs - a scalable initial filesystem
+To: systemd-devel@lists.freedesktop.org, initramfs@vger.kernel.org
+Cc: Stephen Smoogen <ssmoogen@redhat.com>, Yariv Rachmani <yrachman@redhat.com>, 
+	Daniel Walsh <dwalsh@redhat.com>, Douglas Landgraf <dlandgra@redhat.com>
+Content-Type: text/plain; charset="UTF-8"
 
-On Fri, Dec 01, 2023 at 11:40:37PM -0600, Rob Landley wrote:
->No, "the perfect is the enemy of the good" applies. Blocking a small 
->fix to
->force a large fix isn't always reasonable.
->
->I just dislike adding special cases. Right now when you root=/dev/sda1 you
->specify what to overmount on rootfs at runtime, so if you're going to overmount
->something _else_ that seems the layer to do it at. A CONFIG_BLAH=y option to do
->a similar thing (changing the semantics from a different area entirely) seems
->painful, especially as a workaround for a self-inflicted issue in a userspace
->package.
+We have been working on a new initial filesystem called initoverlayfs.
+It is a new filesystem that provides a more scalable approach to
+initial filesystems as opposed to just using initrds. We are writing
+this RFC to the systemd and dracut mailing lists (feel free to forward
+to UAPI group also) because although this solution works without
+changing the code in these projects, it operates in the same area as
+systemd, udev, dracut, etc. and uses these tools.
 
-Understood.
+Brief context:
+--------------
 
->At least until the network admin running kernel.org gets his way and closes down
->the open mailing list, replaced by one that only approved people are allowed to
->join:
->
->https://social.kernel.org/objects/9b3adb80-4198-4c86-abbd-aa3c58700975
+initoverlayfs by default uses transient overlays rather than tmpfs to
+create throwaway filesystems early in the boot sequence.
 
-Haha wow, I have to say: reading the LKML discussion about this is so 
-surreal. Lots of people are suggesting features that have been standard 
-in all of the git hosting platforms for years like they are new. I 
-really don't understand the reluctance to move to one of the existing 
-platforms. Most support outputting plaintext patches, or raising / 
-responding to patches via email for people who like that flow. Seems 
-like a win win, as it would come with all the extra patch / pull request 
-management for free.
+Why?
 
->I'm weird enough to still _try_. At least in the parts common to the 
->systems I'm
->building on a dozen different architectures. (_Everybody_ has to go through
->early boot.)
+An initramfs has to be decompressed and copied to a tmpfs up front
+before it can be used. This results in a situation where you end up
+paying for every byte in an initrd in boot performance, even the ones
+you don't use in a given boot.
 
-Fair point :)
+This leads to a fear of using languages that result in larger binaries
+sizes early boot, reusing libraries, etc. In some cases, reimplemented
+minified versions of software components present in the rootfs are
+used.
 
->I'm currently trying to get vanilla u-boot, linux, and devuan 
->debootstrap to run
->on the orange pi 3b.
+Alternatively, initoverlayfs uses erofs (with compression) and
+overlayfs to achieve this, so you only pay for the bytes you actually
+use.
 
-Nice. My current project started life on the raspberry pi :) I wanted to 
-run containers, but quickly became frustrated at all the extra stuff 
-that Raspberry Pi OS was running, which was slowing everything down for 
-no reason, so I went on a crusade to make a much more minimal system - 
-it looks like there were actually some similarities with mkroot! Great 
-minds think alike, I suppose :) Anyway, I have now moved over to support 
-amd64 too as I realised what I'd built could boot to kubernetes faster 
-than AWS' tailored images can, so looking at options there.
+There is also increased pressure from certain industries like
+automotive, to start essential services in a boot sequence early.
 
->(Unlike raspberry pi which is still
->binary blobs as far as the bootloader can see and a forked kernel.)
+Requirements:
+-------------
 
-Gah, the weird binary blobs really, really bug me on the RPI. Not least 
-because the whole point of the Pis was meant to be a learning / 
-exploration tool, so having a "just trust me bro" blackbox of a 
-bootloader is so absurd.
+An init system
+An initramfs building tool
+A device manager
+overlayfs
 
->The change under discussion here is a case where explaining the design context
->behind this distinction, let alone the decision to change it, is multiple
->minutes for a domain expert to unpack the backstory for you, and hours if not
->days to pick apart yourself. It changes what the design IS. I personally already
->_know_ (some of?) the backstory, but I don't expect other people to, and really
->don't look forward to having to document it.
+Nothing that you wouldn't find in most Linux distributions today.
 
-It looks like this patch isn't going to go anywhere - I'll keep it in my 
-own tree for the moment, as it is useful for me, but may play around 
-with the CLONE_NEWROOTFS idea if I have time - certainly would be 
-interesting to see how easy it would be create proper independent mount 
-namespaces (cue: something random falling over!).
+Design:
+-------
 
--- 
-Emily Shepherd
+Here is the boot sequence with initoverlayfs integrated, the
+mini-initramfs contains just enough to get storage drivers loaded and
+storage devices initialized. storage-init is a process that is not
+designed to replace init, it does just enough to initialize storage
+(performs a targeted udev trigger on storage), switches to
+initoverlayfs as root and then executes init.
 
-Red Coat Development Limited
+```
+fw -> bootloader -> kernel -> mini-initramfs -> initoverlayfs -> rootfs
+
+fw -> bootloader -> kernel -> storage-init   -> init ----------------->
+```
+
+Benefits:
+---------
+
+Scalability: You can put less emphasis on keeping this initial
+filesystem small as you will only pay for the bytes you read. This is
+probably the bigger picture than raw performance in the next point.
+
+Performance: As this minifies the initramfs to contain only the most
+basic storage initialization tasks, linux userspace starts earlier
+than it would using just initramfs alone. Leaving all the other
+software that require early throwaway filesystems to be executed in
+the initoverlayfs. In the case of a Raspberry Pi 4 with sd card, it
+leads to systemd starting ~300ms faster and in the case of a Raspberry
+Pi 4 with NVMe SSD drive over USB it leads to systemd starting ~500ms
+faster. There are some devices that by starting Linux userspace early,
+you can expose a slowly initializing storage driver, leading to a
+slower boot as with just an initramfs you mask this slow driver by
+spending this time on decompression and copying. But a computer is
+only as fast as it's slowest component, so if you care about super
+fast boots, you need to optimize your storage drivers.
+
+Flexibility: It is now easier to consider using fatter languages like
+Rust, etc. Using libraries like graphics libraries, camera libraries,
+libevent, glib, C++, etc. early boot can be considered. As you don't
+have to decompress and copy this data upfront. This leads to easier to
+maintain initrd software also, with more consolidation between rootfs
+impelmentations and initial filesystem implementations of components.
+
+Changes required in other projects:
+-----------------------------------
+
+There are no major changes required in other projects. Tools like
+systemd-analyze might need to be updated to recognize this boot
+sequence more accurately, because it has no awareness of
+initoverlayfs.
+
+Future plans:
+-------------
+
+We intend to propose this to Fedora, CentOS Stream, ostree and
+non-ostree variants as we continue this project.
+
+Feel free to try:
+-----------------
+
+It should work on most standard 3 partition non-ostree Fedora and
+CentOS 9 installs (note: CentOS 9 kernel does not support erofs
+compression, so Fedora is a better playground today). It's still in
+alpha/beta state I guess. Although I successfully dogfood this on my
+laptop and we hard tried this on a couple of different pieces of
+hardware and VMs... Maybe run this on a non-critical piece of hardware
+or a VM for the next few weeks if you want to try :)
+
+git repo:
+
+https://github.com/containers/initoverlayfs
+
+Also checkout the README.md, there are some graphs and other information there:
+
+https://github.com/containers/initoverlayfs/blob/main/README.md
+
+rpm available in copr:
+
+dnf copr enable @centos-automotive-sig/next
+dnf install initoverlayfs
+initoverlayfs-install
+
+Is mise le meas/Regards,
+
+Eric Curtin
+
