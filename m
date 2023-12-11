@@ -1,45 +1,40 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="PhRIiXUy"
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7F9CD8E
-	for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 09:03:53 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1702314232;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=0bVkuZnnkHDBd0/0RnaRvHJaaK4EPoe4mDrduK+fFCE=;
-	b=PhRIiXUythhkwgIVxSDa2ggnFlT/NIyS0vLDEm5QVtn1vRv6ixkyAdz1xDJH8lFWu4m6y2
-	DUe/Q4wsu/mJj73hIYlCR38bMatTx7mlMiD/mBwFngsCo5e8/klY8xiVZC52tWkrPkcxIH
-	zFChQU41wRE2PNwhZYr0Y4ZdahXjI4Q=
-Received: from mail-pj1-f72.google.com (mail-pj1-f72.google.com
- [209.85.216.72]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-511-iy8Y0-tMP-qg14psUYzWPA-1; Mon, 11 Dec 2023 12:03:51 -0500
-X-MC-Unique: iy8Y0-tMP-qg14psUYzWPA-1
-Received: by mail-pj1-f72.google.com with SMTP id 98e67ed59e1d1-28674705fddso2791266a91.2
-        for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 09:03:51 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CKa6NjaG"
+Received: from mail-lj1-x230.google.com (mail-lj1-x230.google.com [IPv6:2a00:1450:4864:20::230])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18A25C3
+	for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 09:34:11 -0800 (PST)
+Received: by mail-lj1-x230.google.com with SMTP id 38308e7fff4ca-2cb20c82a79so44762101fa.3
+        for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 09:34:11 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1702316049; x=1702920849; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=krwHvhUfT7SKb764Y11yTLd2kd5mGB/7YkyIpqc4J5M=;
+        b=CKa6NjaGdBZYyCjIUHhANi50BYoeGPR2d04ECffbxW44hERGeOfN5Np/DaxO9F29dj
+         q8RIfH8okUYSET1OVglbKYqFUxTGQ+OuPCcNC4a9bkLQJkOylO+ImevRsQB4Cv/MiKgB
+         8LYwcCYlbjwVGaX7T+0hXaae1SjmfgwsoAU5TAwkdPhi94HCjrprd/cKZKXMj5qcVdts
+         Sim+i+eQVBe+MlfmSo2mGHBQ0E8WEVtFzp9liQpbDKTIY1le5kA4NlxZ58NrprJnWx0q
+         9dk1MHWdmqwnWN670nPnU5ug8cPTWuKGRi4BXE5G3m43qvkWyAUn9O60MyuHiVEAwL2E
+         OAlA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1702314230; x=1702919030;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=0bVkuZnnkHDBd0/0RnaRvHJaaK4EPoe4mDrduK+fFCE=;
-        b=Ru0o7UXG1EDHxnJyR/x8xe5PyJRwvA9HZkIDHFWsJzDtigARgYrMd7m3ORPtjkzCmC
-         5NUABWqybs9GyTr3cj1J7TyebZslullEt1w0xPmxq5LUcJWkEF6vX6YYGtXjd/jSNrR5
-         VAx/lSYHrLlryoyeWAWxtzde1m2mB8WexsKZ2CIGRu+W+sWVgfDseW5yOrz5ursJTR7f
-         qJceYj3KVj1P6yy2qSX32OHj0bd2QNxRl30nfn5k/6OAtKTBUQ857Kib7D+bWAmCWwqE
-         XkY6CX593yUV7SeL+w7SzIbWB5V+dBmrGWWDd6mvOhZjrUZm61Qf91hL6LAxwnqgVBUE
-         0lwA==
-X-Gm-Message-State: AOJu0Yw6S3/5BoXA5w9Cydb9eYy0y8GhVqTN2qSxEiw/E+XRf0ehM96f
-	CfKGUTPnsKpXpC8Zcxrz4q2w/NXP+yH6+xJPVbklX3Hvxo1bAAJ3IVU5bnCp68Et+oPaqC7bOWh
-	N9UY4P7oGQWctfEXOA2Of6N/3ibS4yp92mKGR
-X-Received: by 2002:a17:90a:51e5:b0:286:c318:42ca with SMTP id u92-20020a17090a51e500b00286c31842camr2064002pjh.58.1702314230060;
-        Mon, 11 Dec 2023 09:03:50 -0800 (PST)
-X-Google-Smtp-Source: AGHT+IFHBphZPUo/qowi9FAmzIlGdvMgcGNzVgTC5v6bk1FH9uuyhNMI1saK/4jYv0tgJho/lUV7Iu4i4PolYKV3FWI=
-X-Received: by 2002:a17:90a:51e5:b0:286:c318:42ca with SMTP id
- u92-20020a17090a51e500b00286c31842camr2063984pjh.58.1702314229652; Mon, 11
- Dec 2023 09:03:49 -0800 (PST)
+        d=1e100.net; s=20230601; t=1702316049; x=1702920849;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=krwHvhUfT7SKb764Y11yTLd2kd5mGB/7YkyIpqc4J5M=;
+        b=PBCg2y1wabOGtbrsXlV7SoHTyO+QdURYl4Uz8z4FNd237qfF6uMiWTfFUjfX3i66sr
+         bzf10ncEdyNWKI+JTF+Ndq1mc5lXxLE2sFsWSAS38XVW9GNHqA/QSNJEUllCZH8zPULy
+         OB7VsdH/cFWqlZjvkizTvapUEYrRnpcGXFJTNW//CinK6N+UJd4KTnG/6DGQ+hcKp5vJ
+         RUBzw5FVngUEVUkyIeMvDiE1h/sjqaIMRLZ/kRi9pPEZhgvzLTAqf+zi+6mg89clgbEO
+         m4MX5N2VZeR02ha7O5g/AzEgCJnH7W2EeeU3G7YgibITNyRz7qXJsr8hRkooXjcfLqLF
+         oU9g==
+X-Gm-Message-State: AOJu0YzosRDC2jCmBSiwOD/9ClJAc29ErdRo8MBOnAizDIjy51c8ZgsG
+	/5fvxjYOmt29NVwW1AO3VcyLWXqXsXhby7ZNyh8=
+X-Google-Smtp-Source: AGHT+IFSKYh1oeIXwjFm+mLFJV9gM4DFm66Xt47wKUr4oe2AHkpaLPSiSHN+gIftD2wPdZJG8rhlL1jp1weitWRfWEY=
+X-Received: by 2002:a2e:a80d:0:b0:2cc:1ec1:90f4 with SMTP id
+ l13-20020a2ea80d000000b002cc1ec190f4mr1914600ljq.69.1702316048828; Mon, 11
+ Dec 2023 09:34:08 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -49,18 +44,19 @@ MIME-Version: 1.0
 References: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
  <ZXbdJp1Vz8M8c1MS@gardel-login> <ZXc4t8ayumo-dhul@itl-email>
 In-Reply-To: <ZXc4t8ayumo-dhul@itl-email>
-From: Eric Curtin <ecurtin@redhat.com>
-Date: Mon, 11 Dec 2023 17:03:13 +0000
-Message-ID: <CAOgh=Fzd-BcBCKzL419iOxbE=+uZWp6oYSV8+VDJ9w8vWG_L-g@mail.gmail.com>
+From: Neal Gompa <ngompa13@gmail.com>
+Date: Mon, 11 Dec 2023 12:33:31 -0500
+Message-ID: <CAEg-Je8FPJ1rTrGwQRQotF_g=f_b7J7Wy7NK_vJWPFNw4RuCdg@mail.gmail.com>
 Subject: Re: [RFC] initoverlayfs - a scalable initial filesystem
 To: Demi Marie Obenour <demi@invisiblethingslab.com>
-Cc: Lennart Poettering <mzerqung@0pointer.de>, Yariv Rachmani <yrachman@redhat.com>, initramfs@vger.kernel.org, 
+Cc: Lennart Poettering <mzerqung@0pointer.de>, Eric Curtin <ecurtin@redhat.com>, initramfs@vger.kernel.org, 
 	systemd-devel@lists.freedesktop.org, Stephen Smoogen <ssmoogen@redhat.com>, 
-	Douglas Landgraf <dlandgra@redhat.com>, 
-	Qubes OS Development Mailing List <qubes-devel@googlegroups.com>
+	Qubes OS Development Mailing List <qubes-devel@googlegroups.com>, Yariv Rachmani <yrachman@redhat.com>, 
+	Douglas Landgraf <dlandgra@redhat.com>
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, 11 Dec 2023 at 16:36, Demi Marie Obenour
+On Mon, Dec 11, 2023 at 12:30=E2=80=AFPM Demi Marie Obenour
 <demi@invisiblethingslab.com> wrote:
 >
 > On Mon, Dec 11, 2023 at 10:57:58AM +0100, Lennart Poettering wrote:
@@ -74,9 +70,11 @@ On Mon, 11 Dec 2023 at 16:36, Demi Marie Obenour
 > > > initoverlayfs as root and then executes init.
 > > >
 > > > ```
-> > > fw -> bootloader -> kernel -> mini-initramfs -> initoverlayfs -> rootfs
+> > > fw -> bootloader -> kernel -> mini-initramfs -> initoverlayfs -> root=
+fs
 > > >
-> > > fw -> bootloader -> kernel -> storage-init   -> init ----------------->
+> > > fw -> bootloader -> kernel -> storage-init   -> init ----------------=
+->
 > > > ```
 > >
 > > I am not sure I follow what these chains are supposed to mean? Why are
@@ -115,7 +113,8 @@ On Mon, 11 Dec 2023 at 16:36, Demi Marie Obenour
 > > 1. You don't want the whole big initrd to be read off disk on every
 > >    boot, but only the parts of it that are actually needed.
 > >
-> > 2. You don't want the whole big initrd to be fully decompressed on every
+> > 2. You don't want the whole big initrd to be fully decompressed on ever=
+y
 > >    boot, but only the parts of it that are actually needed.
 > >
 > > 3. You want to share data between root fs and initrd
@@ -130,10 +129,11 @@ On Mon, 11 Dec 2023 at 16:36, Demi Marie Obenour
 > > So, in the list above you could address the latter three like this:
 > >
 > > 2. Use an erofs rather than a packed cpio as initrd. Make the boot
-> >    loader load the erofs into contigous memory, then use memmap=X!Y on
+> >    loader load the erofs into contigous memory, then use memmap=3DX!Y o=
+n
 > >    the kernel cmdline to synthesize a block device from that, which
 > >    you then mount directly (without any initrd) via
-> >    root=/dev/pmem0. This means yout boot loader will still load the
+> >    root=3D/dev/pmem0. This means yout boot loader will still load the
 > >    whole image into memory, but only decompress the bits actually
 > >    neeed. (It also has some other nice benefits I like, such as an
 > >    immutable rootfs, which tmpfs-based initrds don't have.)
@@ -184,14 +184,6 @@ On Mon, 11 Dec 2023 at 16:36, Demi Marie Obenour
 > recovery tools in the event of a problem, rather than being limited to
 > whatever one can squeese into an initramfs.  One can even include a full
 > GUI stack (with accessibility support!), rather than just Plymouth.  For
-
-plymouth is very interesting in that it has it's own graphics stack, event loop
-implementations, etc. A lot of the initrd software is like this.
-plymouth is one of
-the examples I think of in my head of something that could benefit from being
-able to use more generic things. At least it's an easy example to explain to
-people.
-
 > Qubes OS, one can include enough of the Xen and Qubes toolstack to even
 > launch virtual machines, allowing the use of USB devices and networking
 > for recovery purposes.  It even means that one can use a FIDO2 token to
@@ -204,58 +196,17 @@ people.
 > that is very much a niche use case when compared to the millions of
 > Fedora or Debian desktop installs, or even the tens of thousands of
 > Qubes OS installs.  Furthermore, I would _much_ rather network boot be
-> handled by userspace and kexec, rather than the closed source UEFI network
+> handled by userspace and kexec, rather than the closed source UEFI networ=
+k
 > stack.
-
-A generic approach is hard, I think it's worth discussing which type of boots
-you should actually care about milliseconds of performance for. It would be nice
-if we had an init system that contained the binary data to do the minimum for
-standard Fedora, Debian installs and everything else was an extension whether
-that's sysexts, dlopen, a new binary to execute etc.
-
-If the network is ingrained in your boot stack like this, I'm guessing
-you probably
-don't care about boot performance. Should we come up with a new technique?
-
-Automotive has an expectation for really fast boots, like 2 seconds, in standard
-desktops installs there's some expectation as you interface directly
-with a human,
-but for other installs how much expectation is there?
-
-Or can we just fall back to existing techniques for installs like network boot?
-
-Is mise le meas/Regards,
-
-Eric Curtin
-
 >
-> It does require some care when upgrading, as the dm-verity image and the
-> UKI cannot both be updated atomically, but one can solve that by first
-> writing the new dm-verity image to a separate location.  The UKI will
-> try both both the old and new locations for the dm-verity image and
-> rename the new image over the old one on success.  The wrong image will
-> simply fail to mount as its root hash will be wrong.
->
-> This even allows Apple-esque boot policies to be implemented on
-> commodity hardware, provided that the system firmware is sufficiently
-> hardened.  It won't be as good as what Apple does, but it will be a huge
-> win from what is possible today.
->
-> > (If you are focussing on systems lacking UEFI, then replace the word
-> > "ESP" in the above with a similar concept, i.e. a well discoverable,
-> > unauthenticated relatively simple file system, such as vfat).
-> >
-> > Anyway, I can't tell you how to solve your specific problems, but if
-> > there's one thing I'd suggest you to keep in mind then it's the
-> > security angle, i.e. keep in mind from the beginning how
-> > authentication of every component of your process shall work, how
-> > unatteneded disk encryption shall operate and how measurement shall
-> > work. Security must be built into things from the beginning, not be
-> > added as an afterthought.
->
-> As a Qubes OS developer and a security researcher, thank you.
-> --
-> Sincerely,
-> Demi Marie Obenour (she/her/hers)
-> Invisible Things Lab
 
+Network boot is fairly common in some industries for workstations. In
+particular, the film industry does this a fair bit to leverage
+switching between workstation and renderfarm modes for workstation
+hardware.
+
+
+--=20
+=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
+=BC=81/ Always, there's only one truth!
