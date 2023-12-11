@@ -1,158 +1,154 @@
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="INVM5/uA"
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20333F2
-	for <initramfs@vger.kernel.org>; Sat,  9 Dec 2023 10:26:48 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1702146408;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=YGzDmioAP0SXrZvGW9Wi66ZZQY0OyrY37Q2U6evQSGg=;
-	b=INVM5/uAcx/v38/outqO1CtKaAJ0uUTBakbWUrPa8vNvOX8xKLaqMBgOO9UWNTjMG1U2Ac
-	Z73TjEXtK3PSsfKIfQR/nEI4PS0+6Zi4SBqIQMjHe5IlhOyYx9XyxjqpkEYTFjx//HpFlb
-	/87vFvn2b2c4vBjprntuWsCsBIG5PPc=
-Received: from mail-oo1-f70.google.com (mail-oo1-f70.google.com
- [209.85.161.70]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-437-t8-dtVknNgWXo8xXEkvYlA-1; Sat, 09 Dec 2023 13:26:46 -0500
-X-MC-Unique: t8-dtVknNgWXo8xXEkvYlA-1
-Received: by mail-oo1-f70.google.com with SMTP id 006d021491bc7-58dc2d926e7so4024353eaf.0
-        for <initramfs@vger.kernel.org>; Sat, 09 Dec 2023 10:26:46 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1702146405; x=1702751205;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=YGzDmioAP0SXrZvGW9Wi66ZZQY0OyrY37Q2U6evQSGg=;
-        b=j5biMMRuwneFMNBcgIazcsmDXC4wiwHPr8Anm7ewVd7fH/DxDFZQ4Ezpp8ybjGWHAa
-         Fa9gDrrOjNtHBqGk7UlwqCnnU4m/q2lpNK7rL0FTVkxkDJEZ2+SX9ePON7a5qLSa3/UT
-         2hkjUpfiQbl093TMCGNEvTdu4cCsJpQJbmIbh3tJizf1G90mIcAivY5l8uGmv8t13zPz
-         2SQDodJVj7CiZPcivA58LEjaFmWiFLOhYKULPZSac4xWbHCW5qBkV8l08yif68LdlbXv
-         w2RiJ8gilSQmZgmU6fiE2b+uxKr7KF27FOqZ6snbZah1C7VfCV9VvRWD9RviXqlSFFSs
-         SLVg==
-X-Gm-Message-State: AOJu0Yzk3ntmA8j46G84lvBvEDdDl6hPvvP1gvb54cc4iR8w1h90i4QB
-	ULFKxu1c8MmNIu0/0OU4wpq3yDMoDRi4a1s6BE0rYbR3EIkxqgtWZ1y+G3mr+qXeup3Slc7jlfL
-	4wv7b758pcbnSiZ6W/69b/Fa0hPi+aEjkcqCU
-X-Received: by 2002:a05:6359:4598:b0:170:6ba9:9dac with SMTP id no24-20020a056359459800b001706ba99dacmr2548907rwb.61.1702146405387;
-        Sat, 09 Dec 2023 10:26:45 -0800 (PST)
-X-Google-Smtp-Source: AGHT+IEguVq8ufMXSul7cvPy9D4XZRJ9DavX+Bp0Ojuw6eg+sH6ORtBoWsm8TS/IKmgFBzqPgu0RxJ+wJ+CoS3x1LZA=
-X-Received: by 2002:a05:6359:4598:b0:170:6ba9:9dac with SMTP id
- no24-20020a056359459800b001706ba99dacmr2548890rwb.61.1702146405036; Sat, 09
- Dec 2023 10:26:45 -0800 (PST)
+X-Greylist: delayed 509 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 11 Dec 2023 02:06:30 PST
+Received: from gardel.0pointer.net (gardel.0pointer.net [85.214.157.71])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18DE5B6
+	for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 02:06:30 -0800 (PST)
+Received: from gardel-login.0pointer.net (gardel-mail [85.214.157.71])
+	by gardel.0pointer.net (Postfix) with ESMTP id 3E6F8E80203;
+	Mon, 11 Dec 2023 10:57:59 +0100 (CET)
+Received: by gardel-login.0pointer.net (Postfix, from userid 1000)
+	id CB830160253; Mon, 11 Dec 2023 10:57:58 +0100 (CET)
+Date: Mon, 11 Dec 2023 10:57:58 +0100
+From: Lennart Poettering <mzerqung@0pointer.de>
+To: Eric Curtin <ecurtin@redhat.com>
+Cc: systemd-devel@lists.freedesktop.org, initramfs@vger.kernel.org,
+	Yariv Rachmani <yrachman@redhat.com>,
+	Stephen Smoogen <ssmoogen@redhat.com>,
+	Douglas Landgraf <dlandgra@redhat.com>
+Subject: Re: [RFC] initoverlayfs - a scalable initial filesystem
+Message-ID: <ZXbdJp1Vz8M8c1MS@gardel-login>
+References: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
- <CAMw=ZnRe_h6wmhYQStF8XaHTRYxF0YBbi4+aSuEZ5DOmgMbEkA@mail.gmail.com>
- <CAOgh=Fz9aVO3p=tWQuTtQf-+91dRxyFvNjCk9CGnzvbHWE0u-Q@mail.gmail.com>
- <ac1728d2-1e85-41fb-876b-adb98f0d2dff@gmail.com> <CAOgh=FyGVnyz-5TF_kDbHu+THESCRJ3sJ6HFBfWB_YGj93AzfQ@mail.gmail.com>
- <CAMw=ZnQ7eu7Czy0W5fh8TtM8y3+MGwdubZrrw6612ZTTBY8eWA@mail.gmail.com>
- <CAOgh=FwxR8gEXHnLqxjY_nabvg9uehY3Sqksq8LyakpVjh7AZA@mail.gmail.com>
- <CAMw=ZnQEk+LNUhbAzvhLnUOko16ARLyQ2eW4RmWtwHzBGsNq4Q@mail.gmail.com>
- <CAOgh=FyyrehtCNxcpo3HV7Yxn9Uv_Gout2t_os-pGCZcSgA3ew@mail.gmail.com> <CAMw=ZnTZNY-KQgR8Vmd30Hh3wzywBqyuj1vUZ=t3R1PWug5-0Q@mail.gmail.com>
-In-Reply-To: <CAMw=ZnTZNY-KQgR8Vmd30Hh3wzywBqyuj1vUZ=t3R1PWug5-0Q@mail.gmail.com>
-From: Eric Curtin <ecurtin@redhat.com>
-Date: Sat, 9 Dec 2023 18:26:08 +0000
-Message-ID: <CAOgh=Fw_VtK81m9FLbSJ2=x_HcYmcCmnM4sOnCLYL_WxSJypmA@mail.gmail.com>
-Subject: Re: [RFC] initoverlayfs - a scalable initial filesystem
-To: Luca Boccassi <bluca@debian.org>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>, systemd-devel@lists.freedesktop.org, 
-	initramfs@vger.kernel.org, Yariv Rachmani <yrachman@redhat.com>, 
-	Stephen Smoogen <ssmoogen@redhat.com>, Douglas Landgraf <dlandgra@redhat.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
 
-On Sat, 9 Dec 2023 at 18:12, Luca Boccassi <bluca@debian.org> wrote:
+On Fr, 08.12.23 17:59, Eric Curtin (ecurtin@redhat.com) wrote:
+
+> Here is the boot sequence with initoverlayfs integrated, the
+> mini-initramfs contains just enough to get storage drivers loaded and
+> storage devices initialized. storage-init is a process that is not
+> designed to replace init, it does just enough to initialize storage
+> (performs a targeted udev trigger on storage), switches to
+> initoverlayfs as root and then executes init.
 >
-> On Sat, 9 Dec 2023 at 17:58, Eric Curtin <ecurtin@redhat.com> wrote:
-> >
-> > On Sat, 9 Dec 2023 at 17:46, Luca Boccassi <bluca@debian.org> wrote:
-> > >
-> > > On Sat, 9 Dec 2023 at 17:25, Eric Curtin <ecurtin@redhat.com> wrote:
-> > > >
-> > > > On Sat, 9 Dec 2023 at 17:19, Luca Boccassi <bluca@debian.org> wrote:
-> > > > >
-> > > > > On Sat, 9 Dec 2023 at 15:08, Eric Curtin <ecurtin@redhat.com> wrote:
-> > > > > >
-> > > > > > On Sat, 9 Dec 2023 at 14:56, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> > > > > > >
-> > > > > > > On 09.12.2023 17:42, Eric Curtin wrote:
-> > > > > > > > On Sat, 9 Dec 2023 at 12:46, Luca Boccassi <bluca@debian.org> wrote:
-> > > > > > > >>
-> > > > > > > >> On Fri, 8 Dec 2023 at 19:00, Eric Curtin <ecurtin@redhat.com> wrote:
-> > > > > > > >>>
-> > > > > > > >>> We have been working on a new initial filesystem called initoverlayfs.
-> > > > > > > >>> It is a new filesystem that provides a more scalable approach to
-> > > > > > > >>> initial filesystems as opposed to just using initrds. We are writing
-> > > > > > > >>> this RFC to the systemd and dracut mailing lists (feel free to forward
-> > > > > > > >>> to UAPI group also) because although this solution works without
-> > > > > > > >>> changing the code in these projects, it operates in the same area as
-> > > > > > > >>> systemd, udev, dracut, etc. and uses these tools.
-> > > > > > > >>
-> > > > > > > >> It seems to me everything you described already exists? If you want to
-> > > > > > > >> avoid having an initrd -> rootfs transition, you can already do that -
-> > > > > > > >
-> > > > > > > > You need a initrd -> rootfs transition for generic linux operating
-> > > > > > > > systems right?
-> > > > > > >
-> > > > > > > No, you do not. Nothing stops you from running off initramfs (today you
-> > > > > > > do not really have init*RAM Disk* - the content of initrd is unpacked
-> > > > > > > into initramfs.
-> > > > > >
-> > > > > > Apologies if I am misinterpreting this response, I use terms initrd
-> > > > > > and initramfs
-> > > > > > interchangeably (not technically correct, but it's common to do this). The
-> > > > > > point is to avoid unpacking as much as possible, because in many initrds
-> > > > > > the majority of the software need not be unpacked, but is designed to work
-> > > > > > with throwaway initial filesystems.
-> > > > >
-> > > > > sd-stub already supports having a small initrd shipped in the UKI,
-> > > > > that is extended via sysexts, and systemd already supports running
-> > > > > from it, without any transition to a final rootfs. What else do you
-> > > > > need? What problem is this attempting to solve?
-> > > >
-> > > > I must give sd-stub a try. The bootloader I most commonly work with (and is one
-> > > > of the target platforms this is intended for) isn't UEFI, we need something more
-> > > > portable.
-> > >
-> > > Do we, though? All modern hardware platforms (and VMs) that matter are
-> > > UEFI. Why would any of this be needed for legacy hardware platforms?
-> > > The existing mechanisms can work just fine on those until they reach
-> > > EOL, they won't stop working.
-> >
-> > Respectfully, this is not true. Especially on ARM platforms. I would
-> > like it to be true, but it's not true today.
+> ```
+> fw -> bootloader -> kernel -> mini-initramfs -> initoverlayfs -> rootfs
 >
-> Where any of this would actually matter, they mostly do, and where
-> they don't one can put together uboot with uefi mode.
+> fw -> bootloader -> kernel -> storage-init   -> init ----------------->
+> ```
 
-When you are trying to improve boot performance, introducing another
-layer of bootloader with uboot doesn't help. You also have to port
-every hardware platform you encounter to uboot. And if you can solve
-the problem in the Linux stack somewhere rather than the bootloader.
-Why would we choose to fix the problem in the bootloader?
+I am not sure I follow what these chains are supposed to mean? Why are
+there two lines?
 
->
-> > I should have expanded, we are not trying to avoid transitioning to a
-> > final rootfs, the goal is to transition to a final rootfs. But not to decompress
-> > and copy all the bytes to a tmpfs up front, rather use something like erofs,
-> > overlayfs, etc. sysexts uses erofs+overlayfs, but it's designed with
-> > a different goal in mind.
->
-> In what way is the goal different?
+So, I generally would agree that the current initrd scheme is not
+ideal, and we have been discussing better approaches. But I am not
+sure your approach really is useful on generic systems for two
+reasons:
 
-This project is basically build an initrd, but put it in a
-erofs+overlayfs alternatively (technically it builds a really small
-initrd to initialize some basic storage drivers etc. and build a
-second initrd in an erofs format). All existing software that we've
-tested "just works" with this approach, including all the systemd
-stuff. And you can do transparent decompression with lz4hc
-alternatively. It also means you don't have to be as afraid of
-bloating your initial filesystem, because minimizing initrd's is
-tedious work.
+1. no security model? you need to authenticate your initrd in
+   2023. There's no execuse to not doing that anymore these days. Not
+   in automotive, and not anywhere else really.
 
->
+2. no way to deal with complex storage? i.e. people use FDE, want to
+   unlock their root disks with TPM2 and similar things. People use
+   RAID, LVM, and all that mess.
 
+Actually the above are kinda the same problem in a way: you need
+complex storage, but if you need that you kinda need udev, and
+services, and then also systemd and all that other stuff, and that's
+why the system works like the system works right now.
+
+Whenever you devise a system like yours by cutting corners, and
+declaring that you don't want TPM, you don't want signed initrds, you
+don't want to support weird storage, you just solve your problem in a
+very specific way, ignoring the big picture. Which is OK, *if* you can
+actually really work without all that and are willing to maintain the
+solution for your specific problem only.
+
+As I understand you are trying to solve multiple problems at once
+here, and I think one should start with figuring out clearly what
+those are before trying to address them, maybe without compromising on
+security. So my guess is you want to address the following:
+
+1. You don't want the whole big initrd to be read off disk on every
+   boot, but only the parts of it that are actually needed.
+
+2. You don't want the whole big initrd to be fully decompressed on every
+   boot, but only the parts of it that are actually needed.
+
+3. You want to share data between root fs and initrd
+
+4. You want to save some boot time by not bringing up an init system
+   in the initrd once, then tearing it down again, and starting it
+   again from the root fs.
+
+For the items listed above I think you can find different solutions
+which do not necessarily compromise security as much.
+
+So, in the list above you could address the latter three like this:
+
+2. Use an erofs rather than a packed cpio as initrd. Make the boot
+   loader load the erofs into contigous memory, then use memmap=X!Y on
+   the kernel cmdline to synthesize a block device from that, which
+   you then mount directly (without any initrd) via
+   root=/dev/pmem0. This means yout boot loader will still load the
+   whole image into memory, but only decompress the bits actually
+   neeed. (It also has some other nice benefits I like, such as an
+   immutable rootfs, which tmpfs-based initrds don't have.)
+
+3. Simply never transition to the root fs, don't marke the initrds in
+   systemd's eyes as an initrd (specifically: don't add an
+   /etc/initrd-release file to it). Instead, just merge resources of
+   the root fs into your initrd fs via overlayfs. systemd has
+   infrastructure for this: "systemd-sysext". It takes immutable,
+   authenticated erofs images (with verity, we call them "DDIs",
+   i.e. "discoverable disk images") that it overlays into /usr/. [You
+   could also very nicely combine this approach with systemd's
+   portable services, and npsawn containers, which operate on the same
+   authenticated images]. At MSFT we have a major product that works
+   exactly like this: the OS runs off a rootfs that is loaded as an
+   initrd, and everything that runs on top of this are just these
+   verity disk images, using overlayfs and portable services.
+
+4. The proposal in 3 also addresses goal 4.
+
+Which leaves item 1, which is a bit harder to address. We have been
+discussing this off an on internally too. A generic solution to this
+is hard. My current thinking for this could be something like this,
+covering the UEFI world: support sticking a DDI for the main initrd in
+the ESP. The ESP is per definition unencrypted and unauthenticated,
+but otherwise relatively well defined, i.e. known to be vfat and
+discoverable via UUID on a GPT disk. So: build a minimal
+single-process initrd into the kernel (i.e. UKI) that has exactly the
+storage to find a DDI on the ESP, and set it up. i.e. vfat+erofs fs
+drivers, and dm-verity. Then have a PID 1 that does exactly enough to
+jump into the rootfs stored in the ESP. That latter then has proper
+file system drivers, storage drivers, crypto stack, and can unlock the
+real root. This would still be a pretty specific solution to one set
+of devices though, as it could not cover network boots (i.e. where
+there is just no ESP to boot from), but I think this could be kept
+relatively close, as the logic in that case could just fall back into
+loading the DDI that normally would still in the ESP fully into
+memory.
+
+(If you are focussing on systems lacking UEFI, then replace the word
+"ESP" in the above with a similar concept, i.e. a well discoverable,
+unauthenticated relatively simple file system, such as vfat).
+
+Anyway, I can't tell you how to solve your specific problems, but if
+there's one thing I'd suggest you to keep in mind then it's the
+security angle, i.e. keep in mind from the beginning how
+authentication of every component of your process shall work, how
+unatteneded disk encryption shall operate and how measurement shall
+work. Security must be built into things from the beginning, not be
+added as an afterthought.
+
+Lennart
+
+--
+Lennart Poettering, Berlin
