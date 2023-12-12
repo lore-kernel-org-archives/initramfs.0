@@ -1,25 +1,26 @@
-Received: from gardel.0pointer.net (gardel.0pointer.net [85.214.157.71])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 613D694
-	for <initramfs@vger.kernel.org>; Tue, 12 Dec 2023 09:50:06 -0800 (PST)
-Received: from gardel-login.0pointer.net (gardel-mail [85.214.157.71])
-	by gardel.0pointer.net (Postfix) with ESMTP id D67DEE8057B;
-	Tue, 12 Dec 2023 18:50:04 +0100 (CET)
+Received: from gardel.0pointer.net (gardel.0pointer.net [IPv6:2a01:238:43ed:c300:10c3:bcf3:3266:da74])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8853FB9
+	for <initramfs@vger.kernel.org>; Tue, 12 Dec 2023 10:00:34 -0800 (PST)
+Received: from gardel-login.0pointer.net (gardel-mail [IPv6:2a01:238:43ed:c300:10c3:bcf3:3266:da74])
+	by gardel.0pointer.net (Postfix) with ESMTP id 892D6E801F8;
+	Tue, 12 Dec 2023 19:00:32 +0100 (CET)
 Received: by gardel-login.0pointer.net (Postfix, from userid 1000)
-	id 9A76816012B; Tue, 12 Dec 2023 18:50:04 +0100 (CET)
-Date: Tue, 12 Dec 2023 18:50:04 +0100
+	id 442AC16012B; Tue, 12 Dec 2023 19:00:32 +0100 (CET)
+Date: Tue, 12 Dec 2023 19:00:32 +0100
 From: Lennart Poettering <lennart@poettering.net>
-To: Demi Marie Obenour <demi@invisiblethingslab.com>
-Cc: Eric Curtin <ecurtin@redhat.com>, initramfs@vger.kernel.org,
+To: Eric Curtin <ecurtin@redhat.com>
+Cc: Demi Marie Obenour <demi@invisiblethingslab.com>,
+	Yariv Rachmani <yrachman@redhat.com>, initramfs@vger.kernel.org,
 	systemd-devel@lists.freedesktop.org,
 	Stephen Smoogen <ssmoogen@redhat.com>,
-	Qubes OS Development Mailing List <qubes-devel@googlegroups.com>,
-	Yariv Rachmani <yrachman@redhat.com>,
-	Douglas Landgraf <dlandgra@redhat.com>
+	Douglas Landgraf <dlandgra@redhat.com>,
+	Qubes OS Development Mailing List <qubes-devel@googlegroups.com>
 Subject: Re: [RFC] initoverlayfs - a scalable initial filesystem
-Message-ID: <ZXidTEsIj7csT4N0@gardel-login>
+Message-ID: <ZXifwMan02j9M3n2@gardel-login>
 References: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
  <ZXbdJp1Vz8M8c1MS@gardel-login>
  <ZXc4t8ayumo-dhul@itl-email>
+ <CAOgh=Fzd-BcBCKzL419iOxbE=+uZWp6oYSV8+VDJ9w8vWG_L-g@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -28,59 +29,46 @@ List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ZXc4t8ayumo-dhul@itl-email>
+In-Reply-To: <CAOgh=Fzd-BcBCKzL419iOxbE=+uZWp6oYSV8+VDJ9w8vWG_L-g@mail.gmail.com>
 
-On Mo, 11.12.23 11:28, Demi Marie Obenour (demi@invisiblethingslab.com) wrote:
+On Mo, 11.12.23 17:03, Eric Curtin (ecurtin@redhat.com) wrote:
 
-> I don't think this is "a pretty specific solution to one set of devices"
-> _at all_.  To the contrary, it is _exactly_ what I want to see desktop
-> systems moving to in the future.
+> A generic approach is hard, I think it's worth discussing which type of boots
+> you should actually care about milliseconds of performance for. It would be nice
+> if we had an init system that contained the binary data to do the minimum for
+> standard Fedora, Debian installs and everything else was an extension whether
+> that's sysexts, dlopen, a new binary to execute etc.
 >
-> It solves the problem of large firmware images.  It solves the problem
-> of device-specific configuration, because one can use a file on the EFI
-> system partition that is read by userspace and either treated as
-> untrusted or TPM-signed.  It means that one have a complete set of
-> recovery tools in the event of a problem, rather than being limited to
-> whatever one can squeese into an initramfs.  One can even include a full
-> GUI stack (with accessibility support!), rather than just Plymouth.  For
-> Qubes OS, one can include enough of the Xen and Qubes toolstack to even
-> launch virtual machines, allowing the use of USB devices and networking
-> for recovery purposes.  It even means that one can use a FIDO2 token to
-> unlock the hard drive without a USB stack on the host.  And because the
-> initramfs _only_ needs to load the boot extension volume, it can be
-> very, _very_ small, which works great with using Linux as a coreboot
-> payload.
+> If the network is ingrained in your boot stack like this, I'm
+> guessing you probably don't care about boot performance.
 
-systemd's "system extension" concept ("sysexts") already allow you to
-do all that. The stuff I was fantasizing about would only change one
-thing: instead of sd-stub from uefi mode already putting the sysexts
-you installed into memory for the initrd to consume, it would be some
-proto-initrd that would do so. This does not really change what you
-can do with this, but mostly is just an optimization, reducing iops
-and memory use a bit, and thus boot time latency.
+Uh, I am not sure that's really true. People boot up VMs on demand,
+based on network traffic. They sure care about latency and boot
+times. I mean people care about firecracker and these things precisely
+because it brings the of off-to-IP to a minimum.
 
-> The only problem I can see that this does not solve is network boot, but
-> that is very much a niche use case when compared to the millions of
-> Fedora or Debian desktop installs, or even the tens of thousands of
-> Qubes OS installs.  Furthermore, I would _much_ rather network boot be
-> handled by userspace and kexec, rather than the closed source UEFI network
-> stack.
+> Automotive has an expectation for really fast boots, like 2 seconds, in standard
+> desktops installs there's some expectation as you interface directly
+> with a human,
+> but for other installs how much expectation is there?
 
-Well, somebody's niche is somebody else's common case. In VM/cloud/server
-scenarios network booting is not that "niche" as it might be on the desktop.
+AFAIR in particular in cars there's quite som functionality you
+probaly want to move very early in boot. Which yells to me that you
+want a service manager super early. Which again suggests to me that
+the first initrd that runs should probably already cover that.
 
-> It does require some care when upgrading, as the dm-verity image and the
-> UKI cannot both be updated atomically, but one can solve that by first
-> writing the new dm-verity image to a separate location.  The UKI will
-> try both both the old and new locations for the dm-verity image and
-> rename the new image over the old one on success.  The wrong image will
-> simply fail to mount as its root hash will be wrong.
+If I were you I'd probably focus on a design like this: ship a basic
+systemd in an initrd. Complete enough to find the harddisk, and to run
+the other services that are absolutely necessary this early. Then,
+once you found the disk, look for sysext images on it, and apply them
+all on top of the initrd's root fs you are already running with. Never
+transition anywhere else.
 
-systemd-sysext already covers this just fine: you can encode in their
-"extension-release" file to which base images they match up, and
-systemd-syext will then find the right one to apply, and ignore the
-others. Thus just make sure you drop in the sysexts fist, and the UKI
-last and things should be perfectly robust.
+The try to optimize the initrd a bit by making it an erofs/memmap
+thing and so on. And make sure the initrd only contains stuff you
+always need, so that reading it all into memory is necessary anyway,
+and hence any approach that tries to run even the initrd off a disk
+image won't be necessary becuase you need to read everything anyway.
 
 Lennart
 
