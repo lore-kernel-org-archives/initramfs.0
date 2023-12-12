@@ -1,15 +1,15 @@
 Received: from mx3.molgen.mpg.de (mx3.molgen.mpg.de [141.14.17.11])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 865F8CD
-	for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 19:57:20 -0800 (PST)
-Received: from [192.168.0.224] (ip5f5aee94.dynamic.kabel-deutschland.de [95.90.238.148])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C5BF10E
+	for <initramfs@vger.kernel.org>; Tue, 12 Dec 2023 07:26:30 -0800 (PST)
+Received: from [141.14.17.248] (handsomejack.molgen.mpg.de [141.14.17.248])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
 	(Authenticated sender: pmenzel)
-	by mx.molgen.mpg.de (Postfix) with ESMTPSA id EEB2E61E5FE04;
-	Tue, 12 Dec 2023 04:56:52 +0100 (CET)
-Message-ID: <5b0d9ef5-c40f-45e1-9c8d-d0db02e64928@molgen.mpg.de>
-Date: Tue, 12 Dec 2023 04:56:52 +0100
+	by mx.molgen.mpg.de (Postfix) with ESMTPSA id F0EF961E5FE09;
+	Tue, 12 Dec 2023 16:26:04 +0100 (CET)
+Message-ID: <ab8cbdf1-d724-43b2-b101-c4a8ff8f2f8f@molgen.mpg.de>
+Date: Tue, 12 Dec 2023 16:26:01 +0100
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -17,7 +17,7 @@ List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-From: Paul Menzel <pmenzel-systemd-devel@molgen.mpg.de>
+From: Paul Menzel <pmenzel+systemd-devel@molgen.mpg.de>
 Subject: Re: [RFC] initoverlayfs - a scalable initial filesystem
 To: Luca Boccassi <bluca@debian.org>
 Cc: Demi Marie Obenour <demi@invisiblethingslab.com>,
@@ -34,8 +34,10 @@ References: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
  <CAMw=ZnTTaMK1S6HCm3FL8YkgbYFuvZNQmbPjSC=kfc98=j7MJw@mail.gmail.com>
 Content-Language: en-US
 In-Reply-To: <CAMw=ZnTTaMK1S6HCm3FL8YkgbYFuvZNQmbPjSC=kfc98=j7MJw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+
+[Sorry for the spam to the people in Cc. Now the real address.]
 
 Dear Luca,
 
