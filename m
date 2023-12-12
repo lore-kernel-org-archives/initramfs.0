@@ -1,15 +1,15 @@
 Received: from mx3.molgen.mpg.de (mx3.molgen.mpg.de [141.14.17.11])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B256B4
-	for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 19:47:48 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 865F8CD
+	for <initramfs@vger.kernel.org>; Mon, 11 Dec 2023 19:57:20 -0800 (PST)
 Received: from [192.168.0.224] (ip5f5aee94.dynamic.kabel-deutschland.de [95.90.238.148])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
 	(Authenticated sender: pmenzel)
-	by mx.molgen.mpg.de (Postfix) with ESMTPSA id 6D56061E5FE04;
-	Tue, 12 Dec 2023 04:47:15 +0100 (CET)
-Message-ID: <9788c010-a72a-4f7a-b6c0-12c1bada5dd6@molgen.mpg.de>
-Date: Tue, 12 Dec 2023 04:47:11 +0100
+	by mx.molgen.mpg.de (Postfix) with ESMTPSA id EEB2E61E5FE04;
+	Tue, 12 Dec 2023 04:56:52 +0100 (CET)
+Message-ID: <5b0d9ef5-c40f-45e1-9c8d-d0db02e64928@molgen.mpg.de>
+Date: Tue, 12 Dec 2023 04:56:52 +0100
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -17,6 +17,7 @@ List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
+From: Paul Menzel <pmenzel-systemd-devel@molgen.mpg.de>
 Subject: Re: [RFC] initoverlayfs - a scalable initial filesystem
 To: Luca Boccassi <bluca@debian.org>
 Cc: Demi Marie Obenour <demi@invisiblethingslab.com>,
@@ -32,7 +33,6 @@ References: <CAOgh=Fwbv7sUpHBACNNtXK+keQVBJZ1C-tonoYQtGNNY1ukpTw@mail.gmail.com>
  <ZXd9EVT494r0tuC_@itl-email>
  <CAMw=ZnTTaMK1S6HCm3FL8YkgbYFuvZNQmbPjSC=kfc98=j7MJw@mail.gmail.com>
 Content-Language: en-US
-From: Paul Menzel <pmenzel@molgen.mpg.de>
 In-Reply-To: <CAMw=ZnTTaMK1S6HCm3FL8YkgbYFuvZNQmbPjSC=kfc98=j7MJw@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
