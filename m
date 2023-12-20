@@ -1,42 +1,42 @@
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com [209.85.219.170])
+Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E955238F80
-	for <initramfs@vger.kernel.org>; Tue, 19 Dec 2023 19:23:29 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1372D79D8;
+	Wed, 20 Dec 2023 02:20:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iffzN9PY"
-Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-dbd4d2018f8so307722276.1
-        for <initramfs@vger.kernel.org>; Tue, 19 Dec 2023 11:23:29 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZQdRoJR+"
+Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-5c875ee4f10so5390937b3.1;
+        Tue, 19 Dec 2023 18:20:11 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1703013809; x=1703618609; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1703038811; x=1703643611; darn=vger.kernel.org;
         h=cc:to:subject:message-id:date:from:mime-version:from:to:cc:subject
          :date:message-id:reply-to;
-        bh=81mt3uxxMIhL0SQSJ0+t3yAxcx7pFGIEDren6C8DC0g=;
-        b=iffzN9PY3gqrABkk9CqKsd/czK9NSr+OADT5I98Hz1ntn4vw03SYssg/u7VGNPAexy
-         2qNl0TeFkt9/wuesqwj4oog6RRHZrdGiUzpaTxUyg4zu9X2tY5/G/mnVAEf+3bmS6cdT
-         rXyaYoNOjTrCDA2vrH1sojHxDX7uiOGForuB9OfD7TLXiE1lPLrlfb21t+zEtFQMHUSi
-         aBX0Jm9a7CJBJplkiS99qwT0ujhD2uC7qg26G+vrotLnZsadTMObqHBtl9RYvckzI2pm
-         mjWsC6ZefzAZS2Hc/OYrQNEDprBrL3Ob1HV74H0ZM7k4THc2B5rrO+fHwuPDxp06+Wtd
-         GtMQ==
+        bh=7wnJmKZPNq4/mxy+en/Y2MYRkaPw7M3y1oFd6Iwnst4=;
+        b=ZQdRoJR+41K5vYT+28aU2T3Vj3iH26G5IfA4rP3Pem5lKged7I3pI/91KlSHaaqB9X
+         Nq3nRL2dTKFFudVtdwuhzob6PoJnyMIqZbFcUDSAQmn35WzajjgxtY0wbXmKUHjdnabk
+         B2Q9dGbBwp+1KTOiFcFbwM9fNYASepvfSU+Qjan2ExeoZ9G2UY1dlZm2HnAU35hXjPLL
+         7uUMcwW3yc+dCJAMdW7xH6jmmvL8vMjFyA7eU6H8J1m/BEW7Ua3Z/GS/kS84jlYPj+N1
+         gKaJ5PGZkL5Vqv1Q5V21czBQF4GpEVLrMhVg9U4QcMr6zIUXXfPozKSfBweSly2l8W2H
+         adjg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1703013809; x=1703618609;
+        d=1e100.net; s=20230601; t=1703038811; x=1703643611;
         h=cc:to:subject:message-id:date:from:mime-version:x-gm-message-state
          :from:to:cc:subject:date:message-id:reply-to;
-        bh=81mt3uxxMIhL0SQSJ0+t3yAxcx7pFGIEDren6C8DC0g=;
-        b=sXBk4weHjx8ezxMMMWj5eiHC5JcZ02d7dTUgy/nHU+MoAcskuRa4vu/QyJzzbap+W3
-         OkPaDfZPsg+wgmtBAsMiliijKWJ0O2TxO8uPvzI8hKqi4EdXuxQ8RS9LfZuYwuy8cRNj
-         BrzD/oXnyWPSJz1s12Wan6CsTdWfpBXIjiSpvEDycylphYYviMPk277Ptb9rZ0Wh1oJx
-         aAi6+e7GyBKDIMHwMrK3o9B0R4fHsLGV7g//I2qqdz3X2iOiwaxSvGMXesxwYvC1HbmM
-         Ep/4uKFTbuCBLy1JwLAT+Eb+Kau0v8Kc610mALzUrw1utm9T7OnXMcPRUqvORUUSwqGr
-         WgOQ==
-X-Gm-Message-State: AOJu0YxQGKo0lnu+IMu4S0OzTh5uc4qDbxNoX+bCLOJPAKHzEWDKcrZa
-	Htb5+WHo5IOyKc289tEbwkZxXtiNgmHhuJGCaE1bFVWTqcA=
-X-Google-Smtp-Source: AGHT+IGH2u0EkJNL6kchuykHMZpLkjto6jG7UoqP1Y79xTU/R7hkOIDkE7uL1GOIAwcrS9GIBhUakBHtubik+Slggmk=
-X-Received: by 2002:a25:c281:0:b0:dbd:2443:31c8 with SMTP id
- s123-20020a25c281000000b00dbd244331c8mr4016804ybf.0.1703013808796; Tue, 19
- Dec 2023 11:23:28 -0800 (PST)
+        bh=7wnJmKZPNq4/mxy+en/Y2MYRkaPw7M3y1oFd6Iwnst4=;
+        b=CIHi62kMZ2yjWfWRw4w3I3yTS2Iv11jjy40RggaV6Dchz9PTdPiOGD8mgRHDg9Ysbk
+         x7MdiJRWT8camuzpaDVUWCb0OxXR1BBtiQZA4atfAF5V4t2EcrPeJqkyY71kILZETegh
+         +vowD3SDs/xFyRzoFQnjAS6f9uRulVVoMfNXHKAPu7Utco6rAwiZCdu5hrLqY19RcL5+
+         Z8HRTrgYRkfyLgkihJ4lw/8guM5X+NoDDjUw/clqeYln6PKh7hwKeP4EZ6OVQhMDG9BS
+         5sqWHIscBww0ynBRdZhcKWQdbXozDcqxQVGbfY15UYgXk4EZHfMAmTFVR1J+1aDD2uYl
+         dlHw==
+X-Gm-Message-State: AOJu0YyOgQHD04WCdiaA3gncCGBbXmZ7+vNlFiGYisR1JMV/XGSJAeOF
+	cflE1G3t3DSw50T3h859IrF/BUhPrYhXnsYlSOwLH4Dqw38TGA==
+X-Google-Smtp-Source: AGHT+IFLy/FjAO+dVGqTImgUyEFZTWld45sPwQ8hSeCfhu5lLyEFKFfMpq56I71Eb41GD3pjoC4Bg/VgJpTGXfppOlI=
+X-Received: by 2002:a25:d111:0:b0:dbd:7407:21f4 with SMTP id
+ i17-20020a25d111000000b00dbd740721f4mr1699573ybg.0.1703038810881; Tue, 19 Dec
+ 2023 18:20:10 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -44,79 +44,98 @@ List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 From: Askar Safin <safinaskar@gmail.com>
-Date: Tue, 19 Dec 2023 22:22:43 +0300
-Message-ID: <CAPnZJGAqrj4f+63-cwOpTk+bL2mzpmThSthmGGmfQTTbxT+Taw@mail.gmail.com>
-Subject: Re: [PATCH v2] initramfs: Support unpacking directly to tmpfs
-To: emily@redcoat.dev
-Cc: initramfs@vger.kernel.org, rob@landley.net
+Date: Wed, 20 Dec 2023 05:19:25 +0300
+Message-ID: <CAPnZJGDcNwPLbzC99qNQ+bRMwxPU-Z0xe=TD6DWQU=0MNyeftA@mail.gmail.com>
+Subject: Re: [PATCH v3] rootfs: Fix support for rootfstype= when root= is given
+To: stefanb@linux.ibm.com
+Cc: gregkh@linuxfoundation.org, initramfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, rob@landley.net, stable@vger.kernel.org, 
+	zohar@linux.ibm.com
 Content-Type: text/plain; charset="UTF-8"
 
-Hi, Emily.
+On Sun, Nov 19, 2023 at 08:12:48PM -0500, Stefan Berger wrote:
+> Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
+>
+>   If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
+>   default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
+>   line.
+>
+> This currently does not work when root= is provided since then
+> saved_root_name contains a string and rootfstype= is ignored. Therefore,
+> ramfs is currently always chosen when root= is provided.
 
-I propose this solution: in very beginning of your initramfs's init do
-equivalent of this:
+Maybe it is a good idea to just fully remove ramfs? initramfs will
+always be tmpfs. And tmpfs will always be enabled.
 
-mkdir root
-mount --bind / root
-cd root
-mount --move . /
-chroot .
+As well as I understand, ramfs was originally introduced, because
+tmpfs seemed too big. So, it seemed to be a good idea to have small fs
+(ramfs), which is always enabled.
 
-And then everything else.
+I just did an experiment. I compiled the kernel with a very small
+config. And without TMPFS and SHMEM. I got 1059440 bytes image. Then I
+enabled TMPFS and SHMEM, and I got 1072976 bytes. So tmpfs adds 13536
+bytes, i. e. 14k, which is a very small amount. It adds 1.3 % to the
+kernel even with very small config.
 
-This will create second mount of initramfs. Everything will look same,
-but pivot_root will work.
+So I propose to remove ramfs and always enable tmpfs. This will
+decrease complexity.
 
-Also, you can do this: create file named, say, "preinit" and put it to
-initramfs. Write to this file code above and put to the end of the
-file "exec /init". Of course, "preinit" could be written in shell or C
-or any other language. Add "rdinit=/preinit" to kernel command line.
-This will execute preinit at first, preinit will duplicate initramfs
-mount and then execute actual initramfs's init.
+Here are my configs (x86_64). Just enough to run busybox in "qemu -serial stdio"
 
-I didn't test this, but I'm nearly sure it will work. If you want, I
-can test this.
+make KCONFIG_ALLCONFIG="$FILE" allnoconfig
 
-Also you can put "rdinit=/preinit" to CONFIG_CMDLINE. As well as I
-understand, CONFIG_CMDLINE will be merged with command line provided
-by bootloader, but I'm not sure. Also you can link small initramfs
-with /preinit to kernel image. Again, as well as I understand it will
-be merged with initramfs provided by bootloader. Thus, kernel with
-CONFIG_CMDLINE and with linked in initramfs with /preinit will behave
-very similarly to kernel with your patch. Of course, initial mount
-will not be empty, but I think this is a minor point.
+CONFIG_64BIT=y
+CONFIG_PRINTK=y
+CONFIG_SERIAL_8250=y
+CONFIG_TTY=y
+CONFIG_SERIAL_8250_CONSOLE=y
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_RD_GZIP=y
+CONFIG_BINFMT_ELF=y
+CONFIG_EMBEDDED=y
+CONFIG_EXPERT=y
+CONFIG_TMPFS=n # Try to change this to "y"
+CONFIG_SHMEM=n # Try to change this to "y"
 
-Of course, instead of that "mount --bind" trick you can do the same
-with "cp + rm" solution.
+Here is full docker reproducer:
 
-Also, I remember I saw patch similar to yours in Linux mailing lists.
-It was rejected, too. If you want I can try to find it.
-
-I suggest solution described above. But let me also provide some
-alternative solutions. You can implement patch similar to yours, but
-which will work unconditionally, always. This will solve the problem
-once and for all. Ideally initial mount will be nullfs as suggested by
-Rob. I. e. file system, which has no state at all. To make sure
-containers cannot exchange data. I think such filesystem is easy to
-create. All operations will be no-ops. Look at "fs" directory in
-kernel tree and write something similar.
-
-Another way is to make pivot_root work with initial mount. I think
-this will be hard.
-
-Note that Rob Landley is absent from MAINTAINERS file (
-https://elixir.bootlin.com/linux/latest/source/MAINTAINERS ), so he
-doesn't decide whether a patch will be accepted. (I doesn't decide,
-too. I'm not a kernel developer, I just occasionally found this thread
-and decided to answer.)
-
-If you ever want to start new discussion or sent new patch, then,
-please, sent it to LKML, not to initramfs@vger.kernel.org . As you can
-see here: https://lore.kernel.org/initramfs/ , new discussions are
-started nearly once a month at initramfs@vger.kernel.org , so I think
-very few people will see your message.
-
-Ask me any questions.
+# Reproducible
+# 20230227 = 20230227T000000Z = 20230226T090712Z
+FROM debian:sid-20230227
+ENV LC_ALL C.UTF-8
+RUN sed -i 's~^URIs:.*$~URIs:
+http://snapshot.debian.org/archive/debian/20230226T090712Z~'
+/etc/apt/sources.list.d/debian.sources
+RUN echo 'Acquire::Check-Valid-Until "false";' >
+/etc/apt/apt.conf.d/02acquire-check-valid-until
+RUN apt-get update && apt-get install -y apt-utils whiptail
+RUN apt-get update && apt-get install -y busybox-static
+qemu-system-x86 make gcc git flex bison bc libelf-dev less nano cpio
+RUN git clone --depth=1 -b v6.2
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+RUN : > /.config
+# See Linux f8f0d06438e5c810d1e13b5f8c2fed501fe36e9c
+RUN echo 'CONFIG_64BIT=y' >> /.config
+RUN echo 'CONFIG_PRINTK=y' >> /.config
+RUN echo 'CONFIG_SERIAL_8250=y' >> /.config
+RUN echo 'CONFIG_TTY=y' >> /.config
+RUN echo 'CONFIG_SERIAL_8250_CONSOLE=y' >> /.config
+RUN echo 'CONFIG_BLK_DEV_INITRD=y' >> /.config
+RUN echo 'CONFIG_RD_GZIP=y' >> /.config
+RUN echo 'CONFIG_BINFMT_ELF=y' >> /.config
+RUN echo 'CONFIG_EMBEDDED=y' >> /.config
+RUN echo 'CONFIG_EXPERT=y' >> /.config
+RUN echo 'CONFIG_TMPFS=y' >> /.config # try "n"
+RUN echo 'CONFIG_SHMEM=y' >> /.config # try "n"
+RUN cd linux && make KCONFIG_ALLCONFIG=/.config allnoconfig
+RUN cd linux && make -j4
+RUN mkdir /initramfs && cp /bin/busybox /initramfs && cd /initramfs &&
+ln -s busybox sh && find . | cpio --create --format=newc --quiet |
+gzip > /initramfs.cpio.gz
+RUN echo "qemu-system-x86_64 -M microvm -m 64M -serial stdio -display
+none -kernel /linux/arch/x86/boot/bzImage -initrd /initramfs.cpio.gz
+-append 'quiet console=ttyS0 earlyprintk=ttyS0 rdinit=/sh' -nodefaults
+-no-user-config" > /root/.bash_history
 
 -- 
 Askar Safin
