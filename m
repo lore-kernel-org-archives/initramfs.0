@@ -1,141 +1,150 @@
-Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
+Received: from mail-oa1-f51.google.com (mail-oa1-f51.google.com [209.85.160.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1372D79D8;
-	Wed, 20 Dec 2023 02:20:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A85C04B5BB
+	for <initramfs@vger.kernel.org>; Thu, 21 Dec 2023 09:24:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZQdRoJR+"
-Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-5c875ee4f10so5390937b3.1;
-        Tue, 19 Dec 2023 18:20:11 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="aaaqOUWg"
+Received: by mail-oa1-f51.google.com with SMTP id 586e51a60fabf-1efabc436e4so360331fac.1
+        for <initramfs@vger.kernel.org>; Thu, 21 Dec 2023 01:24:41 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1703038811; x=1703643611; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:mime-version:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=7wnJmKZPNq4/mxy+en/Y2MYRkaPw7M3y1oFd6Iwnst4=;
-        b=ZQdRoJR+41K5vYT+28aU2T3Vj3iH26G5IfA4rP3Pem5lKged7I3pI/91KlSHaaqB9X
-         Nq3nRL2dTKFFudVtdwuhzob6PoJnyMIqZbFcUDSAQmn35WzajjgxtY0wbXmKUHjdnabk
-         B2Q9dGbBwp+1KTOiFcFbwM9fNYASepvfSU+Qjan2ExeoZ9G2UY1dlZm2HnAU35hXjPLL
-         7uUMcwW3yc+dCJAMdW7xH6jmmvL8vMjFyA7eU6H8J1m/BEW7Ua3Z/GS/kS84jlYPj+N1
-         gKaJ5PGZkL5Vqv1Q5V21czBQF4GpEVLrMhVg9U4QcMr6zIUXXfPozKSfBweSly2l8W2H
-         adjg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1703038811; x=1703643611;
-        h=cc:to:subject:message-id:date:from:mime-version:x-gm-message-state
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1703150681; x=1703755481; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :from:to:cc:subject:date:message-id:reply-to;
-        bh=7wnJmKZPNq4/mxy+en/Y2MYRkaPw7M3y1oFd6Iwnst4=;
-        b=CIHi62kMZ2yjWfWRw4w3I3yTS2Iv11jjy40RggaV6Dchz9PTdPiOGD8mgRHDg9Ysbk
-         x7MdiJRWT8camuzpaDVUWCb0OxXR1BBtiQZA4atfAF5V4t2EcrPeJqkyY71kILZETegh
-         +vowD3SDs/xFyRzoFQnjAS6f9uRulVVoMfNXHKAPu7Utco6rAwiZCdu5hrLqY19RcL5+
-         Z8HRTrgYRkfyLgkihJ4lw/8guM5X+NoDDjUw/clqeYln6PKh7hwKeP4EZ6OVQhMDG9BS
-         5sqWHIscBww0ynBRdZhcKWQdbXozDcqxQVGbfY15UYgXk4EZHfMAmTFVR1J+1aDD2uYl
-         dlHw==
-X-Gm-Message-State: AOJu0YyOgQHD04WCdiaA3gncCGBbXmZ7+vNlFiGYisR1JMV/XGSJAeOF
-	cflE1G3t3DSw50T3h859IrF/BUhPrYhXnsYlSOwLH4Dqw38TGA==
-X-Google-Smtp-Source: AGHT+IFLy/FjAO+dVGqTImgUyEFZTWld45sPwQ8hSeCfhu5lLyEFKFfMpq56I71Eb41GD3pjoC4Bg/VgJpTGXfppOlI=
-X-Received: by 2002:a25:d111:0:b0:dbd:7407:21f4 with SMTP id
- i17-20020a25d111000000b00dbd740721f4mr1699573ybg.0.1703038810881; Tue, 19 Dec
- 2023 18:20:10 -0800 (PST)
+        bh=LrFYVKMKAls73y7tPJ/0eD7g7DzKwCrOBW20HJX//Lk=;
+        b=aaaqOUWgquzhDNerPKun3uJ6K6SBNcVh4rgw25Yz6vkv3Rvl4JcfMSUYEJ4vHclqAU
+         jp0z9Vp01B7ck3imhGJdoDpnV7eiW8+t8hVp2SJfXCzukODYuSsd+thD13ZiJmQ7H+Fg
+         wXro0Ir7ZO8uAEEwx/FcptkSZAhWHy5HyV7xj3/w7uuqRXsEcvOZHEFb2qg1wd1NJ03a
+         TT4hjKNDY8e/CE2r3cB6jrs0+49mKY1txJRA6IwyyUzGjQsjQrKGtTd+1fzmX/0oPhvS
+         KRRmIjiyOxOchdSE48/Dx800Lsmx9l6Xguw21vDT201yIlZAwEKBhbIRzJS45xCgxTk1
+         Qe2Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1703150681; x=1703755481;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=LrFYVKMKAls73y7tPJ/0eD7g7DzKwCrOBW20HJX//Lk=;
+        b=AKcxPuluabJJVcrdBw2iG4PRGO19vqIb5XMOX4oSXTrwywDewzqayFw4FvX9CiOSJz
+         HmbylXugnlyc7CoSl1RXDK9GJd2h5/ajIY5JKc97p0zWf+loPOv3aEo4o9JPq0EdgvCZ
+         JX53Ng01zMYjBga1ZBRqQ2VSLjzAEyFivRhMa8hcWamhr9N05Gr8wRUSiXWhQI4/VQ+Y
+         I90z30G7aoXkJxVNyKTFJ6x7OQK6cZTER681OJLQub0H+ru5I+rOfOU1iPelgGLyL7rs
+         9RVSajQXFyNYH5XR+91xCJPnuMvhxREmKmCLpATj8feSLHR6AGRucvjkPKapXhY3d9e3
+         z1hQ==
+X-Gm-Message-State: AOJu0YyYglBoj2VN9iOJaNtFjkLame4ZI2aRcHmUaIyUI0Hs41t751tl
+	l2Z/A3DUQDhIcToUR6CQTL8tpw==
+X-Google-Smtp-Source: AGHT+IG/e7v/4yjyw7iqrmWPlhi6xdNZWnDQpy4LNKo26D8VVfTnVvifn6J0+295mAbJcFvWyBA5sQ==
+X-Received: by 2002:a05:6870:55cb:b0:204:bd5:4b26 with SMTP id qk11-20020a05687055cb00b002040bd54b26mr956962oac.112.1703150680677;
+        Thu, 21 Dec 2023 01:24:40 -0800 (PST)
+Received: from ?IPV6:2607:fb90:e600:87e2:3ea9:f4ff:fe4b:aee8? ([2607:fb90:e600:87e2:3ea9:f4ff:fe4b:aee8])
+        by smtp.gmail.com with ESMTPSA id hi27-20020a056870c99b00b001fa39dfef88sm376079oab.37.2023.12.21.01.24.38
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 21 Dec 2023 01:24:39 -0800 (PST)
+Message-ID: <d4b227de-d609-aef2-888b-203dbcf06707@landley.net>
+Date: Thu, 21 Dec 2023 03:30:37 -0600
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Askar Safin <safinaskar@gmail.com>
-Date: Wed, 20 Dec 2023 05:19:25 +0300
-Message-ID: <CAPnZJGDcNwPLbzC99qNQ+bRMwxPU-Z0xe=TD6DWQU=0MNyeftA@mail.gmail.com>
-Subject: Re: [PATCH v3] rootfs: Fix support for rootfstype= when root= is given
-To: stefanb@linux.ibm.com
-Cc: gregkh@linuxfoundation.org, initramfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, rob@landley.net, stable@vger.kernel.org, 
-	zohar@linux.ibm.com
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH v3] rootfs: Fix support for rootfstype= when root= is
+ given
+Content-Language: en-US
+To: Askar Safin <safinaskar@gmail.com>, stefanb@linux.ibm.com
+Cc: gregkh@linuxfoundation.org, initramfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, stable@vger.kernel.org, zohar@linux.ibm.com
+References: <CAPnZJGDcNwPLbzC99qNQ+bRMwxPU-Z0xe=TD6DWQU=0MNyeftA@mail.gmail.com>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <CAPnZJGDcNwPLbzC99qNQ+bRMwxPU-Z0xe=TD6DWQU=0MNyeftA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Sun, Nov 19, 2023 at 08:12:48PM -0500, Stefan Berger wrote:
-> Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
->
->   If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
->   default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
->   line.
->
-> This currently does not work when root= is provided since then
-> saved_root_name contains a string and rootfstype= is ignored. Therefore,
-> ramfs is currently always chosen when root= is provided.
+On 12/19/23 20:19, Askar Safin wrote:
+> On Sun, Nov 19, 2023 at 08:12:48PM -0500, Stefan Berger wrote:
+>> Documentation/filesystems/ramfs-rootfs-initramfs.rst states:
+>>
+>>   If CONFIG_TMPFS is enabled, rootfs will use tmpfs instead of ramfs by
+>>   default.  To force ramfs, add "rootfstype=ramfs" to the kernel command
+>>   line.
 
-Maybe it is a good idea to just fully remove ramfs? initramfs will
-always be tmpfs. And tmpfs will always be enabled.
+I wrote that around 2005.
 
-As well as I understand, ramfs was originally introduced, because
-tmpfs seemed too big. So, it seemed to be a good idea to have small fs
-(ramfs), which is always enabled.
+>> This currently does not work when root= is provided since then
+>> saved_root_name contains a string and rootfstype= is ignored.
 
-I just did an experiment. I compiled the kernel with a very small
-config. And without TMPFS and SHMEM. I got 1059440 bytes image. Then I
-enabled TMPFS and SHMEM, and I got 1072976 bytes. So tmpfs adds 13536
-bytes, i. e. 14k, which is a very small amount. It adds 1.3 % to the
-kernel even with very small config.
+I wrote the code to populate a tmpfs from initramfs in 2013 (8 years later),
+because nobody else had bothered to, and I've had a patch to fix the rootfstype=
+issue for years, but I long ago lost my touch with linux-kernel proctology:
 
-So I propose to remove ramfs and always enable tmpfs. This will
-decrease complexity.
+https://lkml.iu.edu/hypermail/linux/kernel/2302.2/05601.html
 
-Here are my configs (x86_64). Just enough to run busybox in "qemu -serial stdio"
+Last I heard it was going upstream via somebody else (who tripled the size of
+the fix for no obvious reason, but that's modern linux-kernel for you), but I
+lost track after the guy who'd said to send it to him instead did multiple
+automated bounces from a bot that said "to save this one special guy's time,
+we're going to spam linux-kernel with autogenerated content delivered to tens of
+thousands of plebian mailboxes":
 
-make KCONFIG_ALLCONFIG="$FILE" allnoconfig
+https://lkml.iu.edu/hypermail/linux/kernel/2311.1/05544.html
+https://lkml.iu.edu/hypermail/linux/kernel/2311.1/06448.html
 
-CONFIG_64BIT=y
-CONFIG_PRINTK=y
-CONFIG_SERIAL_8250=y
-CONFIG_TTY=y
-CONFIG_SERIAL_8250_CONSOLE=y
-CONFIG_BLK_DEV_INITRD=y
-CONFIG_RD_GZIP=y
-CONFIG_BINFMT_ELF=y
-CONFIG_EMBEDDED=y
-CONFIG_EXPERT=y
-CONFIG_TMPFS=n # Try to change this to "y"
-CONFIG_SHMEM=n # Try to change this to "y"
+Last I saw the rewrite of the fix had been resubmitted to the Special Guy a
+fourth time:
 
-Here is full docker reproducer:
+https://lkml.iu.edu/hypermail/linux/kernel/2311.2/02938.html
 
-# Reproducible
-# 20230227 = 20230227T000000Z = 20230226T090712Z
-FROM debian:sid-20230227
-ENV LC_ALL C.UTF-8
-RUN sed -i 's~^URIs:.*$~URIs:
-http://snapshot.debian.org/archive/debian/20230226T090712Z~'
-/etc/apt/sources.list.d/debian.sources
-RUN echo 'Acquire::Check-Valid-Until "false";' >
-/etc/apt/apt.conf.d/02acquire-check-valid-until
-RUN apt-get update && apt-get install -y apt-utils whiptail
-RUN apt-get update && apt-get install -y busybox-static
-qemu-system-x86 make gcc git flex bison bc libelf-dev less nano cpio
-RUN git clone --depth=1 -b v6.2
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-RUN : > /.config
-# See Linux f8f0d06438e5c810d1e13b5f8c2fed501fe36e9c
-RUN echo 'CONFIG_64BIT=y' >> /.config
-RUN echo 'CONFIG_PRINTK=y' >> /.config
-RUN echo 'CONFIG_SERIAL_8250=y' >> /.config
-RUN echo 'CONFIG_TTY=y' >> /.config
-RUN echo 'CONFIG_SERIAL_8250_CONSOLE=y' >> /.config
-RUN echo 'CONFIG_BLK_DEV_INITRD=y' >> /.config
-RUN echo 'CONFIG_RD_GZIP=y' >> /.config
-RUN echo 'CONFIG_BINFMT_ELF=y' >> /.config
-RUN echo 'CONFIG_EMBEDDED=y' >> /.config
-RUN echo 'CONFIG_EXPERT=y' >> /.config
-RUN echo 'CONFIG_TMPFS=y' >> /.config # try "n"
-RUN echo 'CONFIG_SHMEM=y' >> /.config # try "n"
-RUN cd linux && make KCONFIG_ALLCONFIG=/.config allnoconfig
-RUN cd linux && make -j4
-RUN mkdir /initramfs && cp /bin/busybox /initramfs && cd /initramfs &&
-ln -s busybox sh && find . | cpio --create --format=newc --quiet |
-gzip > /initramfs.cpio.gz
-RUN echo "qemu-system-x86_64 -M microvm -m 64M -serial stdio -display
-none -kernel /linux/arch/x86/boot/bzImage -initrd /initramfs.cpio.gz
--append 'quiet console=ttyS0 earlyprintk=ttyS0 rdinit=/sh' -nodefaults
--no-user-config" > /root/.bash_history
+Maybe it'll show up in a git pull someday? Who knows...
 
--- 
-Askar Safin
+> Therefore,
+>> ramfs is currently always chosen when root= is provided.
+> 
+> Maybe it is a good idea to just fully remove ramfs?
+
+"Let's delete a 20 year old filesystem that's been built into every system that
+whole time, this can't POSSIBLY have any side effects."
+
+We've already discussed this, more than once:
+
+https://lkml.iu.edu/hypermail/linux/kernel/2311.0/00435.html
+
+Can you build tmpfs on a nommu system? Last I checked the plumbing expects swap,
+but it's been a while...
+
+> initramfs will
+> always be tmpfs. And tmpfs will always be enabled.
+> 
+> As well as I understand, ramfs was originally introduced, because
+> tmpfs seemed too big.
+
+No, ramfs came first, tmpfs was created later. Not just what initramfs uses, but
+the order in which the filesystems were written.
+
+I believe modern ramfs more or less dates to Al Viro factoring out "libfs":
+
+https://lwn.net/Articles/57369/
+
+Although the memory grows a bit hazy. (I vaguely remember what happened, but
+exactly when it was, and what came before what... git log in my unified history
+tree is showing fs/ramfs originating from 2.3.99pre4 in 2000 but it may be
+confused by a rename. I remember somebody, I thought Linus, saying that ramfs
+was an example user of the libfs code...)
+
+> Here are my configs (x86_64). Just enough to run busybox in "qemu -serial stdio"
+
+Back when I maintained busybox there were people in that space who cared about
+14k, and that's not measuring runtime overhead.
+
+There was a lovely ELC talk in 2015 about booting Linux in 256 kilobytes of SRAM
+(everything else being XIP out of ROM-alikes), but alas the entire year's videos
+got wiped by the Linux Foundation. The PDF is still online though:
+
+https://elinux.org/images/9/90/Linux_for_Microcontrollers-_From_Marginal_to_Mainstream.pdf
+
+Alas, XIP got replaced with DAX which I've never managed to get to work...
+
+Rob
