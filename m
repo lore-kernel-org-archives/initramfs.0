@@ -1,151 +1,205 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oo1-f47.google.com (mail-oo1-f47.google.com [209.85.161.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12461125D1;
-	Fri, 29 Dec 2023 16:39:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A64EE12B93
+	for <initramfs@vger.kernel.org>; Fri, 29 Dec 2023 18:29:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="B50YTE3P"
-Received: from pps.filterd (m0360072.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 3BTEWnii000745;
-	Fri, 29 Dec 2023 16:39:19 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- subject : to : cc : references : from : in-reply-to : content-type :
- content-transfer-encoding : mime-version; s=pp1;
- bh=wbcLOjD/g4HQFnhKj1bNCq5O1tu+YtaxHZUwcKk3Rsc=;
- b=B50YTE3P+ltwHRtV9pdbXNh+3+ORJUo3V2XaPk/woyiuUiEWVSK0bTB8VjyuUPHVz8RH
- OZ0sXuDRVCZzkdidhwhYzdBgsjHEuGRB+odocA8zaYCmjBFPPlj3zV37UMUAtyxNVziS
- NdP4Cn6o63zNj+U1SinhP04jfXPWipXO1RtMh5moQUS8J6gUn+oVAJszHb+wmT8g0U2H
- EYJPQNFf00sZnLjYxqM4tjgqSMtsPmJdHjVGcozH7LMcsAN6Q7D7Q3zI3GXuyMlWfYKn
- t1G0/qOvI0kd6rMROY7ObwsOSigOINelR5PrEVgx1wXvzID0DbEyQHbIm5UeeIS/hTii 2Q== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3v9yyfjh3q-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 29 Dec 2023 16:39:19 +0000
-Received: from m0360072.ppops.net (m0360072.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 3BTGMXte028567;
-	Fri, 29 Dec 2023 16:39:18 GMT
-Received: from ppma13.dal12v.mail.ibm.com (dd.9e.1632.ip4.static.sl-reverse.com [50.22.158.221])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3v9yyfjh3j-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 29 Dec 2023 16:39:18 +0000
-Received: from pps.filterd (ppma13.dal12v.mail.ibm.com [127.0.0.1])
-	by ppma13.dal12v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 3BTFqk40016600;
-	Fri, 29 Dec 2023 16:39:18 GMT
-Received: from smtprelay03.wdc07v.mail.ibm.com ([172.16.1.70])
-	by ppma13.dal12v.mail.ibm.com (PPS) with ESMTPS id 3v6c3ke3vq-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 29 Dec 2023 16:39:18 +0000
-Received: from smtpav01.dal12v.mail.ibm.com (smtpav01.dal12v.mail.ibm.com [10.241.53.100])
-	by smtprelay03.wdc07v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 3BTGdHUM15663674
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 29 Dec 2023 16:39:17 GMT
-Received: from smtpav01.dal12v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id E86C058059;
-	Fri, 29 Dec 2023 16:39:16 +0000 (GMT)
-Received: from smtpav01.dal12v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2219A58061;
-	Fri, 29 Dec 2023 16:39:15 +0000 (GMT)
-Received: from [9.47.158.152] (unknown [9.47.158.152])
-	by smtpav01.dal12v.mail.ibm.com (Postfix) with ESMTP;
-	Fri, 29 Dec 2023 16:39:15 +0000 (GMT)
-Message-ID: <fb776d99-1956-4e1b-9afc-84f27ca40f46@linux.ibm.com>
-Date: Fri, 29 Dec 2023 11:39:14 -0500
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] rootfs: Fix support for rootfstype= when root= is
- given
-Content-Language: en-US
-To: Askar Safin <safinaskar@gmail.com>, Rob Landley <rob@landley.net>
-Cc: gregkh@linuxfoundation.org, initramfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        zohar@linux.ibm.com
-References: <CAPnZJGDcNwPLbzC99qNQ+bRMwxPU-Z0xe=TD6DWQU=0MNyeftA@mail.gmail.com>
- <d4b227de-d609-aef2-888b-203dbcf06707@landley.net>
- <CAPnZJGBeV-E_AN8GnTfkaJvRtBmCeMYYCt+O0XMsc3kDULRuKg@mail.gmail.com>
-From: Stefan Berger <stefanb@linux.ibm.com>
-In-Reply-To: <CAPnZJGBeV-E_AN8GnTfkaJvRtBmCeMYYCt+O0XMsc3kDULRuKg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: kKDHc4NgNKVYGnuWe57kEubX-peY3s2Y
-X-Proofpoint-GUID: cU7McnlYahldSoVWHrdOVhsr_YZLIby2
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-UnRewURL: 0 URL was un-rewritten
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="HPy7A0gg"
+Received: by mail-oo1-f47.google.com with SMTP id 006d021491bc7-59502aa878aso722754eaf.1
+        for <initramfs@vger.kernel.org>; Fri, 29 Dec 2023 10:29:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1703874555; x=1704479355; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=AeSrtwQFurF3YcqKmZ2Gt/CZU5AB/xdcrHrq4YB+YYQ=;
+        b=HPy7A0ggUGfH6s1EnM0YCdJJ0d19olaHinlwhluoGFlYJXiDRibKwGt96axQmY19wJ
+         w8vZsLRzyYH17ORKm6HQCMPT8As8iwTABgywxDE06LHy83bej7xfDsfqdH6mIOaCM58R
+         T3zfNbyXitdTSpciZowZxe9PmH4wAayHVjQgpADubhrlmlZ48X4Yxpz8smGJystfTkPl
+         AI5JDl8rEw+Tf7vmw6agbj4wxPJKiMs2Se0VQTtI42JVHzId6ITi1ia3u5UoCg6Ajrx3
+         wgiWTOA5WIvOYfsvsag1+w570SWsOZ4UCKHm1OYf2LDMalb1MHaDMw19+k2PUMUODOc7
+         PZEw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1703874555; x=1704479355;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=AeSrtwQFurF3YcqKmZ2Gt/CZU5AB/xdcrHrq4YB+YYQ=;
+        b=TMsC4YoflwPh4n3u7/mDnUUfSy0V31VJTh82g8iNCctLK6LoWzxjGVtKfn8yeXMM3d
+         ETHJ5b3XSMNjNWyeWMGMCOmDevaMnJuX7I9soSDg2/gPwtO23Ad9aXbOa30SLbgf04Gd
+         MVQ1JJ+ZY4dKoiFtuTzZor2zTjgW4jzPMT/jC+PaXnJdg0vYI0R92+DFbod0aUJ9DfK7
+         V4bWlR8aWwVDcfJwWScZMrW9yVHhZ469jJJsBzSUB4Vt/6p8tsbfyJENiY3SytCXUkjd
+         9qFIKe7rY2Gs3BlMGqAOV7bVeaQevwpX1o6bXmHIn9rXPcNNeyXWg044amzQn9wsDbnW
+         Ea5A==
+X-Gm-Message-State: AOJu0YzMFiwA/r0h0pv57b2KJRYZ1p2OV2p+8AHuIAAPjfULbbPeI/hz
+	RYz8VnpZm2j/qxMdIKgG7TbkVm0GoyYesA==
+X-Google-Smtp-Source: AGHT+IHU72x2P2ARSJrsYr/9PdegL2CIZ35HgbWVZhDOtO8cPofDfaOEFOG6SoWrOxrtPxpcGj8jCw==
+X-Received: by 2002:a05:6820:613:b0:595:1c09:613a with SMTP id e19-20020a056820061300b005951c09613amr1158857oow.18.1703874555656;
+        Fri, 29 Dec 2023 10:29:15 -0800 (PST)
+Received: from [192.168.1.4] ([136.62.51.249])
+        by smtp.gmail.com with ESMTPSA id i1-20020a4aab01000000b0058ad7b0b1a8sm3526791oon.13.2023.12.29.10.29.14
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 29 Dec 2023 10:29:15 -0800 (PST)
+Message-ID: <0879141d-462c-7e94-7c87-7a5b5422b8ed@landley.net>
+Date: Fri, 29 Dec 2023 12:35:31 -0600
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.272,Aquarius:18.0.997,Hydra:6.0.619,FMLib:17.11.176.26
- definitions=2023-12-29_06,2023-12-29_01,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 suspectscore=0
- bulkscore=0 mlxscore=0 mlxlogscore=999 impostorscore=0 phishscore=0
- clxscore=1011 lowpriorityscore=0 spamscore=0 malwarescore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2311290000 definitions=main-2312290132
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH v3] rootfs: Fix support for rootfstype= when root= is
+ given
+Content-Language: en-US
+To: Stefan Berger <stefanb@linux.ibm.com>, Askar Safin <safinaskar@gmail.com>
+Cc: gregkh@linuxfoundation.org, initramfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, stable@vger.kernel.org, zohar@linux.ibm.com
+References: <CAPnZJGDcNwPLbzC99qNQ+bRMwxPU-Z0xe=TD6DWQU=0MNyeftA@mail.gmail.com>
+ <d4b227de-d609-aef2-888b-203dbcf06707@landley.net>
+ <CAPnZJGBeV-E_AN8GnTfkaJvRtBmCeMYYCt+O0XMsc3kDULRuKg@mail.gmail.com>
+ <fb776d99-1956-4e1b-9afc-84f27ca40f46@linux.ibm.com>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <fb776d99-1956-4e1b-9afc-84f27ca40f46@linux.ibm.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
+On 12/29/23 10:39, Stefan Berger wrote:> On 12/21/23 17:58, Askar Safin wrote:
+>> Hi, Rob. And Stefan.
+>> 
+>> First of all, this patch got to linux-next (
+>> https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/log/?qt=author&q=Stefan+Berger
+>> ), so it seems it soon will be in mainline.
+>> 
+>> On Thu, Dec 21, 2023 at 12:24 PM Rob Landley <rob@landley.net> wrote:
+>>> Can you build tmpfs on a nommu system? Last I checked the plumbing expects swap,
+>>> but it's been a while...
+>> Okay, I agree, let's not remove ramfs.
+>> 
+>> Still, I don't like this (already applied) patch. init= and rdinit=
+>> are two different options,
 
+Because they control two different things which are often used at the same time.
+(Debian has an initramfs that hands off to the final root filesystem, for
+example. Hence the initramfs-tools package that runs every time apt-get updates
+the kernel.)
 
-On 12/21/23 17:58, Askar Safin wrote:
-> Hi, Rob. And Stefan.
-> 
-> First of all, this patch got to linux-next (
-> https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/log/?qt=author&q=Stefan+Berger
-> ), so it seems it soon will be in mainline.
-> 
-> On Thu, Dec 21, 2023 at 12:24 PM Rob Landley <rob@landley.net> wrote:
->> Can you build tmpfs on a nommu system? Last I checked the plumbing expects swap,
->> but it's been a while...
-> Okay, I agree, let's not remove ramfs.
-> 
-> Still, I don't like this (already applied) patch. init= and rdinit=
-> are two different options, and this is good. So, I think we should
-> have two different options. Analogously they should be rootfstype= and
-> rdrootfstype=. rootfstype= should be read by kernel when deciding how
-> to mount real root (i. e. not initramfs or initrd) only and
-> rdrootfstype= when deciding how to mount initramfs only. This will
-> make everything cleaner. Also note that userspace tools read
-> rootfstype= and assume that it always applies to real root. For
-> example, this is Debian's rdinit:
-> 
-> https://salsa.debian.org/kernel-team/initramfs-tools/-/blob/cf964bfb4362019fd7fba1e839e403ff950dca8e/init#L103
-> 
-> As you can see, this shell script parses /proc/cmdline and assumes
-> that rootfstype= always applies to real root. So, if someone sets
-> rootfstype= to tmpfs or ramfs, this will likely break this script.
+So being able to specify rdinit= to intercept the ramfs layer or init= to
+intercept the root= layer made sense, because they did different things.
 
-Setting the kernel boot command line option rootfstype= to tmpfs or 
-ramfs was possible so far and that's what the documentation and code 
-supported so far as well. The bug surfaced when root= was provided, in 
-which case it was ignored.
+But the only reason to specify anything nontrivial for the initramfs
+_filesystem_ mount properties is because you intend to stay there. They don't
+get used together.
 
-> 
-> So, I think the code should look so:
-> 
-> +if (IS_ENABLED(CONFIG_TMPFS)) {
-> +        if (!rd_root_fs_names) // We assume rd_root_fs_names is set
-> by rdrootfstype=
-> +                is_tmpfs = true; // Use tmpfs if rdrootfstype= is not
-> set. To get all tmpfs benefits
-> +        else if (rd_root_fs_names && !!strstr(rd_root_fs_names, "tmpfs"))
-> +                is_tmpfs = true;
-> +}
-> 
-> Yes, this will slightly break compatibility. I. e. this will make
-> Linux always choose tmpfs if rdrootfstype= is not present. But I think
+>> and this is good.
 
-You may find someone who doesn't like this change, either, ...
+Eh, not really. Strange legacy decision we're now stuck with. The kernel only
+ever runs one init task per boot. If init= was _also_ checked to see which file
+to run out of initramfs (and the plumbing still justs silently fails and moves
+on if it's not found) then the debian script would have been forced to do INIT=
+or similar to override the overmounted root's init task separately from initrd's
+init task, making it clear a script (not the kernel) is making that decision.
 
-> there is nothing wrong with it. If a user cares, he will set
-> rdrootfstype= . And early boot code will become a lot more clean and
-> logical.
+But that would have been a user-visible change, and when initramfs was going in
+they were trying to avoid user-visible changes that would force sysadmins to
+learn new stuff because the plumbing changed out from under them. (Like the
+change you're proposing now would.)
+
+>> So, I think we should
+>> have two different options. Analogously they should be rootfstype= and
+>> rdrootfstype=.
+
+You can't have a root= type of initramfs or tmpfs. The specified values can't
+overlap. The plumbing I wrote responds to specific values but otherwise leaves
+it for later users.
+
+>> https://salsa.debian.org/kernel-team/initramfs-tools/-/blob/cf964bfb4362019fd7fba1e839e403ff950dca8e/init#L103
+>> 
+>> As you can see, this shell script parses /proc/cmdline and assumes
+>> that rootfstype= always applies to real root.
+
+The script is running _in_ the initramfs, which is already loaded and running at
+that point. Meaning the _kernel_ will not parse root= at that point, userspace
+has to do it.
+
+>> So, if someone sets
+>> rootfstype= to tmpfs or ramfs, this will likely break this script.
+
+Which was the same 10 years ago?
+
+The script is running in a context where initramfs is not persistent, so
+overriding it to be a tmpfs has no benefit. (I mean you _can_... Nobody does,
+because we're gonna switch_root off of it.)
+
+And once code _is_ running in initramfs, the kernel's internal root= automounter
+will never run. The initramfs code can parse /proc/cmdline to use the same
+arguments as the kernel, or it could much more easily use the "any unrecognized
+arguments get set as environment variables in PID 1" and use ROOT= or similar,
+like many scripts do.
+
+Modifying kernel code that NEVER RUNS in the case you're pointing out seems
+silly to me.
+
+That said, the code I wrote is doing a strstr to see if the argument's there,
+but doesn't care what ELSE is there, so it could easily be
+"rootfstype=tmpfs,ext4" and have the userspace script also filter the argument
+for just what it's interested in, since at that point it's NOT THE KERNEL DOING IT.
+
+> Setting the kernel boot command line option rootfstype= to tmpfs or 
+> ramfs was possible so far and that's what the documentation and code 
+> supported so far as well. The bug surfaced when root= was provided, in 
+> which case it was ignored.
+
+No, as I explained when I wrote the initmpfs code in 2013 when you say root= you
+are explicitly requesting the kernel mount a second file system over rootfs
+(that's what root= MEANS), and thus don't bother making it a (more expensive)
+tmpfs because it's not sticking around.
+
+I did that to NOT invent new arguments, and work with existing systems. The new
+feature I added triggered when you _requested_ it.
+
+>> Yes, this will slightly break compatibility. I. e. this will make
+>> Linux always choose tmpfs if rdrootfstype= is not present. But I think
 > 
-> Rob, do you agree? Stefan, do you agree? Then I will write a patch,
+> You may find someone who doesn't like this change, either, ...
 
-... but go ahead.
+Yeah, me.
 
-> with doc changes (currently I use gmail web interface, of course I
-> will use git send-email when I sent actual patch)
-> 
+>> there is nothing wrong with it. If a user cares, he will set
+>> rdrootfstype= . And early boot code will become a lot more clean and
+>> logical.
+>> 
+>> Rob, do you agree? Stefan, do you agree? Then I will write a patch,
+
+I think it's a bad idea.
+
+If a documentation change is needed, maybe clarify what root= means? That
+argument explicitly requests the kernel mount a second filesystem over rootfs
+after failing to launch init out of initramfs, so that rootfs will NOT be the /
+visible to PID 1.
+
+This is what it has ALWAYS meant. Back before initramfs was invented in the old
+initrd days, you didn't need to say root= if you provided an initial ramdisk
+with an init executable in it (except the old mechanism didn't want /init it
+wanted /linuxrc for no apparent reason), and if you DID say root= when the
+kernel launched PID 1 out of initrd the superfluous argument was ignored (never
+parsed) because the kernel setup code never made it far enough to check it.
+
+I also note that I never wired up "rootflags=" (see init/do_mounts.c
+root_data_setup) so it gets passed through to initmpfs, meaning you can't
+specify size= and thus it defaults to 50% of available memory as the enforced
+limit. That would be actually useful. (And no I don't really care if it's the
+original argument or a different one because it can't have any existing users to
+break yet, although once again the kernel CAN'T do both at once so having two is
+SILLY. The reason they're NOT wired up yet is ramfs takes no arguments, so only
+passing rootflags to tmpfs when you didn't specify a root= or when you tell it
+rootfstype=tmpfs makes sense, because then what you're passing better not be
+ext4 arguments because you're staying on initramfs and the kernel's root=
+plumbing doesn't run.)
+
+That's the actual missing feature here.
+
+Rob
