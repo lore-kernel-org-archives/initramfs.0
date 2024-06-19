@@ -1,257 +1,162 @@
-Received: from maynard.decadent.org.uk (maynard.decadent.org.uk [95.217.213.242])
+Received: from NAM10-BN7-obe.outbound.protection.outlook.com (mail-bn7nam10on2051.outbound.protection.outlook.com [40.107.92.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B79C1C6BD
-	for <initramfs@vger.kernel.org>; Sat,  1 Jun 2024 22:25:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.217.213.242
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1717280719; cv=none; b=Msy99DhTxJRwehe8Orm2NQeSDbssPQP+azEi9VItQ9OfNweHlELJReiqdAsoIuk5IG0yzDUmtRiq7rPgyWtgmPBcCG1bPCvwWKsHoVrk7sldzz/DcyfQ5cLxUwet3+sbHyUxGIOtAxn7y71EuwceZivEB1fKmflU6Ptv444ziaM=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1717280719; c=relaxed/simple;
-	bh=tybGkKEBXcFveSSa2HE9Z/i0myxSPIdVUG23xt3VWU8=;
-	h=Message-ID:Subject:From:To:Date:Content-Type:MIME-Version; b=bxf/Y4etukwn1Dx5WMokBdjcR2mtPK+MyqGWorODiYocOHPfvUQVO2viTYgx+/3BWksNk+lY0yYGzhtAV2AFq8eEuvyVSMZKJaG6KXp02yCXvoIHD7R9flt24zdVappnEUIrFW3KUEiU0+/0RKgh1zws4SH5OZD5YcoM6VEs1pU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk; spf=pass smtp.mailfrom=decadent.org.uk; arc=none smtp.client-ip=95.217.213.242
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=decadent.org.uk
-Received: from [2a05:e201:2024:490:ad3b:6c1d:ad82:ad3a] (helo=deadeye)
-	by maynard with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
-	(Exim 4.92)
-	(envelope-from <ben@decadent.org.uk>)
-	id 1sDWuw-00017u-BX; Sun, 02 Jun 2024 00:09:38 +0200
-Received: from ben by deadeye with local (Exim 4.97)
-	(envelope-from <ben@decadent.org.uk>)
-	id 1sDWuu-0000000027t-1A85;
-	Sat, 01 Jun 2024 23:09:36 +0100
-Message-ID: <ad4d40d632a95c73a8a1b5c5605b53d856bbd0c0.camel@decadent.org.uk>
-Subject: initramfs-tools 0.143 release
-From: Ben Hutchings <ben@decadent.org.uk>
-To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, 
-	kernel-team@lists.ubuntu.com
-Date: Sat, 01 Jun 2024 23:09:19 +0100
-Autocrypt: addr=ben@decadent.org.uk; prefer-encrypt=mutual;
- keydata=mQINBEpZoUwBEADWqNn2/TvcJO2LyjGJjMQ6VG86RTfXdfYg31Y2UnksKm81Av+MdaF37fIQUeAmBpWoRsnKL96j0G6ElNZ8Tp1SfjWiAyWFE+O6WzdDX9uaczb+SFXM5twQbjwBYbCaiHuhV7ifz33uPeJUoOcqQmNFnZWC9EbEazXtbqnU1eQcKOLUC7kO/aKlVCxr3yChQ6J2uaOKNGJqFXb/4bUUdUSqrctGbvruUCYsEBk0VU0h0VKpkvHjw2C2rBSdJ4lAyXj7XMB5AYIY7aJvueZHk9WkethA4Xy90CwYS+3fuQFk1YJLpaQ9hT3wMpRYH7Du1+oKKySakh8r9i6x9OAPEVfHidyvNkyClUVYhUBXDFwTVXeDo5cFqZwQ35yaFbhph+OU0rMMGLCGeGommZ5MiwkizorFvfWvn7mloUNV1i6Y1JLfg1S0BhEiPedcbElTsnhg5TKDMeQUmv2uPjWqiVmhOTzhynHZKPY3PGsDxvnS8H2swcmbvKVAMVQFSliWmJiiaaaiVut7ty9EnFBQq1Th4Sx6yHzmnxIlP82Hl2VM9TsCeIlirf48S7+n8TubTsZkw8L7VJSXrmQnxXEKaFhZynXLC/g+Mdvzv9gY0YbjAu05pV42XwD3YBsvK+G3S/YKGmQ0Nn0r9owcFvVbusdkUyPWtI61HBWQFHplkiRR8QARAQABtB9CZW4gSHV0Y2hpbmdzIChET0I6IDE5NzctMDEtMTEpiQI4BBMBCAAiBQJKWaJTAhsDBgsJCAcDAgYVCgkICwMEFgIBAAIeAQIXgAAKCRDnv8jslYYRCUCJEADMkiPq+lgSwisPhlP+MlXkf3biDY/4SXfZgtP69J3llQzgK56RwxPHiCOM/kKvMOEcpxR2UzGRlWPk9WE2wpJ1Mcb4/R0KrJIimjJsr27HxAUI8oC/q2mnvVFD/VytIBQmfqkEqpFUgUGJwX7Xaq520vXCsrM45+n/H
-	FLYlIfF5YJwj9FxzhwyZyG70BcFU93PeHwyNxieIqSb9+brsuJWHF4FcVhpsjBCA9lxbkg0sAcbjxj4lduk4sNnCoEb6Y6jniKU6MBNwaqojDvo7KNMz66mUC1x0S50EjPsgAohW+zRgxFYeixiZk1o5qh+XE7H5eunHVRdTvEfunkgb17FGSEJPWPRUK6xmAc50LfSk4TFFEa9oi1qP6lMg/wuknnWIwij2EFm1KbWrpoFDZ+ZrfWffVCxyF1y/vqgtUe2GKwpe5i5UXMHksTjEArBRCPpXJmsdkG63e5FY89zov4jCA/xc9rQmF/4LBmS0/3qamInyr6gN00C/nyv6D8XMPq4bZ3cvOqzmqeQxZlX9XG6i9AmtTN6yWVjrG4rQFjqbAc71V6GQJflwnk0KT6cHvkOb2yq3YGqTOSC2NPqx1WVYFu7BcywUK1/cZwHuETehEoKMUstw3Zf+bMziUKBOyb/tQ8tmZKUZYyeBwKpdSBHcaLtSPiNPPHBZpa1Nj6tZrQjQmVuIEh1dGNoaW5ncyA8YmVuQGRlY2FkZW50Lm9yZy51az6JAjgEEwEIACIFAkpZoUwCGwMGCwkIBwMCBhUKCQgLAwQWAgEAAh4BAheAAAoJEOe/yOyVhhEJGisP/0mG2HEXyW6eXCEcW5PljrtDSFiZ99zP/SfWrG3sPO/SaQLHGkpOcabjqvmCIK4iLJ5nvKU9ZD6Tr6GMnVsaEmLpBQYrZNw2k3bJx+XNGyuPO7PAkk8sDGJo1ffhRfhhTUrfUplT8D+Bo171+ItIUW4lXPp8HHmiS6PY22H37bSU+twjTnNt0zJ7kI32ukhZxxoyGyQhQS8Oog5etnVL0+HqOpRLy5ZV/laF/XKX/MZodYHYAfzYE5sobZHPxhDsJdPXWy02ar0qrPfUmXjdZSzK96alUMiIBGWJwb0IPS+SnAxtMxY4PwiUmt9WmuXfbhWsi9NJGbhxJpwyi7T7MGU+MVxLau
-	KLXxy04rR/KoGRA9vQW3LHihOYmwXfQ05I/HK8LL2ZZp9PjNiUMG3rbfG65LgHFgA/K0Q3z6Hp4sir3gQyz+JkEYFjeRfbTTN7MmYqMVZpThY1aiGqaNue9sF3YMa/2eiWbpOYS2Pp1SY4E1p6uF82yJ3pxpqRj82O/PFBYqPjepkh1QGkDPFfiGN+YoNI/FkttYOBsEUC9WpJC/M4jsglVwxRax7LhSHzdve1BzCvq+tVXJgoIcmQf+jWyPEaPMpQh17hBo9994r7uMl6K3hsfeJk4z4fasVdyo0BbwPECNLAUE/BOCoqSL9IbkLRCqNRMEf63qGTYE3/tB9CZW4gSHV0Y2hpbmdzIDxiZW5oQGRlYmlhbi5vcmc+iQI4BBMBCAAiBQJKWaIJAhsDBgsJCAcDAgYVCgkICwMEFgIBAAIeAQIXgAAKCRDnv8jslYYRCdseD/9lsQAG8YxiJIUARYvY9Ob/2kry3GE0vgotPNgPolVgIYviX0lhmm26H+5+dJWZaNpkMHE6/qE1wkPVQFGlX5yRgZatKNC0rWH5kRuV1manzwglMMWvCUh5ji/bkdFwQc1cuNZf40bXCk51/TgPq5WJKv+bqwXQIaTdcd3xbGvTDNFNt3LjcnptYxeHylZzBLYWcQYos/s9IpDd5/jsw3DLkALp3bOXzR13wKxlPimM6Bs0VhMdUxu3/4pLzEuIN404gPggNMh9wOCLFzUowt14ozcLIRxiPORJE9w2e2wek/1wPD+nK91HgbLLVXFvymXncD/k01t7oRofapWCGrbHkYIGkNj/FxPPXdqWIx0hVYkSC3tyfetS8xzKZGkX7DZTbGgKj5ngTkGzcimNiIVd7y3oKmW+ucBNJ8R7Ub2uQ8iLIm7NFNVtVbX7FOvLs+mul88FzP54Adk4SD844RjegVMDn3TVt+pjtrmtFomkfbjm6dIDZVWRnMGhiNb11gTfuEWOiO/xRIiAeZ3MAWln1vmWNxz
-	pyYq5jpoT671X+I4VKh0COLS8q/2QrIow1p8mgRN5b7Cz1DIn1z8xcLJs3unvRnqvCebQuX5VtJxhL7/LgqMRzsgqgh6f8/USWbqOobLT+foIEMWJjQh+jg2DjEwtkh10WD5xpzCN0DY2TLQeQmVuIEh1dGNoaW5ncyA8YndoQGtlcm5lbC5vcmc+iQJPBBMBCAA5FiEErCspvTSmr92z9o8157/I7JWGEQkFAloYVe4CGwMGCwkIBwMCBhUKCQgLAwQWAgEAAh4BAheAAAoJEOe/yOyVhhEJ3iIQAIi4tqvz1VblcFubwa28F4oxxo4kKprId1TDVmR7DY/P02eKWLFG1yS2nR+saPUskb9wu2+kUCEEOAoO5YksgB0fYQcOTCzI1P1PyH8QWqulB4icA5BWs5im+JV+0/LjAvj8O5QYwNtTLoSS2zVgZGAom9ljlNkP1M+7Rs/zaqbhcQsczKJXDOSFpFkFmpLADyB9Y9gSFzok7tPbwMVl+MgvF0gVSoXcxPlqKXaN/l4dylQTudZ9zJX6vem9bwj7UQEEVqHgdaUw1BLit6EeRDtGR6bHmfhbcu0raujJPpeHUCEu5Ga1HJ5VwftLfpB2qOwLSfjcFkO77kVFgUhyn+dsf+uwXy1+2mAZ33dcyc85FSkCEF8pV5lHMDTHLIBOV0zglabXGYpKCjzrxZqU8KtFsnROk+5QuWaLGJK81jCpgYTn9nsEUqCtQQ8tB3JC291DagrBVgTqPtXFLeFhftwIMBou9lo85vge/8yIKVLAczlJ7A0eBVDwY/y3UTW9B+XwiITiA71bRMIqEKsO68WFT3cFm/G5LGoxERXCntEeuf+XmYZ5WcjBWyyF11unx4ZbPj7gdSrdLQxzHnpXfYs/J7s+YssnErvR8W02tjKj8L8ObQg078BqBI9DjrH9neAAYeACpZUStbsjUQuDdyup0bAEj4IMisU4Y+SFRfKbuQINBEpZoakBEACZUeVh
-	uZF8eDcpr7cpcev2gID8bCvtd7UH0GgiI3/sHfixcNkRk/SxMrJSmMtIQu/faqYwQsuLo2WT9rW2Pw/uxovv9UvFKg4n2huTP2JJHplNhlp2QppTy5HKw4bZDn7DJ2IyzmSZ9DfUbkwy3laTR11v6anT/dydwJy4bM234vnurlGqInmH+Em1PPSM8xMeKW0wismhfoqS9yZ8qbl0BRf5LEG7/xFo/JrM70RZkW+Sethz2gkyexicp9uWmQuSal2WxB2QzJRIN+nfdU4s7mNTiSqwHBQga6D/F32p2+z2inS5T5qJRP+OPq1fRFN6aor3CKTCvc1jBAL0gy+bqxPpKNNmwEqwVwrChuTWXRz8k8ZGjViP7otV1ExFgdphCxaCLwuPtjAbasvtEECg25M5STTggslYajdDsCCKkCF9AuaXC6yqJkxA5qOlHfMiJk53rBSsM5ikDdhz0gxij7IMTZxJNavQJHEDElN6hJtCqcyq4Y6bDuSWfEXpBJ5pMcbLqRUqhqQk5irWEAN5Ts9JwRjkPNN1UadQzDvhduc/U7KcYUVBvmFTcXkVlvp/o26PrcvRp+lKtG+S9Wkt/ON0oWmg1C/I9shkCBWfhjSQ7GNwIEk7IjIp9ygHKFgMcHZ6DzYbIZ4QrZ3wZvApsSmdHm70SFSJsqqsm+lJywARAQABiQIfBBgBCAAJBQJKWaGpAhsMAAoJEOe/yOyVhhEJhHEQALBR5ntGb5Y1UB2ioitvVjRX0nVYD9iVG8X693sUUWrpKBpibwcXc1fcYR786J3G3j9KMHR+KZudulmPn8Ee5EaLSEQDIgL0JkSTbB5o2tbQasJ2E+uJ9190wAa75IJ2XOQyLokPVDegT2LRDW/fgMq5r0teS76Ll0+1x7RcoKYucto6FZu/g0DulVD07oc90GzyHNnQKcNtqTE9D07E74P0aNlpQ/QBDvwftb5UIkcaB465u6gUngnyCny311TTgfcYq6S1tNng1
-	/Odud1lLbOGjZHH2UI36euTpZDGzvOwgstifMvLK2EMT8ex196NH9MUL6KjdJtZ0NytdNoGm1N/3mWYrwiPpV5Vv+kn2ONin2Vrejre9+0OoA3YvuDJY0JJmzOZ4Th5+9mJQPDpQ4L4ZFa6V/zkhhbjA+/uh5X2sdJ8xsRXAcLB33ESDAb4+CW0m/kubk/GnAJnyflkYjmVnlPAPjfsq3gG4v9eBBnJd6+/QXR9+6lVImpUPC7D58ytFYwpeIM9vkQ4CpxZVQ9jyUpDTwgWQirWDJy0YAVxEzhAxRXyb/XjCSki4dD6S5VhWqoKOd4i3QREgf+rdymmscpf/Eos9sPAiwpXFPAC6Kj81pcxR2wNY8WwJWvSs6LNESSWcfPdN4VIefAiWtbhNmkE2VnQrGPbRhsBw+3A
-Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-KzIoUYuBmBnblIZNJ4vA"
-User-Agent: Evolution 3.50.3-1+b1 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A616318C3D
+	for <initramfs@vger.kernel.org>; Wed, 19 Jun 2024 11:51:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.92.51
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1718797865; cv=fail; b=A/xKLodjloswHYuYDNQ+CwPsfhv3bXtRUSj61YFqarTSge0j9bCGLN48fwFjAtP2DQlq14/cJiXd7Qg1VaUUb38bD+3dZZaYsexpFTjmJKMEuOpclJWwMoVjrfinZKLc+YQyKDfT+OfV/gCRR67VPq+/a7Kdrj1H8JZGrN9VlM4=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1718797865; c=relaxed/simple;
+	bh=xBcwM5p2IKFl9+U4XRxy9K7RBe+v0zc2D4cHr4ghc48=;
+	h=From:To:Subject:Date:Message-ID:Content-Type:MIME-Version; b=CiG0SIyD8juW1q0GXjX7LAQyqaJgEeKbpcWuopEMG1y/v4hLv1sPca7mpQ5eNyo++c8AfxpZrmf1lolYX0G3UA9xpbnYgPLX5Xg0EDRhTkovOG8+6GlfAZOOJWa/xLvQUiBK6r8rG49QlLek5B2jQRZAdAqIu0F2JT0D8ma3xdY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=SJRthMfA; arc=fail smtp.client-ip=40.107.92.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="SJRthMfA"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=GZceME8IAQ396saAPF9yEewnhAyNAx83MNFyZzShzyidyBzPA05Sfaa+Hus4aW2h2ksRklCpB6lOvXFG9wXrrNcCHHJsL/BRQMVaFY542mBRlgzxgUyTPDKoNqP4VrtJmvNZsBMQvUXh8+9WEK7UW5DBHqeEhPFnoJWitarFvCid2+U0/qB1u9Rg8c7pnFIc5kU9IJJMogtqv49F0UIS2J5j5h/k/R4Pss4EhczM4bujVw9iaCc8Ovy3jDkRFnh1HCfucntaQLTvqR4GhTKvmejhubsCcOoAyJFaljqfEe9SUHAq8jgMhUBmBdmcEcl5ic/Fs3J4GHNVBFbudZ7m9w==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=xBcwM5p2IKFl9+U4XRxy9K7RBe+v0zc2D4cHr4ghc48=;
+ b=au63rtFoP92V9oI5eXnEcu7ZamgdrgYqpkVZpRIKNvbGkr/VqCBmA9d2iWsMWu2pvIkxVlSmeZZq3jRbd5o9nh0p9WA2oPNv9y2YjNersX9F7NIE/o6xvCqzPJtWUW6vrw7ALGOhnYDtJeENaDWfqq/rHZFb65UecD7BqPNMaDtPNUq71SsaUnJHqvj5pFaUIjX7Dchut5K5x+zEkLOd0uVKBNS5RDLIJsiZKGrhJomsBicUC7+Vtt6+WtT1QMxkbQTv0/cjCqA0KSsPToPeO7X+hOrzJcH3cHK5vPqe3q1qXasSMMpmtIYzZeNLuRisCeeZxQ53YqbZxwtlHxO67Q==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
+ dkim=pass header.d=nvidia.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=xBcwM5p2IKFl9+U4XRxy9K7RBe+v0zc2D4cHr4ghc48=;
+ b=SJRthMfAtV8pnyUeWhxzTPZz1YjmqYoAtP/Moh2Eyv1sWefxsqtpGpovhw31PHAt1L4CfhGr3SOuh5ZXqQdnYE6vzvCggz0pcH/B4YUJaMtwJLyY6daUcPtolur5WLsD+11UgSIf98/T66YbeoSTrhsAXx+6XHLdiGbCGJTiDo7pHdnrRrUlWD0NqTfd4Ps95KMAtoHelg0k016xIhpJhH9px2PP4uG6XTw2IZzwRYRdN+bzjwMEGIflEPjHXEpLLyjw8Fwskpwm6HvtqM0FHn3wJJUSVAAYYlexCUQYlXHjDEJrpjXLj8uDBKU6QKZO6tQvXkAvkMWPcOAG15Ppgw==
+Received: from BYAPR12MB3318.namprd12.prod.outlook.com (2603:10b6:a03:df::15)
+ by SA1PR12MB6971.namprd12.prod.outlook.com (2603:10b6:806:24e::18) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7677.31; Wed, 19 Jun
+ 2024 11:51:00 +0000
+Received: from BYAPR12MB3318.namprd12.prod.outlook.com
+ ([fe80::698a:d943:647a:c89f]) by BYAPR12MB3318.namprd12.prod.outlook.com
+ ([fe80::698a:d943:647a:c89f%3]) with mapi id 15.20.7677.030; Wed, 19 Jun 2024
+ 11:51:00 +0000
+From: Carolina Jubran <cjubran@nvidia.com>
+To: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>
+Subject: Load modules in initrd
+Thread-Topic: Load modules in initrd
+Thread-Index: AQHawj7tJouVjcxTPkqesc7Dd3UMtg==
+Date: Wed, 19 Jun 2024 11:51:00 +0000
+Message-ID:
+ <BYAPR12MB3318839A4B6BE11ECB13E06BCBCF2@BYAPR12MB3318.namprd12.prod.outlook.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+msip_labels:
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=nvidia.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: BYAPR12MB3318:EE_|SA1PR12MB6971:EE_
+x-ms-office365-filtering-correlation-id: 4476a63a-3b97-4bcd-0f73-08dc905616aa
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;ARA:13230037|366013|376011|1800799021|38070700015;
+x-microsoft-antispam-message-info:
+ =?iso-8859-1?Q?HYUp3T75nCcZyRgB+kYIRKVO5uypP+4GQ9dBcrIvs2arwJbU30rw7NuGGq?=
+ =?iso-8859-1?Q?BVNmkAMFloZ5sCK5GvGRRL/CQzB+91AZ15OCp9fC6ZjZH5Rm/pMs7+tDki?=
+ =?iso-8859-1?Q?TQIoipujubCToxpzHA4ImAvCpezp2UHSNK3KCQ0J6fLcPGT79ukJsLR/QI?=
+ =?iso-8859-1?Q?372LtqsqMPSmFuRO71LDBx8aLYqriuNiSF/g0Y+6/n6F5X8kSSarPAdOB4?=
+ =?iso-8859-1?Q?EtCNR8Dh8YYsj1EUS6PU7751Qc4veMnoqVnTpxA6eYzSEbuW/UAZh5ZKeh?=
+ =?iso-8859-1?Q?bFuzXcjxaFvI8CPvwWsK1fNXjWyrxOeKaqC0XsyzWhd/u6/hE93ta2UQMc?=
+ =?iso-8859-1?Q?lwma6UL9B8Z9AQ3o7oe5NR9xcD5CWXc7jk3sWTJrkFd+iGGhIWs+olZ2Sb?=
+ =?iso-8859-1?Q?KVtjQ1zY5X7p8yVrjCekfWcH1S3mae3JjYV1ZpvbTA1pQOshB/1UVw51Al?=
+ =?iso-8859-1?Q?x2oj/+I0+qfTjiDyD/flFGzy2HMhMtGeemfPf+O6/X8bF/uMIy3uMoyjw+?=
+ =?iso-8859-1?Q?XBAruj2VTTRE8e8Ipt8i4mE9CQymoo94FAq0GYBxbz/RsbfElffJA3zp47?=
+ =?iso-8859-1?Q?BLjf9iWBp4Ny9WdUYnL9MB3su6+T1CxZG37VZgxE/lm5yjkZtQvvlOJyIV?=
+ =?iso-8859-1?Q?hpFbUyquTVs7VljQwljs2tlY8T+r7uSKvfKI/+oMx1ZnB0F+jTYplapEA8?=
+ =?iso-8859-1?Q?Ead0IX85burGEI/a8vu4BfP8BtAyeRPIxmhpZKTIIoOaUELfypzhWbwdj3?=
+ =?iso-8859-1?Q?ndaXiletzb+8Cl7SiFzG8OpOK+fj0s/VSA+UIk5iLbrBHs1q/SImJHXYzx?=
+ =?iso-8859-1?Q?bQjhWxSfVHmZvTtUKyzrrzkb4WMU/+toaSqE2tztfhle+tOZ9FBPBfUGaY?=
+ =?iso-8859-1?Q?xKuNAmcbhZA4OAjSEHKt0wDeJvqEXR6E0b5Wf6IhHIvWdy8PV8p3uC1NQp?=
+ =?iso-8859-1?Q?Z8G0B2EsJKB7eTvInYa4Z6nndabbVNm0gNW1uT10YqXsYuANSNMATEYRLA?=
+ =?iso-8859-1?Q?ALwEtJDqmNkTnWkE4aI3BEA8aNRNMqKuEO8l9g+rYEFCmotOPFdQcbYp83?=
+ =?iso-8859-1?Q?XXKdwnM212A/Gzw7PNJiZb5xu/JYVnbtOGw5JDzV+bcxVJNc4UnrT3MY7y?=
+ =?iso-8859-1?Q?vFiIv9G3vlnq7cnsTFarWNOeO571HTXvozAXjSA/b20+tCsBvh63ht2XNB?=
+ =?iso-8859-1?Q?uTr37GQVF5VE7/Z5RL5SvCEr4jrj5MY4ELYkqMG5GIhdmxS1HP8TnySktB?=
+ =?iso-8859-1?Q?qgxNgXyVTtCEYiPhuYbyomOQHPH+zgB7kOQvAMJ51Ma6sqs3NJ8dhUpije?=
+ =?iso-8859-1?Q?xPuBpRIOpBHN+2DL9yiC7XukTsy6RdssMeppjmcclX8kMi1hkN7/4dchfa?=
+ =?iso-8859-1?Q?evHqvyW/Up91Bc92v9+1x3Tyt08Z7BxW7LNG3tb8K5eqZQ3kMx5IU=3D?=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BYAPR12MB3318.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230037)(366013)(376011)(1800799021)(38070700015);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?iso-8859-1?Q?rrWqdxFq1MGjKVVFXnaLaCSEO8C3qly5O4++xID8Vue7CAcsQAHf3S1nTR?=
+ =?iso-8859-1?Q?u25fqSL8Sbbp5XdP7td3qawxv6n5gennJuNjjeAqJvNcjl3xIYgqwnkPDw?=
+ =?iso-8859-1?Q?ka9ROoQ0eVV71Ug0+x+xS4SQd/lD55OPfAF4xpxoygugbP5Gmf2uwB5Hkx?=
+ =?iso-8859-1?Q?f+tPFOqMGRu6hf7eoXw5oM3HHEjkT90WJaWjXaOMnUrSDwIDf2yQFlVwDE?=
+ =?iso-8859-1?Q?0g/2QvGAMrzYqddbOfYUHDc/AsP5gV1xAiOZptCp1Xm/YLuyLwiw3f8XIY?=
+ =?iso-8859-1?Q?/RDqc7j/wtsm6yuKuaMT6u/mQPVud5df0+dEErdLbcvjDiq2sre4XndjUZ?=
+ =?iso-8859-1?Q?NtUAD8o59+Gny580NZVosP8UjkmKjQJgHyhRNuz0xg9xYq+9mz7LOW3hcW?=
+ =?iso-8859-1?Q?zUbqY0UtOZAo+NnSpi6iNpFYrVMiBfWERHeflxAHHaGysJ4j1pUGQjq7f/?=
+ =?iso-8859-1?Q?5L7ydKPLK6fcVk39zuE7ZfkU/W0z/tm/Uwp+B/U/3CGytUsTaR0TnbZykA?=
+ =?iso-8859-1?Q?S1LJRZ3kszns7sBgOJOPGXkSjt8o8qXBIhlslVAuWnsp17HUGdxA0lVIaZ?=
+ =?iso-8859-1?Q?u2HCs8eJcgTw7+u0qBpaKBPhFWNmTfidLwJ7WGbMCa913Yode39i//76Hn?=
+ =?iso-8859-1?Q?2AM55M/jtcMgmKazDZf3VYKiK7hgtgivksVTbnzFQt+09woTipjy+nlOYr?=
+ =?iso-8859-1?Q?i9nCQDN0q5OqWevb1nIfiyWY5rlrtuEvCQbpDd91auJTliCSSP5LEoO7FQ?=
+ =?iso-8859-1?Q?WoqnqmJZwitr3GScXSsm0BwX+7Bs3I6jTmvACo3pm4GjypRWVwPPc9LTQW?=
+ =?iso-8859-1?Q?pMyi3BHnlGm7KbjAvxvH8n8Ldr1qxyR4OqibLnrAnWLyZOQGJdFtdIB5Ap?=
+ =?iso-8859-1?Q?+EkyhuosljQy3q0MPbEFcVk7zG9OxZbLpBc2bx2Nda/NF5EsOuYzR9wJP3?=
+ =?iso-8859-1?Q?zaqMQmHWVKZBhIUVV0xOhQ2KWFcgUd9qxlmKxDK9Mc0gEzZ5Z5O1AnryyX?=
+ =?iso-8859-1?Q?2UDBsTqkW/ew6hx1UkE/TzWolL1DGqrVPWhn8nDPILXHdEZiUhHF9zqAaV?=
+ =?iso-8859-1?Q?/6SzejdpXy4RBXXdHTYmQuW0ys4M59k3vtnLfPGFmQtKyxXFi6Txs+P3Wp?=
+ =?iso-8859-1?Q?PZ94mvHjLkUy6On97g89SsqkdU+TPrhlSfqdm3XWn0UJnbtRiBGyDyUCgX?=
+ =?iso-8859-1?Q?216Shc+TJ20PYHJ2VCkzvX64ousX7H+FRIuWgcXTWuCy9JpBw/uQThcMEI?=
+ =?iso-8859-1?Q?ErCLziJJ7cXuxAEuulCF4BnGdlEMpb8vYycdlAXfg2QWUaHrj7ScCNwmGQ?=
+ =?iso-8859-1?Q?FHlyPve3Lbc+yuKYJW91WndT22eD8WgLwB0O7s0nsKOe1L3v8hYBh8PIwE?=
+ =?iso-8859-1?Q?MAdMXoCpLbWjEYmajxWh/jBT8BEhoJrJUwNF5xK4XZnD9mXnHjAUk9yPjs?=
+ =?iso-8859-1?Q?TeQmBDmA77VAplKQzFSN+e1UOZlX92OMBv5KCj6f9CUwWLB7bAnWjNRQyB?=
+ =?iso-8859-1?Q?CAkytt9aU2CBqlVnfqyHKASgVsSZ7kDaoXQfVMuBdddemLJsb1CnjqXjGK?=
+ =?iso-8859-1?Q?Z/4zlwbyg7SWlmVgEMXj2wvJqhsMeroXxRnDGic6GiVGB5sADJyTW5JzTy?=
+ =?iso-8859-1?Q?sVGvWlr1de4eM=3D?=
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-SA-Exim-Connect-IP: 2a05:e201:2024:490:ad3b:6c1d:ad82:ad3a
-X-SA-Exim-Mail-From: ben@decadent.org.uk
-X-SA-Exim-Scanned: No (on maynard); SAEximRunCond expanded to false
+X-OriginatorOrg: Nvidia.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: BYAPR12MB3318.namprd12.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 4476a63a-3b97-4bcd-0f73-08dc905616aa
+X-MS-Exchange-CrossTenant-originalarrivaltime: 19 Jun 2024 11:51:00.1093
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 43083d15-7273-40c1-b7db-39efd9ccc17a
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: PBlrlGLL/mj0b39523C0cklu2CQx8RHsecgG0yROrh+90zrQmpbgR/5ynIhAwmav2aIhh914ZUZyxknQcAOarQ==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA1PR12MB6971
 
-
---=-KzIoUYuBmBnblIZNJ4vA
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-This release fixes a number of bugs:
-- Some regressions in autopkgtest cases due to external changes have
-  been fixed.
-- copy_exec no longer fails if ldd prints a warning message.
-- The check for compression support in the kernel config treated a
-  missing config file as a fatal error.  It now assumes the required
-  option is enabled if the config file is not found, and also looks for
-  it under /lib/modules.
-- When MODULES=3Ddep and root is on zfs, mkinitramfs does not fail (but it
-  does not add the required device drivers itself).
-- unmkinitramfs now tells dd to read the correct number of bytes from a
-  multi-part initramfs.
-- If ipconfig never succeeds, configure_networking no longer exits the
-  current shell.
-
-It adds several features:
-- Support for compressed firmware.
-- When configuring networking, populate /etc/hosts, /etc/resolv.conf,
-  and the kernel hostname.
-- The autopkgtest cases cover more architectures, and
-  configure_networking.
-- Always bring up networking when the 'ip' kernel parameter is set.
-- Use dracut-install to install modules and their firmware, which will
-  usually be faster than the previous implementation.
-- Support for panel devices with any name and on any bus when
-  MODULES=3Ddep, so long as the driver name includes "panel".
-- Support for MT8173/8183 Chromebooks with MODULES=3Dmost.
-- Support for Hyper-V keyboard driver.
-
-Possible breaking changes:
-- The detection of generic framebuffer support has been changed to work
-  with newer kernel versions.  This might result in leaving out a
-  needed hardware-specific framebuffer driver when MODULES=3Ddep.
-- The networking bring-up changes might break hooks that also try to do
-  this.
-- Installation of kernel modules into the initramfs is now done with
-  dracut-install, and is batched to amortise the cost of dracut-install
-  startup.  This could break hooks that look for modules installed by
-  other hooks.
-
-Special thanks goes to Benjamin Drung, who will be joining as a co-
-maintainer.
-
-The shortlog is below.
-
-Ben.
-
-Adam Vodopjan (1):
-      unmkinitramfs: add count_bytes iflag in a dd call
-
-Alper Nebi Yasak (8):
-      hook-functions: Don't walk graphics modules if corebootfb is availabl=
-e
-      hook-functions: dep_add_modules: Properly include panel drivers
-      hook-functions: sys_walk_mod_add: Add devlink suppliers as dependenci=
-es
-      hook-functions: auto_add_modules: Add modules for MT8173/8183 Chromeb=
-ooks
-      hook-functions: dep_add_modules: Include mipi-dsi panel drivers
-      hook-functions: dep_add_modules: Generalise wildcard for panel driver=
-s
-      test: Increase QEMU timeout to 120s
-      hook_functions: dep_add_modules: Use heuristics for a generic framebu=
-ffer
-
-Arnaud Rebillout (1):
-      Add hyper-keyboard module, needed to enter LUKS password in Hyper-V
-
-Aron Xu (1):
-      hook-functions: return from dep_add_modules_mount() for zfs
-
-Ben Hutchings (42):
-      Merge branch 'szubersk-shellcheck' into 'master'
-      Merge branch 'maintscripts-no-oldoldstable' into 'master'
-      Merge branch 'szubersk-silence' into 'master'
-      debian/tests/test-common: Update klibc.so installation for /usr-move
-      Merge branch 'master' into 'master'
-      Merge branch 'zfs' into 'master'
-      Merge branch 'master' into 'master'
-      Merge branch 'resolv.conf' into 'master'
-      Merge branch 'set-eu' into 'master'
-      Merge branch 'install_in_lib' into 'master'
-      Merge branch 'dont-die-on-no-networking' into 'master'
-      Merge branch 'dep-add-panels-properly' into 'master'
-      Merge branch 'fix-amd64-separate-usr' into 'master'
-      Merge branch 'lintian' into 'master'
-      Merge branch 'improve-test-common' into 'master'
-      Merge branch 'all-archs' into 'master'
-      Merge branch 'dep-syswalk-devlink-suppliers' into 'master'
-      Merge branch 'qemu-nodefaults' into 'master'
-      Merge branch 'log-mkinitramfs-call' into 'master'
-      Merge branch 'fix-missing-hostname' into 'master'
-      Merge branch 'simplify-pipefail' into 'master'
-      Merge branch 'ignore-ldd-warning' into 'master'
-      Merge branch 'drop-obsolete-maint-script' into 'master'
-      Merge branch 'wrap-and-sort' into 'master'
-      Merge branch 'bring-up-networking' into 'master'
-      Merge branch 'cros-modules-mt8173-mt8183' into 'master'
-      Merge branch 'merge-manual_add_modules-calls' into 'master'
-      Merge branch 'hyperv' into 'master'
-      Merge branch 'dep-add-panels-wildcard' into 'master'
-      Merge branch 'support-missing-kernel-config' into 'master'
-      Merge branch 'dracut-install' into 'master'
-      Merge branch 'indentation' into 'master'
-      Merge branch 'add-bdrung-to-copyright' into 'master'
-      Merge branch 'shorten-add_firmware' into 'master'
-      Merge branch 'corebootfb-no-walk-graphics' into 'master'
-      Merge branch 'dep-graphics-check-heuristics' into 'master'
-      Merge branch 'test-qemu-timeout' into 'master'
-      Merge branch 'reduce-dracut-calls' into 'master'
-      Merge branch 'fix-indentation' into 'master'
-      Add myself to debian/copyright
-      Merge branch 'introduce-run-qemu' into 'master'
-      Releasing version 0.143.
-
-Benjamin Drung (37):
-      Configure /etc/resolv.conf and persist hostname
-      Add unit tests for netinfo_to_resolv_conf
-      Support "set -u"
-      test: Fix too small ext2 block count
-      test-common: Use one common temporary directory
-      Update lintian override to format for lintian 2.116.3
-      Convert debian/copyright to machine-readable format
-      Switch to debhelper 13
-      Bump Standards-Version to 4.7.0
-      Drop Breaks/Conflicts that predate Debian 10 "buster" and Ubuntu 20.0=
-4 "focal"
-      test-common: Support "set -u"
-      test-common: Wrap long qemu-system-x86_64 line
-      autopkgtest: Explicitly specify supported architectures
-      autopkgtest: Rely on linux-image-generic alias on Debian
-      autopkgtest: Group tests with identical dependencies
-      test: Add random number generator to qemu
-      Run autopkgtest on more architectures
-      test: Call qemu with -nodefaults
-      test: log build_initramfs call
-      persist_hostname: fix missing hostname command
-      mkinitramfs: Simplify pipefail implementation
-      copy_exec: ignore ldd output lines not starting with a tab
-      Run wrap-and-sort
-      initramfs-tools-core: drop support for upgrading from < 0.138
-      test: Check that the network is not configured
-      test: create /lib64 to /usr/lib64 symlink as well
-      Bring up networking if ip is specified on cmdline
-      Merge consecutive manual_add_modules calls into one
-      Skip compression support check if /boot/config-${version} is missing
-      Use dracut-install in manual_add_modules
-      mkinitramfs: indent code that writes the outfile
-      hook-functions: Shorten add_firmware
-      Add myself to debian/copyright
-      refactor: Introduce debian/tests/run-qemu
-      hook-utils: fix tab/spaces indentation
-      mkinitramfs: Resolve hidden dependencies after all modules were copie=
-d
-      reduce number of dracut-install calls
-
-Gioele Barabucci (1):
-      d/initramfs-tools.maintscripts: Remove code for ancient versions
-
-Luca Boccassi (1):
-      Check for the kconfig in /lib/modules/ too
-
-Paul Aurich (1):
-      scripts/functions: Don't die if configure_networking times out
-
-szubersk (2):
-      Fix/ignore ShellCheck findings
-      Silence unnecessary `ln -f` warning
-
-=D0=BD=D0=B0=D0=B1 (3):
-      Respect fw_path_para in add_firmware()
-      Handle compressed firmware in add_firmware()
-      Support ZSTD-compressed firmware in add_firmware()
-
---=20
-Ben Hutchings
-Any smoothly functioning technology is indistinguishable
-from a rigged demo.
-
-
---=-KzIoUYuBmBnblIZNJ4vA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmZbnA8ACgkQ57/I7JWG
-EQki1hAAu+sesQ/SW2TqHCfUHmO07pzDnzRXUfgwoansh+dmg8l92tkZPL2YatyS
-PJZs3U4xaLqWWtLgO4Fac23fhAFFMnXSUoKJ5a/VVaDAu6VgFxi7FzBUiODA9T5r
-M/SkaNr+EVyuZecGTMOiwDoFJyrfe5MgaZvjRCZm659S44KXG7mcGAnniWyPlAiS
-aiJuNKYsgqW9FGYYkstkUizqhVvOOCqK13VQFy6NZ8fgYpC1GOIcu7cR2lhf6sXI
-ePBQ0YV29VZS/PFqRKa1nMJbsDIGTv7thN3/tzPqNduUtr14VVwL9n+GhBryKvYg
-YdZf72VnDyEYrlzIENYgUidFPWfAE3qqQx3xwdbRCwotdPZxB2QCKgvEr1cycsEi
-eppL5cX8BgUDVGJGMn4Dckm9biOXzoFTMzf7KPn6Wg/TpfFNp42rwlxYJScL7G5h
-absD/a9l8MEguzbsVlXQWCFc5vo8TY7q4xtaIFpnU2XPSeeHO/5OGfLzuxN81gBs
-rC6rrPqxxjJRapclWBqgfooDld9eTW/tbW3QniPA7Y4owfJ6oemOrj08hpJZT81b
-Lqv6oUmKDOzMrJJdJnBw39J9NufWXEGVCIJ+mOZf+jH42KUgVL7X2aK2wmHkqTC0
-Z0M5E2+aZMubZefc+CNO/aYldKGWsED4kXaFCG3tbrFROtw+Iok=
-=axak
------END PGP SIGNATURE-----
-
---=-KzIoUYuBmBnblIZNJ4vA--
+=0A=
+Hello!=0A=
+=0A=
+I need to load RDMA modules in initrd, and I have a systemd service for tha=
+t. However, when we start running in the initrd, the initrd-cleanup.service=
+ kills the service.=0A=
+The Dracut arrangement only installs the service if the necessary hardware =
+is present.=0A=
+I tried to add dependencies to the systemd service "Before=3Dinitrd.target"=
+ to ensure that the service loads the drivers in initrd.=0A=
+Unfortunately, this was inconsistent; sometimes we load in initrd and somet=
+imes we don't. =0A=
+=0A=
+Then I discovered that adding a "$SYSTEMCTL -q --root "$initdir" add-wants =
+initrd.target <our-service>" in the module-setup.sh helps with the issue, a=
+nd the driver consistently runs in initrd.=0A=
+My question is, how does "add-wants initrd.target" fit into the picture wit=
+h the initramfs image and systemd? =0A=
+Do I need to make any further changes to my systemd service, or is building=
+ the image using dracut sufficient?=0A=
+=0A=
+Thank you,=0A=
+Carolina Jubran=0A=
