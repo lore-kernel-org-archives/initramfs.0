@@ -1,177 +1,152 @@
-Received: from NAM12-BN8-obe.outbound.protection.outlook.com (mail-bn8nam12on2062.outbound.protection.outlook.com [40.107.237.62])
+Received: from mo4-p00-ob.smtp.rzone.de (mo4-p00-ob.smtp.rzone.de [81.169.146.219])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18EF613E3F2
-	for <initramfs@vger.kernel.org>; Wed, 19 Jun 2024 12:08:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.237.62
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C35E1CD15
+	for <initramfs@vger.kernel.org>; Mon,  8 Jul 2024 11:46:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=81.169.146.219
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718798914; cv=fail; b=CMfKk7G9eDgVrXxj4PPtMRPPa8Jm01nnxiLeuYkq2Y9F1dZbtFZRKnkBWGpjrGB6zsgExHrIYD4+LUWj/F5nyJGbtubEC/I9so/NhbC2E2LBk92YUDq+1eIGr12PBQgEdurkBRlkKnRB1hBkdlJfrE9mEw9YX8pElBX+F09jtcE=
+	t=1720439184; cv=pass; b=rPiLxOWINxEMZQgg4J1ct7tlhAlhMpAZNXDXAyZwFIFJwMggm4rRuUTlmiRzxlXqet/X3fW9hRjjiKC0qRhP89AN5BJFJpRIhW8wgNxxy9+Z3meK7SS8+V8bYUXk9m4ye/0XYpUYzSkWV8JKL1ZowJZaunk03TZ7IDfxeBr/dlc=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718798914; c=relaxed/simple;
-	bh=Ct52jet9ZJfkTUinCI2ZS9CTkLhGgw4WoH/bh7LPG6o=;
-	h=From:To:Subject:Date:Message-ID:References:In-Reply-To:
-	 Content-Type:MIME-Version; b=s21LCTmnWW5CYEVhSu4vjuJEvH+vlsKkLuReQd2/yzXuDy24x5hIpWhFg5s3J2/cxZkAVHHmIQSXPAouFes2JEOqLD284GCs5zzGpEmCYOR1U//+0GmoMOIfizLoIUS9ySrdgOB/efLrpariOHtMrPXzANbS5o5w5zyuq3N3YmE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=jOO4OQuI; arc=fail smtp.client-ip=40.107.237.62
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
+	s=arc-20240116; t=1720439184; c=relaxed/simple;
+	bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
+	h=Date:From:To:Subject:Message-ID:MIME-Version:Content-Type; b=oM/yrBPuQXimoepa9CvXnB8gZIFEFcUx5WCdh2oLp9Mkp8z1dminaa/zNVLqhL4cCaDx6ZbxtJRDPocSCvylg2cI9z3VTnBio8/0+tSlrhKRgTH2DH2CLlbzdPsjRQeqffK13uAUjptYkEQ2klPsIfunYoJLiVAGt2jiymTAQN0=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aepfle.de; spf=none smtp.mailfrom=aepfle.de; dkim=pass (2048-bit key) header.d=aepfle.de header.i=@aepfle.de header.b=UYB5dgdc; dkim=permerror (0-bit key) header.d=aepfle.de header.i=@aepfle.de header.b=MskHZlef; arc=pass smtp.client-ip=81.169.146.219
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aepfle.de
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=aepfle.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="jOO4OQuI"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=cOolFLu8lcWGaRzGuTsHScTSey2zRnqor85m1/D94bWihNkX3mPdmqcjTYU79N1XC3ADqA1r9JUyyLGazgDpYrbNCLguVZ87d2npdAwTI0oalErLYta3BR9aDeCbdao3hGIlJVSBp+5jNjuauO3e1gLiORH31X0F+HVHS9nbT0TJ4mEXXbH4uVrTBCQhXNK8ArnHGn98nLs6dvkIaximntPcmX6/rLUpTZPf/jI0mveR8CHA+V477Io3JMDbysua9rIjTbsHBfVFgmagOd0RELbzX2r/dG6xtxVsHGw92Pm7Edy2X5EKvAiHn6lnw5FU1B/Smwb8fz+5YSU0QX++Xw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=Ct52jet9ZJfkTUinCI2ZS9CTkLhGgw4WoH/bh7LPG6o=;
- b=EmPEm14lZiLQCDOT4vVGGwn+5OOf9Q8qX2Dmhb5ge4nz0V3NgenawOpQPtOmwRFJiEMR+IjUC4kFJkesoecSov1E6WmhrRwPUqY9hG49AcU2q7X9uYcm7v8fIPRRyHRf7wX1tnNp29vbz3HOJWsPZEMljCSVSxzvanOCxTOftI9JCffGhROHqoIlpRknY+fb5rPc4++XITxc/UBvnejzY9bse4rvUyAYeQDj9QNI8X0ONHhmbzRtAd4vWmZdwpbx9xiWzJFBDZoq7PRii0R5iAyXZIPX1ipwm7U+wBBDTQvnGIZRjOeuvQSqL180zP+dEaHwbiLu4jaU6gupewj1FA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
- dkim=pass header.d=nvidia.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
- s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=Ct52jet9ZJfkTUinCI2ZS9CTkLhGgw4WoH/bh7LPG6o=;
- b=jOO4OQuIlGmHV/R2XC5YFhctA/KMsRo7jbudhMcr2KFRc5XJYuwUsZYKjyvls780hY8jOBeIdGe4jQg2D0jfiMgp72uLWbk20F/60vbeEk9Sp14kbbyjPEv6+T+rUiaK9LV4484BhkVhIwL5qTon9/Ztx+xTRD4R20GTCjZZyDUDbj3x+gh1k+zIyL3yceQwjmlgIf5C8AjQprBOZ9mHbpfkVQlJvtONqcVVLER3BdlQMN3AWrqQb2j8BlxUcya0x7rSd7gVmHQuYCnuhPZZeXJuiWAL0FK3atXZQfPw3laYz7QSqH2QdOY7OlaysVBQqMXqbHYWH+CMg8TFekvUGQ==
-Received: from BYAPR12MB3318.namprd12.prod.outlook.com (2603:10b6:a03:df::15)
- by DS7PR12MB6214.namprd12.prod.outlook.com (2603:10b6:8:96::13) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7698.19; Wed, 19 Jun
- 2024 12:08:27 +0000
-Received: from BYAPR12MB3318.namprd12.prod.outlook.com
- ([fe80::698a:d943:647a:c89f]) by BYAPR12MB3318.namprd12.prod.outlook.com
- ([fe80::698a:d943:647a:c89f%3]) with mapi id 15.20.7677.030; Wed, 19 Jun 2024
- 12:08:26 +0000
-From: Carolina Jubran <cjubran@nvidia.com>
-To: Andrei Borzenkov <arvidjaar@gmail.com>, "initramfs@vger.kernel.org"
-	<initramfs@vger.kernel.org>
-Subject: Re: Load modules in initrd
-Thread-Topic: Load modules in initrd
-Thread-Index: AQHawj7tJouVjcxTPkqesc7Dd3UMtrHO+peAgAAC25Q=
-Date: Wed, 19 Jun 2024 12:08:26 +0000
-Message-ID:
- <BYAPR12MB331896441988496DB332DD1DCBCF2@BYAPR12MB3318.namprd12.prod.outlook.com>
-References:
- <BYAPR12MB3318839A4B6BE11ECB13E06BCBCF2@BYAPR12MB3318.namprd12.prod.outlook.com>
- <3e5f74f5-3af5-4368-bfa6-b436bd44c1de@gmail.com>
-In-Reply-To: <3e5f74f5-3af5-4368-bfa6-b436bd44c1de@gmail.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach:
-X-MS-TNEF-Correlator:
-msip_labels:
-authentication-results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=nvidia.com;
-x-ms-publictraffictype: Email
-x-ms-traffictypediagnostic: BYAPR12MB3318:EE_|DS7PR12MB6214:EE_
-x-ms-office365-filtering-correlation-id: fbb46b70-7685-476a-63e1-08dc90588686
-x-ms-exchange-senderadcheck: 1
-x-ms-exchange-antispam-relay: 0
-x-microsoft-antispam: BCL:0;ARA:13230037|366013|376011|1800799021|38070700015;
-x-microsoft-antispam-message-info:
- =?iso-8859-1?Q?muwki/HWelr4hLXyGGaavgxSNvtIsfhLqFJVnRPaW8fzhvMya7Nbk9baJC?=
- =?iso-8859-1?Q?xfLrFkAx86YMTxGK8OcDwr5rHdwMn8v4EdtR4M8BCUtd8lIGAUjxl8OTPj?=
- =?iso-8859-1?Q?5VmZfRROhdIvn10swIcoJvNfTi2FK6xBJyCliSjHnwaZAZHr03jdoAE5dQ?=
- =?iso-8859-1?Q?zR/MppMcZqmWt9bMeaz/LP5/TuHZk8kI/ffbehtclk4cEQHpy3LjeWUnaW?=
- =?iso-8859-1?Q?+YDfsVJn3VIptgf8baK8EyfsH0Gz6RqGJd57k4+hoaBenPjF8Bl5jkNn/6?=
- =?iso-8859-1?Q?i/zOEjIzPAuL97R6PkMCETpowMuL10oW4Jw/VjaWgI8pm7n02XfU7dczDj?=
- =?iso-8859-1?Q?KiruC4JZK3dwSshtMn6zYYgUdgstdlrsdmxk7yhsog+itzNki87b4rqahR?=
- =?iso-8859-1?Q?0ON/9cozkyDJ0UG3JS37NOQjbDK3Vge+EKw7j8QZ3BnomG1fJE4SXAsEYE?=
- =?iso-8859-1?Q?KvamHkxQTJhFsTGaQPWg1bxzKf/6szXoB45Pd3RPADUPs24UGjaxZBVowx?=
- =?iso-8859-1?Q?Cs8VR+k3VWmmkrYoyOuv74rASsH9QIfef4+GdfhqlCeUx1tfDDAKTrja6T?=
- =?iso-8859-1?Q?TRRP2Z9GAw+dRghdMoksvAkT4aXLHqFWgodfsJwTaAazCjLbPPBgr4/g8u?=
- =?iso-8859-1?Q?KARshE3YjNNfbRr8G35eAmOeK5x/RXEUMoFu0gq6jSCjlOodcsmFLGiQUF?=
- =?iso-8859-1?Q?wq/himZQzuSbG3TRKrsHfa5UafAcVPbga1RtBCBC+IRQaN1cLbK6F4VPau?=
- =?iso-8859-1?Q?+lV4dWE8Oo935iKwBqg+LVBVKXQZ6NnLp81v9uvWs9urgdtKdOcc+Ek1vu?=
- =?iso-8859-1?Q?kFkIU/FzfzoMtshYP4FRZc1xfHCnyfuZKr7vh2dfL8c4hpZkyKwI+IWwPL?=
- =?iso-8859-1?Q?9+U7qKLXZELombOOZCgWROFdlE0qKoYFyLAu0Tb+DKPLhHjX3PLjYK0SJA?=
- =?iso-8859-1?Q?/bgzL7RRyLuHByQ5/O39Wg5uQYWhtaLs5r3UNdG5q6R+oyE+4+OcuUrmvL?=
- =?iso-8859-1?Q?Mq6OFpywyIj8NZ1c1ZaV0ApikOjG7L8yuU7nOMBGSnCCc98cfVLBekegg6?=
- =?iso-8859-1?Q?/nPHku4Au2tRmx+n9XKrWZqic1BZdhbyCKWpcRwwD53qRK7r1sCzjCTGn6?=
- =?iso-8859-1?Q?CpQVcMSiKILSEsqjDhHhpuHaNgTlfLCcxo6BuinFAEEeNf6NpwiNwf5aoU?=
- =?iso-8859-1?Q?8qSGqFLj9C2c4aqMwDYnivipRk7+7iVTC2ilL/yWveNid9hmdOUp1qjIE4?=
- =?iso-8859-1?Q?5JIoArLUY6obvBDREjFwyYdfdqKdN38duJMq/KvT+GcDCVkfyhkoaPOxyv?=
- =?iso-8859-1?Q?Bu1xxJO3gr9p84cpne6CeBE9dwxu/SBZMK73hDKmc7oyy71T45H6rQLD7o?=
- =?iso-8859-1?Q?/eTqdzoThXTF3aTnz4U3zphlrBQ/H2N6/6DmXqZ05iAl91UuVKFNw=3D?=
-x-forefront-antispam-report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BYAPR12MB3318.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230037)(366013)(376011)(1800799021)(38070700015);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0:
- =?iso-8859-1?Q?fTZSQsdE6IhT4DiuKvzrEYDb0ePyPiTnoENPWv4P6qFottl5lAbbmdfyRf?=
- =?iso-8859-1?Q?ClhBviXBavCavbRJz1QRMeu3kujyD5/uV3bPjW0J7DRYjnhIP5HJXLmtC7?=
- =?iso-8859-1?Q?WAsbQx2vgPh/wtsaPGGefY5DQdlWXKZ+qU5gvkrLDjMtTjLbF7V8vKtvwU?=
- =?iso-8859-1?Q?SJNDBzv3NwL1UuldfwJsMLje22VcVrT6dFaJVRzk0DFy7gSGI8RnEm78Qb?=
- =?iso-8859-1?Q?J5ei4OVovs9TvdLjbLtk3WXB1t+O2FlVv6fv17tyDLGz6gSg80KrrhSbP0?=
- =?iso-8859-1?Q?WYNghAcI7Evj3jVfd6Zb4pyAfeIzT71F63dmce3PfS6iwfL5tUyFaUBqLd?=
- =?iso-8859-1?Q?+MjLdlwCONZ4FUGDaA36NMoH4tHWapKkoJKMXFh5dCh52xbdid/ibHyvB0?=
- =?iso-8859-1?Q?14aI7H8yc8nxuhddyQCNqLY9T2+5aev3BcvwOat7iz8Sw7REDAFFSY1Hrp?=
- =?iso-8859-1?Q?q/TmH0bz0Af3zA1AyID9y6+dFrGZN9XV2Grzrr7kISamhnUqHLWp6Ju7Qu?=
- =?iso-8859-1?Q?s4asxZkKY08Xm3hi49WfwPJy6fRneWHeJkus3icg7OXcQEU9JauvCdyV+f?=
- =?iso-8859-1?Q?tIqnIoE7e0jdj57B95NlWLaHF/a1mG/eCl35RUXGgUa5zIcZvay9+XB0G2?=
- =?iso-8859-1?Q?z8h1pKmDry9JZ/9fnmuCnqds4l6lPbZ7oQJQDNXJs4FXf+qbw1Hrodc4Dr?=
- =?iso-8859-1?Q?i4HWIniCKdVThVFRt44+YMU6j9P7kE23ni6LyhhBK3ne118ZhIICfVeyJ7?=
- =?iso-8859-1?Q?tD0rgiGktpY3On8cC5j6arg584zYFqSKLB6tGXyPOIBStYgkgm2f9/NLH+?=
- =?iso-8859-1?Q?l+UvXqUwHJLGuQqfPrz5ZNIzF8rInfi5utB1W2fyYlt/gEeCvhnlkIBYjq?=
- =?iso-8859-1?Q?znFPHcpISakHY7TiZjLtJD4U5dAjHDt2+jCJyJgTm9ByQuG2tcd1p+QKzE?=
- =?iso-8859-1?Q?o8/I0ZQDz7Ua5tHKrCBZTa9/P0dctDeFmwddsXy5ix/V80s6oDTm/qe0Me?=
- =?iso-8859-1?Q?wyk/6m00131uO564IsHml/qwiAY+HlH7kgO0wqWFKqnilPlbvO/59mQNDe?=
- =?iso-8859-1?Q?nBTGxOC0H763pRlY6nPrPI+dXpuscnWXvfB+8tLFBhz03NoWr/zT/InYJ/?=
- =?iso-8859-1?Q?wIeu8GimzO+O02uEu6cGEJkBKT823Kqx1riI7qJKj4tNhb1M1dmqLQMBtC?=
- =?iso-8859-1?Q?7Yaud3Dr2wC50fim/Qt6BMv4xh6skQf/gmnP0AhUpVXPAXezv2mIQ09g21?=
- =?iso-8859-1?Q?bd3Nm6DXfg7vgqEC/bTdOzCi2SiBXtQECdCbM4iw0lxN70zNTnSltNp3Hl?=
- =?iso-8859-1?Q?6b6BdLGvw9Qxn0rv02lHZ8tyUbruwh6Prqlgh0h6Y3FTMkNneFd3pzF6A0?=
- =?iso-8859-1?Q?pp7YaEpsCq41ECDiVRTST1d2OgfPYqpLVkI4DZ1LqOF6TBHcwujJFTg6yx?=
- =?iso-8859-1?Q?5bK92139cACM4YmZ6DPkHXRBQ0+9toyp/XKmUllKHm0ZqDpB7hhc1jl1LP?=
- =?iso-8859-1?Q?cgjbWz7zfjacE5LXaQt2dluIEmFJgfiFicDrPPcWcHwcCDXOmcP7C8VYpH?=
- =?iso-8859-1?Q?1H7wJHt9tJceygJ4c7vPnaGLSvy5LV+FbzrNkJZt8ajZh+vlHhlHpo4Dhi?=
- =?iso-8859-1?Q?kM1e05v3xTTgU=3D?=
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (2048-bit key) header.d=aepfle.de header.i=@aepfle.de header.b="UYB5dgdc";
+	dkim=permerror (0-bit key) header.d=aepfle.de header.i=@aepfle.de header.b="MskHZlef"
+ARC-Seal: i=1; a=rsa-sha256; t=1720438816; cv=none;
+    d=strato.com; s=strato-dkim-0002;
+    b=by4V9Luvgzx+wRO2PY06ZQR733NB0qCwvlcklOcTWv+1NJ3A8bZztlg6GujQFInBFg
+    HYoaRN+RQOvlLAUlHP67Hi6MsfnXa2jYLXXvnHV11Xm/MNJdaSJixHqVoBd9GDdOZ5X4
+    djMDVNOZ1TwF/TWezKazeUhtB4OKS80E5IhRCbsd3pasB2ogKAKDxMP6ie7BgokRXxy7
+    Nce+pJphQWI0S7rKQtEq4I+6GJJFhZvbM5sU2Egnw93vrBAgb8ktdi4o8glMY1OFaQTy
+    AhdwN/eHlFmVRv3UL5VfH5oZc4OxcKoQ4b/7j+ui1kaaDwOQQaBOAWXXc0/QyDIqabjW
+    d+mg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; t=1720438816;
+    s=strato-dkim-0002; d=strato.com;
+    h=Message-ID:Subject:To:From:Date:Cc:Date:From:Subject:Sender;
+    bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
+    b=a+TupbAiJDULQDiKjSDaIt/zNrgLCdi0efNrCtIYVRv041YcoKzHd+fO5kFCPoG4z1
+    Skc7ljP9ABLspckpAZjEvqVmQi8MFLImCiqbeMWFK20Kt3e4gfnbP6N35/VFNti/pE4r
+    zshhlQ86GpXb21f0a8m186tO4imoz1bdSa8/AKtVshCiJ39XUcFEwWxUr/EuHCgqd76z
+    +nFdnZMD/o3BMvs1hKh1BgxtHsPJpPlWq99rZzRgKbK1Wn79S+mKoe4/b1XC6IP7APzS
+    fQKarSs1rzNHuewa+kTZuxPb7eluZ61j6ZkNvvAnzux8CcwuMy6MCZ2Si53yzxGzo4WY
+    wHZQ==
+ARC-Authentication-Results: i=1; strato.com;
+    arc=none;
+    dkim=none
+X-RZG-CLASS-ID: mo00
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; t=1720438816;
+    s=strato-dkim-0002; d=aepfle.de;
+    h=Message-ID:Subject:To:From:Date:Cc:Date:From:Subject:Sender;
+    bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
+    b=UYB5dgdcTYWvTxt0feR99m/JEOWjzOI7Zei0hzYEiDwKdDM5MsbChGI5vF2XRwpJyI
+    iujR7SwUG7z4HrVKToZHuv18Vr//7tzslrihyJYkqfV1t/qDpPUNg9vO+fZDkNKPc3Qy
+    +X8XIRwIhgDGx8qGseFccLjYHjVUhPSiXVaJlzeqDaqOYXJzkljh5DtJAf9bzgjIVrMe
+    6tDH1gi4uZk8SUBsTfDWy8J9EMLyPz/q+B5JnLQ8UZIR6durpLSANmVd0+Qp1pYv2nIj
+    Y9uQE1wxkKklo0GaxKx6db8D5NY48NgyEI6/bn5/Tw2b1PBxd25Qx0b8Zinu46w6qgno
+    LV+g==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; t=1720438816;
+    s=strato-dkim-0003; d=aepfle.de;
+    h=Message-ID:Subject:To:From:Date:Cc:Date:From:Subject:Sender;
+    bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
+    b=MskHZlefmdqeqIr5Kvykt9CCRwnbkOtVV3DMMK8vt2hMD9L+hNhYHFqeC96bL2dtvY
+    bgWN3jQpXxQR5zzz1GCA==
+X-RZG-AUTH: ":P2EQZWCpfu+qG7CngxMFH1J+3q8wa/QLpd5ylWvMDX3y/OuD5rXVisR5BkKIOBzsrQFE/ZQyiRRrPkprT4fzoKOdWSb+rw=="
+Received: from sender
+    by smtp.strato.de (RZmta 50.5.0 AUTH)
+    with ESMTPSA id D05b2e068BeGPfR
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256 bits))
+	(Client did not present a certificate)
+    for <initramfs@vger.kernel.org>;
+    Mon, 8 Jul 2024 13:40:16 +0200 (CEST)
+Date: Mon, 8 Jul 2024 13:40:06 +0200
+From: Olaf Hering <olaf@aepfle.de>
+To: initramfs@vger.kernel.org
+Subject: built-in configuration file prevents booting with command line
+ options
+Message-ID: <20240708134006.05da2f2d.olaf@aepfle.de>
+X-Mailer: Claws Mail (olh) 20240408T134401.7adfa8f7 hat ein Softwareproblem, kann man nichts machen.
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-OriginatorOrg: Nvidia.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: BYAPR12MB3318.namprd12.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: fbb46b70-7685-476a-63e1-08dc90588686
-X-MS-Exchange-CrossTenant-originalarrivaltime: 19 Jun 2024 12:08:26.8000
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 43083d15-7273-40c1-b7db-39efd9ccc17a
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: nu35nT9dTfUIYvsRDxh/rSkdgR5owvzQxsGQb1YFyiC1d9vVpnqty7qIIKSThwYiffmuav90vs/gLoVY12Oq2w==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS7PR12MB6214
+Content-Type: multipart/signed; boundary="Sig_/DUyw4c=n27GyJWzzrzeaPBq";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
+Content-Transfer-Encoding: 7bit
 
-On 19.06.2024 14:51, Carolina Jubran wrote:=0A=
->>=0A=
->> Hello!=0A=
->>=0A=
->> I need to load RDMA modules in initrd, and I have a systemd service for =
-that. However, when we start running in the initrd, the initrd-cleanup.serv=
-ice kills the service.=0A=
-=0A=
->You already posted this in systemd list and you still failed to explain=0A=
->how kernel module is related to user space program.=0A=
-=0A=
-Attempting an NFS mount over RDMA will fail unless the RDMA NFS module is p=
-re-loaded which is done by the systemd service.=0A=
-=0A=
->> The Dracut arrangement only installs the service if the necessary hardwa=
-re is present.=0A=
->> I tried to add dependencies to the systemd service "Before=3Dinitrd.targ=
-et" to ensure that the service loads the drivers in initrd.=0A=
->> Unfortunately, this was inconsistent; sometimes we load in initrd and so=
-metimes we don't.=0A=
->>=0A=
->> Then I discovered that adding a "$SYSTEMCTL -q --root "$initdir" add-wan=
-ts initrd.target <our-service>" in the module-setup.sh helps with the issue=
-, and the driver consistently runs in initrd.=0A=
->> My question is, how does "add-wants initrd.target" fit into the picture =
-with the initramfs image and systemd?=0A=
->> Do I need to make any further changes to my systemd service, or is build=
-ing the image using dracut sufficient?=0A=
->>=0A=
->> Thank you,=0A=
->> Carolina Jubran=0A=
-=0A=
+--Sig_/DUyw4c=n27GyJWzzrzeaPBq
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+dracut in Leap 15.5 puts /etc/cmdline.d/90crypt.conf into initrd.
+This file contains "rd.luks.uuid=3Dluks-${old_uuid}".
+
+If the disk dies, and the backup is populated on the replacement disk,
+the UUID of the LUKS container does obviously change.
+
+I was able to boot the existing old initrd with "rd.luks.crypttab=3D0
+rd.luks.key=3D/some_path rd.luks.uuid=3D${new_uuid}", but this was not enou=
+gh.
+
+Booting with "rd.debug" revealed that "${old_uuid}" was still expected
+to be present. A search in the extracted initrd revealed that
+"rd.hostonly=3D0" removes "/etc/cmdline.d/*.conf". But using that option
+disables also all knobs specified on the kernel command line.
+
+Is booting an "arbitrary" existing initrd with "rd.hostonly=3D0",
+and specifying every required detail of the root filesystem on
+the kernel command line, supposed to work?
+Did I maybe miss yet another required knob?
+
+This is the full list of used kernel cmdline options:
+
+log_buf_len=3D16M
+mitigations=3Doff
+net.ifnames=3D0
+nosgx
+panic=3D9
+plymouth.enable=3D0
+rd.fstab=3D0
+rd.luks.allow-discards
+rd.luks.crypttab=3D0
+rd.luks.key=3D/.root.key
+rd.luks.uuid=3D${new_uuid}
+rd.lvm.conf=3D0
+rd.lvm.lv=3D${vg}/${lv}
+rd.lvm.vg=3D${vg}
+rd.timeout=3D11
+resume=3D/dev/disk/by-label/${label_swap}
+root=3D/dev/disk/by-label/${label_btrfs}
+rootflags=3Dsubvol=3D/${subvolume},noatime
+
+
+Thanks,
+Olaf
+
+--Sig_/DUyw4c=n27GyJWzzrzeaPBq
+Content-Type: application/pgp-signature
+Content-Description: Digitale Signatur von OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEE97o7Um30LT3B+5b/86SN7mm1DoAFAmaL0BYACgkQ86SN7mm1
+DoDdwg//VVbru9F8a0qqBtlaS6xLzf4nOZPPBElj2j8Srg9OqGlOkdmXFNsfu8Qp
+iy4J4I6c/oqXn8GIGVqn+nRSW/P9M6NLEiDzUrHvznfb0chcKdGwR1jIlbBjMkjA
+2OapzKTZuPm6PBBwKofSTLQrw0OGodpaqmRjpORpkMoFQ0nUruV0ZAfIbeep/WWd
+NapCS03wQ3DYLdmoIi7azBdgSKT931WUdgm2Ihd4Gr2EE5SE9KK22out2st4h3xt
+uM17kJ0rfNGknP4dNzHCC/oFE+O+oOrIkgWBPtTC7PYAQR0910d4U3E8fzSbBGX7
+iJLKwxw237LkfGVH9zQGA381iQUduai2gRalWZtn3yaMM1zkU5nNe7UfzjSuqeUr
+z/ixfYFvY3ysIaCGM6Il1qM8E/jiK/mP4Mpu81kuMHPcqGp768T1C1w3oAd6Y6hO
+kKXXVtyKnapdCoaq6+ZdxHgiUvIoY1mk/bFuLFkJQgz3z1x+bNRaP+GL7rbIwBCZ
+bTgYzMCKlDbD71dLdJ9+Ufaebi9+uOmIRH5yY3GIKTOPg4MpWs/pOEoAKhlLD3t1
+2p+mxK9gu/0R9OSbxjwo6B5osQZJgThn0HdCprb8OAMIH237SMH/I5M5qvrD7vEn
+QeKJ22B1gOysZsb2ycyKOggpsSYBPWJElnqCNudN5/Be+Drjsx4=
+=ccLJ
+-----END PGP SIGNATURE-----
+
+--Sig_/DUyw4c=n27GyJWzzrzeaPBq--
