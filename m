@@ -1,152 +1,141 @@
-Received: from mo4-p00-ob.smtp.rzone.de (mo4-p00-ob.smtp.rzone.de [81.169.146.219])
+Received: from maynard.decadent.org.uk (maynard.decadent.org.uk [65.21.191.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C35E1CD15
-	for <initramfs@vger.kernel.org>; Mon,  8 Jul 2024 11:46:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=81.169.146.219
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1720439184; cv=pass; b=rPiLxOWINxEMZQgg4J1ct7tlhAlhMpAZNXDXAyZwFIFJwMggm4rRuUTlmiRzxlXqet/X3fW9hRjjiKC0qRhP89AN5BJFJpRIhW8wgNxxy9+Z3meK7SS8+V8bYUXk9m4ye/0XYpUYzSkWV8JKL1ZowJZaunk03TZ7IDfxeBr/dlc=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1720439184; c=relaxed/simple;
-	bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
-	h=Date:From:To:Subject:Message-ID:MIME-Version:Content-Type; b=oM/yrBPuQXimoepa9CvXnB8gZIFEFcUx5WCdh2oLp9Mkp8z1dminaa/zNVLqhL4cCaDx6ZbxtJRDPocSCvylg2cI9z3VTnBio8/0+tSlrhKRgTH2DH2CLlbzdPsjRQeqffK13uAUjptYkEQ2klPsIfunYoJLiVAGt2jiymTAQN0=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aepfle.de; spf=none smtp.mailfrom=aepfle.de; dkim=pass (2048-bit key) header.d=aepfle.de header.i=@aepfle.de header.b=UYB5dgdc; dkim=permerror (0-bit key) header.d=aepfle.de header.i=@aepfle.de header.b=MskHZlef; arc=pass smtp.client-ip=81.169.146.219
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aepfle.de
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=aepfle.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=aepfle.de header.i=@aepfle.de header.b="UYB5dgdc";
-	dkim=permerror (0-bit key) header.d=aepfle.de header.i=@aepfle.de header.b="MskHZlef"
-ARC-Seal: i=1; a=rsa-sha256; t=1720438816; cv=none;
-    d=strato.com; s=strato-dkim-0002;
-    b=by4V9Luvgzx+wRO2PY06ZQR733NB0qCwvlcklOcTWv+1NJ3A8bZztlg6GujQFInBFg
-    HYoaRN+RQOvlLAUlHP67Hi6MsfnXa2jYLXXvnHV11Xm/MNJdaSJixHqVoBd9GDdOZ5X4
-    djMDVNOZ1TwF/TWezKazeUhtB4OKS80E5IhRCbsd3pasB2ogKAKDxMP6ie7BgokRXxy7
-    Nce+pJphQWI0S7rKQtEq4I+6GJJFhZvbM5sU2Egnw93vrBAgb8ktdi4o8glMY1OFaQTy
-    AhdwN/eHlFmVRv3UL5VfH5oZc4OxcKoQ4b/7j+ui1kaaDwOQQaBOAWXXc0/QyDIqabjW
-    d+mg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; t=1720438816;
-    s=strato-dkim-0002; d=strato.com;
-    h=Message-ID:Subject:To:From:Date:Cc:Date:From:Subject:Sender;
-    bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
-    b=a+TupbAiJDULQDiKjSDaIt/zNrgLCdi0efNrCtIYVRv041YcoKzHd+fO5kFCPoG4z1
-    Skc7ljP9ABLspckpAZjEvqVmQi8MFLImCiqbeMWFK20Kt3e4gfnbP6N35/VFNti/pE4r
-    zshhlQ86GpXb21f0a8m186tO4imoz1bdSa8/AKtVshCiJ39XUcFEwWxUr/EuHCgqd76z
-    +nFdnZMD/o3BMvs1hKh1BgxtHsPJpPlWq99rZzRgKbK1Wn79S+mKoe4/b1XC6IP7APzS
-    fQKarSs1rzNHuewa+kTZuxPb7eluZ61j6ZkNvvAnzux8CcwuMy6MCZ2Si53yzxGzo4WY
-    wHZQ==
-ARC-Authentication-Results: i=1; strato.com;
-    arc=none;
-    dkim=none
-X-RZG-CLASS-ID: mo00
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; t=1720438816;
-    s=strato-dkim-0002; d=aepfle.de;
-    h=Message-ID:Subject:To:From:Date:Cc:Date:From:Subject:Sender;
-    bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
-    b=UYB5dgdcTYWvTxt0feR99m/JEOWjzOI7Zei0hzYEiDwKdDM5MsbChGI5vF2XRwpJyI
-    iujR7SwUG7z4HrVKToZHuv18Vr//7tzslrihyJYkqfV1t/qDpPUNg9vO+fZDkNKPc3Qy
-    +X8XIRwIhgDGx8qGseFccLjYHjVUhPSiXVaJlzeqDaqOYXJzkljh5DtJAf9bzgjIVrMe
-    6tDH1gi4uZk8SUBsTfDWy8J9EMLyPz/q+B5JnLQ8UZIR6durpLSANmVd0+Qp1pYv2nIj
-    Y9uQE1wxkKklo0GaxKx6db8D5NY48NgyEI6/bn5/Tw2b1PBxd25Qx0b8Zinu46w6qgno
-    LV+g==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; t=1720438816;
-    s=strato-dkim-0003; d=aepfle.de;
-    h=Message-ID:Subject:To:From:Date:Cc:Date:From:Subject:Sender;
-    bh=hw2pXdFamsmUtJWbwgL+b4iAju/dieq5lpLY2PLIo/w=;
-    b=MskHZlefmdqeqIr5Kvykt9CCRwnbkOtVV3DMMK8vt2hMD9L+hNhYHFqeC96bL2dtvY
-    bgWN3jQpXxQR5zzz1GCA==
-X-RZG-AUTH: ":P2EQZWCpfu+qG7CngxMFH1J+3q8wa/QLpd5ylWvMDX3y/OuD5rXVisR5BkKIOBzsrQFE/ZQyiRRrPkprT4fzoKOdWSb+rw=="
-Received: from sender
-    by smtp.strato.de (RZmta 50.5.0 AUTH)
-    with ESMTPSA id D05b2e068BeGPfR
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256 bits))
-	(Client did not present a certificate)
-    for <initramfs@vger.kernel.org>;
-    Mon, 8 Jul 2024 13:40:16 +0200 (CEST)
-Date: Mon, 8 Jul 2024 13:40:06 +0200
-From: Olaf Hering <olaf@aepfle.de>
-To: initramfs@vger.kernel.org
-Subject: built-in configuration file prevents booting with command line
- options
-Message-ID: <20240708134006.05da2f2d.olaf@aepfle.de>
-X-Mailer: Claws Mail (olh) 20240408T134401.7adfa8f7 hat ein Softwareproblem, kann man nichts machen.
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 965B91CB316
+	for <initramfs@vger.kernel.org>; Thu, 22 Aug 2024 15:07:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=65.21.191.19
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1724339244; cv=none; b=FzqRcFoAaJeOMrHXGIUxcvYVV59uHwqnpogh3f7yLUoddWsOo6ITdXLAOifI3fvRDs6YSBkKnlLnzxgJG3f9Q7VpGCsEhsyFDWwchonSeTTibjCXcS5hGXLIYo+1KBTvv/EOsuWLCtHQbdg6k2Nq/vuiTJnQTVKWga1c8y04KyQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1724339244; c=relaxed/simple;
+	bh=ZP3/WGwqlJzEkcwPYa2psmnjjThjA5ySwg0/heS/L20=;
+	h=Message-ID:Subject:From:To:Date:Content-Type:MIME-Version; b=KwF50gS5OMOiLW6SG0+DygAOauAQtQTpV6+Qy9kYoLdFnIFMJVFHD57vuvwbC5pCIbn8aMuVGNfj8rQJKCpMgJudIi4DszGWIT5lgrKF10tT0blokozN+Vt4twYkurnJmof/BNxAbTfLPmH7isN/CLm3YXgtBdpC8Y+vpMwC0oE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk; spf=pass smtp.mailfrom=decadent.org.uk; arc=none smtp.client-ip=65.21.191.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=decadent.org.uk
+Received: from [2a02:578:851f:1502:391e:c5f5:10e2:b9a3] (helo=deadeye)
+	by maynard with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.96)
+	(envelope-from <ben@decadent.org.uk>)
+	id 1sh9PC-005NNI-2w;
+	Thu, 22 Aug 2024 15:07:18 +0000
+Received: from ben by deadeye with local (Exim 4.98)
+	(envelope-from <ben@decadent.org.uk>)
+	id 1sh9PB-000000045Ds-29c2;
+	Thu, 22 Aug 2024 17:07:17 +0200
+Message-ID: <ba3a2dfc3a1bfd3eeda42d0411cdabdd29405ea5.camel@decadent.org.uk>
+Subject: initramfs-tools 0.144 release
+From: Ben Hutchings <ben@decadent.org.uk>
+To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, 
+	kernel-team@lists.ubuntu.com
+Date: Thu, 22 Aug 2024 17:07:12 +0200
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-rBlpy5pKhgwG4jH7vAiB"
+User-Agent: Evolution 3.52.3-1 
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="Sig_/DUyw4c=n27GyJWzzrzeaPBq";
- protocol="application/pgp-signature"; micalg=pgp-sha256
-Content-Transfer-Encoding: 7bit
+X-SA-Exim-Connect-IP: 2a02:578:851f:1502:391e:c5f5:10e2:b9a3
+X-SA-Exim-Mail-From: ben@decadent.org.uk
+X-SA-Exim-Scanned: No (on maynard); SAEximRunCond expanded to false
 
---Sig_/DUyw4c=n27GyJWzzrzeaPBq
-Content-Type: text/plain; charset=US-ASCII
+
+--=-rBlpy5pKhgwG4jH7vAiB
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-dracut in Leap 15.5 puts /etc/cmdline.d/90crypt.conf into initrd.
-This file contains "rd.luks.uuid=3Dluks-${old_uuid}".
+This release fixes a number of bugs:
+- copy_file handles avoids duplicating files whose source filename
+  includes a directory symlink.
+- The autopkgtest test cases now work on ppc64el.
+- mkinitramfs exits with an error if dracut-install fails.
 
-If the disk dies, and the backup is populated on the replacement disk,
-the UUID of the LUKS container does obviously change.
+It adds several features:
+- Support for MS Surface Pro 4 keyboard when MODULES=3Dmost.
+- The onboard_usb_hub or onboard_usb_dev driver is included when
+  MODULES=3Dmost.
+- Drivers for supplier devices are also included when MODULES=3Ddep.
+- mkinitramfs gained a -m option to override the MODULES setting.
+and optimisations:
+- Iteration over module directories is mostly deferred to
+  dracut-install.
+- The main cpio archive is piped to the compressor rather
+  than written to a temporary file first,
 
-I was able to boot the existing old initrd with "rd.luks.crypttab=3D0
-rd.luks.key=3D/some_path rd.luks.uuid=3D${new_uuid}", but this was not enou=
-gh.
+Known breaking change:
+- The bug fix in copy_file exposed other longstanding bugs in this
+  function, that affect in particular the reiserfsprogs hook.
+  This will be fixed by another release shortly.
 
-Booting with "rd.debug" revealed that "${old_uuid}" was still expected
-to be present. A search in the extracted initrd revealed that
-"rd.hostonly=3D0" removes "/etc/cmdline.d/*.conf". But using that option
-disables also all knobs specified on the kernel command line.
+The shortlog is below.
 
-Is booting an "arbitrary" existing initrd with "rd.hostonly=3D0",
-and specifying every required detail of the root filesystem on
-the kernel command line, supposed to work?
-Did I maybe miss yet another required knob?
+Ben.
 
-This is the full list of used kernel cmdline options:
+Alper Nebi Yasak (4):
+      hook-functions: auto_add_modules: Add onboard_usb_hub, onboard_usb_de=
+v
+      hook-functions: add_loaded_modules: Walk bound devices for suppliers
+      d/gbp.conf: Set gbp-dch options matching existing changelog entries
+      mkinitramfs: Add -m argument to override MODULES setting
+=20
+Ben Hutchings (18):
+      Releasing version 0.143.1.
+      Merge branch 'enable-kvm' into 'master'
+      Merge branch 'replace-copy_modules_dir-calls-by-dracut' into 'master'
+      Merge branch 'avoid-tmp-main-cpio' into 'master'
+      Merge branch 'multitouch' into 'master'
+      Merge branch 'fsck-mention-device' into 'master'
+      Merge branch 'onboard-usb-hub' into 'master'
+      Merge branch 'dep-walk-loaded-modules' into 'master'
+      Merge branch 'gbp-dch-config' into 'master'
+      Merge branch 'mkinitramfs-modules-arg' into 'master'
+      hook_functions: Fix copy_file with source including a directory symli=
+nk
+      Merge branch 'shellcheck' into 'master'
+      Merge branch 'copy-file-symlink-dir' into 'master'
+      autopkgtest: Fix name of ppc64el kernel flavour
+      autopkgtest: Fix test failure when built-in drivers request firmware
+      Merge branch 'autopkgtest-fixes' into 'master'
+      mkinitramfs, hook-functions: Exit with error if dracut-install fails
+      Releasing version 0.144.
+=20
+Benjamin Drung (8):
+      Replace copy_modules_dir by manual_add_modules calls
+      autopkgtest: Enable KVM if available
+      mkinitramfs: Use pipefail for creating final initrd.img file
+      mkinitramfs: Do not store intermediate main cpio archive
+      install hid-multitouch module for Surface Pro 4 Keyboard
+      fsck: Mention file system name in failed identification warning
+      Move shellcheck configuration to .shellcheckrc
+      Check shell scripts for POSIX sh compliance
 
-log_buf_len=3D16M
-mitigations=3Doff
-net.ifnames=3D0
-nosgx
-panic=3D9
-plymouth.enable=3D0
-rd.fstab=3D0
-rd.luks.allow-discards
-rd.luks.crypttab=3D0
-rd.luks.key=3D/.root.key
-rd.luks.uuid=3D${new_uuid}
-rd.lvm.conf=3D0
-rd.lvm.lv=3D${vg}/${lv}
-rd.lvm.vg=3D${vg}
-rd.timeout=3D11
-resume=3D/dev/disk/by-label/${label_swap}
-root=3D/dev/disk/by-label/${label_btrfs}
-rootflags=3Dsubvol=3D/${subvolume},noatime
+--=20
+Ben Hutchings
+All the simple programs have been written, and all the good names taken
 
 
-Thanks,
-Olaf
-
---Sig_/DUyw4c=n27GyJWzzrzeaPBq
-Content-Type: application/pgp-signature
-Content-Description: Digitale Signatur von OpenPGP
+--=-rBlpy5pKhgwG4jH7vAiB
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEE97o7Um30LT3B+5b/86SN7mm1DoAFAmaL0BYACgkQ86SN7mm1
-DoDdwg//VVbru9F8a0qqBtlaS6xLzf4nOZPPBElj2j8Srg9OqGlOkdmXFNsfu8Qp
-iy4J4I6c/oqXn8GIGVqn+nRSW/P9M6NLEiDzUrHvznfb0chcKdGwR1jIlbBjMkjA
-2OapzKTZuPm6PBBwKofSTLQrw0OGodpaqmRjpORpkMoFQ0nUruV0ZAfIbeep/WWd
-NapCS03wQ3DYLdmoIi7azBdgSKT931WUdgm2Ihd4Gr2EE5SE9KK22out2st4h3xt
-uM17kJ0rfNGknP4dNzHCC/oFE+O+oOrIkgWBPtTC7PYAQR0910d4U3E8fzSbBGX7
-iJLKwxw237LkfGVH9zQGA381iQUduai2gRalWZtn3yaMM1zkU5nNe7UfzjSuqeUr
-z/ixfYFvY3ysIaCGM6Il1qM8E/jiK/mP4Mpu81kuMHPcqGp768T1C1w3oAd6Y6hO
-kKXXVtyKnapdCoaq6+ZdxHgiUvIoY1mk/bFuLFkJQgz3z1x+bNRaP+GL7rbIwBCZ
-bTgYzMCKlDbD71dLdJ9+Ufaebi9+uOmIRH5yY3GIKTOPg4MpWs/pOEoAKhlLD3t1
-2p+mxK9gu/0R9OSbxjwo6B5osQZJgThn0HdCprb8OAMIH237SMH/I5M5qvrD7vEn
-QeKJ22B1gOysZsb2ycyKOggpsSYBPWJElnqCNudN5/Be+Drjsx4=
-=ccLJ
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmbHVCAACgkQ57/I7JWG
+EQlN2Q//QrIyPP4CuSTMhyHjIWmQIiPNROpPsFE+U/k+4rKy1sRhFVBXrnkxk8ZP
+eMZxKwVqHHOmNSJyydkohQWtg9cA8gnOeIXTFE8h0z0lpIB2Kt+NyQgSaMc/+XWk
+oX4wj1zeijCuh3s/bApk4piNd8j44CBjN0jBJ9o/Yq/CIl9b6nzU/Q0dxYiZAzlw
+XMEdSG5F257FygvnyLkNgV2nFKCFnAjlp5yKfN+r/6gwjQMc/l9tjyj/mmXcnej6
+ZNgPQU0j574cw2pnHQ3PCHtoyQuXil1BRPWdahifU5bJk173nZxbU8cAQ9tUySlo
+cCG8uNeZIM+5wRvfqsjHaLfShE20XnAJ/PVKSlrQBh4tXsTjREeYmPonk2dFcA6/
+zoWEDhAMOG8+uef09WZ58lnIE0iS7IC5xLE6vKr5DgaiYEOk3juYWh0gA17j0fuf
+FVru6WDYSEjicsWVErD/Pth0CUqhKm6jGANJZmEuh6lzcNLFNB7XDh3jtv1BwM4Z
+CZg/xjt8NXPWi2n9m9SkNClBu3DzLsB8Bb9bhGrIn02D1FE7kUHvp6DfGb04L2n8
+t8RJnQd90cM6NGH2pfai0/x0/yh2fJ4gAXIEfsBW3MaYElmt7qXFEAZTGYOdk2Dz
+ws1pJLsDJYU44swDcTI2nXUcPUUr/8fKJblKrNH/Wgv6UsMlyAc=
+=+djG
 -----END PGP SIGNATURE-----
 
---Sig_/DUyw4c=n27GyJWzzrzeaPBq--
+--=-rBlpy5pKhgwG4jH7vAiB--
