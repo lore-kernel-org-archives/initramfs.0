@@ -1,15 +1,15 @@
 Received: from maynard.decadent.org.uk (maynard.decadent.org.uk [65.21.191.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E9808821
-	for <initramfs@vger.kernel.org>; Sun,  2 Mar 2025 20:09:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EAB9F8836
+	for <initramfs@vger.kernel.org>; Tue,  4 Mar 2025 03:33:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=65.21.191.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740946152; cv=none; b=a+3xqk2qfh/eQl4Yrb9+XDP31ng3Ye27BLssj5OguuUN9qOmyd+no8o4InY/4vJhNLg52diGx/TIIHNXDr80Bm9receYn6jZpIgG21PEwYL1SmWPtWjsBdnKkmnfNd/4mKKV53A0gNCRMALuU8qoAUttPkp5z+Qw6+ni8P7mBfg=
+	t=1741059236; cv=none; b=hM0GnS8gCvBHH9d5oK3SjhfWJTJjEtUobPnWVb/vFDHanI0nl+J4+4GWlAkTUxU5do6hbs5Z/wf6qCkRPRosITYSIFzxPQj/I/51tHn5wD+LKeALmV0+WFytHghbXoOHMUZPWHsThLfjc7yN0rL6dzgMEGHt/yr+l1Meqo5OvOA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740946152; c=relaxed/simple;
-	bh=1/jMKUTH+8VlikMYUj7myQwFkB2pi09WA7SpN5tfmcI=;
-	h=Message-ID:Subject:From:To:Date:Content-Type:MIME-Version; b=p++lc1UjD88YOtlHXfTmuh5YKENQywtL3RqNael9pMy3/R9PRQ5npPsxk6OvZewOYTpmgdpXVs9d/gB7doaEABnXaKzqz25FWtPTXZAqjnXFJf/nLfuBQyQWmr3jvyPKc1yorUVHfasd7I1jxurNTTvqVePBiq8zjOLNJjha+kw=
+	s=arc-20240116; t=1741059236; c=relaxed/simple;
+	bh=aShKJIn/vDDZLXWlmFVxmufdHoC+eGe5BHS7VALeI/c=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=ghQEvl/hELj4wOsfBateZS+kYkjGC8j4fjwCzZQsSoIFijNNeWzP125wCoP8LC7q79UM2q+VzJqHfPKY4UssyS83nJJwDYZDTAWbbhTPyxQk0xjQgCcKKu14bU9MGeTLEh3aXk4qa0aNKBaQgyZuJGShPCWkBNok9d7l99AfDUg=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk; spf=pass smtp.mailfrom=decadent.org.uk; arc=none smtp.client-ip=65.21.191.19
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=decadent.org.uk
@@ -17,20 +17,20 @@ Received: from [2a02:578:851f:1502:391e:c5f5:10e2:b9a3] (helo=deadeye)
 	by maynard with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
 	(Exim 4.96)
 	(envelope-from <ben@decadent.org.uk>)
-	id 1topcb-007TNa-1b;
-	Sun, 02 Mar 2025 20:09:08 +0000
+	id 1tpJ2S-007fYU-2t;
+	Tue, 04 Mar 2025 03:33:47 +0000
 Received: from ben by deadeye with local (Exim 4.98)
 	(envelope-from <ben@decadent.org.uk>)
-	id 1topcY-000000002y6-2exo;
-	Sun, 02 Mar 2025 21:09:06 +0100
-Message-ID: <f6bbacb6a446e4b8c12ed03753585e7721ab4028.camel@decadent.org.uk>
-Subject: initramfs-tools 0.146 release
+	id 1tpJ2P-000000058hs-3YOc;
+	Tue, 04 Mar 2025 04:33:45 +0100
+Message-ID: <deb28abc8530f26bbf62c2d476124b8e3d68d6e9.camel@decadent.org.uk>
+Subject: [ANNOUNCE] klibc 2.0.14
 From: Ben Hutchings <ben@decadent.org.uk>
-To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, 
-	kernel-team@lists.ubuntu.com
-Date: Sun, 02 Mar 2025 21:09:01 +0100
+To: klibc mailing list <klibc@zytor.com>
+Cc: initramfs@vger.kernel.org
+Date: Tue, 04 Mar 2025 04:33:40 +0100
 Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-Apgug8iFcLJPVkU431u/"
+	protocol="application/pgp-signature"; boundary="=-ugW4+LuHXe6n5vp2jazO"
 User-Agent: Evolution 3.55.3-1 
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
@@ -43,138 +43,92 @@ X-SA-Exim-Mail-From: ben@decadent.org.uk
 X-SA-Exim-Scanned: No (on maynard); SAEximRunCond expanded to false
 
 
---=-Apgug8iFcLJPVkU431u/
+--=-ugW4+LuHXe6n5vp2jazO
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-This release fixes a number of bugs:
-- copy_file again treats a destination ending with a slash as being a
-directory to copy into (regression in 0.145).
-- copy_file excludes usr-merge symlinks from its detection of a source
-being symlinked (regression in 0.144).
-- Various drivers needed to boot systems with Qualcomm SoCs, and
-probably other embedded systems, are now included by default.
-- The resume device check properly checks that the device has a swap
-label.
-- When multiple network devices were configured, in some cases DNS
-configuration was duplicated in resolv.conf; but now it is not.
+I have released version 2.0.14.=C2=A0 This is available in the git
+repository at:
 
-It adds several features:
-- "tmpfs" in the ROOTFSTYPE is recognised and skipped.
-- Any kernel modules or firmware that are already compressed are placed
-in an uncompressed cpio archive before the main compressed cpio archive,
-rather than being recompressed.
-- Network drivers are recognised and added based on the kernel symbols
-they use, rather than only being included from specific directories.
-- copy_libgcc no longer requires a directory argument.
+=C2=A0=C2=A0=C2=A0 https://git.kernel.org/pub/scm/libs/klibc/klibc.git
 
-Known breaking changes:
-- unmkinitramfs now creates directories with names "cpio1", "cpio2",
-etc. rather than "early" and "main".
+and as a tarball at:
 
-The shortlog is below.
+=C2=A0=C2=A0=C2=A0 https://mirrors.kernel.org/pub/linux/libs/klibc/2.0/
+
+New features:
+- Added a system call wrapper for inotify_init1(), and a inotify_init()
+  function for architectures that only have the newer system call
+
+Bug fixes:
+- inet_pton() actually works now
+- inet_aton() detects and returns 0 for more (hopefully all) invalid
+  inputs
+- mlock(), munlock(), mlockall(), and munlockall() system call
+  wrappers are again defined on all architectures
+- parisc port is compatible with kernel headers from Linux 6.10+
+- ipconfig no longer triggers alignment faults when processing DHCP
+  option 51 on a CPU that requires natural alignment
+- mips64 port explicitly sets the executable base address, fixing linker
+  errors where the toolchain's default is not what we expect
+
+Other changes:
+- ia64 port has been removed
+- The untested no-MMU support has been removed
+- All ports that were still using socketcall() now use the separate
+  system=C2=A0calls instead
+
+A git shortlog of changes since version 2.0.13 follows.
 
 Ben.
 
-Alper Nebi Yasak (18):
-      hook-functions: Add soc and extcon drivers
-      hook-functions: Add rpmsg and hwspinlock drivers
-      hook-functions: Add interconnect drivers
-      hook-functions: Add mailbox drivers
-      hook-functions: Add memory drivers
-      hook-functions: Add nvmem drivers
-      hook-functions: Add power modules
-      hook-functions: Add spmi modules
-      hook-functions: Add qrtr driver
-      hook-functions: Add devfreq drivers
-      hook-functions: Add dma drivers
-      hook-functions: Add watchdog drivers
-      hook-functions: Add usb/typec drivers
-      hook-functions: Add tty/serial drivers
-      hook-functions: Add input/serio drivers
-      hook-functions: Add platform/chrome drivers
-      hook-functions: Handle msm hidden depency on qrtr
-      hook-functions: Add msm to fb modules list
+Ben Hutchings (15):
+      [klibc] 2.0.13 released, next version is 2.0.14
+      [klibc] tests: Add test programs for inet_aton() and inet_pton()
+      [klibc] inet: Fix character type test in inet_pton()
+      [klibc] inet: Stricter byte parsing in inet_aton()
+      [klibc] inet: Stricter IPv6 field parsing in inet_pton()
+      [klibc] Delete the ia64 port
+      [klibc] parisc: Fix build with Linux 6.10+
+      [klibc] Remove unused no-MMU support
+      [klibc] syscalls: Define mlock() etc. on all architectures
+      [klibc] syscalls: Clean up the fork() and clone() definitions
+      [klibc] syscalls: Make more system calls non-optional
+      [klibc] syscalls: Remove _KLIBC_SYS_SOCKETCALL config macro
+      [klibc] syscalls: Remove support for socketcall()
+      [klibc] syscalls: Support for inotify_init1()
+      [klibc] mips64: Set executable base address to fix link failure on R6
 =20
-Ben Hutchings (25):
-      Merge branch 'modules-from-dracut' into 'master'
-      hook-functions: Expand documentation of copy_exec and copy_file
-      hook-functions: Restore copy_file's handling of target ending in slas=
-h
-      hook-functions: Exclude usr-merge symlinks in copy_file
-      autopkgtest: Add tests for copy_file function
-      Merge branch 'qcom' into 'master'
-      Merge branch 'copy-file-to-dir-fix' into 'master'
-      Merge branch 'keep-kernel-modules-compressed' into 'master'
-      functions: Define list_filter_out function for filtering comma-sep li=
-sts
-      init: Filter 'tmpfs' out of $ROOTFSTYPE
-      Merge branch 'net-modules' into 'debian/latest'
-      Merge branch 'small-fixes' into 'debian/latest'
-      Merge branch 'msm-qrtr-hidden-dep' into 'debian/latest'
-      Merge branch 'most-fb-msm' into 'debian/latest'
-      Merge branch 'miniramfs' into 'debian/latest'
-      Merge branch 'shellcheck' into 'debian/latest'
-      Merge branch 'set-e' into 'debian/latest'
-      Merge branch 'reset-vars-before-sourcing' into 'debian/latest'
-      Merge branch 'local-net_file' into 'debian/latest'
-      Merge branch 'log-commands-with-output' into 'debian/latest'
-      Merge branch 'libgcc' into 'debian/latest'
-      tests: Add e2fsprogs to dependencies
-      Merge branch 'tests-install-e2fsprogs' into 'debian/latest'
-      Merge branch 'shellcheck-tests' into 'debian/latest'
-      Releasing version 0.146.
+Donny Xia (1):
+      [klibc] Fix the inet_pton implementation
 =20
-Benjamin Drung (19):
-      Put compressed kernel modules and firmware in an uncompressed cpio
-      unmkinitramfs: use directory names 'cpio1', 'cpio2', etc.
-      Declare breaking miniramfs 1.0.2 and older
-      Drop obsolete shellcheck overrides
-      Filter net kernel modules by symbol regexp from dracut
-      Explicitly call "set -e" instead of specifying on shebang
-      netinfo_to_resolv_conf: clear variables between sourcing
-      netinfo_to_resolv_conf: add net_file to local variables
-      hook-functions: make copy_libgcc to not take any parameters
-      test: log commands that produce output on stdout
-      Mark debian/tests/test-common as sh script
-      tests: fix shellcheck warning "Declare and assign separately to ..."
-      tests: Replace 'echo -n' by printf
-      tests: fix shellcheck warning "variable appears unused"
-      tests: fix shellcheck info "read without -r will mangle backslashes"
-      test: make prepare_network_dumping_rootfs take no parameters
-      test: silence incorrect shellcheck SC2119
-      test: fix checking output / initrd content
-      d/salsa-ci.yml: include tests in shellcheck
-=20
-Dmitry Baryshkov (1):
-      hook-functions: add missing module dependencies for Qualcomm plaforms
-=20
-Jeffery To (1):
-      Fix resume device type check
+Jesse Taube (1):
+      [klibc] ipconfig: align reads of ext for RISC architectures
 
 --=20
 Ben Hutchings
-Teamwork is essential - it allows you to blame someone else.
+Experience is directly proportional to the value of equipment destroyed
+                                                    - Carolyn Scheppner
 
---=-Apgug8iFcLJPVkU431u/
+--=-ugW4+LuHXe6n5vp2jazO
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmfEut0ACgkQ57/I7JWG
-EQnBKA/+Or4vQqDi9U/ah3TIZS6c3ZpkceQJNVrC+NnWDbKy8JcgTK0yZaJwcr9y
-wskJMoZQ6Cfl20LAmHNl+soEQKAJSiSXzVg8h9epTw0jUjXvyPgF7W8Ng7Fjv5zo
-p+/NDU6Scz4KHsaC6QzJZlm0z4Z1u0c4tMi+1d1Ca+sv3bcUVCEIPyvVyetgQT4z
-Ihb/DVlLhk0gGEdNSF/U9ZZl53OVtqGGixdNE4vvwvXZ2/Tv+/z7Eu4/E8B0MT2A
-TnLqp4hL225olUP4PhaEPjiEU2yl7Lre/h1fEL1r8tNTYgqN7bmpuHOPu0Yc3Hyv
-L8+jMqC9yz8nB/nUF455Ryd+rQYdLS5ffmU8OQk613EVnHl/Ox52xzOxLLuNWB/I
-8JAzgHLsiDrOC4B38hlMUYanvjdUo9mdLpjhmTv8qEPO/qlJhvkBDjxD4dQRjIlk
-2MzsQ61ftRLe5tM5LD2YEj9RKDBXjUgfIQc/uCPNTOxUBsqAMlHVqNncvK1xAvSr
-8VFME5c4XKBqq8nYjop3Z8h78Aq+Qr69NXBi2rm+qYBCPRLu6vnWv0bHDA9ZDTFW
-R14IxxAnKyLwXFT8fPXqbRRgKr33Tk6otx81Nh+SKXr3lZCfH/FLyk9W5YhVNFlS
-oIdi69d7dN73vbDmfYaLVb0AUSdODT97H8bGiemNwCtSG71ujnE=
-=LayL
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmfGdJQACgkQ57/I7JWG
+EQmSFRAAq2Sk0YgvhcrhjH6MfsPYpQzN/h/WCMftCyTax3VdOuupcvfqFShu/FuP
+mCmo3YNxLoeNsntQIBjkZqmRBmweux8JTC0vv5Wv2haL7bF0ygPlsi1fOoWfktKT
+zHvRz4046ZbFPWEMlyPcSW+KkF2jt273U+l+MWOsyX6xw2hv/lX4ZWtKvIiWJBHe
+fVJO68vE+OBLDaYnx288acsLC7Noeh1YF86xz5M7lSFL1HQsrPf+LhfYJTHrvfL5
+X/mSNoy3xdtTaQgwFe3EL2HVGmhn4065KGZ/NywdDWBG9GEgAPgycZKwEMnzd4VX
+5uMoHiAJ929ZzuF9QR+ktvfjOQSMw+yhnhuodMJP4Bv53cLSmn6KIYjxAvXYUyVj
+VMJEPpw9ViSlCXkvAfuFe+A1/H0DXRGWWJrs1zHZicTwsAnQPB7cKOVqmIjtQIHz
+FM98qC3jk+AgqegEb1PWic0jLSN6+WmlXWXZMGOoywSqN37QiaXTXAs7xB8Ofud1
+/oOj+Fjr8tT52yHmP/kmJ783NWLdRerY1QRN9lfSKOjPHfgiPGkS0f8ws/SUCO6C
+4WVENLcugNn1jDN7rMHHU6ZpjFueXWPHblZgW5EdrlzGggNj3CS5Pc2h9bNeerFC
+asn9LeYh90avVOC/gjXCqekliU/z7WX1VzIjnY/xy5+uTzWLy94=
+=SGoW
 -----END PGP SIGNATURE-----
 
---=-Apgug8iFcLJPVkU431u/--
+--=-ugW4+LuHXe6n5vp2jazO--
