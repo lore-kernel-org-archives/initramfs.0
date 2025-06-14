@@ -1,84 +1,126 @@
-Received: from mail-ed1-f43.google.com (mail-ed1-f43.google.com [209.85.208.43])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from maynard.decadent.org.uk (maynard.decadent.org.uk [65.21.191.19])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49F579478
-	for <initramfs@vger.kernel.org>; Mon,  2 Jun 2025 18:59:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52BF31A08BC
+	for <initramfs@vger.kernel.org>; Sat, 14 Jun 2025 16:36:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=65.21.191.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1748890774; cv=none; b=pwQ/pHpK/mdSHmUajZKLBKnxOV6weJ2C3DZL+9zq8Qq6yMI0qllCAM1qUyyeYRwypyQaSJD1O2a4uoPKirm/rQI6X/P+vmVkcstc5kj/RQy6LFtTTLhmzFoLLMH7Qs7r9fLxj8wdpBUYA4L+QfWMgmQtIyNVlnEAnNVLeX82Brc=
+	t=1749918990; cv=none; b=aPB2BsqCy2/KB38jFNbbpxFiIqHdWEaigD2EXh6w/IOgb70Fh34tP3YQbmYY4eSAzitYz7YakbLcyPlD1YIPPnmhfxrP8TWUB9SHbDNBNSm8Dx1UeNbDv6xYqs3WysRUpHiF/ae6BG8iZZvfB88MV57YonDgoe/Qub8KX3CNgaY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1748890774; c=relaxed/simple;
-	bh=VHh3yfwYBCrEn3aLRyHU/0WXZCEcKfejXJwEjj/40og=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=F5Gh77wVkaJUOxrK3k8bU/c9xPW6FkeNNIZLv717uizSj6oxkIhp63M+0O3Ebjr+Sx0fLCx6xbfaeL7bM16Djc7zaO2b3YRcg7uKDJ5OHD9sqkaXlRVpirtDGWVRl8XJZKS0FcXeL6yc4bII/Z6k83I1mH4oa/AxIhIpX/IOZOA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ifeQd2Yq; arc=none smtp.client-ip=209.85.208.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ifeQd2Yq"
-Received: by mail-ed1-f43.google.com with SMTP id 4fb4d7f45d1cf-602039559d8so8892213a12.1
-        for <initramfs@vger.kernel.org>; Mon, 02 Jun 2025 11:59:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1748890770; x=1749495570; darn=vger.kernel.org;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=VHh3yfwYBCrEn3aLRyHU/0WXZCEcKfejXJwEjj/40og=;
-        b=ifeQd2YqFzhzsn+UM23y9ghj678NOIoxcqimmGWue4NgeZzGleYj9a5QRQqT9xvrJu
-         UUMzA29GzgLdnGVzhB5D6h4Arf2EDdPI81gUmv23ECPfM6vI+AhxAB2M/nDnmyqLSbyB
-         9PXXIJv/y2Z/2Eud908Fl7jaZmk6R8XhRDRn8Y45TIwN1wjRoH5nNcTC1oCluV489vga
-         qSJk4MpkS9pEqrpVOsWwUMRwgrwdlRkkhbIpCr+jXznnpocjwKjnVsfiZOgWl5LS/Gea
-         QZ+RNOGZJTTpinrCfh+ypzzqQcruVvWzq7EiweVSdlmYRgTWZpEv2+qyYZqP56hzB+Ve
-         xTFg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1748890770; x=1749495570;
-        h=content-transfer-encoding:to:subject:message-id:date:from
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=VHh3yfwYBCrEn3aLRyHU/0WXZCEcKfejXJwEjj/40og=;
-        b=Enu1ejjWe7doiaTsWvEpcK6vQM05uQnnTosyC/PFR/FNrZ5ZCl+4w5sEG24irVe0fv
-         tEhOmpTAI3HAcSm/+7VJKIxEK8LAuKZmzBNHXVso8eCwfidNjnfG8/roTyoq6pdyEkVT
-         EpkTX8Nl+VE5UmDoBowxGNk2q0qPgGSyUEVqWotpe9xHtg2T0ZnJsoofR2AQ6jZI3Tnd
-         Y8sWbOJUQx2J7J4fOimtJnJ9rXUacTuYQU88zOq3o4sqJ6Tsb21VcWG2Fzi0/4RWE+oo
-         mAFCbELAY7mh6k+Wfnxp9RN+LQ6s0K9rhetdT/EaQnVUCt4w35JNxPs+AU+/0sBjon2F
-         LF8A==
-X-Gm-Message-State: AOJu0Yw2HmrFHG3M/vMxNaGgiEaVpob4tf0qkVPHA1HKTX7dRktEdy8K
-	JkZ9zarVOhLDMk2kifskMJevckdR0P7HVINupYq1ZuvLqlc4JnMoY65IEE8qEQyszYqwt6vLtTx
-	xCPixnbo9AMN6pYGIY5Oh4mSaCZ6+0zwAnw==
-X-Gm-Gg: ASbGncvSHeQD+8PV1EXgzTI9fYKvfST0bSNJOKuYlQCScUBP+6YWWjK0ZXQkAXLa5ch
-	Wwq4LqU5JBlLjLES4d46smHo/GwbgtIs/XGlXAkLCCDgJ5oTUNsA5YVlR6Svtvrjxt5xVraMMLM
-	cVq9Ad2GFRtOyiIgAsd7edHLF1rj0DDER52m0TJeyq8kFapfx4ltoBzLI3YB/3H6s=
-X-Google-Smtp-Source: AGHT+IEPszmhAMhQ4bHdwFd9zJpfiNrOlISQ+W4+TBh4xnOTPsoDiBT83d4nEuTuo3HjwSRL0L7vFVMVBfp6wU63d8w=
-X-Received: by 2002:a17:906:6a1e:b0:ad8:93a3:299d with SMTP id
- a640c23a62f3a-adb36be2359mr1192260466b.30.1748890770057; Mon, 02 Jun 2025
- 11:59:30 -0700 (PDT)
+	s=arc-20240116; t=1749918990; c=relaxed/simple;
+	bh=Kf2IBUOby9rjywJO+qE+WTMrdC7n++W0XDMzIztK/1U=;
+	h=Message-ID:Subject:From:To:Date:Content-Type:MIME-Version; b=OdovOuYPg57YOZft8VZi5yTipa8N5TPosGpPGXgdZiHhZTQCGKlxSi1zzLcC9IWGXBRexiBX1V/gYYXPVH8XIZc3LpjoVNX3Gsb/IDy4Z/YQR906stK53FCkYZE+lG88oZfsZl9rpELYwBuSfbXownHEkJTITL/z3OZ9W9vxLyI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk; spf=pass smtp.mailfrom=decadent.org.uk; arc=none smtp.client-ip=65.21.191.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=decadent.org.uk
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=decadent.org.uk
+Received: from [2a02:578:851f:1502:391e:c5f5:10e2:b9a3] (helo=deadeye)
+	by maynard with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.96)
+	(envelope-from <ben@decadent.org.uk>)
+	id 1uQTHc-001hbf-39;
+	Sat, 14 Jun 2025 15:59:04 +0000
+Received: from ben by deadeye with local (Exim 4.98.2)
+	(envelope-from <ben@decadent.org.uk>)
+	id 1uQTHa-00000000urM-12VD;
+	Sat, 14 Jun 2025 17:59:02 +0200
+Message-ID: <2dbdfc8453a9578c4ace0a984e4d868b650e5b27.camel@decadent.org.uk>
+Subject: initramfs-tools 0.149 release
+From: Ben Hutchings <ben@decadent.org.uk>
+To: initramfs@vger.kernel.org, debian-kernel@lists.debian.org, 
+	kernel-team@lists.ubuntu.com
+Date: Sat, 14 Jun 2025 17:58:50 +0200
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-6KjmFbFngJXZGNs2ssVq"
+User-Agent: Evolution 3.56.1-1 
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Merrick Geoff <merrick.mypackagingpro@gmail.com>
-Date: Mon, 2 Jun 2025 15:00:49 -0400
-X-Gm-Features: AX0GCFsiSMWa1nm5PAoce4pBplOSeEnueH_Ts_9AzcXnc5A_vMyC0RG09DheJ3M
-Message-ID: <CANuX7KUfjanj3kw8-qkjpOZvQ6OiZUiK1znOwOpH1UjMonnLRw@mail.gmail.com>
-Subject: Personalised Bags and Boxes
-To: initramfs@vger.kernel.org
+X-SA-Exim-Connect-IP: 2a02:578:851f:1502:391e:c5f5:10e2:b9a3
+X-SA-Exim-Mail-From: ben@decadent.org.uk
+X-SA-Exim-Scanned: No (on maynard); SAEximRunCond expanded to false
+
+
+--=-6KjmFbFngJXZGNs2ssVq
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hi,
+This release fixes 2 bugs:
+- On s390(x), when MODULES=3Dmost, the zfcp driver is again included
+- The initramfs-tools-bin package has the required versioned Breaks
+  (as well Replaces) relation to initramfs-tools-core
 
-We make personalized packaging=E2=80=94tuck boxes, CBD boxes, mailer boxes,
-rigid boxes, bakery boxes, retail boxes, shopping bags, label stickers
-and more.
+It adds several features:
+- framebuffer_coreboot, simpledrm, and simplefb modules may be
+  automatically included (depending on the MODULES setting) and
+  loaded
+- When MODULES=3Dmosst, all bridge, panel, and backlight drivers are
+  included
+- When MODULES=3Ddep, more panel drivers are recognised and included
+- unmkinitramfs supports lzma compression
 
-Simply provide us with the dimensions (L x W x H), quantity, and
-preferred box style, and we'll provide you with a competitive quote.
-Plus, for a limited time, we=E2=80=99re also providing complimentary design
-services and shipping on all orders.
+Other changes:
+- copy_file prints an error message on failure
+- unmkinitramfs no longer creates subdirectories when the initramfs
+  image includes an "early" part
 
-Thanks, and looking forward to potentially working together.
+The shortlog is below.
 
-Best regards
-Merrick Geoff
-Marketing Executive
-My Packaging Pro.
+Ben.
+
+Alper Nebi Yasak (2):
+      Handle simple-framebuffer drivers built as modules
+      Handle framebuffer_coreboot driver built as a module
+=20
+Bastian Blank (1):
+      Re-add s390 specific scsi drivers
+=20
+Ben Hutchings (10):
+      unmkinitramfs: Stop splitting into "early" and "main" subdirectories
+      Merge branch 'simple-framebuffer-modules' into 'debian/latest'
+      Merge branch 'log-copy_file-failures' into 'debian/latest'
+      Merge branch 'unmkinitramfs-unsplit' into 'debian/latest'
+      Merge branch 'panels' into 'debian/latest'
+      unmkinitramfs: Add support for lzma compression
+      Merge branch 'unmkinitramfs-lzma' into 'debian/latest'
+      Merge branch 'fix-zfcp' into 'debian/latest'
+      Merge branch 'missing-breaks' into 'debian/latest'
+      Releasing version 0.149.
+=20
+Benjamin Drung (2):
+      hook-functions: Print error message on copy_file failure
+      Add missing Breaks to initramfs-tools-bin (for moved unmkinitramfs)
+=20
+Tobias Heider (2):
+      Fix include of panel drivers if MODULES=3Ddep
+      Include all bridge, panel and backlight drivers if MODULES=3Dmost
+
+--=20
+Ben Hutchings
+Hoare's Law of Large Problems:
+   Inside every large problem is a small problem struggling to get out.
+
+--=-6KjmFbFngJXZGNs2ssVq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAmhNnDoACgkQ57/I7JWG
+EQmVShAAsJKYceZZ/pQ08MA9T6epoJFbpm3O87G86etcI9QVBOODPh02XGzsxyw2
+1ilXY2v1wgMGMu8KMmloUIl7rSeOfYuJ3ItgZR/U+Aj67zLkmOecYhJkSPglDRjq
+F0VqZ8HHwg8Xy7BveupRIz+scqLvVoowAu25eUmNNQMyqxYVecNCFUnQGt4JsmpF
+IxVzi2nUTXqAu+Sv/fa0r4Nst34C9hTjpCPX6lB9Syd5GRyZW+wcg87e27LCMasJ
+7p6UxwnoqplNDzv6r8uUwMIor4vJX3KU03tImyPmnp922zhd2XMSOVwrjParJhUA
++UBJnaAOwlZgIKo2NZsSXngD8lkhXtwWyG4qC3sDomOU0rcMKPwiEAkBo2PB6Yrl
+eXUhhS1rhHkiSJo+rQFrnF+YQYEjWjHSHjsfrmG6pq/8af96p+txHzM5OFGJK7nn
+rAf0ygWpykg90lyhMvSYsCajOk45Jt3JtggoVLVwwJpX7c4ZNcDD5vwmx1qoxfjH
+MgNiY6ZS3qfSDcysgbYjXQK0/PcZtIAY93dew7YnhvAeRxPtpoE86CARYXIFlfw1
+nT/9rpzlwIXpLEazqCKAqUBXCsoLPdFK0Narw3nKeHfFWqmiQS0iDMTrptoisfPM
+fhfeZClOk/kK+nmfFsgMey/8gb1wif1DcEOn/zH9Fjx/+uwPMmI=
+=QU1l
+-----END PGP SIGNATURE-----
+
+--=-6KjmFbFngJXZGNs2ssVq--
