@@ -1,105 +1,83 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from sender4-pp-o95.zoho.com (sender4-pp-o95.zoho.com [136.143.188.95])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 940BA2EA49E;
-	Thu, 21 Aug 2025 08:26:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1755764774; cv=none; b=BKSPd2hBuVjsXZMr4uddGSRrQ0Of3Ntzj8GMENmaHdfm01KrQA6AQRnTDBeSDByISR/MzpNeg4CgPjyOj64wYTzc5V7aYX5WdA+uQfrSKjg7gLsDP5z2ukC5Atg8ALnAE8VtCYwwA33P1kH6L+4t/IcdUYhZIZPPoxZMTQkP4UM=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1755764774; c=relaxed/simple;
-	bh=cLUbOqUr6cTb/vKgSfC31FXfcobLn5rCi7Usx5zRpc0=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=DJQ2g9VMLuSvJYwZILZ7Y/6/Hml00r+uii6JP38shCEttNUYpCMdJDCfHKNJxTUjArrTPel75lwHXUM05/Snhj2vIhNt9a6Iiw7kOygfbt4mDbclU9lg/Qf9Y9sl+qS0A6+Lax+dOjzG20Z+q7CUD1USilCI1NdXvoRTt39vYu8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KB/twgsA; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 053A836CDE1;
+	Thu, 21 Aug 2025 13:05:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=136.143.188.95
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1755781527; cv=pass; b=u6qHI0OGSQlo4vs7DTyaH0tko/H6GViMUn47N9NMipMAN06vJtjK0avJskb5KL5uOrxUVnvKl4XG8bc/gvUrI+3AuL3jYb2QfoQdjv39tuiQgWtEhvqocwvEqXCqBBKYH8QXSJ9cU6k2XmRdU35RjeLZXSx/eRmNHq5A3uzZ+cg=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1755781527; c=relaxed/simple;
+	bh=+8sGKMRZCJWLdmy/DkF91IGc5BVarEzYoIFTWH7RXXw=;
+	h=Date:From:To:Cc:Message-ID:In-Reply-To:References:Subject:
+	 MIME-Version:Content-Type; b=LOrFw20DKcbTFWWKGmQKyz14Erss5VwPZYYBW1HwQxAluTsEnlt/ttR6OsciFlEuw+mDJI6cYZpuor1Fyh/Oy3I/wtRcqnEOYeIoeNYCoe/cXqHSLE7DINvnb1nxB81PY8uaPuWZ89IEalWwheRqe/MRJbHu1FYoJ4O/QYKGfng=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=zohomail.com; spf=pass smtp.mailfrom=zohomail.com; dkim=pass (1024-bit key) header.d=zohomail.com header.i=safinaskar@zohomail.com header.b=AXQ7SPKx; arc=pass smtp.client-ip=136.143.188.95
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=zohomail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zohomail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KB/twgsA"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8AD01C4CEEB;
-	Thu, 21 Aug 2025 08:26:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1755764774;
-	bh=cLUbOqUr6cTb/vKgSfC31FXfcobLn5rCi7Usx5zRpc0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=KB/twgsA/CTVnp586RP3GyuIdvA0EyWAAu+91jwzNtpbYbFOXHSU+jhu4roGlyYaB
-	 BxV+AOwx9I0X+6uSH1kDHGrWRCz5VW4AjFllgPvHKsWA5GjEhBoTsBtmc2sQ09hzK5
-	 jQuxubCyXuxk/Fe2zDo0iQi/7yW6zxEmdnetP1tMY7f7jUGykW5edx68Zmf5wRLqM1
-	 AaGdKlxJfMGHLS7Dw6iFgcgxUCI0acFJ+cmRXj/ME/nXBKoswdmAChcBH49jSUT7AT
-	 nNClgUYNQbD/ibAssVpOs7cjGiJbe9NxlKJR5WwEypQ96O8gqU8pcz1UxbhkZGpIi3
-	 Vsg9b0HqcCtvA==
-From: Christian Brauner <brauner@kernel.org>
-To: Lichen Liu <lichliu@redhat.com>
-Cc: Christian Brauner <brauner@kernel.org>,
-	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	safinaskar@zohomail.com,
-	kexec@lists.infradead.org,
-	rob@landley.net,
-	weilongchen@huawei.com,
-	cyphar@cyphar.com,
-	linux-api@vger.kernel.org,
-	zohar@linux.ibm.com,
-	stefanb@linux.ibm.com,
-	initramfs@vger.kernel.org,
-	corbet@lwn.net,
-	linux-doc@vger.kernel.org,
-	viro@zeniv.linux.org.uk,
-	jack@suse.cz
+	dkim=pass (1024-bit key) header.d=zohomail.com header.i=safinaskar@zohomail.com header.b="AXQ7SPKx"
+ARC-Seal: i=1; a=rsa-sha256; t=1755781475; cv=none; 
+	d=zohomail.com; s=zohoarc; 
+	b=i7Wggr5HBYWBGUd1xe6bh1Ol5XBy0xuiYXMGjM/ux/SsG7ULhZMJeq6sOPDK8+C3fImCCbM5Vv8f5XXDM8RcTe0KKF8ROT2alww190aXSohBq9IUNOKu22MshDdjGtaHfq1SpLT9MMeR/qDICFaA7pSaw396lyLv0bfGQVo/RhI=
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zohomail.com; s=zohoarc; 
+	t=1755781475; h=Content-Type:Content-Transfer-Encoding:Cc:Cc:Date:Date:From:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:Subject:To:To:Message-Id:Reply-To; 
+	bh=SYHuj7Wjx5qXUTPgXJD1D8Eca4emv02OFlDqdIAxWXg=; 
+	b=La0rFyDmhqKUYNKXoHgy/2RIceLK9RCjNqIdMCFI7uRY8LX9RPJ2eGtKytCGNuhKlyQZ7iSvyO/eL/vE/GEvtKq61b1Nl/YZMP/0tiYalzN+cwnMJaJjCVc04Q831rwtyyKUVZmGH4ZSNtCxx2d4PVlLf7wodS7gumlZs07q+tk=
+ARC-Authentication-Results: i=1; mx.zohomail.com;
+	dkim=pass  header.i=zohomail.com;
+	spf=pass  smtp.mailfrom=safinaskar@zohomail.com;
+	dmarc=pass header.from=<safinaskar@zohomail.com>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1755781475;
+	s=zm2022; d=zohomail.com; i=safinaskar@zohomail.com;
+	h=Date:Date:From:From:To:To:Cc:Cc:Message-ID:In-Reply-To:References:Subject:Subject:MIME-Version:Content-Type:Content-Transfer-Encoding:Feedback-ID:Message-Id:Reply-To;
+	bh=SYHuj7Wjx5qXUTPgXJD1D8Eca4emv02OFlDqdIAxWXg=;
+	b=AXQ7SPKxUUopWeIvF7qQBZ7U4g0taKulTETxsoQoPfyom1vx/YMhl6nP5YCcK/zj
+	b74nczifLvROCOVksSFURwJTZ3ZGTInNUeJDjCipy7k9oHM2h3DDmi9gQ5QHA1GIQ/4
+	If6GaO7AjDGG5/1MAVWnSjteaxHi7J92Pi6jJ8vY=
+Received: from mail.zoho.com by mx.zohomail.com
+	with SMTP id 1755781473954167.9696619074616; Thu, 21 Aug 2025 06:04:33 -0700 (PDT)
+Received: from  [212.73.77.104] by mail.zoho.com
+	with HTTP;Thu, 21 Aug 2025 06:04:33 -0700 (PDT)
+Date: Thu, 21 Aug 2025 17:04:33 +0400
+From: Askar Safin <safinaskar@zohomail.com>
+To: "Christian Brauner" <brauner@kernel.org>
+Cc: "Lichen Liu" <lichliu@redhat.com>,
+	"linux-fsdevel" <linux-fsdevel@vger.kernel.org>,
+	"linux-kernel" <linux-kernel@vger.kernel.org>,
+	"kexec" <kexec@lists.infradead.org>, "rob" <rob@landley.net>,
+	"weilongchen" <weilongchen@huawei.com>, "cyphar" <cyphar@cyphar.com>,
+	"linux-api" <linux-api@vger.kernel.org>,
+	"zohar" <zohar@linux.ibm.com>, "stefanb" <stefanb@linux.ibm.com>,
+	"initramfs" <initramfs@vger.kernel.org>, "corbet" <corbet@lwn.net>,
+	"linux-doc" <linux-doc@vger.kernel.org>,
+	"viro" <viro@zeniv.linux.org.uk>, "jack" <jack@suse.cz>
+Message-ID: <198ccbb2694.d3fad31887413.1131652624698180933@zohomail.com>
+In-Reply-To: <20250821-zirkel-leitkultur-2653cba2cd5b@brauner>
+References: <20250815121459.3391223-1-lichliu@redhat.com> <20250821-zirkel-leitkultur-2653cba2cd5b@brauner>
 Subject: Re: [PATCH v2] fs: Add 'rootfsflags' to set rootfs mount options
-Date: Thu, 21 Aug 2025 10:24:11 +0200
-Message-ID: <20250821-zirkel-leitkultur-2653cba2cd5b@brauner>
-X-Mailer: git-send-email 2.47.2
-In-Reply-To: <20250815121459.3391223-1-lichliu@redhat.com>
-References: <20250815121459.3391223-1-lichliu@redhat.com>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1905; i=brauner@kernel.org; h=from:subject:message-id; bh=cLUbOqUr6cTb/vKgSfC31FXfcobLn5rCi7Usx5zRpc0=; b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQsuyF9J8I8+ZPI912RyxZ9nXK0nUlMZilruGDJHpOm7 9cirH4HdZSyMIhxMciKKbI4tJuEyy3nqdhslKkBM4eVCWQIAxenAEzE5BbDX+kbB6buCWFhtarJ sWE8wewxpUXp9twbsTPVd/5ZsXix9k9GhvNr7pbsmytTaOiSs/k6/9MrFlk+jBf5/2xw5Z0eo9v QwAcA
-X-Developer-Key: i=brauner@kernel.org; a=openpgp; fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+Importance: Medium
+User-Agent: Zoho Mail
+X-Mailer: Zoho Mail
+Feedback-ID: rr080112273e22f1786581338e49b7e07e000001104afa9c15ad2a122830cf688da2c59c8afe72e8c650ac99:zu080112272dfa6be1a67c778365ab64e5000011cfac17ec895c53b99647dbd1d7d4ef18c9ec956b108d8a70:rf0801122b9f962294dd4be519c8bf7647000010f904f79ddee4b424b1c5dbfae154f5453192b76d9278235c9b24def2:ZohoMail
 
-On Fri, 15 Aug 2025 20:14:59 +0800, Lichen Liu wrote:
-> When CONFIG_TMPFS is enabled, the initial root filesystem is a tmpfs.
-> By default, a tmpfs mount is limited to using 50% of the available RAM
-> for its content. This can be problematic in memory-constrained
-> environments, particularly during a kdump capture.
-> 
-> In a kdump scenario, the capture kernel boots with a limited amount of
-> memory specified by the 'crashkernel' parameter. If the initramfs is
-> large, it may fail to unpack into the tmpfs rootfs due to insufficient
-> space. This is because to get X MB of usable space in tmpfs, 2*X MB of
-> memory must be available for the mount. This leads to an OOM failure
-> during the early boot process, preventing a successful crash dump.
-> 
-> [...]
+ ---- On Thu, 21 Aug 2025 12:24:11 +0400  Christian Brauner <brauner@kernel.org> wrote --- 
+ > Applied to the vfs-6.18.misc branch of the vfs/vfs.git tree.
+ > Patches in the vfs-6.18.misc branch should appear in linux-next soon.
 
-This seems rather useful but I've renamed "rootfsflags" to
-"initramfs_options" because "rootfsflags" is ambiguous and it's not
-really just about flags.
+Applied version contains this:
+> Specify mount options for for the initramfs mount
 
-Other than that I think it would make sense to just raise the limit to
-90% for the root_fs_type mount. I'm not sure why this super privileged
-code would only be allowed 50% by default.
+I. e. "for" two times.
 
----
+--
+Askar Safin
+https://types.pl/@safinaskar
 
-Applied to the vfs-6.18.misc branch of the vfs/vfs.git tree.
-Patches in the vfs-6.18.misc branch should appear in linux-next soon.
-
-Please report any outstanding bugs that were missed during review in a
-new review to the original patch series allowing us to drop it.
-
-It's encouraged to provide Acked-bys and Reviewed-bys even though the
-patch has now been applied. If possible patch trailers will be updated.
-
-Note that commit hashes shown below are subject to change due to rebase,
-trailer updates or similar. If in doubt, please check the listed branch.
-
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git
-branch: vfs-6.18.misc
-
-[1/1] fs: Add 'rootfsflags' to set rootfs mount options
-      https://git.kernel.org/vfs/vfs/c/278033a225e1
