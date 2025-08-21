@@ -1,200 +1,105 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2E131326D5D
-	for <initramfs@vger.kernel.org>; Wed, 20 Aug 2025 15:17:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 940BA2EA49E;
+	Thu, 21 Aug 2025 08:26:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1755703057; cv=none; b=mnFFILvlds/zIrhbWwiMV77/sP0I7b46mcO7eTXlsF12sExndAtO0y08JPcd2tYhIFabo/ZWxP8pLg991D7ArtNHdoEE/hW4vtiRQ5aVc8NtJifXFQB0uHVXGiT2x01ik4tHcBxH6UaM5PThXmUjwe5Ehc12lbnXXm9hq8eRCus=
+	t=1755764774; cv=none; b=BKSPd2hBuVjsXZMr4uddGSRrQ0Of3Ntzj8GMENmaHdfm01KrQA6AQRnTDBeSDByISR/MzpNeg4CgPjyOj64wYTzc5V7aYX5WdA+uQfrSKjg7gLsDP5z2ukC5Atg8ALnAE8VtCYwwA33P1kH6L+4t/IcdUYhZIZPPoxZMTQkP4UM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1755703057; c=relaxed/simple;
-	bh=W4duEWOlM+udE5VNJ/zPTR+3z61gEew4hVyTyQpHZM4=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=M6koz//GNH5Nk1DIKIU+n3boSQvYmOpqk+/dpujU2F5eADTPHx0X7xi10y0jyBI6VpOvEu1bSUiHlOW1Y5O2RRG6aFIYbqhUZldDnYaQdS5YXnFgUYW0msSaduNIt2Gvfochhbb2ZllmuGzUG0TRV+twPSDiK4HU915BqSnDW90=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=XPnjKtZA; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1755764774; c=relaxed/simple;
+	bh=cLUbOqUr6cTb/vKgSfC31FXfcobLn5rCi7Usx5zRpc0=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=DJQ2g9VMLuSvJYwZILZ7Y/6/Hml00r+uii6JP38shCEttNUYpCMdJDCfHKNJxTUjArrTPel75lwHXUM05/Snhj2vIhNt9a6Iiw7kOygfbt4mDbclU9lg/Qf9Y9sl+qS0A6+Lax+dOjzG20Z+q7CUD1USilCI1NdXvoRTt39vYu8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KB/twgsA; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="XPnjKtZA"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1755703054;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=lwfU+IsVElt3h1n12yQUuhxkyKNo90VrK/DGR70vyVI=;
-	b=XPnjKtZACGjNqU2LY+VCKreoDDF6wSndHvqXVaBNUco1cSqLuhAF44oScNKH6ehZ3UHI8f
-	fDb0sKziN9t3UqSJsK4QWRYkzKnzqQpwmRafUTlE/ElSOgkVtgb0ie3QvMu1pHJBhWpbD7
-	LymjE4/RftnBue+nAE/7iSPsOdWRr4g=
-Received: from mail-qt1-f199.google.com (mail-qt1-f199.google.com
- [209.85.160.199]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-608-RJevZ-maPC6-opelV_yWjw-1; Wed, 20 Aug 2025 11:17:32 -0400
-X-MC-Unique: RJevZ-maPC6-opelV_yWjw-1
-X-Mimecast-MFC-AGG-ID: RJevZ-maPC6-opelV_yWjw_1755703052
-Received: by mail-qt1-f199.google.com with SMTP id d75a77b69052e-4b29a0b8a6aso638281cf.0
-        for <initramfs@vger.kernel.org>; Wed, 20 Aug 2025 08:17:32 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1755703052; x=1756307852;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=lwfU+IsVElt3h1n12yQUuhxkyKNo90VrK/DGR70vyVI=;
-        b=RtPgG8+Myb2zx5UjT0CFDkAntCB+pbDE1PExba4luxEAhtG2kHDJpGEtNYz0JFKylJ
-         +UoIVkFOqyNmjHn6vPxmvphY0qe2YJPq5INB3AasyhqVa5qe4KEFIhh5fULI6TZsKf9I
-         N4xSOLZZXtOwXAZThhpYhUWI4etpHfPXe8bgWfk5uMi5SK/c0+YhdrPLlYhRD2dLxczP
-         YdGUxvB3esw9hOGhhCdv4czQmFY72+IL+kUsULENKUfUXfq844TpQma4+oLfR0WRyD9n
-         olLe1GWGjL8AaQNfaD5SUF6zVE5YTtKwSBnnn5/UpDaTtdNh98AWLE1K++3Tvq7w90m6
-         1zEA==
-X-Forwarded-Encrypted: i=1; AJvYcCVZ0ZaffewsWMPEm/1oHGDr+jV+xXfJx99akDawaYNVnGOuzVce2iIyEvfGvX7jM1mmlUVT3yazxcI=@vger.kernel.org
-X-Gm-Message-State: AOJu0YzZrx5oOesMGGWO6EKUk8L/HVpsh7IX0IDvYMAziPYJfl1jHrTl
-	xbYln3aT5zGOlHl8SUWr2dmLTx24ehqy3kMCjF2EXj4NXnEDxF6GLvc8GPIrIhZjZtGebFqScM9
-	INkn7S4CgHvRpKZDCO8D76YRt5diT60RZ+Iwddc0TheW3quN0l9ujB6f7/SqjwCY/3woQl1sTOq
-	VQe/fHrMStBSd/Fdj8Hdb6NPX5X/ublttbN5i+
-X-Gm-Gg: ASbGnctig1Q0Fpf4rcfTF9g01ahJ3S2uMbP/iMU5domwQyp1QJiaDdsslZWvBUSBtyN
-	HitQuKyJSg/8HE7jDOaprW+DwDs7apN84aCMT3R3L7AxBTSYqBwlSkqytoFbSI5s/KEXgKkTlsJ
-	LgPCbrVtxnpFlcWTNbuS4RM0SfooLdcdrA9t0QPe6wuye546TrNx7L
-X-Received: by 2002:a05:622a:5c93:b0:4af:203f:73e9 with SMTP id d75a77b69052e-4b291a45948mr38268821cf.3.1755703051778;
-        Wed, 20 Aug 2025 08:17:31 -0700 (PDT)
-X-Google-Smtp-Source: AGHT+IHgNNXQPsAlJCg5PdYpqbUQjKk2La90rXTiB/Xg+AFCp6PDdl0eXQ9VodkzneYLfMLO6npPB65IGBnQ/QO7tyQ=
-X-Received: by 2002:a05:622a:5c93:b0:4af:203f:73e9 with SMTP id
- d75a77b69052e-4b291a45948mr38268261cf.3.1755703051224; Wed, 20 Aug 2025
- 08:17:31 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KB/twgsA"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8AD01C4CEEB;
+	Thu, 21 Aug 2025 08:26:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1755764774;
+	bh=cLUbOqUr6cTb/vKgSfC31FXfcobLn5rCi7Usx5zRpc0=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=KB/twgsA/CTVnp586RP3GyuIdvA0EyWAAu+91jwzNtpbYbFOXHSU+jhu4roGlyYaB
+	 BxV+AOwx9I0X+6uSH1kDHGrWRCz5VW4AjFllgPvHKsWA5GjEhBoTsBtmc2sQ09hzK5
+	 jQuxubCyXuxk/Fe2zDo0iQi/7yW6zxEmdnetP1tMY7f7jUGykW5edx68Zmf5wRLqM1
+	 AaGdKlxJfMGHLS7Dw6iFgcgxUCI0acFJ+cmRXj/ME/nXBKoswdmAChcBH49jSUT7AT
+	 nNClgUYNQbD/ibAssVpOs7cjGiJbe9NxlKJR5WwEypQ96O8gqU8pcz1UxbhkZGpIi3
+	 Vsg9b0HqcCtvA==
+From: Christian Brauner <brauner@kernel.org>
+To: Lichen Liu <lichliu@redhat.com>
+Cc: Christian Brauner <brauner@kernel.org>,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	safinaskar@zohomail.com,
+	kexec@lists.infradead.org,
+	rob@landley.net,
+	weilongchen@huawei.com,
+	cyphar@cyphar.com,
+	linux-api@vger.kernel.org,
+	zohar@linux.ibm.com,
+	stefanb@linux.ibm.com,
+	initramfs@vger.kernel.org,
+	corbet@lwn.net,
+	linux-doc@vger.kernel.org,
+	viro@zeniv.linux.org.uk,
+	jack@suse.cz
+Subject: Re: [PATCH v2] fs: Add 'rootfsflags' to set rootfs mount options
+Date: Thu, 21 Aug 2025 10:24:11 +0200
+Message-ID: <20250821-zirkel-leitkultur-2653cba2cd5b@brauner>
+X-Mailer: git-send-email 2.47.2
+In-Reply-To: <20250815121459.3391223-1-lichliu@redhat.com>
+References: <20250815121459.3391223-1-lichliu@redhat.com>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250815121459.3391223-1-lichliu@redhat.com>
-In-Reply-To: <20250815121459.3391223-1-lichliu@redhat.com>
-From: Lichen Liu <lichliu@redhat.com>
-Date: Wed, 20 Aug 2025 23:17:20 +0800
-X-Gm-Features: Ac12FXz5J-qsSNe_dCy4Is9oFh6XR_1xsHJhV6_kkHN0LaUVbdz8uoGPSmN-wtU
-Message-ID: <CAPmSd0OHB3orya=3V1icz4ZzOoAwHuWTqON_Dk+EaEcACtVtbg@mail.gmail.com>
-Subject: Re: [PATCH v2] fs: Add 'rootfsflags' to set rootfs mount options
-To: viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	safinaskar@zohomail.com, kexec@lists.infradead.org, rob@landley.net, 
-	weilongchen@huawei.com, cyphar@cyphar.com, linux-api@vger.kernel.org, 
-	zohar@linux.ibm.com, stefanb@linux.ibm.com, initramfs@vger.kernel.org, 
-	corbet@lwn.net, linux-doc@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1905; i=brauner@kernel.org; h=from:subject:message-id; bh=cLUbOqUr6cTb/vKgSfC31FXfcobLn5rCi7Usx5zRpc0=; b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQsuyF9J8I8+ZPI912RyxZ9nXK0nUlMZilruGDJHpOm7 9cirH4HdZSyMIhxMciKKbI4tJuEyy3nqdhslKkBM4eVCWQIAxenAEzE5BbDX+kbB6buCWFhtarJ sWE8wewxpUXp9twbsTPVd/5ZsXix9k9GhvNr7pbsmytTaOiSs/k6/9MrFlk+jBf5/2xw5Z0eo9v QwAcA
+X-Developer-Key: i=brauner@kernel.org; a=openpgp; fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
+Content-Transfer-Encoding: 8bit
 
-Hi all, do you have any comments for this v2 patch?
-
-Thanks,
-Lichen
-
-On Fri, Aug 15, 2025 at 8:15=E2=80=AFPM Lichen Liu <lichliu@redhat.com> wro=
-te:
->
+On Fri, 15 Aug 2025 20:14:59 +0800, Lichen Liu wrote:
 > When CONFIG_TMPFS is enabled, the initial root filesystem is a tmpfs.
 > By default, a tmpfs mount is limited to using 50% of the available RAM
 > for its content. This can be problematic in memory-constrained
 > environments, particularly during a kdump capture.
->
+> 
 > In a kdump scenario, the capture kernel boots with a limited amount of
 > memory specified by the 'crashkernel' parameter. If the initramfs is
 > large, it may fail to unpack into the tmpfs rootfs due to insufficient
 > space. This is because to get X MB of usable space in tmpfs, 2*X MB of
 > memory must be available for the mount. This leads to an OOM failure
 > during the early boot process, preventing a successful crash dump.
->
-> This patch introduces a new kernel command-line parameter, rootfsflags,
-> which allows passing specific mount options directly to the rootfs when
-> it is first mounted. This gives users control over the rootfs behavior.
->
-> For example, a user can now specify rootfsflags=3Dsize=3D75% to allow the
-> tmpfs to use up to 75% of the available memory. This can significantly
-> reduce the memory pressure for kdump.
->
-> Consider a practical example:
->
-> To unpack a 48MB initramfs, the tmpfs needs 48MB of usable space. With
-> the default 50% limit, this requires a memory pool of 96MB to be
-> available for the tmpfs mount. The total memory requirement is therefore
-> approximately: 16MB (vmlinuz) + 48MB (loaded initramfs) + 48MB (unpacked
-> kernel) + 96MB (for tmpfs) + 12MB (runtime overhead) =E2=89=88 220MB.
->
-> By using rootfsflags=3Dsize=3D75%, the memory pool required for the 48MB
-> tmpfs is reduced to 48MB / 0.75 =3D 64MB. This reduces the total memory
-> requirement by 32MB (96MB - 64MB), allowing the kdump to succeed with a
-> smaller crashkernel size, such as 192MB.
->
-> An alternative approach of reusing the existing rootflags parameter was
-> considered. However, a new, dedicated rootfsflags parameter was chosen
-> to avoid altering the current behavior of rootflags (which applies to
-> the final root filesystem) and to prevent any potential regressions.
->
-> Also add documentation for the new kernel parameter "rootfsflags"
->
-> This approach is inspired by prior discussions and patches on the topic.
-> Ref: https://www.lightofdawn.org/blog/?viewDetailed=3D00128
-> Ref: https://landley.net/notes-2015.html#01-01-2015
-> Ref: https://lkml.org/lkml/2021/6/29/783
-> Ref: https://www.kernel.org/doc/html/latest/filesystems/ramfs-rootfs-init=
-ramfs.html#what-is-rootfs
->
-> Signed-off-by: Lichen Liu <lichliu@redhat.com>
-> Tested-by: Rob Landley <rob@landley.net>
-> ---
-> Changes in v2:
->   - Add documentation for the new kernel parameter.
->
->  Documentation/admin-guide/kernel-parameters.txt |  3 +++
->  fs/namespace.c                                  | 11 ++++++++++-
->  2 files changed, 13 insertions(+), 1 deletion(-)
->
-> diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentat=
-ion/admin-guide/kernel-parameters.txt
-> index fb8752b42ec8..0c00f651d431 100644
-> --- a/Documentation/admin-guide/kernel-parameters.txt
-> +++ b/Documentation/admin-guide/kernel-parameters.txt
-> @@ -6220,6 +6220,9 @@
->
->         rootflags=3D      [KNL] Set root filesystem mount option string
->
-> +       rootfsflags=3D    [KNL] Set initial root filesystem mount option =
-string
-> +                       (e.g. tmpfs for initramfs)
-> +
->         rootfstype=3D     [KNL] Set root filesystem type
->
->         rootwait        [KNL] Wait (indefinitely) for root device to show=
- up.
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 8f1000f9f3df..e484c26d5e3f 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -65,6 +65,15 @@ static int __init set_mphash_entries(char *str)
->  }
->  __setup("mphash_entries=3D", set_mphash_entries);
->
-> +static char * __initdata rootfs_flags;
-> +static int __init rootfs_flags_setup(char *str)
-> +{
-> +       rootfs_flags =3D str;
-> +       return 1;
-> +}
-> +
-> +__setup("rootfsflags=3D", rootfs_flags_setup);
-> +
->  static u64 event;
->  static DEFINE_XARRAY_FLAGS(mnt_id_xa, XA_FLAGS_ALLOC);
->  static DEFINE_IDA(mnt_group_ida);
-> @@ -5677,7 +5686,7 @@ static void __init init_mount_tree(void)
->         struct mnt_namespace *ns;
->         struct path root;
->
-> -       mnt =3D vfs_kern_mount(&rootfs_fs_type, 0, "rootfs", NULL);
-> +       mnt =3D vfs_kern_mount(&rootfs_fs_type, 0, "rootfs", rootfs_flags=
-);
->         if (IS_ERR(mnt))
->                 panic("Can't create rootfs");
->
-> --
-> 2.47.0
->
+> 
+> [...]
 
+This seems rather useful but I've renamed "rootfsflags" to
+"initramfs_options" because "rootfsflags" is ambiguous and it's not
+really just about flags.
+
+Other than that I think it would make sense to just raise the limit to
+90% for the root_fs_type mount. I'm not sure why this super privileged
+code would only be allowed 50% by default.
+
+---
+
+Applied to the vfs-6.18.misc branch of the vfs/vfs.git tree.
+Patches in the vfs-6.18.misc branch should appear in linux-next soon.
+
+Please report any outstanding bugs that were missed during review in a
+new review to the original patch series allowing us to drop it.
+
+It's encouraged to provide Acked-bys and Reviewed-bys even though the
+patch has now been applied. If possible patch trailers will be updated.
+
+Note that commit hashes shown below are subject to change due to rebase,
+trailer updates or similar. If in doubt, please check the listed branch.
+
+tree:   https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git
+branch: vfs-6.18.misc
+
+[1/1] fs: Add 'rootfsflags' to set rootfs mount options
+      https://git.kernel.org/vfs/vfs/c/278033a225e1
