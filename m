@@ -1,24 +1,65 @@
-Received: from smtp2-g21.free.fr (smtp2-g21.free.fr [212.27.42.2])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4017C30DECA;
-	Thu, 18 Sep 2025 15:29:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.27.42.2
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EDAFB306B0C
+	for <initramfs@vger.kernel.org>; Thu, 18 Sep 2025 19:58:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758209388; cv=none; b=WYq6KGHeiw8+Fr6IUeDir0CP34mWhD+5qQVhSn06o8SHUGC5cG+xivNKwFjfhs6TJ+h3N0mVb8MeApCdITR+8AH3yUNZuIrLvWEQLyfCJhduGGXHg88ORagUopM8jN74TDYNkWqxFIn+JQ/u5LdVaF+UQbkKUh9wjxNOc4L/FJQ=
+	t=1758225501; cv=none; b=TECjGKViz7LzuuWq4AU1Gy9PhUoV1M71KFHGyZX4CLGIzo6C43xMvGIXAxZrrH2vbyHVKkPwCAGs6d0wsJm406Y9qZZURx2OyxPAhXA2eGrxHAKPMbldAFCJu4UvCs2a47+sAdXqrIk6tz4t+7X8L+G1KE3vMPFq5vrN0z7Kzuo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758209388; c=relaxed/simple;
-	bh=1E1TtPIzWv3UVjPPN5oafjjL60AY6+jP9kR4QCfSNnU=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=PvGhCB0dzmwbkI77atdqyqReCeWamBfqjA3tAz4g9JGvz47TSOUXF7kFb9qaxjyBgfsCtN0RT5EFFcvG0igUUb2IpMn1llfTor0uONxBC09z8nci0HSl6jMjCSKZXjRNF8gbpefQC6MHYMrcxRAy3RyqLHO75Z3hJqUOfuKP3OM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=freebox.fr; spf=fail smtp.mailfrom=freebox.fr; arc=none smtp.client-ip=212.27.42.2
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=freebox.fr
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=freebox.fr
-Received: from daria.iliad.local (unknown [213.36.7.13])
-	by smtp2-g21.free.fr (Postfix) with ESMTP id 179252003FC;
-	Thu, 18 Sep 2025 17:28:31 +0200 (CEST)
-From: Nicolas Schichan <nschichan@freebox.fr>
-To: safinaskar@gmail.com
+	s=arc-20240116; t=1758225501; c=relaxed/simple;
+	bh=hrTKVKMuOKbLilzSA+VEl+XSSF0VIocT2KvCzkuRjcw=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=iOuqnDzSzpuJaC2/tq+y/FVG5rKb8WjzIN7s8k88xlpScA+wM1je5TtdYOY4AuOLC3ckdBwc2YsTrIZzjCCzDtgBCrLnz9bA4sWYvwoCUfPxAVZx+VBynuY8+SXJO83FCAmd7tB8gxpxztlxZvROovMR53HusW/fkMh9wId1MPk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=hNlT1dRM; arc=none smtp.client-ip=209.85.218.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hNlT1dRM"
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-b211ccfda1dso182202366b.3
+        for <initramfs@vger.kernel.org>; Thu, 18 Sep 2025 12:58:17 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1758225496; x=1758830296; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=9McvDjxp1cOQ8m8DQ7zr8KAOkClRv+R613f7KwPZqLk=;
+        b=hNlT1dRMFhV3nNEO8OCPXfEiZjy7HadMXu4vRgp3Ipj8QW/pTjkxFRxYZEa69pe80J
+         R5WZR6uBlmeIbF+VQhBUi3wnRJuDxh3ZSYPm2HtEzHdmYgYFzaLOTkBNZpxqwUsXFCi5
+         xh48TC/I8mOWxP2I4D6qthvi1wAkVJadHw9+Q6aETqCdcS+tzshGNcO1qODnTVXpUxR3
+         DzGuLf7FRf7YNLECrqzb9ayMBLdTqRvBk0ivmzKueGmRkmu1GRq1Uqn5Uc0kg8EqXgPJ
+         5wCj9Urjk2M3jfgX+oYXsBuDx3I+zNM2GW5fMn6rB/kk6qlx/ZV55XBxceRxo80pIEfP
+         n68Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1758225496; x=1758830296;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=9McvDjxp1cOQ8m8DQ7zr8KAOkClRv+R613f7KwPZqLk=;
+        b=b0QxhnukzCzJnHuTMk45fj/BI/8NuJ8i+oBLj/MHDzRZv7wfZNdZ+8Gel28JFdCzfh
+         5n5cgt2ssONlZmP3D3dL5eVVu0j1Pl6moBjtMKbCT0HU14XrfB6mL+Gm85VG4Y1I+zHv
+         ptJs6yVzjKxlZB/MPhqp4ELG6Eaj6CCKQNqq7H88nRmO9/m9BdZqUWmU7aVLWKA8djdT
+         ek0Fl+2PyLHK8fwOJd1uoZaFlEEYUklkCRPWorXwpYzt6iD0NtxRdhQZNCAI2v3j38R8
+         eq9P7QZLLozY/Q40xg07usmYtEwUg3WTfSjHvImtScKBiI3MtuD1LVrq7Af247PjRbNx
+         rQDw==
+X-Forwarded-Encrypted: i=1; AJvYcCWB6Ic4+DWkkH3sTZtygDVcxclqBY4SNRKrP/krH6CXFYEEbeLUX6+6v5vfeVmeLalHNtOc7ylUdJ4=@vger.kernel.org
+X-Gm-Message-State: AOJu0YyBKsiZ06pZMvL237qsOg73GJqWtJb1L4zAz9ibPPufXZDj2uE0
+	MCF+A08Y0+QYTNZB4vfqgTtTTBVAKkLGXojDSM6miZNu8uVKP/5YJTDn
+X-Gm-Gg: ASbGncuTaLWog4mFC4CccddXDoTK+kvZdIUSZd4DinJvLGeDr9X/DB0d131R91kZ8Un
+	1hlq+lzAl5FuxSL9F95LreF6n+hp2rioioiQPoIFEeTfvAEaVtTJc4rqWZ0JiLpVitVM8IZO879
+	81kbeHWwCnF5moqRVayL47Ozbfq4ltxnojSyaIeb/IvoaDHTvnD5pq2uW6OHzvBuNZfi0zgGwl5
+	lrqIj2BQHitvmiaen3ofqq8769VSNhK95P3WovmVQ7fF07teTjOTnpUi7MFOUFAGUVkHsZYHW/M
+	Ep9bFoYk4Zyta8XppvH/2uJp2/9eTM+/KKGTPRQeuwkkSoc55dcR+LO/z+NfH+Rc/iw0zk+zcBZ
+	PtTQHjlj0CrKx1wIFOYpOz0sYWC+28sM9pGiv4Q==
+X-Google-Smtp-Source: AGHT+IH2NBu6L+bASXNqg9sJUcZ42MFCB2aqzEFiqoDEW6um54A4CtHcJnO37auTgFbi6nwycKDm8A==
+X-Received: by 2002:a17:907:a089:b0:b19:969a:86 with SMTP id a640c23a62f3a-b24f35aa177mr45885966b.37.1758225496090;
+        Thu, 18 Sep 2025 12:58:16 -0700 (PDT)
+Received: from localhost ([212.73.77.104])
+        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b1fd1101c44sm264530466b.82.2025.09.18.12.58.11
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 18 Sep 2025 12:58:15 -0700 (PDT)
+From: Askar Safin <safinaskar@gmail.com>
+To: nschichan@freebox.fr
 Cc: akpm@linux-foundation.org,
 	andy.shevchenko@gmail.com,
 	axboe@kernel.dk,
@@ -66,20 +107,20 @@ Cc: akpm@linux-foundation.org,
 	mzxreary@0pointer.de,
 	patches@lists.linux.dev,
 	rob@landley.net,
+	safinaskar@gmail.com,
 	sparclinux@vger.kernel.org,
 	thomas.weissschuh@linutronix.de,
 	thorsten.blum@linux.dev,
 	torvalds@linux-foundation.org,
 	tytso@mit.edu,
 	viro@zeniv.linux.org.uk,
-	x86@kernel.org,
-	nschichan@freebox.fr
+	x86@kernel.org
 Subject: Re: [PATCH RESEND 00/62] initrd: remove classic initrd support
-Date: Thu, 18 Sep 2025 17:28:30 +0200
-Message-Id: <20250918152830.438554-1-nschichan@freebox.fr>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20250913003842.41944-1-safinaskar@gmail.com>
-References: <20250913003842.41944-1-safinaskar@gmail.com>
+Date: Thu, 18 Sep 2025 22:58:06 +0300
+Message-ID: <20250918195806.6337-1-safinaskar@gmail.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <20250918152830.438554-1-nschichan@freebox.fr>
+References: <20250918152830.438554-1-nschichan@freebox.fr>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -88,47 +129,18 @@ List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Hello,
+> When booting with root=/dev/ram0 in the kernel commandline,
+> handle_initrd() where the deprecation message resides is never called,
+> which is rather unfortunate (init/do_mounts_initrd.c):
 
-> Intro
-> ====
-> This patchset removes classic initrd (initial RAM disk) support,
-> which was deprecated in 2020.
+Yes, this is unfortunate.
 
-This serie came a bit as a surprise, because even though the message
-notifying of the initrd deprecation was added in July 2020, the message
-was never displayed on our kernels.
+I personally still think that initrd should be removed.
 
-When booting with root=/dev/ram0 in the kernel commandline,
-handle_initrd() where the deprecation message resides is never called,
-which is rather unfortunate (init/do_mounts_initrd.c):
+I suggest using workaround I described in cover letter.
 
-	if (rd_load_image("/initrd.image") && ROOT_DEV != Root_RAM0) {
-		init_unlink("/initrd.image");
-		handle_initrd(root_device_name); // shows the deprecation msg
-		return true;
-	}
-
-It is likely we are not the alone booting with that particular
-configuration, so other people are probably going to be surprised when
-initrd support is removed, because they never saw the deprecation
-message.
-
-We do depend on initrd support a lot on our embedded platforms (more
-than a million devices with a yearlyish upgrade to the latest
-kernel). If it eventually becomes removed this is going to impact us.
-
-We use an initrd squashfs4 image, because coming from a time where
-embedded flash devices were fragile, we avoid having the root
-filesystem directly mounted (even when read only) on the flash
-block/mtd device, and have the bootloader load the root filesystem as
-an initrd.
-
-We use a squashfs4 because we can mount it and keep it compressed. The
-kernel would decompress data on demand in the page cache, and evict it
-as needed.
-
-Regards,
+Also, for unknown reasons I didn't get your letter in my inbox.
+(Not even in spam folder.) I ocasionally found it on lore.kernel.org .
 
 -- 
-Nicolas Schichan
+Askar Safin
