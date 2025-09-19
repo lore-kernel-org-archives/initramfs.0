@@ -1,146 +1,131 @@
-Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
+Received: from mail-lf1-f47.google.com (mail-lf1-f47.google.com [209.85.167.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EDAFB306B0C
-	for <initramfs@vger.kernel.org>; Thu, 18 Sep 2025 19:58:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C5304318143
+	for <initramfs@vger.kernel.org>; Fri, 19 Sep 2025 15:25:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1758225501; cv=none; b=TECjGKViz7LzuuWq4AU1Gy9PhUoV1M71KFHGyZX4CLGIzo6C43xMvGIXAxZrrH2vbyHVKkPwCAGs6d0wsJm406Y9qZZURx2OyxPAhXA2eGrxHAKPMbldAFCJu4UvCs2a47+sAdXqrIk6tz4t+7X8L+G1KE3vMPFq5vrN0z7Kzuo=
+	t=1758295505; cv=none; b=RXZUGtXq1Teql0POM6eD2bPRj+PEtv5quBQgZSNxjQSMs2m3IpCRGyCBUWpiIQE4YZV90NE+US4/04/cX00Yf3pixXrRgOzJ8CLgUF6iRZy9ainPkBh/ZHSL31f8Ve0PlDDdUbzySifCqIsDT37cG5NV57P9FfGfUTOrbbS1WZw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1758225501; c=relaxed/simple;
-	bh=hrTKVKMuOKbLilzSA+VEl+XSSF0VIocT2KvCzkuRjcw=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=iOuqnDzSzpuJaC2/tq+y/FVG5rKb8WjzIN7s8k88xlpScA+wM1je5TtdYOY4AuOLC3ckdBwc2YsTrIZzjCCzDtgBCrLnz9bA4sWYvwoCUfPxAVZx+VBynuY8+SXJO83FCAmd7tB8gxpxztlxZvROovMR53HusW/fkMh9wId1MPk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=hNlT1dRM; arc=none smtp.client-ip=209.85.218.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1758295505; c=relaxed/simple;
+	bh=tIBWHHOOKfm2qL1G0oNEg1lQ/EY8RTTkm2B9w+25Bvk=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=XQTZHvCUoLrihlQM/OuyjS6vG6XwCmRBP/PAntNe2cCFb0I7rFtXhS21gy8GlDvp89MRhU8UcIkik2ABRuiIwOCdL+elwZ688fFWNGQVvnKvnKHuES5yeLSFrzFxgkzyQeA8Q+CRY108/sBOI4jAqaBIgR12XMO8WLIHr3HTSTs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=freebox.fr; spf=pass smtp.mailfrom=freebox.fr; dkim=pass (2048-bit key) header.d=freebox-fr.20230601.gappssmtp.com header.i=@freebox-fr.20230601.gappssmtp.com header.b=xbo3W1UF; arc=none smtp.client-ip=209.85.167.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=freebox.fr
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=freebox.fr
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hNlT1dRM"
-Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-b211ccfda1dso182202366b.3
-        for <initramfs@vger.kernel.org>; Thu, 18 Sep 2025 12:58:17 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=freebox-fr.20230601.gappssmtp.com header.i=@freebox-fr.20230601.gappssmtp.com header.b="xbo3W1UF"
+Received: by mail-lf1-f47.google.com with SMTP id 2adb3069b0e04-577dd4c1e84so2840535e87.0
+        for <initramfs@vger.kernel.org>; Fri, 19 Sep 2025 08:25:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1758225496; x=1758830296; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=9McvDjxp1cOQ8m8DQ7zr8KAOkClRv+R613f7KwPZqLk=;
-        b=hNlT1dRMFhV3nNEO8OCPXfEiZjy7HadMXu4vRgp3Ipj8QW/pTjkxFRxYZEa69pe80J
-         R5WZR6uBlmeIbF+VQhBUi3wnRJuDxh3ZSYPm2HtEzHdmYgYFzaLOTkBNZpxqwUsXFCi5
-         xh48TC/I8mOWxP2I4D6qthvi1wAkVJadHw9+Q6aETqCdcS+tzshGNcO1qODnTVXpUxR3
-         DzGuLf7FRf7YNLECrqzb9ayMBLdTqRvBk0ivmzKueGmRkmu1GRq1Uqn5Uc0kg8EqXgPJ
-         5wCj9Urjk2M3jfgX+oYXsBuDx3I+zNM2GW5fMn6rB/kk6qlx/ZV55XBxceRxo80pIEfP
-         n68Q==
+        d=freebox-fr.20230601.gappssmtp.com; s=20230601; t=1758295500; x=1758900300; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=EztjVQ+y07YMfegmHOd0VyK62XkODMWu0LdNE29WAS0=;
+        b=xbo3W1UFpKFkZ1p3cmir9bHExoubmn+zN65uKZIOYM/VNr4k3So7pYfDI6mX/D9Xs7
+         tKrFxrKGsa1OUV4/BaJm81tBW61J4ZGYYxqxZFHL+2WJXFRTEp/mhXDIaLf+cQRcgUXe
+         AYqPNZvLbxLN1AyYo7ig5n8eVxO+iPi1huE+4hW6lV7MZkf7YHIdjHXfXdto2VLmATJZ
+         knqRg3MYiebrHRGL5TV4krfrv3EaVDwqo3YKPYYlEuRSeFOsywbR4G16hcwfzRVUvkmK
+         +8rrea1TuR59LvTS19HlGLqGt+kLHJ+F5+322OVOV6/84SIcgYqHnsi5cc3ulWFd4ja5
+         pnpg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1758225496; x=1758830296;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=9McvDjxp1cOQ8m8DQ7zr8KAOkClRv+R613f7KwPZqLk=;
-        b=b0QxhnukzCzJnHuTMk45fj/BI/8NuJ8i+oBLj/MHDzRZv7wfZNdZ+8Gel28JFdCzfh
-         5n5cgt2ssONlZmP3D3dL5eVVu0j1Pl6moBjtMKbCT0HU14XrfB6mL+Gm85VG4Y1I+zHv
-         ptJs6yVzjKxlZB/MPhqp4ELG6Eaj6CCKQNqq7H88nRmO9/m9BdZqUWmU7aVLWKA8djdT
-         ek0Fl+2PyLHK8fwOJd1uoZaFlEEYUklkCRPWorXwpYzt6iD0NtxRdhQZNCAI2v3j38R8
-         eq9P7QZLLozY/Q40xg07usmYtEwUg3WTfSjHvImtScKBiI3MtuD1LVrq7Af247PjRbNx
-         rQDw==
-X-Forwarded-Encrypted: i=1; AJvYcCWB6Ic4+DWkkH3sTZtygDVcxclqBY4SNRKrP/krH6CXFYEEbeLUX6+6v5vfeVmeLalHNtOc7ylUdJ4=@vger.kernel.org
-X-Gm-Message-State: AOJu0YyBKsiZ06pZMvL237qsOg73GJqWtJb1L4zAz9ibPPufXZDj2uE0
-	MCF+A08Y0+QYTNZB4vfqgTtTTBVAKkLGXojDSM6miZNu8uVKP/5YJTDn
-X-Gm-Gg: ASbGncuTaLWog4mFC4CccddXDoTK+kvZdIUSZd4DinJvLGeDr9X/DB0d131R91kZ8Un
-	1hlq+lzAl5FuxSL9F95LreF6n+hp2rioioiQPoIFEeTfvAEaVtTJc4rqWZ0JiLpVitVM8IZO879
-	81kbeHWwCnF5moqRVayL47Ozbfq4ltxnojSyaIeb/IvoaDHTvnD5pq2uW6OHzvBuNZfi0zgGwl5
-	lrqIj2BQHitvmiaen3ofqq8769VSNhK95P3WovmVQ7fF07teTjOTnpUi7MFOUFAGUVkHsZYHW/M
-	Ep9bFoYk4Zyta8XppvH/2uJp2/9eTM+/KKGTPRQeuwkkSoc55dcR+LO/z+NfH+Rc/iw0zk+zcBZ
-	PtTQHjlj0CrKx1wIFOYpOz0sYWC+28sM9pGiv4Q==
-X-Google-Smtp-Source: AGHT+IH2NBu6L+bASXNqg9sJUcZ42MFCB2aqzEFiqoDEW6um54A4CtHcJnO37auTgFbi6nwycKDm8A==
-X-Received: by 2002:a17:907:a089:b0:b19:969a:86 with SMTP id a640c23a62f3a-b24f35aa177mr45885966b.37.1758225496090;
-        Thu, 18 Sep 2025 12:58:16 -0700 (PDT)
-Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b1fd1101c44sm264530466b.82.2025.09.18.12.58.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 18 Sep 2025 12:58:15 -0700 (PDT)
-From: Askar Safin <safinaskar@gmail.com>
-To: nschichan@freebox.fr
-Cc: akpm@linux-foundation.org,
-	andy.shevchenko@gmail.com,
-	axboe@kernel.dk,
-	brauner@kernel.org,
-	cyphar@cyphar.com,
-	devicetree@vger.kernel.org,
-	ecurtin@redhat.com,
-	email2tema@gmail.com,
-	graf@amazon.com,
-	gregkh@linuxfoundation.org,
-	hca@linux.ibm.com,
-	hch@lst.de,
-	hsiangkao@linux.alibaba.com,
-	initramfs@vger.kernel.org,
-	jack@suse.cz,
-	julian.stecklina@cyberus-technology.de,
-	kees@kernel.org,
-	linux-acpi@vger.kernel.org,
-	linux-alpha@vger.kernel.org,
-	linux-api@vger.kernel.org,
-	linux-arch@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org,
-	linux-block@vger.kernel.org,
-	linux-csky@vger.kernel.org,
-	linux-doc@vger.kernel.org,
-	linux-efi@vger.kernel.org,
-	linux-ext4@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-hexagon@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org,
-	linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org,
-	linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-snps-arc@lists.infradead.org,
-	linux-um@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org,
-	loongarch@lists.linux.dev,
-	mcgrof@kernel.org,
-	mingo@redhat.com,
-	monstr@monstr.eu,
-	mzxreary@0pointer.de,
-	patches@lists.linux.dev,
-	rob@landley.net,
-	safinaskar@gmail.com,
-	sparclinux@vger.kernel.org,
-	thomas.weissschuh@linutronix.de,
-	thorsten.blum@linux.dev,
-	torvalds@linux-foundation.org,
-	tytso@mit.edu,
-	viro@zeniv.linux.org.uk,
-	x86@kernel.org
-Subject: Re: [PATCH RESEND 00/62] initrd: remove classic initrd support
-Date: Thu, 18 Sep 2025 22:58:06 +0300
-Message-ID: <20250918195806.6337-1-safinaskar@gmail.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20250918152830.438554-1-nschichan@freebox.fr>
-References: <20250918152830.438554-1-nschichan@freebox.fr>
+        d=1e100.net; s=20230601; t=1758295500; x=1758900300;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=EztjVQ+y07YMfegmHOd0VyK62XkODMWu0LdNE29WAS0=;
+        b=vXmB6RH+UGK7qwPJNCFSgagIbubgDq8ro+NDW+kNkiZnVltjO3fDGWecoq1gJzQM/R
+         sQbi28z8HdrPlXGYrIOrdT7trRet/Z0NqKdw2+b/8+hV7t1qPivYahV+925c9IybviLB
+         LRYRVeB/MPjd9bc2ldfUpcJqXAoK5+tfiMRjuISy4hea6GJRX0Ot8KVbspKLByc8woL+
+         AAbqoVhu7/sSigPEl+0NKt4XmDOI5OGzqfkd1SDDOmVRBqt0LM3HM34NWb7dc0QhKmXT
+         QIgKAAbFfjxBQAxPXZrl60yMUJ8adohRFzIEAECABKhMOoO3Qym4VH3rao38poRUMn2j
+         YGOg==
+X-Forwarded-Encrypted: i=1; AJvYcCW28+29lvby2Js0ZURdd2PaIFc0JuPHwqGtVwke0CU6Nf0iFj80jFdpogiKxmNpD0FG1ZJ5qI/kp8I=@vger.kernel.org
+X-Gm-Message-State: AOJu0YymiJ3aR74EVmYEK9YKWMOHTUY3m6HpjoSYRqS8/RpSMXXGcFMb
+	VxqBYOSr7JrJqWaaeYH97jjskFP63VJmMN4i4IBPRkc90yJRpmV8JC+RkCfxPpLNVC1+XF6yJL9
+	uvtXlS1TDB7UlFmgrPwGt2Wdkv9OVfIBr9bSxTSSzwQ==
+X-Gm-Gg: ASbGncs83RAWYYmAqBATV8XGmVZdRGfUAZXmSsqk+Ihu42mkUXc9vt/YWlKRK9YrOJI
+	L/M+CLxY4Kd3xmJCGgSI62mWSrECCQb8iXgOxhvrol+FQPs9BtUrbgTv68xDQr0y3xQMLPHCqJa
+	Y7usBtNRY3JZs9kplI5ojlzvbTraZk3mx78uCy3gEYgYQkTpPgsRp7h/6Pq+39f++hVW1qLlFFM
+	BTzwE2YRIRe9ZU=
+X-Google-Smtp-Source: AGHT+IHin4gQus9SrkFEog2pTedfunr2Ers950l0f82oxrEtfjemfexmsAorW/Dsqdjvay/GpFMt6pfW/hwC+qBHF14=
+X-Received: by 2002:a05:6512:2c0b:b0:571:b70b:7dbf with SMTP id
+ 2adb3069b0e04-579e2507c81mr1455897e87.17.1758295499599; Fri, 19 Sep 2025
+ 08:24:59 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20250918152830.438554-1-nschichan@freebox.fr> <20250918195806.6337-1-safinaskar@gmail.com>
+In-Reply-To: <20250918195806.6337-1-safinaskar@gmail.com>
+From: Nicolas Schichan <nschichan@freebox.fr>
+Date: Fri, 19 Sep 2025 17:24:48 +0200
+X-Gm-Features: AS18NWBwMqIXE_dMXDlT0ngUIReSbekPPTszWv5gIfg03bAEg3Id33JL3Yqjedw
+Message-ID: <CAHNNwZAzecVcJXZmycX063-=p-M5jVkfStfgYVKJruOFo7y9zg@mail.gmail.com>
+Subject: Re: [PATCH RESEND 00/62] initrd: remove classic initrd support
+To: Askar Safin <safinaskar@gmail.com>
+Cc: akpm@linux-foundation.org, andy.shevchenko@gmail.com, axboe@kernel.dk, 
+	brauner@kernel.org, cyphar@cyphar.com, devicetree@vger.kernel.org, 
+	ecurtin@redhat.com, email2tema@gmail.com, graf@amazon.com, 
+	gregkh@linuxfoundation.org, hca@linux.ibm.com, hch@lst.de, 
+	hsiangkao@linux.alibaba.com, initramfs@vger.kernel.org, jack@suse.cz, 
+	julian.stecklina@cyberus-technology.de, kees@kernel.org, 
+	linux-acpi@vger.kernel.org, linux-alpha@vger.kernel.org, 
+	linux-api@vger.kernel.org, linux-arch@vger.kernel.org, 
+	linux-arm-kernel@lists.infradead.org, linux-block@vger.kernel.org, 
+	linux-csky@vger.kernel.org, linux-doc@vger.kernel.org, 
+	linux-efi@vger.kernel.org, linux-ext4@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, 
+	linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org, 
+	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org, 
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, 
+	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev, mcgrof@kernel.org, 
+	mingo@redhat.com, monstr@monstr.eu, mzxreary@0pointer.de, 
+	patches@lists.linux.dev, rob@landley.net, sparclinux@vger.kernel.org, 
+	thomas.weissschuh@linutronix.de, thorsten.blum@linux.dev, 
+	torvalds@linux-foundation.org, tytso@mit.edu, viro@zeniv.linux.org.uk, 
+	x86@kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-> When booting with root=/dev/ram0 in the kernel commandline,
-> handle_initrd() where the deprecation message resides is never called,
-> which is rather unfortunate (init/do_mounts_initrd.c):
+Hello,
 
-Yes, this is unfortunate.
+> > When booting with root=/dev/ram0 in the kernel commandline,
+> > handle_initrd() where the deprecation message resides is never called,
+> > which is rather unfortunate (init/do_mounts_initrd.c):
 
-I personally still think that initrd should be removed.
+> Yes, this is unfortunate.
+>
+> I personally still think that initrd should be removed.
 
-I suggest using workaround I described in cover letter.
+Considering that the deprecation message didn't get displayed in some
+configurations, maybe it's a bit early at the very least.
 
-Also, for unknown reasons I didn't get your letter in my inbox.
-(Not even in spam folder.) I ocasionally found it on lore.kernel.org .
+> I suggest using workaround I described in cover letter.
+
+I'm not too keen on having an initramfs just to loop-mount
+/sys/firmware/initrd, after all current kernels are able to handle the
+use case just fine.
+
+It looks like there is a lot of code calling into specific filesystems
+so that the initrd code can guess the size of the file system before
+copying into /dev/ram0, and I believe this is what causes the main
+gripe against initrd today. What is wrong with just copying
+/initrd.image using its actual size into /dev/ram0 instead of guessing
+it with the help of filesystem specific code ?
+
+> Also, for unknown reasons I didn't get your letter in my inbox.
+> (Not even in spam folder.) I ocasionally found it on lore.kernel.org .
+
+Sorry about that, When I used git-send-email yesterday to reply, the
+SMTP server I used wasn't authenticated to google, so all gmail
+recipients were dropped. Hopefully this work better today.
+
+Regards,
 
 -- 
-Askar Safin
+Nicolas Schichan
