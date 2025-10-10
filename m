@@ -1,63 +1,63 @@
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA4132C2375
-	for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 09:42:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B8A729CB4C
+	for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 09:42:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760089343; cv=none; b=CMvMMK5d0nhHrpLQ6GpjQBsvBXCFzMY95XjYUG+odFdtQE+fcU/R7Z8w4PbpLWzhSypacfseA5V93yFgD8awpWMQ8VoKlDGYYNB5yqXyWQ3u/J6vtNUffZc0nkp5GewLuCajhERhWDZOuYFYijq8EU1Y857CfSbwBvNz/rejB9Y=
+	t=1760089368; cv=none; b=SSPUkw37AtYcN1s1RenD1KxTCD1oEyGVnCnPpVdHAOQEPJsWG8UWVBExZqQWOVO1Z3St/SkBLuxDbowCZz5XweMn8TWanL1Ahazgq+BeGWKcPSuVAB4KpcQ+rnzB2ffZfzk8bsCEJJCkSFizQ56cYsTY4/MIC9shq07CWxnkySk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760089343; c=relaxed/simple;
-	bh=vpQ+LSLHouZBwGQBSVAWIUVgEf6yUW/Fn0AY8RH0AoY=;
+	s=arc-20240116; t=1760089368; c=relaxed/simple;
+	bh=gjPlGissF6EYFYZPaMD+IJyLT7L2Kw6o1SmPVz9xBaU=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=HSiOnS+OfNxTk1gN7jHTHUwAo3o/yMbOuYAEky+Pi4K4+K3BUMwvAPNt38VK4KNCAXH6P+mhpRlwnyQsjGMZghPp0V7GhCKMzoS36oYJbCFXDUIN0KRm2ax6mcDMiZjC6j7pqCTSzTdJALmrAtNJIdvuYYwwF/8VIYsSnHJs3tM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=TnAOXH22; arc=none smtp.client-ip=209.85.128.49
+	 MIME-Version; b=mSSclvt9MlN+M6C4zdwOQog3ap57i0UCpCcLM2ya7nU8msyuPrw2pf+GHyVaMWoKEYalapJKT3X26qFx752M5FCcdI3Y45YGBMNJM+llhhjIwmUVDSpcHaht2RkVWAa7rhZH29RE0MLmswNd+pinc67YJTZzfty4LERjPOPQdDU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=M67juhzb; arc=none smtp.client-ip=209.85.221.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TnAOXH22"
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-46e2e6a708fso12236085e9.0
-        for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 02:42:18 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="M67juhzb"
+Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-3ee1221ceaaso1356729f8f.3
+        for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 02:42:43 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1760089336; x=1760694136; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1760089361; x=1760694161; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=yB+XQb9dVBYMVnL4S8fyMdF/923o0cYSVo05HxH73v4=;
-        b=TnAOXH22joUBWeDFi3SJV91CLC4+/N0+FB/jANT4nnEvRw297wobaPMZhQcosUqoVn
-         MfeMc68XOFLZ5wTi1GSj/sXxDUtSyRG8/1wEK/iqjAnPOeC35dmCFdhWA+zZjQ4kCmUK
-         85plJ6WJV/Rd5RPq9L4Pi/eyWc43r9imFtFeObShrzKVKMEoQV3cERBfIwP10xUb0Ol9
-         pBwf71B24jw7pRoP39HFculG6cDtNGvJzwuy5n8zZ5B1GXs7JrbQbLifqjPo6wKHBhpx
-         XoHm1TISiXBZMj949r7qFjJzG7uPyPo+xQM4Mw/amx+r2cN1M5PfkaokgmGX4ykmGOmW
-         Jcnw==
+        bh=GGor90y5sQmBa6+afLj7nUayHxGY9HpJCoz4p3w31VA=;
+        b=M67juhzbW+EksNbNENYBsjEYULuJJiJwyd4z+LPON174cTXkSu29UnLru21DY2wjOR
+         t/GvC+7fGPPzENHHCtoGW25nCdPiBkwgrGc+OYs7VD2z8g4qzw24CLoTp1l6/emQJVTW
+         r4RDR4nBewy5rUal5YsAbDmenOeiL82lY1d5iUC/5bPiv7i2jXcIHnQ2DBpfuKxyTtma
+         /0jz2I2aidpEiQjaiYQQN6rRzJHFysCk5hypK79yRWy6a+qKgW0plx/wgXESKXFx0bTa
+         o5S67y1aawV1Y1s/6l21fZePmGOazaUlLZTdUNI1wia0DkMBvjsL/FwOjAzSFLgM/qDL
+         pJtQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1760089336; x=1760694136;
+        d=1e100.net; s=20230601; t=1760089361; x=1760694161;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=yB+XQb9dVBYMVnL4S8fyMdF/923o0cYSVo05HxH73v4=;
-        b=bsHxz7WJju91G0Vd0rY1uBQSmuf5iysKP1G7hG3Z2rkMRlmqhIbWPPVqWUakcmVIE2
-         ROCYynwmmSsTe+RqyFm9cU/eZgAbTxJBEqQokXSerPG4Ec//9gdkT4CtGSie1QlwNi84
-         vb38WICU3qxE2nISmKmUxKHUspCR/lrqhyvIVaZ1kq1mZY+ESZy667D4JFpjWs8+uE8g
-         Li2leCYufIm1bmY0LQl3z5DQvo9koFCSf2bqqQ0KsdrCs69Lg7gZ1kzXF9h8uMczUQ1n
-         LnEv2C+zsrbcW1w0DpvrpGWmkj3uglsPc0r3dWbIAohKERooMAtgxCTs5lVHOkTTJ+DD
-         jiCg==
-X-Forwarded-Encrypted: i=1; AJvYcCXFnU1FxUnJhb1FGNanec2U7AndbxWxuOuepfJKsUoAhFzsEqSPiOUaFHZMM5lXKbM6jclEWPYq1Rs=@vger.kernel.org
-X-Gm-Message-State: AOJu0YxbdVJRXTM/iXI6HxG8ZQ/kf0MhvhOovLC1yzCe4Ae7oNhjFGoT
-	F4DDex/tzY5iccssunv0378eQOfh0JxtlwRnvsodmqn9swLSSPkTEiBd
-X-Gm-Gg: ASbGnctC67k8v0S+20wz9QbH2tCfGPyaRzsrTkA81CE01is50xIs9+RMlk8TyTCGTJX
-	HkGg+3KSko9tmsQLy+7G+sy++r25rZ3dXfS+GWgSbP7mBVYErqrr+eBcge6NkV82Wro2FFPAWad
-	9rjk8bpDdqazwHWkk2NJlIYE3emLZNgSzvVwaXrGOhxDMS2giNxf+l3lDZJY0LsI9HjSu4QpOpa
-	DhLZffrARYJ+Ffelgxp0GvR8OfNDeVB5/D1EwLUpkCY3gq7mmpLvd33t7SKpUR4NszcuU3a59tE
-	BPPIiSoJpc/hO73m2AXWQCwVQ+lP+vGOAoCOoT6iBtacij+Jm2gRwPPWcee0oEu8seS6Tyma0Z0
-	uVwGlSYxbaZIIQEP4EYaT6hm4YD8E3LGIQa/Hzg==
-X-Google-Smtp-Source: AGHT+IGhj1/Xta/HDezSCHmYKGPM6KRR6NesF+F9b2XmUayFL7V4iH3QP/fT9tINiA4R8cJX5aHPpA==
-X-Received: by 2002:a05:600c:6383:b0:45d:d353:a491 with SMTP id 5b1f17b1804b1-46fa9a8c425mr74390025e9.1.1760089336065;
-        Fri, 10 Oct 2025 02:42:16 -0700 (PDT)
+        bh=GGor90y5sQmBa6+afLj7nUayHxGY9HpJCoz4p3w31VA=;
+        b=gOQalBdNSRuIhnxxJAOfKAo9yf6Z1FtMak5BPIfdQH7LLYjSpRqLZYzwMfdJFF1+Qg
+         pEI+yCzxOIH7tJnPbW3XfVbewvjPfb/cN8Y85kIrQIYyp+wA1ltzusQSBBYwiUPGCQGC
+         Ar+zDsaalAAegtTDbI/WhjZYBzpOsepuj6KgDy5+4SX2k409K0p9zRzbU+bTLombno/r
+         qSxbMQaR86WEzWRbGSU3iiEx4cSa/DIZV+zZUdJeUGWYjwIHpdVHmVjb8wu/hAv4C+JZ
+         nzSUGIFPe10nadVHYFmmTu7yI4gP9HlHXvfRdEzuQZ8k1iTFLUs4+VxomDoWxjnwS97l
+         prnQ==
+X-Forwarded-Encrypted: i=1; AJvYcCV1oXvdRZSFeWWOdpdEnkKNB7MkxyWcMVFnobI+5+bA+x3bveSM7K9d1mxsZLzUT+CMClghZCdQzU8=@vger.kernel.org
+X-Gm-Message-State: AOJu0Yyax1/WsmZqcRn1eKQJ2MDlVthYB7nmKUiAn8or9N0MKsSpWzef
+	KioQq26k3l/l7ZmVnIjDmQfklt4UPBUKY0ykGRX1Yafutvj2ufwOdkOF
+X-Gm-Gg: ASbGncusb6jT2L3+w1zuY4rPZTQ+K2xOUThzCMU6BypUvlj7Q5e8GqvZXWX1NbYKTw+
+	SKzlq+MFmxAeq+VrHIvrkTWIARyFpogc+jbS2a6LpONDaGmd+1ccybWSTLVA8EY/QM+HfyrtA9h
+	bCWUgd8OmMoiAHYd4Nm7FkN+N9PqjYGdDdRWPb1T1VejmnVz+HEIw0PWOfRX8a27al//Blb71Vn
+	h5sMKB8yw6uSNiPlSlLMfIXL6oQZvt5pXbTDXjMRfouxl+hMtnaIuVEJoO35PKr/o9nJv+ClsAZ
+	q/OrxJXEMu+Pvz+MhgvcRMmnuN/Rt6juZhYYTellcg1lhYnj4BqYtYMPJKXwQU5G2a6C0z8fXxD
+	kLAIh43PdnPfjAgQB53dUO+8D9ZnCfvllIumVJQ==
+X-Google-Smtp-Source: AGHT+IG5hUlNpNqFmjuCUBM21GrnZZo3v6yQYLN20PP8R9c3EH7G+xd/e7926FvUzEtuyqYUZ8VCzA==
+X-Received: by 2002:a05:6000:4305:b0:3c8:d236:26bd with SMTP id ffacd0b85a97d-42666ac2ce9mr6828418f8f.11.1760089360889;
+        Fri, 10 Oct 2025 02:42:40 -0700 (PDT)
 Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-46fab3d7df4sm59813525e9.1.2025.10.10.02.42.12
+        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-426ce582b39sm3248294f8f.15.2025.10.10.02.42.37
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 10 Oct 2025 02:42:15 -0700 (PDT)
+        Fri, 10 Oct 2025 02:42:40 -0700 (PDT)
 From: Askar Safin <safinaskar@gmail.com>
 To: linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org
@@ -97,9 +97,9 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Nicolas Schichan <nschichan@freebox.fr>,
 	David Disseldorp <ddiss@suse.de>,
 	patches@lists.linux.dev
-Subject: [PATCH v2 1/3] init: remove deprecated "load_ramdisk" and "prompt_ramdisk" command line parameters
-Date: Fri, 10 Oct 2025 09:40:45 +0000
-Message-ID: <20251010094047.3111495-2-safinaskar@gmail.com>
+Subject: [PATCH v2 2/3] initrd: remove deprecated code path (linuxrc)
+Date: Fri, 10 Oct 2025 09:40:46 +0000
+Message-ID: <20251010094047.3111495-3-safinaskar@gmail.com>
 X-Mailer: git-send-email 2.47.3
 In-Reply-To: <20251010094047.3111495-1-safinaskar@gmail.com>
 References: <20251010094047.3111495-1-safinaskar@gmail.com>
@@ -111,90 +111,325 @@ List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-...which do nothing. They were deprecated (in documentation) in
-6b99e6e6aa62 ("Documentation/admin-guide: blockdev/ramdisk: remove use of
-"rdev"") and in kernel messages in c8376994c86c ("initrd: remove support
-for multiple floppies")
+Remove linuxrc initrd code path, which was deprecated in 2020.
+
+Initramfs and (non-initial) RAM disks (i. e. brd) still work.
+
+Both built-in and bootloader-supplied initramfs still work.
+
+Non-linuxrc initrd code path (i. e. using /dev/ram as final root
+filesystem) still works, but I put deprecation message into it
 
 Signed-off-by: Askar Safin <safinaskar@gmail.com>
 ---
- Documentation/admin-guide/kernel-parameters.txt | 4 ----
- arch/arm/configs/neponset_defconfig             | 2 +-
- init/do_mounts.c                                | 7 -------
- init/do_mounts_rd.c                             | 7 -------
- 4 files changed, 1 insertion(+), 19 deletions(-)
+ .../admin-guide/kernel-parameters.txt         |  4 +-
+ fs/init.c                                     | 14 ---
+ include/linux/init_syscalls.h                 |  1 -
+ include/linux/initrd.h                        |  2 -
+ init/do_mounts.c                              |  4 +-
+ init/do_mounts.h                              | 18 +---
+ init/do_mounts_initrd.c                       | 85 ++-----------------
+ init/do_mounts_rd.c                           | 17 +---
+ 8 files changed, 17 insertions(+), 128 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index e019db1633fd..521ab3425504 100644
+index 521ab3425504..24d8899d8a39 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -3280,8 +3280,6 @@
- 			If there are multiple matching configurations changing
- 			the same attribute, the last one is used.
+@@ -4285,7 +4285,7 @@
+ 			Note that this argument takes precedence over
+ 			the CONFIG_RCU_NOCB_CPU_DEFAULT_ALL option.
  
--	load_ramdisk=	[RAM] [Deprecated]
+-	noinitrd	[RAM] Tells the kernel not to load any configured
++	noinitrd	[Deprecated,RAM] Tells the kernel not to load any configured
+ 			initial RAM disk.
+ 
+ 	nointremap	[X86-64,Intel-IOMMU,EARLY] Do not enable interrupt
+@@ -5299,7 +5299,7 @@
+ 	ramdisk_size=	[RAM] Sizes of RAM disks in kilobytes
+ 			See Documentation/admin-guide/blockdev/ramdisk.rst.
+ 
+-	ramdisk_start=	[RAM] RAM disk image start address
++	ramdisk_start=	[Deprecated,RAM] RAM disk image start address
+ 
+ 	random.trust_cpu=off
+ 			[KNL,EARLY] Disable trusting the use of the CPU's
+diff --git a/fs/init.c b/fs/init.c
+index 07f592ccdba8..60719494d9a0 100644
+--- a/fs/init.c
++++ b/fs/init.c
+@@ -27,20 +27,6 @@ int __init init_mount(const char *dev_name, const char *dir_name,
+ 	return ret;
+ }
+ 
+-int __init init_umount(const char *name, int flags)
+-{
+-	int lookup_flags = LOOKUP_MOUNTPOINT;
+-	struct path path;
+-	int ret;
 -
- 	lockd.nlm_grace_period=P  [NFS] Assign grace period.
- 			Format: <integer>
- 
-@@ -5245,8 +5243,6 @@
- 			Param: <number> - step/bucket size as a power of 2 for
- 				statistical time based profiling.
- 
--	prompt_ramdisk=	[RAM] [Deprecated]
+-	if (!(flags & UMOUNT_NOFOLLOW))
+-		lookup_flags |= LOOKUP_FOLLOW;
+-	ret = kern_path(name, lookup_flags, &path);
+-	if (ret)
+-		return ret;
+-	return path_umount(&path, flags);
+-}
 -
- 	prot_virt=	[S390] enable hosting protected virtual machines
- 			isolated from the hypervisor (if hardware supports
- 			that). If enabled, the default kernel base address
-diff --git a/arch/arm/configs/neponset_defconfig b/arch/arm/configs/neponset_defconfig
-index 2227f86100ad..4d720001c12e 100644
---- a/arch/arm/configs/neponset_defconfig
-+++ b/arch/arm/configs/neponset_defconfig
-@@ -9,7 +9,7 @@ CONFIG_ASSABET_NEPONSET=y
- CONFIG_ZBOOT_ROM_TEXT=0x80000
- CONFIG_ZBOOT_ROM_BSS=0xc1000000
- CONFIG_ZBOOT_ROM=y
--CONFIG_CMDLINE="console=ttySA0,38400n8 cpufreq=221200 rw root=/dev/mtdblock2 mtdparts=sa1100:512K(boot),1M(kernel),2560K(initrd),4M(root) load_ramdisk=1 prompt_ramdisk=0 mem=32M noinitrd initrd=0xc0800000,3M"
-+CONFIG_CMDLINE="console=ttySA0,38400n8 cpufreq=221200 rw root=/dev/mtdblock2 mtdparts=sa1100:512K(boot),1M(kernel),2560K(initrd),4M(root) mem=32M noinitrd initrd=0xc0800000,3M"
- CONFIG_FPE_NWFPE=y
- CONFIG_PM=y
- CONFIG_MODULES=y
+ int __init init_chdir(const char *filename)
+ {
+ 	struct path path;
+diff --git a/include/linux/init_syscalls.h b/include/linux/init_syscalls.h
+index 92045d18cbfc..0bdbc458a881 100644
+--- a/include/linux/init_syscalls.h
++++ b/include/linux/init_syscalls.h
+@@ -2,7 +2,6 @@
+ 
+ int __init init_mount(const char *dev_name, const char *dir_name,
+ 		const char *type_page, unsigned long flags, void *data_page);
+-int __init init_umount(const char *name, int flags);
+ int __init init_chdir(const char *filename);
+ int __init init_chroot(const char *filename);
+ int __init init_chown(const char *filename, uid_t user, gid_t group, int flags);
+diff --git a/include/linux/initrd.h b/include/linux/initrd.h
+index f1a1f4c92ded..7e5d26c8136f 100644
+--- a/include/linux/initrd.h
++++ b/include/linux/initrd.h
+@@ -3,8 +3,6 @@
+ #ifndef __LINUX_INITRD_H
+ #define __LINUX_INITRD_H
+ 
+-#define INITRD_MINOR 250 /* shouldn't collide with /dev/ram* too soon ... */
+-
+ /* starting block # of image */
+ extern int rd_image_start;
+ 
 diff --git a/init/do_mounts.c b/init/do_mounts.c
-index 6af29da8889e..0f2f44e6250c 100644
+index 0f2f44e6250c..1054ad3c905a 100644
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
-@@ -34,13 +34,6 @@ static int root_wait;
+@@ -476,13 +476,11 @@ void __init prepare_namespace(void)
+ 	if (saved_root_name[0])
+ 		ROOT_DEV = parse_root_device(saved_root_name);
  
- dev_t ROOT_DEV;
+-	if (initrd_load(saved_root_name))
+-		goto out;
++	initrd_load();
  
--static int __init load_ramdisk(char *str)
--{
--	pr_warn("ignoring the deprecated load_ramdisk= option\n");
--	return 1;
--}
--__setup("load_ramdisk=", load_ramdisk);
+ 	if (root_wait)
+ 		wait_for_root(saved_root_name);
+ 	mount_root(saved_root_name);
+-out:
+ 	devtmpfs_mount();
+ 	init_mount(".", "/", NULL, MS_MOVE, NULL);
+ 	init_chroot(".");
+diff --git a/init/do_mounts.h b/init/do_mounts.h
+index 6069ea3eb80d..a386ee5314c9 100644
+--- a/init/do_mounts.h
++++ b/init/do_mounts.h
+@@ -23,25 +23,15 @@ static inline __init int create_dev(char *name, dev_t dev)
+ }
+ 
+ #ifdef CONFIG_BLK_DEV_RAM
 -
- static int __init readonly(char *str)
+-int __init rd_load_disk(int n);
+-int __init rd_load_image(char *from);
+-
++int __init rd_load_image(void);
+ #else
+-
+-static inline int rd_load_disk(int n) { return 0; }
+-static inline int rd_load_image(char *from) { return 0; }
+-
++static inline int rd_load_image(void) { return 0; }
+ #endif
+ 
+ #ifdef CONFIG_BLK_DEV_INITRD
+-bool __init initrd_load(char *root_device_name);
++void __init initrd_load(void);
+ #else
+-static inline bool initrd_load(char *root_device_name)
+-{
+-	return false;
+-	}
+-
++static inline void initrd_load(void) { }
+ #endif
+ 
+ /* Ensure that async file closing finished to prevent spurious errors. */
+diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
+index f6867bad0d78..d4f5f4c60a22 100644
+--- a/init/do_mounts_initrd.c
++++ b/init/do_mounts_initrd.c
+@@ -2,13 +2,7 @@
+ #include <linux/unistd.h>
+ #include <linux/kernel.h>
+ #include <linux/fs.h>
+-#include <linux/minix_fs.h>
+-#include <linux/romfs_fs.h>
+ #include <linux/initrd.h>
+-#include <linux/sched.h>
+-#include <linux/freezer.h>
+-#include <linux/kmod.h>
+-#include <uapi/linux/mount.h>
+ 
+ #include "do_mounts.h"
+ 
+@@ -41,6 +35,7 @@ late_initcall(kernel_do_mounts_initrd_sysctls_init);
+ 
+ static int __init no_initrd(char *str)
  {
- 	if (*str)
++	pr_warn("noinitrd option is deprecated and will be removed soon\n");
+ 	mount_initrd = 0;
+ 	return 1;
+ }
+@@ -70,85 +65,17 @@ static int __init early_initrd(char *p)
+ }
+ early_param("initrd", early_initrd);
+ 
+-static int __init init_linuxrc(struct subprocess_info *info, struct cred *new)
+-{
+-	ksys_unshare(CLONE_FS | CLONE_FILES);
+-	console_on_rootfs();
+-	/* move initrd over / and chdir/chroot in initrd root */
+-	init_chdir("/root");
+-	init_mount(".", "/", NULL, MS_MOVE, NULL);
+-	init_chroot(".");
+-	ksys_setsid();
+-	return 0;
+-}
+-
+-static void __init handle_initrd(char *root_device_name)
+-{
+-	struct subprocess_info *info;
+-	static char *argv[] = { "linuxrc", NULL, };
+-	extern char *envp_init[];
+-	int error;
+-
+-	pr_warn("using deprecated initrd support, will be removed soon.\n");
+-
+-	real_root_dev = new_encode_dev(ROOT_DEV);
+-	create_dev("/dev/root.old", Root_RAM0);
+-	/* mount initrd on rootfs' /root */
+-	mount_root_generic("/dev/root.old", root_device_name,
+-			   root_mountflags & ~MS_RDONLY);
+-	init_mkdir("/old", 0700);
+-	init_chdir("/old");
+-
+-	info = call_usermodehelper_setup("/linuxrc", argv, envp_init,
+-					 GFP_KERNEL, init_linuxrc, NULL, NULL);
+-	if (!info)
+-		return;
+-	call_usermodehelper_exec(info, UMH_WAIT_PROC|UMH_FREEZABLE);
+-
+-	/* move initrd to rootfs' /old */
+-	init_mount("..", ".", NULL, MS_MOVE, NULL);
+-	/* switch root and cwd back to / of rootfs */
+-	init_chroot("..");
+-
+-	if (new_decode_dev(real_root_dev) == Root_RAM0) {
+-		init_chdir("/old");
+-		return;
+-	}
+-
+-	init_chdir("/");
+-	ROOT_DEV = new_decode_dev(real_root_dev);
+-	mount_root(root_device_name);
+-
+-	printk(KERN_NOTICE "Trying to move old root to /initrd ... ");
+-	error = init_mount("/old", "/root/initrd", NULL, MS_MOVE, NULL);
+-	if (!error)
+-		printk("okay\n");
+-	else {
+-		if (error == -ENOENT)
+-			printk("/initrd does not exist. Ignored.\n");
+-		else
+-			printk("failed\n");
+-		printk(KERN_NOTICE "Unmounting old root\n");
+-		init_umount("/old", MNT_DETACH);
+-	}
+-}
+-
+-bool __init initrd_load(char *root_device_name)
++void __init initrd_load(void)
+ {
+ 	if (mount_initrd) {
+ 		create_dev("/dev/ram", Root_RAM0);
+ 		/*
+-		 * Load the initrd data into /dev/ram0. Execute it as initrd
+-		 * unless /dev/ram0 is supposed to be our actual root device,
+-		 * in that case the ram disk is just set up here, and gets
+-		 * mounted in the normal path.
++		 * Load the initrd data into /dev/ram0.
+ 		 */
+-		if (rd_load_image("/initrd.image") && ROOT_DEV != Root_RAM0) {
+-			init_unlink("/initrd.image");
+-			handle_initrd(root_device_name);
+-			return true;
++		if (rd_load_image()) {
++			pr_warn("using deprecated initrd support, will be removed in September 2026; "
++				"use initramfs instead or (as a last resort) /sys/firmware/initrd.\n");
+ 		}
+ 	}
+ 	init_unlink("/initrd.image");
+-	return false;
+ }
 diff --git a/init/do_mounts_rd.c b/init/do_mounts_rd.c
-index 19d9f33dcacf..5311f2d7edc8 100644
+index 5311f2d7edc8..0a021bbcd501 100644
 --- a/init/do_mounts_rd.c
 +++ b/init/do_mounts_rd.c
-@@ -18,13 +18,6 @@
- static struct file *in_file, *out_file;
- static loff_t in_pos, out_pos;
- 
--static int __init prompt_ramdisk(char *str)
--{
--	pr_warn("ignoring the deprecated prompt_ramdisk= option\n");
--	return 1;
--}
--__setup("prompt_ramdisk=", prompt_ramdisk);
--
- int __initdata rd_image_start;		/* starting block # of image */
+@@ -22,6 +22,7 @@ int __initdata rd_image_start;		/* starting block # of image */
  
  static int __init ramdisk_start_setup(char *str)
+ {
++	pr_warn("ramdisk_start= option is deprecated and will be removed soon\n");
+ 	rd_image_start = simple_strtol(str,NULL,0);
+ 	return 1;
+ }
+@@ -177,7 +178,7 @@ static unsigned long nr_blocks(struct file *file)
+ 	return i_size_read(inode) >> 10;
+ }
+ 
+-int __init rd_load_image(char *from)
++int __init rd_load_image(void)
+ {
+ 	int res = 0;
+ 	unsigned long rd_blocks, devblocks, nr_disks;
+@@ -191,7 +192,7 @@ int __init rd_load_image(char *from)
+ 	if (IS_ERR(out_file))
+ 		goto out;
+ 
+-	in_file = filp_open(from, O_RDONLY, 0);
++	in_file = filp_open("/initrd.image", O_RDONLY, 0);
+ 	if (IS_ERR(in_file))
+ 		goto noclose_input;
+ 
+@@ -220,10 +221,7 @@ int __init rd_load_image(char *from)
+ 	/*
+ 	 * OK, time to copy in the data
+ 	 */
+-	if (strcmp(from, "/initrd.image") == 0)
+-		devblocks = nblocks;
+-	else
+-		devblocks = nr_blocks(in_file);
++	devblocks = nblocks;
+ 
+ 	if (devblocks == 0) {
+ 		printk(KERN_ERR "RAMDISK: could not determine device size\n");
+@@ -267,13 +265,6 @@ int __init rd_load_image(char *from)
+ 	return res;
+ }
+ 
+-int __init rd_load_disk(int n)
+-{
+-	create_dev("/dev/root", ROOT_DEV);
+-	create_dev("/dev/ram", MKDEV(RAMDISK_MAJOR, n));
+-	return rd_load_image("/dev/root");
+-}
+-
+ static int exit_code;
+ static int decompress_error;
+ 
 -- 
 2.47.3
 
