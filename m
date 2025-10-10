@@ -1,73 +1,72 @@
-Received: from mail-ej1-f52.google.com (mail-ej1-f52.google.com [209.85.218.52])
+Received: from mail-ej1-f45.google.com (mail-ej1-f45.google.com [209.85.218.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43B512F6168
-	for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 15:02:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EDD352F8BC4
+	for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 15:05:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760108562; cv=none; b=J2BUvSn+MLFkHQS0GZyU0Z06R94I7mE53xS6JNbVH8nnl4S1W+Xg6VR38o4hJ2tvgIZFp5++Svyw32/xBxqFh2IIfP5Kjjprx92KzAEuFUZXLBnKJ/KT73ELx7XJJcc2S4wff5KU98lIPzvD1aTGGwbPC0CWJFZ+LfjbLVZL2+0=
+	t=1760108713; cv=none; b=eILiV0ZAggHqnVCxKoMiyG7ergVqvHodSmOWKnbDUbzj8vp0xiWgPCfjW6ZuIDO669lL1kmsfYUSaJd71TnE2qeiVaOHqWICkvTC62CHzye/RcJlfqSbNC+hIcXmDbR7m3quM/b9D65fSPHPrT2azI9J0wrhcZgDlL5clpNX88M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760108562; c=relaxed/simple;
-	bh=lLjhJqbBDQ/a2E91zif4RZ281K6W6HFigWXT0cxbz3M=;
+	s=arc-20240116; t=1760108713; c=relaxed/simple;
+	bh=auvR4vzTTatOuCuru52VOtm4KI7SmeTOVUgJyw2/46g=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=StXXeTwxPXTFKEoeU3MWiXWp3/HsoHG8QyfmccWMfyfWA7PoMhLwjffYWfjzUAyQVuugpWPLqBI7d4DW02sxSikTB0Bq1xgFdxfxkDFZ9IO/aNUPLOJUNgqoq/a2YG0zrEPNnhFrf/MfKVubb90tgKqk6tUXgK6yOX0P7r8COuo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=aFLDqTBw; arc=none smtp.client-ip=209.85.218.52
+	 To:Cc:Content-Type; b=g6oNf6pmHUY/TjfnF340aA/pHjylEfgnc3IBpeVZeoBEnLqEC2oD/amNOMdf3jALKAPlq6b8YhlbC6PNer1w27va+gk/TPCTzB4AtT41Bz5o4IOD8WTh+9ztNEgC/yRfGMPxlMO0UhzvZFWBf3rBbUzOD+K2Y/d+UHZRKigEij4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=cukOrGdK; arc=none smtp.client-ip=209.85.218.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aFLDqTBw"
-Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-b3d50882cc2so414409666b.2
-        for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 08:02:40 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cukOrGdK"
+Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-b463f986f80so496466166b.2
+        for <initramfs@vger.kernel.org>; Fri, 10 Oct 2025 08:05:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1760108558; x=1760713358; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1760108709; x=1760713509; darn=vger.kernel.org;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=lLjhJqbBDQ/a2E91zif4RZ281K6W6HFigWXT0cxbz3M=;
-        b=aFLDqTBwDW9/tslHGMMpz/fDXm/8YFeWeEqOIcghoh/WbHIq4K/0SzxFSFr2C8rGcg
-         FzfA6mauz29MwswTSj8YO3mq3cxhh5u7GFdf5ExSSfl6BXbILBg23XGuvlNp3mANuW6S
-         eel9qNFJhrnpSPxNuvU8zfBQImKbaXpPm7yI2z/z99IQuraI1weEKXaWKAoKN2dn1Fia
-         VeA9V8C1Loi2AzEhqtTtkmVxXU3/XSg2XO66Oqk58zTi4gP34AT/wGmHBqeZyuMiW54A
-         2nUtDEww8Cwcun3qpGWQvCqHEXtidVmA+q8Oy3lJypcr/DIo7Im2rac59BUjorWx/gNF
-         KEvw==
+        bh=NIWxPopIPg40sXCXJnzxg4lhVvntApAACn3HESqIPcY=;
+        b=cukOrGdK67ALc138mnVZJfA3nAbcSaf9ydeV1KhpWWi4VAc2Reodc632tdlco8WCam
+         6lmTryDBz8Pwky0HIhVJGEdxdSIf+t7NjJZt66/OCUU01cmxp+7b2d9nrdbpTot4q3Xw
+         PG8OPQYolf/jm7ASPNQQLQxnQpjWMLLE8DE0H7sAy535HzhvOfIi9iDMTUNjgURkfN38
+         sPcLH8bje6HSkKtd2nm1jf0miU3Fm3O8g947/Ybrc/iWH3QK6BG/H1hhM4S750ZmcsYw
+         dK2uOqJRJTQHyoL56Sg0wLuhcKFqk5jTN+4Tgym4kGXc1tRa0WHfSarSptSXNVsGG1tq
+         IDQg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1760108558; x=1760713358;
+        d=1e100.net; s=20230601; t=1760108709; x=1760713509;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=lLjhJqbBDQ/a2E91zif4RZ281K6W6HFigWXT0cxbz3M=;
-        b=wEex59YF9vsrWtTfyCN0FA3LLJffZV8xEiEnNRzU0/K9dbBOfTGfyL+/oV61ivveN7
-         BpVXsOkROqP2PVD92ZVeaKJ3Nj5b2HkrrN5icUe56zXVR4GXkdhQdkS60F/8pGR+HaJj
-         bETbXcyvlOPL6u16qcZZ+5ayuefOkZqBapo0LTPGNmgNAKJ6NDX0EfeZTmoqGJ6QIlBz
-         QlXGLU5sDLlzCxxYsuoGlzinjYXDveFSUt1e1YBo5WjQOjU/qUm7pdKIZw7uUN8Pf8Yg
-         Fr15gnmPP46WlBJhdm7Xv8npTG4PprKNW8JKJTa5cc/tF82SycG5+f3TXsXuabhvtGIl
-         vdQQ==
-X-Forwarded-Encrypted: i=1; AJvYcCUQ43rJoTnvcVTgZHOLN35o87kzwRX9Y93KyBqubK5QqdztL5ng2nMNpIcMV+xe37K76F+jAkh2mpI=@vger.kernel.org
-X-Gm-Message-State: AOJu0YxfRA1NEfO/xwg/XmVjZ7+Vtk9Foj0+aoEGrUCXqfRG9ezR6u5w
-	FsNiC1briWTCPfEcviffPhdt5eQietWIoa48cxaTc7+jQn/9wWG1Cn4lY/tVosq4b7nQetA38+J
-	l4y4pLyqTYSL7U8f1OTgOVkIOD0JXI7I=
-X-Gm-Gg: ASbGncun0oAvFHNeBp/TY6XnxqyBWWUtSKFmowayiBXNv4LmmoNdchU7ZNq2uuGbXxA
-	csIk+EGWNazQRhY8SHlCzhGmF6CR7i/y07VW/YO3DFQabyBhiFs7kMy8jab/MlxmRmxvebF3JgM
-	ZTLJ/mgU2KcBzLXokTJoyVmfmKGmHBDCnRFrq2DZ2kk20dV4qIXo0B9vLugN9QfqNfLxh2TtpHp
-	T+YiOqrjwLOr6dZVeuEbkq03g==
-X-Google-Smtp-Source: AGHT+IGa/polL6/8Ynsft44cUD0O1NPKwafCC8Smc6nmBnm4TDK7NhR64Y4hIQgBMI+z098vLRzD8f+sU8sdugojvoo=
-X-Received: by 2002:a17:906:c104:b0:b04:9ad9:5b29 with SMTP id
- a640c23a62f3a-b50ac5d1e3bmr1407180966b.54.1760108556823; Fri, 10 Oct 2025
- 08:02:36 -0700 (PDT)
+        bh=NIWxPopIPg40sXCXJnzxg4lhVvntApAACn3HESqIPcY=;
+        b=RO2hWqtGR3Ou6TIU4UsX3TevphbeYfIqhdtnIGpuyo6/+32/FRdw4Ii6eiMGZ1NgZy
+         /M5bFIqkXVWDDf8xQvUjynZjKgJgmnl6C8cRiP3c/+Tn5jrd//xDcr8QwfWYbZcMrWlN
+         pmThtPFcheo+2lbR3lt8v6rTdpgBSLmKYhZfFM5Dqq1DP5A396jeIJs0cDnyV//TW2Bi
+         A6UC8PwO+U7X1TxG4kNaz2ZPJJvVk/GlxLbNtreeK1pzhymzCoABfaovTwg3G5gQH6i6
+         vL60RZ202AkxQ0Q/bqzDwR3qK9nrsww1NmQEG60EiO94/asdiBp4vXuzpwtosIlcFZoA
+         C60w==
+X-Forwarded-Encrypted: i=1; AJvYcCWc7mHxksWQ1BjD/4ReIXTKeAhyS2L7kZhPQKumkaJX84Kmjqe/8NEP0GQrLNua6AgbYL5R83r5hLA=@vger.kernel.org
+X-Gm-Message-State: AOJu0YxMIlovtGhcWzstRsA0i49FQC1+PDQ+4HfaPZCj1OWciOzXNhdm
+	QpcJdYFzBTXMbT7ktK6u/iVc2dYlVf8pDj2+QDFu498xKrvPUiLE7KjJ9X0pqGPGes3eWxViNxr
+	/vQlEKZYp0Zvt9p5aCtye9vaXuci9wmI=
+X-Gm-Gg: ASbGncsOwG3PaAMM/oNtIhEW0YV2VKkZPS3s7nALMYi+m/CEGuDmKw2Q+xheq4J7WV5
+	T0m/oeLoPsEkjRbFDnfKzSnUANCFWjNGqvzDZD1sEXVJ0R8SIZXNTWJ6U0bmNvWhphk/FQjyhGk
+	XMIhlMJWR9m2eXxOTSHYj2CUBs7Bkw9fE6C8nZmRiAzJfI44HsgpEMyI1YZ4WLSkWmpSxr4bMV8
+	Ueg1lkpyWdSLxukIhg2oFGqKwIvphPJaqrM5EayHhuP0OA=
+X-Google-Smtp-Source: AGHT+IF09dfhTcQpiRWLSf2A1k/s4FQSc760VKHf84ZQbfzXVjJJrp2yCq5wGIDsYhhFT8HuSa1w5HwjyUCOwQmF8So=
+X-Received: by 2002:a17:907:2da3:b0:b3e:e244:1d8 with SMTP id
+ a640c23a62f3a-b50abaa44c8mr1245748966b.34.1760108709145; Fri, 10 Oct 2025
+ 08:05:09 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20251010094047.3111495-1-safinaskar@gmail.com> <20251010094047.3111495-2-safinaskar@gmail.com>
-In-Reply-To: <20251010094047.3111495-2-safinaskar@gmail.com>
+References: <20251010094047.3111495-1-safinaskar@gmail.com> <20251010094047.3111495-3-safinaskar@gmail.com>
+In-Reply-To: <20251010094047.3111495-3-safinaskar@gmail.com>
 From: Andy Shevchenko <andy.shevchenko@gmail.com>
-Date: Fri, 10 Oct 2025 18:02:00 +0300
-X-Gm-Features: AS18NWAoVP5WYC_07QqSXrvsFY0nBG5PiGs9ESaeN2ZfR7dfSMsKUbHhpVYPARc
-Message-ID: <CAHp75VeJM_OoCWDX20FhphRi6e7rG9Z4X6zkjx9vFF12n7Ef7A@mail.gmail.com>
-Subject: Re: [PATCH v2 1/3] init: remove deprecated "load_ramdisk" and
- "prompt_ramdisk" command line parameters
+Date: Fri, 10 Oct 2025 18:04:33 +0300
+X-Gm-Features: AS18NWCvLx5PLZaUkorsbem-B-yR3hlKjw6yF-hbdTFMFmR4Zuzb6EIcT1htWkA
+Message-ID: <CAHp75VezkZ7A1VOP8cBH8h0DKVumP66jjUbepMCP87wGOrh+MQ@mail.gmail.com>
+Subject: Re: [PATCH v2 2/3] initrd: remove deprecated code path (linuxrc)
 To: Askar Safin <safinaskar@gmail.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
 	Linus Torvalds <torvalds@linux-foundation.org>, 
@@ -93,16 +92,25 @@ Content-Transfer-Encoding: quoted-printable
 On Fri, Oct 10, 2025 at 12:42=E2=80=AFPM Askar Safin <safinaskar@gmail.com>=
  wrote:
 >
-> ...which do nothing. They were deprecated (in documentation) in
-> 6b99e6e6aa62 ("Documentation/admin-guide: blockdev/ramdisk: remove use of
-> "rdev"") and in kernel messages in c8376994c86c ("initrd: remove support
-> for multiple floppies")
+> Remove linuxrc initrd code path, which was deprecated in 2020.
+>
+> Initramfs and (non-initial) RAM disks (i. e. brd) still work.
+>
+> Both built-in and bootloader-supplied initramfs still work.
+>
+> Non-linuxrc initrd code path (i. e. using /dev/ram as final root
+> filesystem) still works, but I put deprecation message into it
 
-With all the respect to the work and the series I have noted this:
-1) often the last period is missing in the commit messages;
-2) in this change it's unclear for how long (years) the feature was
-deprecated, i.e. the other patch states that 2020 for something else.
-I wonder if this one has the similar order of oldness.
+...
+
+> -       noinitrd        [RAM] Tells the kernel not to load any configured
+> +       noinitrd        [Deprecated,RAM] Tells the kernel not to load any=
+ configured
+>                         initial RAM disk.
+
+How one is supposed to run this when just having a kernel is enough?
+At least (ex)colleague of mine was a heavy user of this option for
+testing kernel builds on the real HW.
 
 --=20
 With Best Regards,
