@@ -1,59 +1,59 @@
-Received: from mail-yx1-f54.google.com (mail-yx1-f54.google.com [74.125.224.54])
+Received: from mail-yx1-f44.google.com (mail-yx1-f44.google.com [74.125.224.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A6062DAFAF
-	for <initramfs@vger.kernel.org>; Mon, 13 Oct 2025 06:06:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF7FF2FE560
+	for <initramfs@vger.kernel.org>; Mon, 13 Oct 2025 09:59:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760335594; cv=none; b=RrnhLJ3h08S+H4SbYWH35oakTtQCyc6QL+n8wAvaIiOsd4iv23VLdQcLieQ8VkLhPLKMle9Sq8OtzmBfcsMj2VDFaUN0t4x6XtacW8/u3nZZBtKMEn9o/bDpolwLbrLOwndx4CodAVCeSSbsbWi1yC1Ct+aPwxhNRCQfPDBv0Ew=
+	t=1760349601; cv=none; b=K/R9tw4UbXGb46SVTs5e4pND2WjXWLUrTh54ohuJKUqbPMhwuKaqvy/k+ga7ST0ETLfVpYE6e7UoZkVieXrFyZfsEbOLWL786barhZlRl5bFSeETEdQbwdf3Gg5E7WTpWGXBI3p4WBkOzb+9TFKynxCWzUURcDLlkDbAWmZit6U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760335594; c=relaxed/simple;
-	bh=RSL7ODefchx0oaqAeJ6n26+cCreCbBCiVlRzlUCjIjc=;
+	s=arc-20240116; t=1760349601; c=relaxed/simple;
+	bh=+zOuCBbttI2pym4Pdpz046IX8ZPwrX2sj4yc80Raf0c=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=QsqggHmTG031LQEClx/PvncHkKXmA3Eyan8ODY4QEwVhjJltVAi87Qu7jIW8U1gGL3aNDKxZibnBnl8/oPF2dWfi4Eg8dVo+H/LmhfrNm4NqG7urmiTTO8Nq1icGXuSIJQ5wqwIYbT6UNrXm7Iq/apW61hFzRhI1tGZXg2WA1o0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=E08XGpzm; arc=none smtp.client-ip=74.125.224.54
+	 To:Cc:Content-Type; b=jnNWvvWOjsBO7WcdZZkbhIiPrRyC/2CIDMCMnA7sUIvCqiioxTeM+uY3ZHD+PEWkr8Y4XAUt89VS7OWFvotz/tr2WBEFB1qxVJolxvx3Wtqgz0aGnU3rTN1yvgIiMMGvQf5krllxVHgSE/roJ+RgrJGdqiPJVZalBBOmqio4pwc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=lYGb4s7P; arc=none smtp.client-ip=74.125.224.44
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="E08XGpzm"
-Received: by mail-yx1-f54.google.com with SMTP id 956f58d0204a3-633c1b740c5so3745704d50.3
-        for <initramfs@vger.kernel.org>; Sun, 12 Oct 2025 23:06:33 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lYGb4s7P"
+Received: by mail-yx1-f44.google.com with SMTP id 956f58d0204a3-633c1b740c5so3939397d50.3
+        for <initramfs@vger.kernel.org>; Mon, 13 Oct 2025 02:59:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1760335592; x=1760940392; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1760349599; x=1760954399; darn=vger.kernel.org;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=RSL7ODefchx0oaqAeJ6n26+cCreCbBCiVlRzlUCjIjc=;
-        b=E08XGpzmHVw0+qDzU5sCl5j2nWjFq/4gmZrI+HSMqUtrUQdW75O40jzorsqViIJ5Op
-         YueCYgQvB7QPc4pUrMdPo6WnC+J7hR1UlRYyfnedh94HC57pUVWE3OllsoN75neJ05zd
-         7IcSugJKTLhjY0wSwmbSfQ1BF+GIHKMdxFsZBTI139vylrWwsfot4THqwBnc5WWO1ADS
-         owqxNkoEXxySlcupDmKJPMhXmeet3aWT00Ul8qKcfRlZ1+XFeBRnw6Pd6ASpf6fNaQKa
-         kriZgtpxAU1TcDZRtFRbT0eY4rS6fV6XOKhazNP5uPTqs37bNueBArVUKMrsryxA49Ua
-         /esQ==
+        bh=hZsaCMPk0e7xOahYxc9B2HTwzlp/3SZdj7OzfRUl7Tc=;
+        b=lYGb4s7PFPtlQAqGLwjY6C3BoptYCrvsiQTPmRJWe0jrmue4kzt875LXGc+nwMus5e
+         gg/dRRivympKqj/Xbh/kqv4jfo3sNkaRAWWH4kZP7QO+EYk91Xl5ZvumS/kg92GHtPjk
+         j1DbxG/Dgk3vmqFQjqZbS6cxMNqHU4DeIsE2rSdChE2dhflRSZVNKpBaEr6XVXJ3d+35
+         Uw6w91MZJuEBrgw2xCsk0gcBTZMcncRHXUPfRkRDe21ahILoyvU3E/QbhqdS6KHwrvfA
+         79Um23YLTNO6t/m7Vr/uQlJA0nZ6SxJWNCgTAeqdZEx/sH8Vu9rR490wZ3vArZnHDyqH
+         MjnQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1760335592; x=1760940392;
+        d=1e100.net; s=20230601; t=1760349599; x=1760954399;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=RSL7ODefchx0oaqAeJ6n26+cCreCbBCiVlRzlUCjIjc=;
-        b=pQu99a/M7zwIkxNiSVAD5B3gQYz7WGrlmXHK6emmtwQCWWip9TVCKWSXl09VNMb3n9
-         8Wsy2BQeZqpvxwaHflvFM5mWEe2AAoN8aROc3SNsLaYufFmftB3IvARnyTJWC1SCtT3O
-         hnC/r/mryJAAjoF8+sg/7/ZW7fsF1OiL/MNAjwYmNlVpcuTKK8bH+3sOCnNuepvvU1UB
-         y0AbYKMZC+yDWhtrq9ZS89lS/WG2Sg/xYSE2bgSumoC5iikHtWUn8Dz8IRQorCbISTt6
-         tbXqsJ7VrmGGbkIgKrMkrPHI04DMmDN9GGeG2uFwbHcMHRkX+MB96U1G5aVcSwimjOv2
-         G7bw==
-X-Forwarded-Encrypted: i=1; AJvYcCUcdxgRQDYSj6avlpxnx7drMusAEWKysPHR8GO2ri72FeOOCqVcxTJ+Pr7/1L8tA7ihw/dy/ubBxbg=@vger.kernel.org
-X-Gm-Message-State: AOJu0YyFf+yzygG9Xg9sRnqWbdHzzJpKf11HcDqtqytQoGWTqCE5TAP2
-	KMskkGBUmgvbopzrEX1xPtcPb8qIy6hrG2Cwrn3W1XRoMCyhPXEwXOLn+oh8K+Q0+oZmBPtl/s1
-	WDRR3vlfge5z2y0AAOVM6rraqQ/5Qucg=
-X-Gm-Gg: ASbGncsX90PCtiDccF4Z4TFrQ228d6NqWn1pLr0qbAja0YHDduuXX855zgkfViP0u4B
-	zWlMpvzl0YvdV4cNVX+p/XtvVyPnZPujHfGLdgIkJgTJvbKi/GK2QGir09gcO32ZKfWrAnGUwXQ
-	eMXJOEnrWboPfxSwAXblG1xU22BBAjcMo1IhH/9Nz748JVoUuJ/xiC9EWxvkHst5kWgjKS06AuH
-	d4ys1OY8dYndmbhFw/RuLnHjsIxjKzv+F7X
-X-Google-Smtp-Source: AGHT+IGNAOIcFLi0/Sm93Y3jSHSuxr+30gS3y7Fr34MKhVqQQnt1MJ/lLmHR6+qpb+bVmq5VVWr9ycljJFZ2Qxe2L4U=
-X-Received: by 2002:a05:690e:4142:b0:63c:f4eb:1b0d with SMTP id
- 956f58d0204a3-63cf4eb1b25mr7582533d50.22.1760335592286; Sun, 12 Oct 2025
- 23:06:32 -0700 (PDT)
+        bh=hZsaCMPk0e7xOahYxc9B2HTwzlp/3SZdj7OzfRUl7Tc=;
+        b=QOZx/Ztp6vQRVBThkzQRunKpxC7EnfSRF/jKhSHHYAgG7dqj4r6OgzyCwKw73Y2VT8
+         XZNNRXVxN+TADQow9/b0Ns9Zgsuh4ZaS/T3wqTYJjRZIb1R9UCFtg14fhTAgK8taWMXV
+         1hjT1jgE6UjwtK2SmCibigde1C2eF9jRJHlhE2Mc5+nX1XMeczxfYHLJ212s3LNfiymc
+         iLTylvoyjMxn4N2eDrDxyHSw4p40yvmLomtFideVHPaPB4Pk/rIyQXsK+AiICITBrh3E
+         pxEnpuF0RsB2pd5+6m90An5LGXQAf2axC9BMzKbdXQUa7gZ8IT1JDOc8/7KltBMrFRFK
+         q6ZA==
+X-Forwarded-Encrypted: i=1; AJvYcCUzYktUW4IPryNq463yEDv0ECbDqjDR+PQ9sqJPdtDiIqrq3/7LMhWwOvaoBPfLbLQkD1DLyIkMt/4=@vger.kernel.org
+X-Gm-Message-State: AOJu0YzvTNipTHQ2jrMaCyLK1qwPcLr+YRvB07OY0UeyF0hF3R/apdJP
+	Plm0jFU1vRxluV90eaNoNMsimpdE0TtBJyIwCitpZjwO6/QTKnme0xT6KkK+RVCKLWHAStTm7/j
+	HgHO0kLA+LYtWrJ7uyWFQEPSgC5wmM3Y=
+X-Gm-Gg: ASbGncuvkIlTp6iMepzl7UtBAeLBNsCy0S4f2l7HhHQ6RNq2H5NosO/5KIhKzFT58+r
+	bl+HVBxb6xT3kzDFdfqsC3dXSpcRRQoH4PTWHVvrkBnmABpEsYjqaTbb0Vq+szpGTV0UEjcHRg3
+	Aw45+9zNWe1fN5edGQPDqguvyjTMMAF9Ldm+AJL2DTQeA6A3qEOHTNIxKaZhs8Pff6uymFKhsBG
+	vpLYv2cXtHZfXV8zpTCymDhJid8JDpCL94B
+X-Google-Smtp-Source: AGHT+IEjiQMnhpQ/Kb5hfGFGrybCEQQLnH8Bm2H6/rcdu7ghvXP+Te8kpl6LHQn/PIgvNHwUMvVrGJdsfOorS0mdutU=
+X-Received: by 2002:a53:ee07:0:b0:63c:daf9:bf21 with SMTP id
+ 956f58d0204a3-63cdaf9fa65mr11783686d50.24.1760349598638; Mon, 13 Oct 2025
+ 02:59:58 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -61,14 +61,13 @@ List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 References: <20251010094047.3111495-1-safinaskar@gmail.com>
- <20251010094047.3111495-2-safinaskar@gmail.com> <CAHp75VeJM_OoCWDX20FhphRi6e7rG9Z4X6zkjx9vFF12n7Ef7A@mail.gmail.com>
-In-Reply-To: <CAHp75VeJM_OoCWDX20FhphRi6e7rG9Z4X6zkjx9vFF12n7Ef7A@mail.gmail.com>
+ <20251010094047.3111495-3-safinaskar@gmail.com> <CAHp75VezkZ7A1VOP8cBH8h0DKVumP66jjUbepMCP87wGOrh+MQ@mail.gmail.com>
+In-Reply-To: <CAHp75VezkZ7A1VOP8cBH8h0DKVumP66jjUbepMCP87wGOrh+MQ@mail.gmail.com>
 From: Askar Safin <safinaskar@gmail.com>
-Date: Mon, 13 Oct 2025 09:05:56 +0300
-X-Gm-Features: AS18NWAQKixJeSnu1jMDTs2ReasUmQ44oKevMSLcLyEUnjeI8Werl5Jwf9tycOM
-Message-ID: <CAPnZJGDvHbDt_JvDNLN+LaU+5yFyB_qkdBtVhSEV60_yktAVzw@mail.gmail.com>
-Subject: Re: [PATCH v2 1/3] init: remove deprecated "load_ramdisk" and
- "prompt_ramdisk" command line parameters
+Date: Mon, 13 Oct 2025 12:59:21 +0300
+X-Gm-Features: AS18NWA-897xF_-UIFWa7pg6NN4-821ID7y01MXNqW6009NHHhcR0gsdnks-4OY
+Message-ID: <CAPnZJGBAc-kqZ-MAKRGrk1big=N_GZupxKgM_+TodqgteffLvw@mail.gmail.com>
+Subject: Re: [PATCH v2 2/3] initrd: remove deprecated code path (linuxrc)
 To: Andy Shevchenko <andy.shevchenko@gmail.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
 	Linus Torvalds <torvalds@linux-foundation.org>, 
@@ -91,16 +90,30 @@ Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Oct 10, 2025 at 6:02=E2=80=AFPM Andy Shevchenko
+On Fri, Oct 10, 2025 at 6:05=E2=80=AFPM Andy Shevchenko
 <andy.shevchenko@gmail.com> wrote:
-> 1) often the last period is missing in the commit messages;
-I will fix in v3.
+> > -       noinitrd        [RAM] Tells the kernel not to load any configur=
+ed
+> > +       noinitrd        [Deprecated,RAM] Tells the kernel not to load a=
+ny configured
+> >                         initial RAM disk.
+>
+> How one is supposed to run this when just having a kernel is enough?
+> At least (ex)colleague of mine was a heavy user of this option for
+> testing kernel builds on the real HW.
 
-> 2) in this change it's unclear for how long (years) the feature was
-> deprecated, i.e. the other patch states that 2020 for something else.
-> I wonder if this one has the similar order of oldness.
+This option applies to initrd only, not to initramfs.
+Except for EFI mode, when it applies to both.
 
-These two commits were done in 2020, too. I will fix in v3.
+I will remove this option when I remove initrd.
 
---
+In EFI mode it is easy just not to pass initramfs, so all is okay.
+
+Also I will clarify docs in v3.
+
+Also, please, answer here:
+https://lore.kernel.org/regressions/20250918183336.5633-1-safinaskar@gmail.=
+com/
+
+--=20
 Askar Safin
