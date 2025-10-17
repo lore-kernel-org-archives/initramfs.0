@@ -1,191 +1,134 @@
-Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from AM0PR83CU005.outbound.protection.outlook.com (mail-westeuropeazon11020103.outbound.protection.outlook.com [52.101.69.103])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D24D30FF04
-	for <initramfs@vger.kernel.org>; Fri, 17 Oct 2025 06:11:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.44
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1760681485; cv=none; b=f29Jphp5Y8obbOQ9QSBwwRStsga86tzav+rCrck9cF0zdJI81DRcB+pYqNut2Z0WsPtZQhgViFLrngHLkf9ndWkR+CQpYWb40On5hUy2YA3qK7UPyOWZ0F3FCuX5MfXy1L69D2VlmrbvnvvHtrkwTI8W49kjpUuiYU4oKj+x3MY=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1760681485; c=relaxed/simple;
-	bh=ulNxyjs+7P2Oi91QTv8ZCqiBF+ih61EgQsdAC1fi7Y0=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=EsRL0RZomB468PvhJQnSnlh89OhU5C2p2+Os3qtxKpczF9jrMNXEe6wl3Eu9kOU5JaU+cK2rou+tPRgHG/LvQ4Y4yw+lfTL3yBF+PG8iV8kC0Sn5Sl/LLTc5ldQrCwp7d/LmXevz/kc6DYIcwLgr+y/f8B/dnttpKEP5YZJKBOA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=fxsUWHaQ; arc=none smtp.client-ip=209.85.221.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F072726F292
+	for <initramfs@vger.kernel.org>; Fri, 17 Oct 2025 08:10:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.69.103
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1760688626; cv=fail; b=FDLFAxS35ozIh8hI7KS5eXYSHkIRubaqLhqQfOptqK+yq/TAnAmTUPlqmHS9+u64VF4ht0dnHhofiQDseZWTnWkAvgcUBfABRI2UT7vR3Xk4FhvnTT35lPayijn5hMq3R2Ylb2Lm3HWlnXXNHIaXQcSvK0MJ1Tag8G3fvZSntm8=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1760688626; c=relaxed/simple;
+	bh=SaNpKZMgczsgt0advWBYhhbwZs1v09pY4H9roQkXIR0=;
+	h=From:To:Subject:Date:Message-ID:Content-Type:MIME-Version; b=UBs24x7UbS81bQDLZzBbZFl1n1kq+pg6vvjwhsuMAZPewD3eUYzS0Ysak0FKDrT1eiPfLpI8KwQlzpW2IUbX+9N8pTK9sNSToIi27wNK5fm1vUxiwR0t8JkzC2qRPfXlZ1EF9cf7J2nm1KnXRik7VqhOt19zWls3aHuN80LoNHk=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=dalco.ch; spf=pass smtp.mailfrom=dalco.ch; dkim=pass (1024-bit key) header.d=dalcoch.onmicrosoft.com header.i=@dalcoch.onmicrosoft.com header.b=epMJsfpM; arc=fail smtp.client-ip=52.101.69.103
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=dalco.ch
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=dalco.ch
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fxsUWHaQ"
-Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-4060b4b1200so1359572f8f.3
-        for <initramfs@vger.kernel.org>; Thu, 16 Oct 2025 23:11:22 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=dalcoch.onmicrosoft.com header.i=@dalcoch.onmicrosoft.com header.b="epMJsfpM"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=zRLMUF+xoOgKrIoW3bmTUUMEfdayZyRmWXczxhKoU+4SfYMO1QW98ngmXcQORix6zuUDtaAWitcXSxRMqpF6gQbuMXoONFMkyKvZb3Sjvdj2aoCgNYfacDdESqAa91DQHC3hguWhcupMiRVrt+cmy/JpKkny/M+Z6v5Vgr6MUiApcuK9fkDwFus6UVbjFmD4jKmJU0X/Nmj5BLDWIHUabKggakNFg/tbMuBse+OFBi8XJUvomArGrpzeohlzold+z9XaMY59KWSXt39bxrd4GMtuvUFfb+hTxeWUQaytiEd2b79PFzbxAdGZGyCOzps9bsuibRVxoUe5EK6lKBWa1A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=SaNpKZMgczsgt0advWBYhhbwZs1v09pY4H9roQkXIR0=;
+ b=MQ+81WFf4B6CKvjrWwqTU4FcGXhB+9p0MQKkXrXFKF6/YWYoXrCV5okvVBERiPuNJhIbQAayaqYToC1u2HGYOmH48kmCE/vVY34yIPdQbmbvc/6S4K+bnP/KmuVfFpGz0Ock5p2ptBKq0qBK9V0l0ztiXZnzhK8Rwnj++aPkS7QkzcloxMHBssCN2EQbT4b4Ow7sn284CDZS35IfVvULnPkbVMQpto5c78ykct8Inxsl4E1o5vwNnZEvAENza2LcrjY1U61ct0b4qxeCCPkUMI7yjBDIkIblbD67ChKQR86LxWKoZZbr6v1wvDhmT56RKUk2h8ADlxl/+5jVD180AQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass (sender ip is
+ 195.242.140.30) smtp.rcpttodomain=vger.kernel.org smtp.mailfrom=dalco.ch;
+ dmarc=pass (p=none sp=none pct=100) action=none header.from=dalco.ch;
+ dkim=none (message not signed); arc=none (0)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1760681481; x=1761286281; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=OqXHg8fIVhNftDZOE9plbEgrQCbIv7x8GRINtPvlAdM=;
-        b=fxsUWHaQhj7CFg7lwcIffAaSGDYWnNOGnC2Wtr3PDtaEQ9OtgWAnhCZQLOr71juH5N
-         3E/e54f8YRt74Evm+pMY6HvoH1eAmF6GGjFao2uXEssAtfz413aAKV/SMCQpVD1yjpF5
-         xc+Ur35Icqe6/d4U7f4prbrV3uXc52+J4ltL6zk0jWtqUqy3Wu1QIgjoRWEs94JGfPf6
-         fN9loldJBtOUIUBY/zuNxxt9O41Ya+f1i0Soerajk472YDphWjYYmMdQOA3QRy7P4Tfa
-         GFMJNBc840prEByFOpUiIYEcNOtpizvHVz2tfiQgiwYAyKEIgyRVv4/P/RFOb4FO9GG8
-         Ps6A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1760681481; x=1761286281;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=OqXHg8fIVhNftDZOE9plbEgrQCbIv7x8GRINtPvlAdM=;
-        b=TJbPT4CEo0WD+wezbdGUSJNjJIkiiIyfjecFIR4vViySD+nSU1WXKoVLrscD9/X7BL
-         H47FQFojEeMle9AfRHi5ItGu32Z8lyM/HZgKTjlZ2Y/9vvhpTQGAabprBqrXTOZSG4yv
-         fu2EIundMsFIXgEGrtCJDkYi9iI9wm3gDk2+0Nkt/FKVw+zhVFoSXsigtJPrNBmQR1rz
-         IVqrg6bhMBABvkW67H+150bJXd0FLh3A2HExxwdCSZDUo8hVeR5ZA6YcxdfZofj03U0+
-         4dmZZ3LbPxsevDgW07f++4ZHhddD1DrSzfgPpc1+rdDUi9i4m7DYoPlhNxjkFeZE5kj1
-         cYdQ==
-X-Forwarded-Encrypted: i=1; AJvYcCXswnJpr49z8ccRuGXn/MeF0y+4S/Ij36IQPP/bgmclFyEyQJU/cZBrg6BiCsKoW2ri9vwZ44MhQDs=@vger.kernel.org
-X-Gm-Message-State: AOJu0YxRax6j750Dt4eDdWaWljDiQU3wSRi8PhKFqcaZVlqTtIWQQumJ
-	KGOhSeuLalNa6lWSxWOVfjJREV76ImDg+VYF8xvxYhhdBkOVlW3lxdZB
-X-Gm-Gg: ASbGncvf1kCFMLbpyE5d29iGIr3PpOsPVGn2AZ7qm5R1q45lFy9IzgI8pzXYpMYdeGU
-	cS0ZukHdZeDnigusKb7H7+K/K/BtVC1P8y86ohALOb8hLv4VxO0Gz7ypxn1H9qRffR/h2owV1nv
-	sQUbco9WJ/ZGJ/iLh4kho3W8q5VuXuklh6QXSNUXMa2+rHeStVuLjnOGXQy6Ip4t2kyn0AXM2OC
-	gohWSTKOSSddLpa4sD/DdHByopQXzGXLumQ+JQYPleVu0V/1ipo/St6vgReOF0E7prYOnllXY/+
-	4zkwc9Ccv8RaeN3tXWSfrXJu7fFanjrCFycxulwncK4TQF8H86Omk6ICX6an7j8qL+1l8zgVAtY
-	cpgrIuQ94Ap+qRAL52uzKIH7XNwo382ULmrYb1Faa5wXvPecdMVG5SHs7/phwJbIhnY54ERAyFz
-	HouEUw1R0sP9Q=
-X-Google-Smtp-Source: AGHT+IG9nFyXU6/YzYNrNEKOmFbcI73aJtoTWz3HhvfOqLzAHFD1KIWSe0W31I+6MYQb5EK9zvZOHQ==
-X-Received: by 2002:a05:6000:2507:b0:425:737a:4804 with SMTP id ffacd0b85a97d-42704d4422dmr1625416f8f.4.1760681480389;
-        Thu, 16 Oct 2025 23:11:20 -0700 (PDT)
-Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-426ff84cbb7sm7231059f8f.23.2025.10.16.23.11.17
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 16 Oct 2025 23:11:19 -0700 (PDT)
-From: Askar Safin <safinaskar@gmail.com>
-To: linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Christian Brauner <brauner@kernel.org>,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	Jan Kara <jack@suse.cz>,
-	Christoph Hellwig <hch@lst.de>,
-	Jens Axboe <axboe@kernel.dk>,
-	Andy Shevchenko <andy.shevchenko@gmail.com>,
-	Aleksa Sarai <cyphar@cyphar.com>,
-	=?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>,
-	Julian Stecklina <julian.stecklina@cyberus-technology.de>,
-	Gao Xiang <hsiangkao@linux.alibaba.com>,
-	Art Nikpal <email2tema@gmail.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Alexander Graf <graf@amazon.com>,
-	Rob Landley <rob@landley.net>,
-	Lennart Poettering <mzxreary@0pointer.de>,
-	linux-arch@vger.kernel.org,
-	linux-block@vger.kernel.org,
-	initramfs@vger.kernel.org,
-	linux-api@vger.kernel.org,
-	linux-doc@vger.kernel.org,
-	Michal Simek <monstr@monstr.eu>,
-	Luis Chamberlain <mcgrof@kernel.org>,
-	Kees Cook <kees@kernel.org>,
-	Thorsten Blum <thorsten.blum@linux.dev>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Arnd Bergmann <arnd@arndb.de>,
-	Dave Young <dyoung@redhat.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Krzysztof Kozlowski <krzk@kernel.org>,
-	Borislav Petkov <bp@alien8.de>,
-	Jessica Clarke <jrtc27@jrtc27.com>,
-	Nicolas Schichan <nschichan@freebox.fr>,
-	David Disseldorp <ddiss@suse.de>,
-	patches@lists.linux.dev
-Subject: [PATCH v3 3/3] init: remove /proc/sys/kernel/real-root-dev
-Date: Fri, 17 Oct 2025 06:09:56 +0000
-Message-ID: <20251017060956.1151347-4-safinaskar@gmail.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20251017060956.1151347-1-safinaskar@gmail.com>
-References: <20251017060956.1151347-1-safinaskar@gmail.com>
+ d=dalcoch.onmicrosoft.com; s=selector1-dalcoch-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=SaNpKZMgczsgt0advWBYhhbwZs1v09pY4H9roQkXIR0=;
+ b=epMJsfpMiOqdjEQWlx6zFjSJSTPpoSmXtjWEeHy3bImGZhdNHMZ6yToK0mbaoB+Luu0RJwdVZtxnUA8yK5jomFLTTGgu6KG6ZxUHfww87ZXwJqpOogBia2ETz9YYAZMyCXQUzO9aNl8D5OnxHQyDXMOTLeGWfsj3cnLcfzvfwAw=
+Received: from GV0P278CA0014.CHEP278.PROD.OUTLOOK.COM (2603:10a6:710:26::24)
+ by AM9P193MB0821.EURP193.PROD.OUTLOOK.COM (2603:10a6:20b:1fb::12) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9228.13; Fri, 17 Oct
+ 2025 08:10:18 +0000
+Received: from GV1PEPF000006FB.CHEP278.PROD.OUTLOOK.COM
+ (2603:10a6:710:26:cafe::5d) by GV0P278CA0014.outlook.office365.com
+ (2603:10a6:710:26::24) with Microsoft SMTP Server (version=TLS1_3,
+ cipher=TLS_AES_256_GCM_SHA384) id 15.20.9228.13 via Frontend Transport; Fri,
+ 17 Oct 2025 08:10:17 +0000
+X-MS-Exchange-Authentication-Results: spf=pass (sender IP is 195.242.140.30)
+ smtp.mailfrom=dalco.ch; dkim=none (message not signed)
+ header.d=none;dmarc=pass action=none header.from=dalco.ch;
+Received-SPF: Pass (protection.outlook.com: domain of dalco.ch designates
+ 195.242.140.30 as permitted sender) receiver=protection.outlook.com;
+ client-ip=195.242.140.30; helo=mail.dalco.ch; pr=C
+Received: from mail.dalco.ch (195.242.140.30) by
+ GV1PEPF000006FB.mail.protection.outlook.com (10.167.240.7) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.9253.7 via Frontend Transport; Fri, 17 Oct 2025 08:10:17 +0000
+Received: from mail1.corp.dalco.ch (172.16.16.32) by mail1.corp.dalco.ch
+ (172.16.16.32) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.2562.29; Fri, 17 Oct
+ 2025 10:09:50 +0200
+Received: from mail1.corp.dalco.ch ([fe80::cfbb:174:8a8b:44ee]) by
+ mail1.corp.dalco.ch ([fe80::cfbb:174:8a8b:44ee%7]) with mapi id
+ 15.02.2562.029; Fri, 17 Oct 2025 10:09:50 +0200
+From: Matteo Guglielmi <Matteo.Guglielmi@dalco.ch>
+To: "initramfs@vger.kernel.org" <initramfs@vger.kernel.org>
+Subject: unsubscribe
+Thread-Topic: unsubscribe
+Thread-Index: AQHcPz1oR+EJTTr7qECGy3ubhx35sw==
+Date: Fri, 17 Oct 2025 08:09:50 +0000
+Message-ID: <23d7c43089eb4a259b0b5548ab67ad6e@dalco.ch>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-EOPAttributedMessage: 0
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: GV1PEPF000006FB:EE_|AM9P193MB0821:EE_
+X-MS-Office365-Filtering-Correlation-Id: f4d2c57e-4119-41a5-8e03-08de0d549ba3
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|376014|4022899009|82310400026|36860700013|1800799024;
+X-Microsoft-Antispam-Message-Info:
+	=?iso-8859-1?Q?XByMcCYnh7YxdpuEufl/8SlIW0ucrIpWhQ8bYnhgnDqAeTRSx/lfQ7N+ZU?=
+ =?iso-8859-1?Q?a2WUnnMM/7tAGxZONNyDZ6MHmaI3p9Y7AV9vGxPt/VbFjSnHOXbgumsJbW?=
+ =?iso-8859-1?Q?/pgpyvOvEJqaUAQbGoVbXCFyKN/L2TPYKsTlRCQ6WJimY5x3XSHVGsxDq3?=
+ =?iso-8859-1?Q?WktXKH7nVIRjmfZmuMChiO4PdaRRQUjx37kIV17Fyp8Uf4M3pxLccUwXfd?=
+ =?iso-8859-1?Q?pplH66fdu3Etq0yqwRbyxqJW+iJjaWONlk5HGS2sEnIs9jAlTXAxXigeEx?=
+ =?iso-8859-1?Q?OMkfDN9yGbb4oahPGHXAX67S3Swn+G065dJqBOxwrB3kq8TV2qBvGCyeWw?=
+ =?iso-8859-1?Q?bnBxS7g/7DGOiy6blNcFGF6Ti+P+Nv3YHhqpgkCU05l1qL4kBXmOjGp/mP?=
+ =?iso-8859-1?Q?Yqzk5GbMI0W7TGF7HQA9FPPTA4R6ljNn8VK3NEDWXkZ3eSZbQkIX0w6gLg?=
+ =?iso-8859-1?Q?eipw41X0o2QMPed8UwKdTqDlDyfQmYE2R/bL1SgMSTtILpgD4RDBrPl0Y6?=
+ =?iso-8859-1?Q?qO/9178jWo1GseDOF7kX2nUGYFATtcgL0CjYFy+rpF9ZxQGM2L0oK85UKb?=
+ =?iso-8859-1?Q?1fwSfAof3MQJhBIfbSBz1AK7hkFmb7o1WhPBu3EdKp6lXVNYqFjIJQSHfv?=
+ =?iso-8859-1?Q?i7QOYPAGVhClxruzHm24vKIBqMmZcspK9b8W85wNJx1mGIfhnc75ua8OI1?=
+ =?iso-8859-1?Q?/TQwlPYNBBggzCbHUbaExhRD++39FGwQu7Zv6+HE5//pKPI1426MBBEmbr?=
+ =?iso-8859-1?Q?XmWQTdebCaBpmMQD1Fvy3TkwQY2QsNLKe1DJHIbuCtTLyZWmQhF55i5HZ/?=
+ =?iso-8859-1?Q?Qoh1QmooJdP8i+lfPtLKn7vmm6RJ+73noJoY05xQBip4CerEd5rd5xuTiZ?=
+ =?iso-8859-1?Q?nIx8cZL99t0AdzbmdKLj/hiR0uHUCMiwOtITQl7WP7ZhOSSsvmWJov6rYg?=
+ =?iso-8859-1?Q?QY3CLX4j7ZQphTRqv0etGVNbrkVgjaEHyuyRmopueOQ/pJ4c+gw1s6CRlS?=
+ =?iso-8859-1?Q?WPKoJ/vuhJlWewr+S4NA2avVmCI2y61RwyZVScgUdrmENr51rEu7NcnPbQ?=
+ =?iso-8859-1?Q?P1VeJkwD1yABAzp7R82a45FQVYaeAE0Ngqk7KJno23Q6m7uTllC4GqVs74?=
+ =?iso-8859-1?Q?gXz9Uwt2HjF5ZmSgDVuU02+yVkOlreczY8tj/9gFe5rCksJk8KMGb/mjrh?=
+ =?iso-8859-1?Q?OZ8b2lXLbTmy2FNhupUURzizPYcWr5OrFWsQv93TrgF9CSWo0B/L+rzXS7?=
+ =?iso-8859-1?Q?+R58DkxcIOFtgRs/EOml6N92dnYsxzLwu0wvJe29jLjg9Icl5/1iSzOi0r?=
+ =?iso-8859-1?Q?YDY/hnPDsygpTcAm5sbIAZr7cQX9F2WV+XGkrKbnnkqEqAA9C1+u8lk6yi?=
+ =?iso-8859-1?Q?Xi+RAMNFN/IolW/lcICDboU9wd13LQik33zL+wceUYf7b17+dKtPZI+fcx?=
+ =?iso-8859-1?Q?KDDyOBbj15Yy4J3CppqaOyEbhP+MK9GCNM5zoFoL3qwLd4Y3AGvcnmXD+h?=
+ =?iso-8859-1?Q?w24Ik37j3gNG89rd1Iyer2BCcwI31YAj0Lkq3PDp7CKCpNlpfddnUWtrwC?=
+ =?iso-8859-1?Q?asOXYYOH/L0rlAstauZtbXUKoqZ7inYJvkIk9SXMDgQBPug4hOEI/Jjnl7?=
+ =?iso-8859-1?Q?psn9oSEZq1CVU=3D?=
+X-Forefront-Antispam-Report:
+	CIP:195.242.140.30;CTRY:CH;LANG:en;SCL:1;SRV:;IPV:CAL;SFV:NSPM;H:mail.dalco.ch;PTR:mail.dalco.ch;CAT:NONE;SFS:(13230040)(376014)(4022899009)(82310400026)(36860700013)(1800799024);DIR:OUT;SFP:1102;
+X-OriginatorOrg: dalco.ch
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 17 Oct 2025 08:10:17.2337
+ (UTC)
+X-MS-Exchange-CrossTenant-Network-Message-Id: f4d2c57e-4119-41a5-8e03-08de0d549ba3
+X-MS-Exchange-CrossTenant-Id: d06af698-620a-41dc-a250-98f7b8431cf6
+X-MS-Exchange-CrossTenant-OriginalAttributedTenantConnectingIp: TenantId=d06af698-620a-41dc-a250-98f7b8431cf6;Ip=[195.242.140.30];Helo=[mail.dalco.ch]
+X-MS-Exchange-CrossTenant-AuthSource: GV1PEPF000006FB.CHEP278.PROD.OUTLOOK.COM
+X-MS-Exchange-CrossTenant-AuthAs: Anonymous
+X-MS-Exchange-CrossTenant-FromEntityHeader: HybridOnPrem
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM9P193MB0821
 
-It is not used anymore.
+unsubscribe
 
-Signed-off-by: Askar Safin <safinaskar@gmail.com>
----
- Documentation/admin-guide/sysctl/kernel.rst |  6 ------
- include/uapi/linux/sysctl.h                 |  1 -
- init/do_mounts_initrd.c                     | 20 --------------------
- 3 files changed, 27 deletions(-)
-
-diff --git a/Documentation/admin-guide/sysctl/kernel.rst b/Documentation/admin-guide/sysctl/kernel.rst
-index f3ee807b5d8b..218265babaf9 100644
---- a/Documentation/admin-guide/sysctl/kernel.rst
-+++ b/Documentation/admin-guide/sysctl/kernel.rst
-@@ -1215,12 +1215,6 @@ that support this feature.
- ==  ===========================================================================
- 
- 
--real-root-dev
--=============
--
--See Documentation/admin-guide/initrd.rst.
--
--
- reboot-cmd (SPARC only)
- =======================
- 
-diff --git a/include/uapi/linux/sysctl.h b/include/uapi/linux/sysctl.h
-index 63d1464cb71c..1c7fe0f4dca4 100644
---- a/include/uapi/linux/sysctl.h
-+++ b/include/uapi/linux/sysctl.h
-@@ -92,7 +92,6 @@ enum
- 	KERN_DOMAINNAME=8,	/* string: domainname */
- 
- 	KERN_PANIC=15,		/* int: panic timeout */
--	KERN_REALROOTDEV=16,	/* real root device to mount after initrd */
- 
- 	KERN_SPARC_REBOOT=21,	/* reboot command on Sparc */
- 	KERN_CTLALTDEL=22,	/* int: allow ctl-alt-del to reboot */
-diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
-index bf381aa0400f..82613a3be756 100644
---- a/init/do_mounts_initrd.c
-+++ b/init/do_mounts_initrd.c
-@@ -8,31 +8,11 @@
- 
- unsigned long initrd_start, initrd_end;
- int initrd_below_start_ok;
--static unsigned int real_root_dev;	/* do_proc_dointvec cannot handle kdev_t */
- static int __initdata mount_initrd = 1;
- 
- phys_addr_t phys_initrd_start __initdata;
- unsigned long phys_initrd_size __initdata;
- 
--#ifdef CONFIG_SYSCTL
--static const struct ctl_table kern_do_mounts_initrd_table[] = {
--	{
--		.procname       = "real-root-dev",
--		.data           = &real_root_dev,
--		.maxlen         = sizeof(int),
--		.mode           = 0644,
--		.proc_handler   = proc_dointvec,
--	},
--};
--
--static __init int kernel_do_mounts_initrd_sysctls_init(void)
--{
--	register_sysctl_init("kernel", kern_do_mounts_initrd_table);
--	return 0;
--}
--late_initcall(kernel_do_mounts_initrd_sysctls_init);
--#endif /* CONFIG_SYSCTL */
--
- static int __init no_initrd(char *str)
- {
- 	pr_warn("noinitrd option is deprecated and will be removed soon\n");
--- 
-2.47.3
-
+--------
+Matteo Guglielmi | DALCO AG | Industriestr. 28 | 8604 Volketswil | Switzerl=
+and | T: +41 44 908 38 38 | D: +41 44 908 38 37
