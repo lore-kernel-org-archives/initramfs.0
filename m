@@ -1,88 +1,124 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f45.google.com (mail-ed1-f45.google.com [209.85.208.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83F77258CD7;
-	Wed, 22 Oct 2025 06:44:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C7DD303C80
+	for <initramfs@vger.kernel.org>; Wed, 22 Oct 2025 08:06:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761115482; cv=none; b=VOTT/2n4PP2w7Kkqg/l8adZBSZs8Z0vR/4pqWgCBSEd+p5trO3YaXGyrD0ROtL8XUqH3KstBRCqK7OFVWM/pswXIkVfofCSCr84ac42wRiVEf9dhli7tAloq/wWYu1SqcQzG+0h8Di0v6qSN62PnXiMslrj5muQQCpRZQfmncUs=
+	t=1761120398; cv=none; b=I2jwh+PgRKKgb+tBN6TYTRIsIXkT7ejaWpuIkvIxKH/ZptSdmyMAsdQGH95p9Nev4KOY8GROVAldOtv5ghHUcqZVWegZVX3ufyIoh4mi+coRPN+/zpwWvv6Oif3SKBjgwgf8EK6lPWNBSQpX+0UgkcwCXTj+s7F8jcVLj3bsrCE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761115482; c=relaxed/simple;
-	bh=Z5AWUZgXIxpUHQV1fNHHxpTVV6Oicr9t+TxDvGlw+6k=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=G4Bu901eQTK4W0Z92tB3bK/hjksBjCg8UmW01+pTCrng4RxM+d7KkIe4N9Zke8bp3WXUGdTQiHXF9szL1T+lVXu31CuBKOpms2UInMgYfkiXdLuC95pUVoNpMfVwQG910s1Tv/kDnag0rt18pzsN4859BOQcTcercYpCHecSdNY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=OiRdl3zf; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	s=arc-20240116; t=1761120398; c=relaxed/simple;
+	bh=eyBdO2wWOgqsPzs2lpBJ9/L31r8e4dCSgvgCYmxIx6k=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=QF+eOX2Te49NTbhe+bUrxh15xCcrcw9zz0TBaOpYtLc0We1fbTwgyZMMzbtK6XysROmX3TQb2h77OuMx1irwc0Q+V1gINak2RkyVgELGfpMr/8min4OlvPdc6siiFMTdfFEgWY6fSSIFThBTeoH8p33iZFcNEBThl+KNRZ2jTTY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=aUx/AVC/; arc=none smtp.client-ip=209.85.208.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="OiRdl3zf"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=kyOfDxXn3l+NgMiyysxqYTdckOUTzb689OEE6eFFTKI=; b=OiRdl3zfcabVHV+WVH9hzNGVFQ
-	0i+ZfByOM4atbb8kHfDy6gQeI7Re38es6JsN5tmh13zxnW9jwICCGbJgvDp18LQsqgV32ieYElvCm
-	mSBTJnTW/OXvoFYW4TatNGmCSiNh9RgVzKHW5wJuRqq/IUeM92y0x5jyeqeqIr6GTr/6dghygJRPh
-	d4VYJqGqBgAKkkR+e7xS8F2Toh0nVymoE0a0kKaDeDrYb06k8cKRISjNVtrAj4JSHGkkdX6fFhWtl
-	C6HlapxNk6t418RIa0UnOCJVeSaJffeaYQkk5jOWvHH2QPTwsfV/zORvRd8vM0nGGyOvOlgVNd4qI
-	Uu3E0uGg==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.98.2 #2 (Red Hat Linux))
-	id 1vBSaF-00000001hpk-2d9E;
-	Wed, 22 Oct 2025 06:44:31 +0000
-Date: Tue, 21 Oct 2025 23:44:31 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Askar Safin <safinaskar@gmail.com>, linux-fsdevel@vger.kernel.org,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aUx/AVC/"
+Received: by mail-ed1-f45.google.com with SMTP id 4fb4d7f45d1cf-63e0cec110eso2195725a12.2
+        for <initramfs@vger.kernel.org>; Wed, 22 Oct 2025 01:06:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1761120394; x=1761725194; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=toHlnWQqNYbfD0u6quHogsDi3+miz5wiSuRT4/A88gI=;
+        b=aUx/AVC/VZbpE2oN97dtsPHXthi3yMi5uzy00pyB+I/2aKpB1pOF2pRPdY6cZntp6p
+         +DxMKa9u/iHSxDOYlybze4ivOTbEBXwIlPobhtH9vR+ofclCSVUnFdLZ2x75oKao2T6F
+         BzGLltxDdG1BTWxSKuNX4gqbmqd/hSjjIIFVs0n0Ch4mlkoUiC6dBoLKKuDIBPDKTFUi
+         kFk5uj7UUBrRa5xQZqggiEu3sdLoHgwuGvH/67ISB2+jrRmwVgOB6jqYyuXpupwhrpaf
+         63/jcsA3jGWujqwOZrdyACWvjfRvauXk4GbFXeQNuFeYqpEhKr8/+iUckaeissAGe+rY
+         jSBA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1761120394; x=1761725194;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=toHlnWQqNYbfD0u6quHogsDi3+miz5wiSuRT4/A88gI=;
+        b=j6jfUVfwCugUQr+JUHVxbSb4uUurGO5NuN+5usND1OS8PRlzR/mxDoxazWohLvoSiv
+         Yh3GN5mLU3kXIsL1mZtnBeidEQMFADUiEtgLo+mjIGcF+t70s6WiMs8fMSeHv4Fr479J
+         kkkpedKQgVgaVLpwmvZsnz2F62JroMGUsXGQw/KqgNPYGGtuqAj/WwISJAqSmUCPLfvP
+         b8+MeIzruipPgoqilDD9jx77wGn19ac29U2a6FuFVkokqJJPFaQriH5bWvBMiZ/FuNuF
+         C12rWXj0XNNGW1/+3H8IintaZl9K+2Euz/VcL6CczmZVkdwg+jINp0KW0qVn4+7wKcAO
+         Na+A==
+X-Forwarded-Encrypted: i=1; AJvYcCULZDvGeZ38tiLVTFk/tsMHD453bFO2qAtepZ+wgSuGFgdeUmy0vkRNFluSide6kSgTiPuBbZOtWuU=@vger.kernel.org
+X-Gm-Message-State: AOJu0Yyh2F5Y8dHQ/+dZhSPe1UCg5pByzNhoqbXVfZiWP4+RNlx+Vbe2
+	fUCmWS3IyF4jIfdmzgFcfp+evQTpIqgV68GD66KxkJteAGYWafUnDzIA
+X-Gm-Gg: ASbGncuoK7Bwiyo8Vb8rAi7wSpjI7vpOFG1Brxof/pFNmsdQglCwBcbwl3b/KKnVVsa
+	b47jyME6ukJKiKN77zsdkVrorWVYTw/qH3F2uVwyIjqD0RBUmIsgjs5MX7cKgRI+D8jmp9vJL9n
+	R8OD7WsMtoHI1QUzGec1vmNTlCfj0P/N7OokyW/I26XlEjfEdsRQxHrb9Oz+QBD5mOfTCcJyQnt
+	mOPmhle5X3ePQaWk+uEwEApVS/KC/7TzxoyiHL6qt27xrnQiBqJqJTnbGGv0iXoRa/zCavq7lN0
+	5zEHDpgk1HRZ8axoEO+hWvJB3/mJZx3sHWxVTLlMjuX5XbdRwwZ+zRSN3aEbCSjY4oSq/+t6NdQ
+	9VHazktxXWBU1+Dhffx/Vhney9EHAu+rjH3k26cIb7k/RgeyM/y0+DB9UQPSJ8oF9EXujQGkGwT
+	8F
+X-Google-Smtp-Source: AGHT+IFKMamBOdEkXZztW4+a96FX3cVQPwKK7mU8xvsOl5ZRh1X2aHXQdNoBVmqwPChAhbEjv7M9Xg==
+X-Received: by 2002:a05:6402:2791:b0:63e:23c0:c33e with SMTP id 4fb4d7f45d1cf-63e23c0c43amr1116868a12.27.1761120394218;
+        Wed, 22 Oct 2025 01:06:34 -0700 (PDT)
+Received: from localhost ([212.73.77.104])
+        by smtp.gmail.com with UTF8SMTPSA id 4fb4d7f45d1cf-63c4945ef49sm11192106a12.29.2025.10.22.01.06.30
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 22 Oct 2025 01:06:33 -0700 (PDT)
+From: Askar Safin <safinaskar@gmail.com>
+To: bagasdotme@gmail.com
+Cc: akpm@linux-foundation.org,
+	andy.shevchenko@gmail.com,
+	arnd@arndb.de,
+	axboe@kernel.dk,
+	bp@alien8.de,
+	brauner@kernel.org,
+	christophe.leroy@csgroup.eu,
+	cyphar@cyphar.com,
+	ddiss@suse.de,
+	dyoung@redhat.com,
+	email2tema@gmail.com,
+	graf@amazon.com,
+	gregkh@linuxfoundation.org,
+	hca@linux.ibm.com,
+	hch@lst.de,
+	hsiangkao@linux.alibaba.com,
+	initramfs@vger.kernel.org,
+	jack@suse.cz,
+	jrtc27@jrtc27.com,
+	julian.stecklina@cyberus-technology.de,
+	kees@kernel.org,
+	krzk@kernel.org,
+	linux-api@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-block@vger.kernel.org,
+	linux-doc@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Al Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>,
-	Jens Axboe <axboe@kernel.dk>,
-	Andy Shevchenko <andy.shevchenko@gmail.com>,
-	Aleksa Sarai <cyphar@cyphar.com>,
-	Thomas =?iso-8859-1?Q?Wei=DFschuh?= <thomas.weissschuh@linutronix.de>,
-	Julian Stecklina <julian.stecklina@cyberus-technology.de>,
-	Gao Xiang <hsiangkao@linux.alibaba.com>,
-	Art Nikpal <email2tema@gmail.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Alexander Graf <graf@amazon.com>, Rob Landley <rob@landley.net>,
-	Lennart Poettering <mzxreary@0pointer.de>,
-	linux-arch@vger.kernel.org, linux-block@vger.kernel.org,
-	initramfs@vger.kernel.org, linux-api@vger.kernel.org,
-	linux-doc@vger.kernel.org, Michal Simek <monstr@monstr.eu>,
-	Luis Chamberlain <mcgrof@kernel.org>, Kees Cook <kees@kernel.org>,
-	Thorsten Blum <thorsten.blum@linux.dev>,
-	Heiko Carstens <hca@linux.ibm.com>, Arnd Bergmann <arnd@arndb.de>,
-	Dave Young <dyoung@redhat.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Krzysztof Kozlowski <krzk@kernel.org>,
-	Borislav Petkov <bp@alien8.de>, Jessica Clarke <jrtc27@jrtc27.com>,
-	Nicolas Schichan <nschichan@freebox.fr>,
-	David Disseldorp <ddiss@suse.de>, patches@lists.linux.dev
-Subject: Re: [PATCH v3 0/3] initrd: remove half of classic initrd support
-Message-ID: <aPh9Tx95Yhm_EkLN@infradead.org>
-References: <20251017060956.1151347-1-safinaskar@gmail.com>
- <20251021-bannmeile-arkaden-ae2ea9264b85@brauner>
+	mcgrof@kernel.org,
+	monstr@monstr.eu,
+	mzxreary@0pointer.de,
+	nschichan@freebox.fr,
+	patches@lists.linux.dev,
+	rob@landley.net,
+	safinaskar@gmail.com,
+	thomas.weissschuh@linutronix.de,
+	thorsten.blum@linux.dev,
+	torvalds@linux-foundation.org,
+	viro@zeniv.linux.org.uk
+Subject: Re: [PATCH v3 2/3] initrd: remove deprecated code path (linuxrc)
+Date: Wed, 22 Oct 2025 11:06:25 +0300
+Message-ID: <20251022080626.24446-1-safinaskar@gmail.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <aPg-YF2pcyI-HusN@archie.me>
+References: <aPg-YF2pcyI-HusN@archie.me>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20251021-bannmeile-arkaden-ae2ea9264b85@brauner>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 
-On Tue, Oct 21, 2025 at 03:05:35PM +0200, Christian Brauner wrote:
-> Without Acks or buy-in from other maintainers this is not a change we
-> can just do given that a few people already piped up and expressed
-> reservations that this would be doable for them.
-> 
-> @Christoph, you marked this as deprecated years ago.
-> What's your take on this?
+Bagas Sanjaya <bagasdotme@gmail.com>:
+> Do you mean that initrd support will be removed in LTS kernel release of 2026?
 
-I'd love to see it go obviously.  But IIRC we had various users show
-up, which speaks against removing it.  Maybe the first step would be
-a separate config option just for block-based initrd?
+I meant September 2026. But okay, if there is v4, then I will change this to
+"after LTS release in the end of 2026".
 
+-- 
+Askar Safin
