@@ -1,66 +1,66 @@
-Received: from mail-ed1-f45.google.com (mail-ed1-f45.google.com [209.85.208.45])
+Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C7DD303C80
-	for <initramfs@vger.kernel.org>; Wed, 22 Oct 2025 08:06:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8426309EE4
+	for <initramfs@vger.kernel.org>; Wed, 22 Oct 2025 08:26:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761120398; cv=none; b=I2jwh+PgRKKgb+tBN6TYTRIsIXkT7ejaWpuIkvIxKH/ZptSdmyMAsdQGH95p9Nev4KOY8GROVAldOtv5ghHUcqZVWegZVX3ufyIoh4mi+coRPN+/zpwWvv6Oif3SKBjgwgf8EK6lPWNBSQpX+0UgkcwCXTj+s7F8jcVLj3bsrCE=
+	t=1761121578; cv=none; b=hqDrErfcxJFG8SITMQRqmRWVakjyo5ECtoq86urXzu3VGXfj6+uXKkh3Lxi/pNm0xSC8DMlLcDZWYfUo8z0pkdHW4KkNexlmGSHVsjU12g53i/ApXtQl328yxVSlBjJug98ck2/EKDV+YPVEEqpWyjveZC/lTWxJNKk3Ex8kNqQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761120398; c=relaxed/simple;
-	bh=eyBdO2wWOgqsPzs2lpBJ9/L31r8e4dCSgvgCYmxIx6k=;
+	s=arc-20240116; t=1761121578; c=relaxed/simple;
+	bh=Q6H986X15qYys1qfZkB9W2dW8AtLZxTL9G3Hoa0FETk=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=QF+eOX2Te49NTbhe+bUrxh15xCcrcw9zz0TBaOpYtLc0We1fbTwgyZMMzbtK6XysROmX3TQb2h77OuMx1irwc0Q+V1gINak2RkyVgELGfpMr/8min4OlvPdc6siiFMTdfFEgWY6fSSIFThBTeoH8p33iZFcNEBThl+KNRZ2jTTY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=aUx/AVC/; arc=none smtp.client-ip=209.85.208.45
+	 MIME-Version; b=nVutKIZnzhOM7p04F2rYXfy9tmwRWKRmPN409nQtzuy1ZYS1R9mSh4zSWx9wy8VfwVyo8l/ALcUhb7yU2W+tMMC4bJilfBrOzflMSlaKlmEY5nKdEQ3MNQ/jC+iJfv64uGStFwBHgsG+rb63zbPecBScSeGWXTyTXpDUV/xUIVY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=g9lSf9jl; arc=none smtp.client-ip=209.85.218.47
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aUx/AVC/"
-Received: by mail-ed1-f45.google.com with SMTP id 4fb4d7f45d1cf-63e0cec110eso2195725a12.2
-        for <initramfs@vger.kernel.org>; Wed, 22 Oct 2025 01:06:35 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="g9lSf9jl"
+Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-b456d2dc440so1069644366b.0
+        for <initramfs@vger.kernel.org>; Wed, 22 Oct 2025 01:26:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1761120394; x=1761725194; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1761121574; x=1761726374; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=toHlnWQqNYbfD0u6quHogsDi3+miz5wiSuRT4/A88gI=;
-        b=aUx/AVC/VZbpE2oN97dtsPHXthi3yMi5uzy00pyB+I/2aKpB1pOF2pRPdY6cZntp6p
-         +DxMKa9u/iHSxDOYlybze4ivOTbEBXwIlPobhtH9vR+ofclCSVUnFdLZ2x75oKao2T6F
-         BzGLltxDdG1BTWxSKuNX4gqbmqd/hSjjIIFVs0n0Ch4mlkoUiC6dBoLKKuDIBPDKTFUi
-         kFk5uj7UUBrRa5xQZqggiEu3sdLoHgwuGvH/67ISB2+jrRmwVgOB6jqYyuXpupwhrpaf
-         63/jcsA3jGWujqwOZrdyACWvjfRvauXk4GbFXeQNuFeYqpEhKr8/+iUckaeissAGe+rY
-         jSBA==
+        bh=NDyEa99uEXhpux+y1jdsG/DCyMfzL2pd992wei+/e1g=;
+        b=g9lSf9jlzTL74ZxyfEMsa16zdauZydvqbq6C8BlT0oq+R+RCOZKV7QlN+n7Puwk6X9
+         TK11E1pXhHLdAuoU9qJ8OVl+4QcN5CIDLdvrtHDuaQdch6/it+z8DAx58sBJnRfAmgVz
+         vG4xalYkaDCAiv6gJpIiu08tQML8GZKeBJuCErAqp862qz7oIFTxEML3NDQfa42+q1m5
+         JyZrQGPFKnbdBW9dDJ4+v/Qb2AY9ddKozGeODolVFc91lLhGagiEvJAxutp+Fa0TKdf+
+         VbXPxrycqhr9LTv3VpU2DzC8PZWvGeSgNpfGHO24xPNLpypRN3tDJdofqxE6Q/w05re7
+         zT7Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1761120394; x=1761725194;
+        d=1e100.net; s=20230601; t=1761121574; x=1761726374;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=toHlnWQqNYbfD0u6quHogsDi3+miz5wiSuRT4/A88gI=;
-        b=j6jfUVfwCugUQr+JUHVxbSb4uUurGO5NuN+5usND1OS8PRlzR/mxDoxazWohLvoSiv
-         Yh3GN5mLU3kXIsL1mZtnBeidEQMFADUiEtgLo+mjIGcF+t70s6WiMs8fMSeHv4Fr479J
-         kkkpedKQgVgaVLpwmvZsnz2F62JroMGUsXGQw/KqgNPYGGtuqAj/WwISJAqSmUCPLfvP
-         b8+MeIzruipPgoqilDD9jx77wGn19ac29U2a6FuFVkokqJJPFaQriH5bWvBMiZ/FuNuF
-         C12rWXj0XNNGW1/+3H8IintaZl9K+2Euz/VcL6CczmZVkdwg+jINp0KW0qVn4+7wKcAO
-         Na+A==
-X-Forwarded-Encrypted: i=1; AJvYcCULZDvGeZ38tiLVTFk/tsMHD453bFO2qAtepZ+wgSuGFgdeUmy0vkRNFluSide6kSgTiPuBbZOtWuU=@vger.kernel.org
-X-Gm-Message-State: AOJu0Yyh2F5Y8dHQ/+dZhSPe1UCg5pByzNhoqbXVfZiWP4+RNlx+Vbe2
-	fUCmWS3IyF4jIfdmzgFcfp+evQTpIqgV68GD66KxkJteAGYWafUnDzIA
-X-Gm-Gg: ASbGncuoK7Bwiyo8Vb8rAi7wSpjI7vpOFG1Brxof/pFNmsdQglCwBcbwl3b/KKnVVsa
-	b47jyME6ukJKiKN77zsdkVrorWVYTw/qH3F2uVwyIjqD0RBUmIsgjs5MX7cKgRI+D8jmp9vJL9n
-	R8OD7WsMtoHI1QUzGec1vmNTlCfj0P/N7OokyW/I26XlEjfEdsRQxHrb9Oz+QBD5mOfTCcJyQnt
-	mOPmhle5X3ePQaWk+uEwEApVS/KC/7TzxoyiHL6qt27xrnQiBqJqJTnbGGv0iXoRa/zCavq7lN0
-	5zEHDpgk1HRZ8axoEO+hWvJB3/mJZx3sHWxVTLlMjuX5XbdRwwZ+zRSN3aEbCSjY4oSq/+t6NdQ
-	9VHazktxXWBU1+Dhffx/Vhney9EHAu+rjH3k26cIb7k/RgeyM/y0+DB9UQPSJ8oF9EXujQGkGwT
-	8F
-X-Google-Smtp-Source: AGHT+IFKMamBOdEkXZztW4+a96FX3cVQPwKK7mU8xvsOl5ZRh1X2aHXQdNoBVmqwPChAhbEjv7M9Xg==
-X-Received: by 2002:a05:6402:2791:b0:63e:23c0:c33e with SMTP id 4fb4d7f45d1cf-63e23c0c43amr1116868a12.27.1761120394218;
-        Wed, 22 Oct 2025 01:06:34 -0700 (PDT)
+        bh=NDyEa99uEXhpux+y1jdsG/DCyMfzL2pd992wei+/e1g=;
+        b=AdYQqpiiYoO2E0vyBafaLTtSuDDTK7uzd7yGI+aQXtGlK2RcyibQyHpA+UM4WY93nF
+         1guoDCO/s6vTZIVlFC/yvT9jxtHGTD14gpHqrfHUQyGv767UGyJM8NibTD24+FweHyGn
+         k7t64d1xzbCrykSZ6bw74a8E6l0NATRgHims90jCD1FmsmBT5CmgZfssDdLc+8H7KgM0
+         hEz7X3zG8xZZVad+vARi7NRhW7XyKs6NsL6sI/oVu0n8vaEPPZTrx68jPiSOCAJCZDNc
+         8ViugyV/8vaPM3ruNz7KZ3pGAj0Nlyg5ceZ1d8Pqm6crAvC6dzNy7E9AiTpLUe/fsE2+
+         5oAA==
+X-Forwarded-Encrypted: i=1; AJvYcCUYkDQ9epCEVIW1yXd++XbMLrkOJyS2ac3G76F4s7s88lfjCBEgltGuxDnlNm2wSW5Wnf+UHMH88H8=@vger.kernel.org
+X-Gm-Message-State: AOJu0YxnmNoTI6/7K+ocUkWHKX0VCtWEwmyDUv0DG8gUM1O834Ssy3Xt
+	SRZ9GZJd8iVJsQ66jDzmvM1KWuT9BC+oN47Njhxavfkq4zziutOgf+/b
+X-Gm-Gg: ASbGncvH+NDmIvU3FCxomvahZGYQJlGp+z/Iy+pnHUQcfMAveJinNhC5mqfIYKLQ6+D
+	RExrzZt4PvRFnij/k30h7rPSsKJI0LJs3HwBjdzcsLiB7vkhmZcripYgs0/eAnPFSFEIrqD40Vn
+	R9C1bTG0wQjZeoyX2PZaDhGm14iaTETPKP22QhKYQXnqX0f7PUB8ZqZvfryYChkgAQm4pRqemsu
+	Zsykt+3hyEkReNM3SPtOZU+vLXJUu1FWEZJs0ADIcY3UFvdaq439ggmS6oRopEj2XaUj/KQ4WwV
+	NwDjiyV68eB+lGsTRd41q+Zb+6gaebn95Fdlnv/Vciio+47mRWnSA1dDi175s5IJZNV3HWHYVLI
+	63nCik8yOUeUGx1tgcqSciqYb3umkGAzJYw4Uch4hUiWJrL6VR90K1w1mVjd1Z+Ewl+NZMvCqjW
+	od
+X-Google-Smtp-Source: AGHT+IFMC1ZTRJ80d2+tQCzLJZEUcRjgNolpnafRAvb1tXsgv9lX8RVp0jdHUx6GvU3poKNRSafE7g==
+X-Received: by 2002:a17:907:7ea6:b0:b3e:3c1c:d2f2 with SMTP id a640c23a62f3a-b6474940fc1mr2581204566b.36.1761121573582;
+        Wed, 22 Oct 2025 01:26:13 -0700 (PDT)
 Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id 4fb4d7f45d1cf-63c4945ef49sm11192106a12.29.2025.10.22.01.06.30
+        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b6cfa6cb6e6sm365510866b.49.2025.10.22.01.26.09
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 22 Oct 2025 01:06:33 -0700 (PDT)
+        Wed, 22 Oct 2025 01:26:13 -0700 (PDT)
 From: Askar Safin <safinaskar@gmail.com>
-To: bagasdotme@gmail.com
+To: hch@infradead.org
 Cc: akpm@linux-foundation.org,
 	andy.shevchenko@gmail.com,
 	arnd@arndb.de,
@@ -75,7 +75,6 @@ Cc: akpm@linux-foundation.org,
 	graf@amazon.com,
 	gregkh@linuxfoundation.org,
 	hca@linux.ibm.com,
-	hch@lst.de,
 	hsiangkao@linux.alibaba.com,
 	initramfs@vger.kernel.org,
 	jack@suse.cz,
@@ -100,12 +99,12 @@ Cc: akpm@linux-foundation.org,
 	thorsten.blum@linux.dev,
 	torvalds@linux-foundation.org,
 	viro@zeniv.linux.org.uk
-Subject: Re: [PATCH v3 2/3] initrd: remove deprecated code path (linuxrc)
-Date: Wed, 22 Oct 2025 11:06:25 +0300
-Message-ID: <20251022080626.24446-1-safinaskar@gmail.com>
+Subject: Re: [PATCH v3 0/3] initrd: remove half of classic initrd support
+Date: Wed, 22 Oct 2025 11:26:04 +0300
+Message-ID: <20251022082604.25437-1-safinaskar@gmail.com>
 X-Mailer: git-send-email 2.47.3
-In-Reply-To: <aPg-YF2pcyI-HusN@archie.me>
-References: <aPg-YF2pcyI-HusN@archie.me>
+In-Reply-To: <aPh9Tx95Yhm_EkLN@infradead.org>
+References: <aPh9Tx95Yhm_EkLN@infradead.org>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -114,11 +113,41 @@ List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Bagas Sanjaya <bagasdotme@gmail.com>:
-> Do you mean that initrd support will be removed in LTS kernel release of 2026?
+Christoph Hellwig <hch@infradead.org>:
+> On Tue, Oct 21, 2025 at 03:05:35PM +0200, Christian Brauner wrote:
+> > Without Acks or buy-in from other maintainers this is not a change we
+> > can just do given that a few people already piped up and expressed
+> > reservations that this would be doable for them.
+> > 
+> > @Christoph, you marked this as deprecated years ago.
+> > What's your take on this?
+> 
+> I'd love to see it go obviously.  But IIRC we had various users show
+> up, which speaks against removing it.  Maybe the first step would be
+> a separate config option just for block-based initrd?
 
-I meant September 2026. But okay, if there is v4, then I will change this to
-"after LTS release in the end of 2026".
+So far in recent months 3 people spoke against initrd removal. All they are in Cc. They are:
+
+- Julian Stecklina. He planned to use initrd with erofs, which is currently
+not supported anyway. Also, he replied to v1:
+"You have all my support for nuking so much legacy code!"
+"Acked-by: Julian Stecklina <julian.stecklina@cyberus-technology.de>"
+( https://lore.kernel.org/lkml/1f9aee6090716db537e9911685904786b030111f.camel@cyberus-technology.de/ )
+
+- Gao Xiang, maintainer of erofs. He also planned to use initrd with erofs,
+which is currently not supported anyway. Also, he said to me:
+> Again, I don't have any strong opinion to kill initrd entirely because
+> I think initdax may be more efficient and I don't have any time to work
+> on this part -- it's unrelated to my job.
+( https://lore.kernel.org/all/79315382-5ba8-42c1-ad03-5cb448b23b72@linux.alibaba.com/ )
+
+- Nicolas Schichan. He has million devices, which use initrd. But they use
+root=/dev/ram code path, not linuxrc code path, which I'm removing. He
+explained this here:
+https://lore.kernel.org/lkml/20250918152830.438554-1-nschichan@freebox.fr/
+
+So, this patchset will not impact these people. So, I think it is okay
+to remove linuxrc now. We can revert this patchset if needed.
 
 -- 
 Askar Safin
