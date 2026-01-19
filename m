@@ -1,79 +1,80 @@
-Received: from mail-lf1-f48.google.com (mail-lf1-f48.google.com [209.85.167.48])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62AF83233E8
-	for <initramfs@vger.kernel.org>; Mon, 15 Dec 2025 17:59:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD0CD31B13B
+	for <initramfs@vger.kernel.org>; Mon, 19 Jan 2026 17:14:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765821584; cv=none; b=QUaZs3kYmwhZZk2DX8txiVzwFNeu7YRaE0KWWsqhjMWAF8ivdOhoKOBdgDtD/lcdwGK0o8a165RzlLsCVdZ6QjW16fM+VY52ir81cyb75GlLiohUF7QxvISqVYq6g+R0ckpXzbDTmHm7uO3zqm3qd5qdHOYIfssKFZQ7zbIe4sk=
+	t=1768842842; cv=none; b=FHGY3sIOsqso04SsBdyesNpCk9EwV8xTMrZVeGq/mxLO8+Z7wohEwV6OzRL6MhT/zhhxgCrTRj6FHN6DLTsA205FoZ2Jols18EMYMDjoYdpEFlXGhpG75ONF1rHivG1wvR9bRx3v3ftymhySrFTeBCuloofzuNeh/XHCbcqEdpo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765821584; c=relaxed/simple;
-	bh=rKVKnsmZY5Zk5WseCbLhC70tZU73oYSI0ZX68nvqOpU=;
+	s=arc-20240116; t=1768842842; c=relaxed/simple;
+	bh=HltWzhCU/jyKg3OH86O7zVr1VGgKXVSd9KnWS0kbuZw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OgNhlcnxX4w4PKrkTVsnYceKQ+eF4/FTUHGXa8VgEXtjjYWOjMItBIqVO9PKMlCmVTbGcxGPn4/6uUA3fZkIYH+4BCrSmFiN8JmIntPoaM/wSmcdyzSFHt86DxXlRpO8A+AINXOzdhme462ISn4ZyAdO+QkwwrDaZUhVlWFdkAg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=mWcISiYv; arc=none smtp.client-ip=209.85.167.48
+	 MIME-Version; b=Qglwc+vA3q3MQIj2k/JzGvXmBeJnZqtzc4QW9Viv30ptVhtvjSJR3vZjzcxeptETix41YwcWd3lYP4cLOBqP+s3HDs1oGDJxUD/H7KcLNzNFiL9PCRcf67rQR9O6tKNmrK6dxzYU01tqSe2IZ92h3HL+Owo+erdF97jPi9T7mdA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=H/XtslX8; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mWcISiYv"
-Received: by mail-lf1-f48.google.com with SMTP id 2adb3069b0e04-5943b62c47dso3758743e87.1
-        for <initramfs@vger.kernel.org>; Mon, 15 Dec 2025 09:59:42 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="H/XtslX8"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-47ee0291921so30119075e9.3
+        for <initramfs@vger.kernel.org>; Mon, 19 Jan 2026 09:14:00 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1765821580; x=1766426380; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1768842839; x=1769447639; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=zIbn2oDFRSGWfD5W22SaWrURpraJkYSQ1nm0bbeV7eo=;
-        b=mWcISiYvQDMyWrcSRycAfbgC2LcfDHeiHNEwlrIHZIiej1AYC1xSGsNIQAQ09hrYkV
-         JX5RKvAXPuBpvT42pleeeJWKLBH2sgmOEqfv/KpJmG2j4MZwEb/VhmN2KUWZSKmpR4y8
-         W9Y9TRYiK/LUJSWBxJeCtVm6+grs9CMML+9OjkE4C8237semIawFtJN/0+n1tfa/B4sH
-         4PXZxM7CBczsbeXD5LrxS/cB7X27CZ/SgFLeQqgNRSooR0u6fqf5viqD1bfmET98d1BJ
-         y+OTGkBGOVpj54S8EoEEBS6SOazJkp5BEh/6fqKDGAxYCvW45iAXLY5VypDKgUjIZ0ta
-         NCVg==
+        bh=JFPZYWBsnoffalizcrUMTn6MQic+Yir2jaF7eYeMMsE=;
+        b=H/XtslX8LIAnTJwS1EVkymRnTq3doHz1nEYBPg9HSQNWr472FqEZbK+VAO0jNWrV8G
+         9hzanuF9m1ELmedyeeW+Tb74It/wf/djAB5KB2qjFveWQhuxw4h45f3uCO1YcQffL+PW
+         hG+Bun9ERX7jMylC85H0J1En909396v36NfsfY2CNcFF0NiTehEanjB1rEUgTIgLpNrF
+         pZd9nZ69DAKKnqUKtgAoTCEHaZLJp/LgMxrv0LsfzwOTOFFXV6EwY90Zs7rz951nwP0L
+         zhTvVJiv7xhchqA7CoESKAl1FOV9D/VBPBVRIEFtSTHUODdic3c7LQlZO7TkoLXZ73ks
+         /1ow==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1765821580; x=1766426380;
+        d=1e100.net; s=20230601; t=1768842839; x=1769447639;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=zIbn2oDFRSGWfD5W22SaWrURpraJkYSQ1nm0bbeV7eo=;
-        b=dO8oNY74T1In+/LH7U5BiKdYKiI4qBg9ien7KQcigpNcQiFY3ddEw/onWqMvY7mlzZ
-         FFgRVs7Q8/6kRbNTZXUTNqiN7nabu3p4MEnk8OruXUAtuCctdo0b35k38gHkYvPGL265
-         /n5jm3a1ZJGXQnFU2JkdBPvEvqd1H49QLt1dqG8zqlMznj95Un0rLWugh9I4rhvFqZYP
-         RomH+VUvhUhpeZaNBM7Qeb0mF6LBqOv77GQf8FnP0SviIj866b4NSX9VpeNFlRQe63TE
-         C+x0unFMtGLXh/rXbvi3qOM0EnwPpb4orRK/WoEHmVuL7tewC1hh4MeQsyJKfdAudrIL
-         EsAg==
-X-Gm-Message-State: AOJu0Ywf/+v0VUzy8xkpgyg2WUB/iYjYZPpQ4yaB5xwqp3/7VYsgiu04
-	1LKH5zWmKOOv8MnqkCAv6ETF7fRv6tTlUOVhY+YFQIImJ07RGeKZpv1e
-X-Gm-Gg: AY/fxX6AJKP9J3hBOQ7rbZVJUZiSh+KZWHX4y5Haz9Wdqov5pKJR1zS3X87PR98TwDa
-	lx5E1nycghunJN/Q/QhHUt1b78BxBqvhnyViD6SdBWtiVzVcVDy/SJINbUxYgZO/jlRrMTt69jE
-	IAGR8T5gnioCIJLT3kJNhq//OaLg00hFWhVSuO1hrBbQjpsN2Nx15NMnVmQypI4cEqh8weZIwTi
-	cxivhDn9Y0dXrJrZODfJ0W7SmE5y4LqexMReUYaTk32IqPkHqZUXMlSlUI1e+GRyRmz90dw2+RO
-	V0oO7bKj188eRVykLxdMMvX9NvspBZb8OYoaUWKli8fawZa3NqBU67oh5s6KzBpfPm2g8tvboBw
-	THylRcKyoX3/3y+E+TuJ9Ckrr1dDim/vTJv8CBb9dp194SoFHeXxshaKFYLQrUHclCdztG1yFi9
-	jHchv/9ZFd
-X-Google-Smtp-Source: AGHT+IFsDUVoZATaLzj9N1/hjfRE03GZ2gIP+Qj4HQeX9tt2ONoJL779FMDFpau9DQULSPR5u/L2Cg==
-X-Received: by 2002:a05:6512:1154:b0:597:d59a:69ca with SMTP id 2adb3069b0e04-598faa4d5b5mr3889154e87.28.1765821580147;
-        Mon, 15 Dec 2025 09:59:40 -0800 (PST)
-Received: from localhost ([194.190.17.114])
-        by smtp.gmail.com with UTF8SMTPSA id 2adb3069b0e04-5990da11dbfsm5648e87.13.2025.12.15.09.59.38
+        bh=JFPZYWBsnoffalizcrUMTn6MQic+Yir2jaF7eYeMMsE=;
+        b=eOQjic2Kjiv5cJLgow7Mh4BWdqfFNGSpbCXncgI0n7z8pBjbjsKJtbi3zT7gmwDrIj
+         h0vuWbR1EHFSAS2fRAuBRpDthq9dK4KlLpBaiV5CodHLSWJeVY8hIfYq8W3Ph+iyOUAX
+         SGRyRwawkKCcqLm43pmM8rGI56ziZaWoApSSpoCDuK+7fslp1LgY53DF7+zs1joMGFkW
+         5YUhCKRp+b7aZtNpV0w9HvZmiW0bMhxq28C/WBbGSaiUwhltXsbh9DKTyZkQBin3re6x
+         /+prA3sVzDHnvC+OC7bbdyP77mOY2ZEdfUPoAuSV+8Qfipvc5IDbNTWds1cKgMqOnsTT
+         Bm1A==
+X-Forwarded-Encrypted: i=1; AJvYcCWUAbdNOm8fghhAY/bWXJ9PvPOI94898BBgD9M7cMrPyJ8Zxf4gQpZlYrj8oIUGb4sVzCsElyEjLSI=@vger.kernel.org
+X-Gm-Message-State: AOJu0Yw8wc1aazAVtxqIpMi2asd4ZcCwff7GvFkNBNgHmQJDbK9HcaFZ
+	hBEW/d2q+5Vj1Q7/aH2AYwcv2uZ13JSBhUjuaFrsc3EAXrLFP1UJn3+O
+X-Gm-Gg: AY/fxX46i3QyiDr2XFtZ5rEMO8ZNug6A5BxAsOocMIcDxpRT/t1bO4bCBUUMtmzFG8A
+	NOEuNqY3c0b4uyYzwa5hBLQ69DsVClbagnipsKsKivCTDgtd1PX4k3bng7GhSX4LefFZEHyBC09
+	0R/BQ4IGcpJMZIwgyccEWHq+22iDT+082mIZRDrhQNgq3y7jmyRQlW89uymbYvf4dFtEmMWrm2n
+	YNAxhXn7iQGULaE4vTygpQIO++87yfVu9IKxHE1t3WdkGHrOSM+EOJO3Jt3CpImypWzMYxORqJ0
+	Ch1yrTVjRZqMHWWwNid+GwDdVAMZCmeYBpMczJhrTCg5qsqDCMyz7z0St3RiZLMVE1lwQlaWydw
+	Xf+qvNEra30viSAmF+Hne7hyLjQNVRy2UtSHBkVhOO+1YIsUxxog9di1TtdOouhmiFhXRe3/LnA
+	kfsoj5uiggBIvMRkInuQ==
+X-Received: by 2002:a05:600c:474a:b0:477:5897:a0c4 with SMTP id 5b1f17b1804b1-4801eab5647mr145969725e9.4.1768842839032;
+        Mon, 19 Jan 2026 09:13:59 -0800 (PST)
+Received: from localhost ([212.73.77.104])
+        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-4801e9daaabsm85035595e9.4.2026.01.19.09.13.57
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 15 Dec 2025 09:59:39 -0800 (PST)
+        Mon, 19 Jan 2026 09:13:58 -0800 (PST)
 From: Askar Safin <safinaskar@gmail.com>
-To: rdunlap@infradead.org
-Cc: initramfs@vger.kernel.org,
-	linux-api@vger.kernel.org,
-	linux-arch@vger.kernel.org,
-	linux-block@vger.kernel.org,
-	linux-doc@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	patches@lists.linux.dev
-Subject: Re: [PATCH v4 1/3] init: remove deprecated "load_ramdisk" and "prompt_ramdisk" command line parameters
-Date: Mon, 15 Dec 2025 20:59:27 +0300
-Message-ID: <20251215175927.300936-1-safinaskar@gmail.com>
+To: rob@landley.net
+Cc: akpm@linux-foundation.org,
+	anders.f.bjorklund@gmail.com,
+	axboe@kernel.dk,
+	emily@redcoat.dev,
+	giuseppe@scrivano.org,
+	hch@lst.de,
+	initramfs@vger.kernel.org,
+	t+github@chainguard.dev,
+	viro@zeniv.linux.org.uk
+Subject: Re: [PATCH v2] initramfs: Support unpacking directly to tmpfs
+Date: Mon, 19 Jan 2026 20:12:46 +0300
+Message-ID: <20260119171246.3218393-1-safinaskar@gmail.com>
 X-Mailer: git-send-email 2.47.3
-In-Reply-To: <5c3c4233-3572-4842-850e-0a88ce16eee3@infradead.org>
-References: <5c3c4233-3572-4842-850e-0a88ce16eee3@infradead.org>
+In-Reply-To: <dbeb7b4b-b5e6-15ba-7e74-f9ffdd07059b@landley.net>
+References: <dbeb7b4b-b5e6-15ba-7e74-f9ffdd07059b@landley.net>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -82,16 +83,38 @@ List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Randy Dunlap <rdunlap@infradead.org>:
-> Reviewed-by: Randy Dunlap <rdunlap@infradead.org>
-> 
-> Thanks.
+Hi, Rob and Emily. All problems mentioned in this thread are solved!!!
+Let me explain.
 
-Thank you!
+Rob Landley <rob@landley.net>:
+> Your mount tree in a container does NOT start empty.
 
-P. S. For unknown reasons I don't see your email in my Gmail. Not even in
-spam folder.
+We got [1], which allows us to create new empty mount namespace.
 
+Well, not quite empty. Assuming that we also have [2] and we passed
+"nullfs_rootfs" in kernel command line, then open_tree(OPEN_TREE_NAMESPACE)
+will create new mount
+namespace, which will contain (in usual case) exactly two mounts: nullfs
+and whatever we passed to open_tree call.
+
+I. e. [1] solves "create new empty mount namespace" problem.
+
+And [2] introduces nullfs you mentioned.
+
+These patches are already in next, but not yet in mainline. So you have
+some time to try to raise some concerns. If you have some concerns,
+raise them in [1] and [2].
+
+> despite the openat() family being in posix-2008 we sadly don't appear to have a
+> mountat()...". I dunno. That's design work to properly fix the issue.
+
+We do have mountat. It is called fsopen+fsconfig+fsmount+move_mount.
+By the way, we very recently got them documented:
+https://manpages.debian.org/unstable/manpages-dev/fsopen.2.en.html .
+
+
+[1] https://lore.kernel.org/all/20251229-work-empty-namespace-v1-0-bfb24c7b061f@kernel.org/
+[2] https://lore.kernel.org/all/20260112-work-immutable-rootfs-v2-0-88dd1c34a204@kernel.org/
 
 -- 
 Askar Safin
