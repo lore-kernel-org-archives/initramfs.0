@@ -1,91 +1,163 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 05D1131D38B
-	for <initramfs@vger.kernel.org>; Thu, 19 Feb 2026 23:42:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E9C032ABC3
+	for <initramfs@vger.kernel.org>; Thu, 19 Feb 2026 23:59:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771544580; cv=none; b=M/tKHj3p9LJHiMhpodbbjXN7n0rfz7FWDW+JTCxPATCFrlhckZwWTOs5MZl5eQ4wAbZMEY5i6b+y6Pn7V1P0fSzjYOH1MDE24LmnxQGfdTR7pYWitBZbNnwlCt2EfxSggIWeowIL+H/nHoTgDjgtYlstOabTILxe5YQh7i62etQ=
+	t=1771545576; cv=none; b=sC2y56p0vf2gc/PQHEF2FzC0WA2DhwO0TmKh6LiUqEJfnOev7lLk7G0RiwjjnXV/aJ8CtVWZfM+qJQXKWSMwQh5L5OyuEy8j74orIZy6WYkw5l5i5wQDsqKSdauBtX7Qo/R7H/WoXgYdnHYBcsrTlcotlGqWRkQUWSMGXnN8pgQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771544580; c=relaxed/simple;
-	bh=quE5sGl3Uk/gMNmwDYmHMacZa/Zg+chR5zy0mjgEh1Y=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=JgkkghBPAqc8GJ6Ug4kvpHIBW+7DH7IyWnJSbeWoOysD9eCk2EvOKXsoG8iuLhBUb+CQHXd2xKMtelA9Rd5CLa/h8Wo4AiYwdRFXHVexKUttvZ65i01EBVAxIfFtKF7IVmPm/neM2ihPqSRqm81y9El9H2+O1LGdpGVNGw66CYI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UfQcgfQX; arc=none smtp.client-ip=209.85.128.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1771545576; c=relaxed/simple;
+	bh=/sMVd6t/ySVPo+xYFCuqRKNAdXXwIh8XQ0cpYIdZPPI=;
+	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=MPNKmxptqCqS3LyF/s3jVlgv1JaYN/D+2f2iiDti3BpmuNesZSUBKgksvdefgCASBFNMzKZB3UIQJrmvJM5MztskGyQJfblidcdXu1928zt8ES2WpKpTbnoAVDBsw4BbGW6CMFA6Dc5Fo6ly4ITBrr9qKv2XYpb1JfiFBA+TXb4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=DbF8Broz; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=mNEqWp7W; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=DbF8Broz; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=mNEqWp7W; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UfQcgfQX"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-48375f1defeso10640215e9.0
-        for <initramfs@vger.kernel.org>; Thu, 19 Feb 2026 15:42:58 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1771544577; x=1772149377; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=VTF1k698GVo28+ckOqecetXyS8IP9ymt5tN+tdpIOiA=;
-        b=UfQcgfQXQy+pYZ6LXrr9RBMeLnuzdqzm13XEFaa5QkNWUZcmJ241fUUe8Cqas9iInE
-         Rx/OLeqATRTaT9UFghx2R2YUrh60VeM9q1gBCqVQKa9U+Jxprjj4tj6sov/A/DnjhP2J
-         zOS1DfxoNfNg3j2OOVvKMCb/Xzyz+LhmQsyNb0TNhUEkus4xluqIIQIX6Eua36gAiYmd
-         LLD6KyKE/dY94xjs0z4jy+o9yXlTGvuVI1SBZGDoisBPmF04N9gUlhqeHisj33IaXNIi
-         gLSVGbUIGlvaAYq3drOD5i99jhPZhetE15bWfy/5E5cl730+9fQFX2m5YUnv8bs5qdcm
-         rA4Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1771544577; x=1772149377;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=VTF1k698GVo28+ckOqecetXyS8IP9ymt5tN+tdpIOiA=;
-        b=TlDKM1I1m3kKxcwQdovYkZ80yFC8L3i1IO+qhdGPPZrojAVi8Cke8wUu8AoaRCm5t/
-         J3pyPtKVYENeQeofKFXWoRKdkU8tiyPppZT/A4E0Pyfjf4p/L79h1KO1DArBrRNr53kV
-         HBcFusVByo0mKLAPc38GUXJ65lTHRKp4zBTeb23aEvnSvf9isdJJFjQ+s9LzG4Ei6NhT
-         wWBCqA5YbvA4YXA9xU4O8WZ3VQohqc17S9JtxuudGyq3QXUHWZQ7FGLoZxuE7SVH/CLQ
-         H8sOdsgV8rXqIvkmvgURVZF3zk3WKr8wznlERS/voYBPQHtAoxiK9OiJhM9+c7FLt+xO
-         ZBlg==
-X-Forwarded-Encrypted: i=1; AJvYcCVwrRrSh4xn11aNeXwGEf+smDcNuCaNDlxux7BsoUDOk+m2G5CFswXEPgLjlP42fW98hHcrIoY1Jhc=@vger.kernel.org
-X-Gm-Message-State: AOJu0YzUQhIdd3oJww9r3SPfJZCmTnXMITSNXD4D9sEYIz67RgJYTZRf
-	ezflTjWCuVBmiVvL4vbNIJbj0dB6hXzI8II1QWdQ3OBbEwLvobfmrYbNTdXRrw==
-X-Gm-Gg: AZuq6aLr/ZvTQU6BL9MU4b1FFuFSDY+05/dkA+C+BhNIwhDvVDQKXr+VOFjPTkiw5lb
-	FVP8WBJGxjyjR+CWUlh91xji3iHIuik37FobRSR0lH4divVIp2EC4FQySuY/bX3SiYBryEcWNSl
-	E1+2ycBh6JyMij6emq45rn13mRSBBaZyf7/qLzNEY0xwCKbRNrOkkvWGNmEoi/quD0NXxbQXXMf
-	Y6O2Mj42BSCluY/X9I5Dd1Iv7bOnFt+SPY9ncI3l5v8g0tFmf2xoI8YBy5u0QZLn15e2Baj6Hkz
-	q8ePIoZuGzLaqejxCJpRsi+iG+zRGmGYlC/pK8+oBXk1i0LQ44EMS5YbzFN3e0rPB3XJEMW/XW0
-	6lZR6MGWre6zthEbE5qu/cVla1Cbu9rUl+R2ip0iMQDy3+lme0zevuvvIka7hbaVakAeEDPXcR3
-	R6HM+P22rZNTWY7EqhEgY=
-X-Received: by 2002:a05:600c:4e54:b0:480:4a90:1af2 with SMTP id 5b1f17b1804b1-4839c002d65mr111614985e9.35.1771544577127;
-        Thu, 19 Feb 2026 15:42:57 -0800 (PST)
-Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-483a31c048bsm35793735e9.7.2026.02.19.15.42.54
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 19 Feb 2026 15:42:56 -0800 (PST)
-From: Askar Safin <safinaskar@gmail.com>
-To: rob@landley.net
-Cc: containers@lists.linux.dev,
-	initramfs@vger.kernel.org,
-	linux-api@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 0/2] mount: add OPEN_TREE_NAMESPACE
-Date: Fri, 20 Feb 2026 02:42:49 +0300
-Message-ID: <20260219234249.3757808-1-safinaskar@gmail.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <6375f293-709c-41b8-a23d-12010baa3cae@landley.net>
-References: <6375f293-709c-41b8-a23d-12010baa3cae@landley.net>
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="DbF8Broz";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="mNEqWp7W";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="DbF8Broz";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="mNEqWp7W"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 429AB3E709;
+	Thu, 19 Feb 2026 23:59:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1771545573; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=aZD03gpmbjzf0OFyLhz08rHF0+1Tr1YE3QGG0eHm078=;
+	b=DbF8Brozji/Gnlo86j5STnf3x3t1w/OuGydFZxJ5nWv7SETPQ/qVhS90RgrIgmrAB0l5yH
+	xelF8QLcGsauhT8ubJonaoFetIwO/kdgWqUj32mxazzJ1zODhlmsAf/kcFidtmKF9QSs+C
+	C42EyH+LwoGDBujDSG7xspkXB83Aids=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1771545573;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=aZD03gpmbjzf0OFyLhz08rHF0+1Tr1YE3QGG0eHm078=;
+	b=mNEqWp7Wy2+OGLKVxlN2vVuPD0pVjSs9GATulwuCv78j/9Nhxn3oyzVN8Z05tR6kuXOvLE
+	fA/Txza0ZEAl0uDQ==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=DbF8Broz;
+	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=mNEqWp7W
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1771545573; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=aZD03gpmbjzf0OFyLhz08rHF0+1Tr1YE3QGG0eHm078=;
+	b=DbF8Brozji/Gnlo86j5STnf3x3t1w/OuGydFZxJ5nWv7SETPQ/qVhS90RgrIgmrAB0l5yH
+	xelF8QLcGsauhT8ubJonaoFetIwO/kdgWqUj32mxazzJ1zODhlmsAf/kcFidtmKF9QSs+C
+	C42EyH+LwoGDBujDSG7xspkXB83Aids=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1771545573;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=aZD03gpmbjzf0OFyLhz08rHF0+1Tr1YE3QGG0eHm078=;
+	b=mNEqWp7Wy2+OGLKVxlN2vVuPD0pVjSs9GATulwuCv78j/9Nhxn3oyzVN8Z05tR6kuXOvLE
+	fA/Txza0ZEAl0uDQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 76C8F3EA65;
+	Thu, 19 Feb 2026 23:59:28 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id IzI+CuCjl2ntMwAAD6G6ig
+	(envelope-from <ddiss@suse.de>); Thu, 19 Feb 2026 23:59:28 +0000
+Date: Fri, 20 Feb 2026 10:59:13 +1100
+From: David Disseldorp <ddiss@suse.de>
+To: Askar Safin <safinaskar@gmail.com>
+Cc: linux-fsdevel@vger.kernel.org, Christian Brauner <brauner@kernel.org>,
+ Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>, Randy
+ Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
+ linux-kbuild@vger.kernel.org, initramfs@vger.kernel.org, Rob Landley
+ <rob@landley.net>, Nathan Chancellor <nathan@kernel.org>, Nicolas Schier
+ <nsc@kernel.org>, patches@lists.linux.dev
+Subject: Re: [PATCH 1/2] init: ensure that /dev/console is (nearly) always
+ available in initramfs
+Message-ID: <20260220105913.4b62e124.ddiss@suse.de>
+In-Reply-To: <20260219210312.3468980-2-safinaskar@gmail.com>
+References: <20260219210312.3468980-1-safinaskar@gmail.com>
+	<20260219210312.3468980-2-safinaskar@gmail.com>
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+X-Spamd-Result: default: False [-3.51 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	FREEMAIL_TO(0.00)[gmail.com];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_TWELVE(0.00)[13];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	RCVD_TLS_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MISSING_XM_UA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_TRACE(0.00)[suse.de:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -3.51
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 429AB3E709
 
-Rob Landley <rob@landley.net>:
-> Also, could you guys make CONFIG_DEVTMPFS_MOUNT work with initramfs?
+On Thu, 19 Feb 2026 21:03:11 +0000, Askar Safin wrote:
 
-I did something similar:
-https://lore.kernel.org/initramfs/20260219210312.3468980-1-safinaskar@gmail.com/T/#u
+> If we generate external initramfs as normal user using "cpio"
+> command, then we cannot put /dev/console there.
+> 
+> Fortunately, in this case default builtin initramfs will
+> contain /dev/console (before this commit).
+> 
+> But if we generate builtin initramfs instead, then we will
+> not have /dev/console at all. Thus the kernel will be unable to
+> open /dev/console, and PID 1 will have stdin, stdout and stderr
+> closed.
+> 
+> This problem can be solved by using gen_init_cpio.
+> 
+> But I think that proper solution is to ensure that /dev/console
+> is always available, no matter what. This is quality-of-implementation
+> feature. This will reduce number of possible failure modes. And
+> this will make easier for developers to get early boot right.
+> (Early boot issues are very hard to debug.)
 
-Does this solve your problem?
+I'd prefer not to go down this path:
+- I think it's reasonable to expect that users who override the default
+  internal initramfs know what they're doing WRT /dev/console creation.
+- initramfs can be made up of concatenated cpio archives, so tools which
+  insist on using GNU cpio and run into mknod EPERM issues could append
+  the nodes via gen_init_cpio, while continuing to use GNU cpio for
+  everything else.
 
--- 
-Askar Safin
+Thanks, David
