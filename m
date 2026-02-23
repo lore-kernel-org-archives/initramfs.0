@@ -1,102 +1,139 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fennec.ash.relay.mailchannels.net (fennec.ash.relay.mailchannels.net [23.83.222.58])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EFF641CFBA
-	for <initramfs@vger.kernel.org>; Sat, 21 Feb 2026 00:16:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771632988; cv=none; b=bz5xWBywxhDrQ1szs+YNl1UNLytxhe8eyoVkrIrNm7wVDUAx+2Qh1B9imwuXVNwhe3N0t4CmO5npY0AlGcuIIobnX65k3RE45Bf8CTVYMk72zJn2rPJ6xXbUiC5jxMuKofDHtsJR10O9QI2dWDNHbAeE03SRvW/778QzOnBPR1M=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771632988; c=relaxed/simple;
-	bh=3CyBu6t4VMRW7+VaTdEqeBQZt8ryLT8L+AYTjT70+ps=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=n6Oq8ef4PAOwMDtshaEjMxNpCWekvhRBQHn6cz2DWsFPlXxfp4xlC0nUqgO47HgQTH3WQEjyY5RUdEWHbRG7ixHi878IkMVSzp31RAkcWtkybf4vYvw14133YmrcHjASTavA5+5a6MOpxLwaGLGwez7OtRLT2sGvocbWNnaXHuc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gmyGnR+c; arc=none smtp.client-ip=209.85.128.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A0FA3EBF06;
+	Mon, 23 Feb 2026 00:25:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.222.58
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1771806345; cv=pass; b=dMi7qmW/O+Pw/oyghpnMV31pLadTsEcRi9TcZn9s+T4ZRDH68EkUpBmW/ljfZ2x7+tY5/hwdRgCvX7Am8lOTrbNk2BZH1JD/Z+QgjN/0iDnvuM11CD4knVAyQhHbd4NkWnvgp+2bWoRl4zlqu4t1Kcugcy3/ajnp7Cy+Z3yO8LA=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1771806345; c=relaxed/simple;
+	bh=vnl3n6hiLRbYTraiOMb+bVU+YKg9dIaxSlm6mpPCZuE=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=kjrGX7uh0eHjOT7SKxRVrb8/s1u5lo9w2y31+qxzazfl0fX8wYNiQ98aEc2wCFCHvtXqnAQzXUgw7dv2ouKWf18APIb+eoIFQWL5uGQD0CN3WY2cl7k+VeOULni5emHX1QYR/OAxf9NFCf/c/J/BU0o/JBQ0BMFdPXqjnTxuS7c=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=KAdio8I+; arc=pass smtp.client-ip=23.83.222.58
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gmyGnR+c"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-483487335c2so24213045e9.2
-        for <initramfs@vger.kernel.org>; Fri, 20 Feb 2026 16:16:26 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1771632985; x=1772237785; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=pT8043eXb3x0Y28ESC3KU+eLsSvxZ0GN6RPVeedqxFo=;
-        b=gmyGnR+cTByphmKcMVQaGwrgyNnOc4mBuocXd2Bt1JNeS6DrZMvCUw7QWjM3nipa4y
-         bjyuuE7o1mZcN6cHm6gHllEBqLgCoq+83y4PNmNan+G7O20r5zx1ZojRa3qS8ZwAyWOM
-         uJuxLdRlotZuh4uqIYlx+EAMDXF9H6luBhKZFECbATtuPqwTGwXvAhI+VMt8NLZUsotA
-         7ZHQh50HCA1hRnJ17+A2P/PER9XokOBnW3WzBQsc3KhTDSZhjDdHcC15l9EWrwQLzHdw
-         TbCysF5cXa36FJTpIJiCxyDQnSe39LAowaXGxmpbdhvS/D5jrv8Gxud/WlBAs4Wcuvvv
-         8rIw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1771632985; x=1772237785;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=pT8043eXb3x0Y28ESC3KU+eLsSvxZ0GN6RPVeedqxFo=;
-        b=nh4zBq3GIq7CQin9hZgsifbLTYXmly3pdqoZcbFE4Bzaou2oQoDEbiyNfwtS7mJHpB
-         9UDXwXuauhzTKuu8OZWqAkX1qcIIy8xslcY4+mbtHRAX/9zHVw3FZ0f9Uu3BEL54NKij
-         hhJeWPxTYVMbcDi3Ax1cXxu9jsxfxxOAwFJzhaBA1Rxr/gMCTlhEyho5iuXHcBfnHnRb
-         6+wfgzJsHpNWL/pohOHefVMqMq9BZNLkwFT8dlWkeqku3PwgDTfZbPORC5dbJI+ebP2d
-         +oZspS9Mr9K94fk359GG34M1dUYDWrBiSFz+9mXgF4f/+Zm8G6PZkoAzyUhJtQmA7Hj/
-         RxYw==
-X-Forwarded-Encrypted: i=1; AJvYcCVlSev2xi5+cx1jDw4dcXjnzmfUikf7AbFkOmD7WGR0LQ7ejdjQwHvDicTY5qCwz8HedlZHG/7HJoE=@vger.kernel.org
-X-Gm-Message-State: AOJu0YxlxEMT77cPVPS2ppvFN8TOchQO0dOqhJyw4OyvZ2ieQPiP48pV
-	PQ6Z7/lma7XSwy+dXF8yDDsvLQx5hFN7wqEKNUqxnwbkXGJE/+9Bbugo
-X-Gm-Gg: AZuq6aJ65IfkuJ8ZiQ0ibRFQSjftKcwn2AzWhfe7b/En3b3YpId5BiRCzoQDMP541sm
-	exZV1MTvAT925nyIhYNJSpHtQRalxLy3tFGjJ5v/AmYVoRy0TUVuh9L4lmd9DHpUZcCbWyaRkpC
-	fvb+ti6E74NW8Yz7770cgQreJxn0xenLAtQRE5UANpGfptlv6d3V3jkWAm+lJL39pURSzTOjHNd
-	0Z1AmkM34T6RFCKsUNkxGT3P6VOQTQ3m0Hk7zcGio8J0/jvxuYWwr8fSAXLCVU2brJTOpXkBuKQ
-	gmTcGBPyLGPnRihZ8Gl3LA8tCNLFcD/Aes70h18zyB3K4GEjUA+YyXvfBDHP75OLy6Wu97zF1f5
-	9Fpr06rMuxsa0OMbFd8h87cOxzeOSc8bHM958V+Jx0RKQ8b9vrwUZhRJDX3eA+kUDm70DJVLiSQ
-	DKx/Mti2nUXdwJqUqyU3w=
-X-Received: by 2002:a05:600c:1d15:b0:47e:e8c2:905f with SMTP id 5b1f17b1804b1-483a95bc0cbmr16930615e9.8.1771632985095;
-        Fri, 20 Feb 2026 16:16:25 -0800 (PST)
-Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-483a42cd49fsm38764515e9.5.2026.02.20.16.16.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 20 Feb 2026 16:16:23 -0800 (PST)
-From: Askar Safin <safinaskar@gmail.com>
-To: ddiss@suse.de
-Cc: brauner@kernel.org,
-	initramfs@vger.kernel.org,
-	jack@suse.cz,
-	linux-fsdevel@vger.kernel.org,
-	linux-kbuild@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	nathan@kernel.org,
-	nsc@kernel.org,
-	patches@lists.linux.dev,
-	rdunlap@infradead.org,
-	rob@landley.net,
-	viro@zeniv.linux.org.uk
-Subject: Re: [PATCH 2/2] init: ensure that /dev/null is (nearly) always available in initramfs
-Date: Sat, 21 Feb 2026 03:16:09 +0300
-Message-ID: <20260221001610.820321-1-safinaskar@gmail.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20260220112606.551099f5.ddiss@suse.de>
-References: <20260220112606.551099f5.ddiss@suse.de>
+	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="KAdio8I+"
+X-Sender-Id: dreamhost|x-authsender|rob@landley.net
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id CB9EA78323A;
+	Mon, 23 Feb 2026 00:17:06 +0000 (UTC)
+Received: from pdx1-sub0-mail-a220.dreamhost.com (100-97-187-78.trex-nlb.outbound.svc.cluster.local [100.97.187.78])
+	(Authenticated sender: dreamhost)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 5F91078320C;
+	Mon, 23 Feb 2026 00:17:06 +0000 (UTC)
+ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
+	t=1771805826;
+	b=nS39JAZZ1x7GEi8kd6hBEb0VddJIjmIN1ih8vqTrOPa3KljmW925tQ/jr4GcJMBeloTIhs
+	2kF6rAvjwWm53D80pv1bzQlek8Ta6Ru6m2tsnx2Jw9Aq0pyp+3EA9cyIarJ7KJXFNThDqS
+	gHA7adwCWLFiXr/Agcn3YmoVwQqXuODCKAICZ0n9N6aXLrM8UBnH6lZzGw1O+OTYEP+SYO
+	tH7dlHcjVVmxCgh+PzmJ3Wh/HWtT4NOmpUn2m2H79CWJlDZPFQzWod1MdMBs6YTs/RjWsb
+	+30P2A1y3daOsjUb1QNGD+BF0Oppuze9E00ZDYlj/tHNOEw5i5yL/ApJnEHIRA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+	s=arc-2022; t=1771805826;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references:dkim-signature;
+	bh=ejC93Nu7XMWnzidBneVNGHhfI3IKdCvyfDvNoCmZe5o=;
+	b=cKGwSgB0vfBiNtu1dFyo1LGfvIgzprANNnIF+iIunOUk4fNzzMDALACUhLTb1jGPBhZJBR
+	W2JA5L2C2mTbl93uGWAuQc5GCFDq3bGhEwzIiQ9pnc8Oi/WRHuT0JD/jSkUzI8KXGLvi3+
+	K+73V0R8ajEb//hJJqySV2YXrfMY9T355DReIMR+5HOAN+hIUuf3RYPSzno8m7CgwofQOB
+	rUcuEOAUKDC/OlrWxrCZHhB19EHB0bvfYNUljUlAZqjFDBs8BNp0J8DlXazYzeqQvAw9mN
+	DJk0ELFjp+CzTBMZCpThq47u2x263zzgvkao57C/94UROTEjh/6vxh5/KWhZMA==
+ARC-Authentication-Results: i=1;
+	rspamd-7f65b64645-s74qj;
+	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
+X-Sender-Id: dreamhost|x-authsender|rob@landley.net
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
+X-MailChannels-Auth-Id: dreamhost
+X-Descriptive-Shrill: 1a594b3400788975_1771805826688_2785434387
+X-MC-Loop-Signature: 1771805826688:3386891487
+X-MC-Ingress-Time: 1771805826686
+Received: from pdx1-sub0-mail-a220.dreamhost.com (pop.dreamhost.com
+ [64.90.62.162])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
+	by 100.97.187.78 (trex/7.1.3);
+	Mon, 23 Feb 2026 00:17:06 +0000
+Received: from [192.168.14.155] (unknown [209.81.127.98])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	(Authenticated sender: rob@landley.net)
+	by pdx1-sub0-mail-a220.dreamhost.com (Postfix) with ESMTPSA id 4fK1cx3K7JzQf;
+	Sun, 22 Feb 2026 16:17:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
+	s=dreamhost; t=1771805826;
+	bh=ejC93Nu7XMWnzidBneVNGHhfI3IKdCvyfDvNoCmZe5o=;
+	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
+	b=KAdio8I+4ZC3SZr9noEGXA1dPIra+K58gvG05zU5jOQZkc0RirZwaZxLAoBlCIsR/
+	 c/HYyZhksRxOjmA8bw7SkM0NKHnGPwCAim9zuZMkqYdU1Sj4eC2kp9L85o5ZlHDSqE
+	 jZd+rhCiIKRWNeoOt3KDAQEWKhY4ojUDOuMVy8pqiF0FRHsChUdb3wGkvguzfQGDEn
+	 CGoc96VpC250tJ29hiSWU9d+igRn0BddbJ/5zIcbamM87+zxhnLyoCxQ0w/vee33Sy
+	 V1AbEj4Xyuh7ZQv6jJYUVwmxcaO578FIEOrRq8JHSkdkovJct2YP/a9rGJOYfnvoBf
+	 sQhnrkDENDYAQ==
+Message-ID: <a7cb199d-928d-4158-8f16-db7ae5309082@landley.net>
+Date: Sun, 22 Feb 2026 18:17:04 -0600
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 0/2] init: ensure that /dev/console and /dev/null are
+ (nearly) always available in initramfs
+To: Askar Safin <safinaskar@gmail.com>, linux-fsdevel@vger.kernel.org,
+ Christian Brauner <brauner@kernel.org>,
+ Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>
+Cc: Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
+ linux-kbuild@vger.kernel.org, initramfs@vger.kernel.org,
+ David Disseldorp <ddiss@suse.de>, Nathan Chancellor <nathan@kernel.org>,
+ Nicolas Schier <nsc@kernel.org>, patches@lists.linux.dev
+References: <20260219210312.3468980-1-safinaskar@gmail.com>
+Content-Language: en-US
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <20260219210312.3468980-1-safinaskar@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-David Disseldorp <ddiss@suse.de>:
-> It looks as though Bionic has extra logic to handle missing /dev/null
-> during early boot, although it's dependent on !is_AT_SECURE:
->   https://cs.android.com/android/platform/superproject/main/+/main:bionic/libc/bionic/libc_init_common.cpp;drc=a7637a8f06f103c53d61a400a6b66f48f2da32be;l=400
+On 2/19/26 15:03, Askar Safin wrote:
+> This patchset is for VFS.
 > 
-> I think this would be better addressed via documentation (e.g. in Bionic
-> or ramfs-rootfs-initramfs.rst).
+> See commit messages for motivation and details.
 
-Okay, I see, current bionic behavior is good.
+FYI I've been using (and occasionally posting) variants of 
+https://landley.net/bin/mkroot/0.8.13/linux-patches/0003-Wire-up-CONFIG_DEVTMPFS_MOUNT-to-initramfs.patch 
+since 2017.
 
-Okay, I agree that this /dev/null patch is not necessary.
+What needs /dev/null? I haven't encountered that.
 
--- 
-Askar Safin
+The problem with no /dev/console is init launches with no 
+stdin/stdout/stderr (which is what happens for static initramfs made 
+with normal user mode cpio, no easy way to insert /dev nodes into the 
+filesystem you're archiving up and most cpio tools don't offer an easy 
+way to hallucinate nodes). The problem with having no stderr when init 
+launches is if anything goes wrong you can't get debug messages.
+
+I have a shell script I run as PID 1 that mounts devtmpfs and then 
+redirects stdin/out/err ala 
+https://codeberg.org/landley/toybox/src/branch/master/mkroot/mkroot.sh#L111 
+but THAT's fiddly because when the shell is opening the file it 
+_becomes_ stderr (with the script _itself_ usually having been opened as 
+stdin because first available filehandle) so the shell needs plumbing to 
+dup2() them up to a high filehandle and close the original one and that 
+tends not to get regression tested when anything changes because "we ran 
+with no stdin/stdout/stderr is not a common case...
+
+Having the kernel auto-mount devtmpfs (which it already has a config 
+option for and all my patch does is make it work for initramfs) fixes 
+this, because /dev/console is then available before launching /init.
+
+How is manually editing initramfs _less_ awkward that automounting 
+devtmpfs when the config symbol requests it?
+
+Rob
