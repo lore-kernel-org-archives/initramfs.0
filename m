@@ -1,83 +1,83 @@
-Received: from chocolate.ash.relay.mailchannels.net (chocolate.ash.relay.mailchannels.net [23.83.222.35])
+Received: from beige.elm.relay.mailchannels.net (beige.elm.relay.mailchannels.net [23.83.212.16])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95EFF20B80B;
-	Mon, 23 Feb 2026 02:43:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.222.35
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2094B32939C;
+	Mon, 23 Feb 2026 17:07:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.212.16
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771814605; cv=pass; b=dOa99I/hs8kOWOpvb7wxKoP2213gGymsqRckP7k/jh2jiPMVlchrJK3qYNC5twER6xdIfuGGK7fRDAVLBtl5OQ/L2Iu4BvCNvjRHwIvKICXP1MyK4vY2CdoZXCsmLiNgtZO4eHFLaHqZS2EnNzCNrNVuiAw4kh37nLXLnS+/U3A=
+	t=1771866431; cv=pass; b=uPSwl/3YdX+s2sRDixxIIbtdNfZJBYhEPD4hHQTDmUxWgA6ACyakJgPDuKLQNWcySxt1Q6PwIfKnssThiJ1YXQlIkmCesPFdG4WFWmKdrgYsISUIjTOt7FOvXbtdUjmNBEtaZBUGY4ChDJcrRr+ifXy1W+zylWaIiZ4vvWAAg6c=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771814605; c=relaxed/simple;
-	bh=Fppz4XqbW7vpobAU4JG/17grv29+FYDLFAOpl+bgv4E=;
+	s=arc-20240116; t=1771866431; c=relaxed/simple;
+	bh=QmuNg1tBtzwmz+wkhgiXHLezpaCUDOCDyd8P/htnkvc=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=dsVPtKOzVb//NDNNvI+XNZ+kGcgV9gtfNtAEAhfJ9HeKOjrgiYAzv5Sv3vW9HboPKPXTszWKH+6c9i/TKq+fWMAi9WjVL79O0xI9lt1REfzP2KTm76cPhL8OfzmYLrEIU0u0autDbW8zvNYO+jIccayZ4PVqtj/uG5znHbhEdyQ=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=lxehg/1E; arc=pass smtp.client-ip=23.83.222.35
+	 In-Reply-To:Content-Type; b=PuyuPB6eaRFsjLx/5JKE8UESFFnafWugjypXOn77c0+dVK1EN4++Y4W8zdpX9yQSX1OhXqm0mhLLi9IB0sQ9rCll5PVmuE/XZN07mSioryMTFQM+utpgoxUw7i5eClWEsTvRJ6nal87R4/+u+IXOLF/yeOWLLaedzBzxZvqchwU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=E7yTKFH6; arc=pass smtp.client-ip=23.83.212.16
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="lxehg/1E"
+	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="E7yTKFH6"
 X-Sender-Id: dreamhost|x-authsender|rob@landley.net
 Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id DB68192273F;
-	Mon, 23 Feb 2026 01:27:52 +0000 (UTC)
-Received: from pdx1-sub0-mail-a220.dreamhost.com (trex-green-9.trex.outbound.svc.cluster.local [100.99.99.94])
+	by relay.mailchannels.net (Postfix) with ESMTP id 96639160C57;
+	Mon, 23 Feb 2026 16:11:12 +0000 (UTC)
+Received: from pdx1-sub0-mail-a229.dreamhost.com (100-103-37-158.trex-nlb.outbound.svc.cluster.local [100.103.37.158])
 	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 787B0922749;
-	Mon, 23 Feb 2026 01:27:52 +0000 (UTC)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 13DC4163A9E;
+	Mon, 23 Feb 2026 16:11:10 +0000 (UTC)
 ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1771810072;
-	b=a4TfLbL+xWkl3FoRGPcvZXNFn3VWLS4RXhDLC1KITO/46AiXKDYcYmRknZqRd2g7nYbZcQ
-	k/VTABhhm7Zn3yscxxHTYULAVNJqbUU1PLLoRrBGwoBkiLW+AmN9QqdoQdybP6C4ijX3Bz
-	8TcDH3r63d57+soL/dCLrawV8iZId4lfoGr3mkqndFpINTWdkmjfxQI9bPv8tmcOsc5r6B
-	GQmo+rDUxyLX0LJvWazS82AksNk6eCbnj8gGGp36g572JivFZmZtkKrIiCJBrpXSgYKfsE
-	CriSJ54qiofQ4NqeYdXLr7UhBeVcFia63qopSQGlDjtk4wb2mlAp3YJYTn4NnA==
+	t=1771863070;
+	b=D10lQ/C9uKN0awKaoY1DJbyw883z2sXTh1CP2yS9BDRhSH58rsf1CoH5LujX2k7UdyXoBD
+	t1bhwmCoGJUp9Vlj46sIobRvYohwXZMku0zgzlMBomVvtklhx9MTfMCq18nqt7BfSfv5sy
+	JVyRXMl+RWIB9TE/S+JSDtdPUzvkDAid+ovXQx2YKRnNJmpm5dGpxNqaSlaH32r3Q7Bgj8
+	Df91LPvo+OF+8/1j3YKIG3yfMANeWaohaeRJukOVHk0/p9XDuYaSP7vRB736CZPbK9+1uR
+	Q5fyNplw8uWgFHsNE6fxqfshimehi1AB1J9EDCVb/DyMbdGOH2nQUoa/y2CAhg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
  d=mailchannels.net;
-	s=arc-2022; t=1771810072;
+	s=arc-2022; t=1771863070;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=b6UUucr5palJUDrml2pz1tY23CzM6eiRyVkxM3xGuAA=;
-	b=HdoEr90CECUgiNkWcdKhY9qPiubDCqdcgP93IcgbJ6bGIJdLPT9mTOqQWq9/KGzSPzpPVM
-	iz0tjCQiflDqV799rxXYm+1600dMsIr7Xyl+Na/fSq9W505Z04B/zT54hAubOOYfWbh4/q
-	n6JCCES3uB+6VvjQSLT8tIQv20Tp+EnOrEzXTpmRMDlq29Jq6kHqaT7InUUvH61nTramUq
-	Wvd33wBqNSJ4P0aUQKSC97ZYm1TxBQXr37iJRDUZ36tvJ5Up0T4wxmo6HassoubYHxofDQ
-	L5sfUyRfjMUgvVB8kt5AKNb9EXkBTjSsPg8di3bk+AaQyTpc8kqJRHJcLX2ejA==
+	bh=XuD6XCjlTOuLfHYtXzVsTlp4WOA/ge30qcw+P5i9Neg=;
+	b=J4JKNO/Aq56Qgvep1jBeLGTX0W4LsZYTzravitWIiHbtcBK53abXlKnP3aSwFPPxC8WCdU
+	2HKgwjMY25lyHqUUf86/lzeAksAERcKa5INoAEp/MKbQs0d2mcu9Vh7PZdoezJ3mJP05lD
+	9YgRxaG/As8lvZTDA3Ry3nd2hF4QVxeimG3XC4CAgaSbTC3J7Y1U6NJowVojfIyx2Ds9Dw
+	JldXum/9uH/Pg/DjU6owlT5lDyq1K7rZYtfgNDqXZbFJf3u6vf8yNkQzu+9oPmutrcJdcE
+	eMdaySlElaVd84WcD02Igp0Re0WMlbkG4IY++BztF09xTyEHTrW2wno/ZJNfTw==
 ARC-Authentication-Results: i=1;
-	rspamd-7f65b64645-vf9m5;
+	rspamd-6fbd58c58b-q6pqj;
 	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
 X-Sender-Id: dreamhost|x-authsender|rob@landley.net
 X-MC-Relay: Neutral
 X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
 X-MailChannels-Auth-Id: dreamhost
-X-Abiding-Exultant: 6f84e5a4203b0a61_1771810072783_2986007946
-X-MC-Loop-Signature: 1771810072783:965855009
-X-MC-Ingress-Time: 1771810072782
-Received: from pdx1-sub0-mail-a220.dreamhost.com (pop.dreamhost.com
+X-Glossy-Stupid: 51eb68441b29b606_1771863072406_1607851710
+X-MC-Loop-Signature: 1771863072406:3925674246
+X-MC-Ingress-Time: 1771863072404
+Received: from pdx1-sub0-mail-a229.dreamhost.com (pop.dreamhost.com
  [64.90.62.162])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.99.99.94 (trex/7.1.3);
-	Mon, 23 Feb 2026 01:27:52 +0000
-Received: from [192.168.14.155] (unknown [209.81.127.98])
+	by 100.103.37.158 (trex/7.1.3);
+	Mon, 23 Feb 2026 16:11:12 +0000
+Received: from [IPV6:2607:fb90:9a0f:889c:175:8594:632c:fd9c] (unknown [172.56.10.34])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
 	(No client certificate requested)
 	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a220.dreamhost.com (Postfix) with ESMTPSA id 4fK3Bb49zqzQf;
-	Sun, 22 Feb 2026 17:27:51 -0800 (PST)
+	by pdx1-sub0-mail-a229.dreamhost.com (Postfix) with ESMTPSA id 4fKQnm4c9Yz6N;
+	Mon, 23 Feb 2026 08:11:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1771810072;
-	bh=b6UUucr5palJUDrml2pz1tY23CzM6eiRyVkxM3xGuAA=;
+	s=dreamhost; t=1771863069;
+	bh=XuD6XCjlTOuLfHYtXzVsTlp4WOA/ge30qcw+P5i9Neg=;
 	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
-	b=lxehg/1EVHOBltxoiNS7w5jDgzxv0VeeWXCmyzs3sqvAEWSbnZP7s4pdZmqwScG+8
-	 1AxNCRb9pzm2ejZi/cG0jbrXSV9KBgl/p5jA9/PwK9/ZMi2mGm73jyIezlfgp+pmz+
-	 XMEdh7Y5/1tgWjG/EF0W2d72DPfNPTiqiXM8qI+23WiZEYzl2OftBprj0AZ4EG8vq3
-	 /oLGIG7LBbXeeajFrZgV9mMO7G+1Km9hqMpN+pZK5midNHTVKs3fWrEyan6WbUf+o4
-	 CaZxbDbBexTUZ6Gy8q5AQCeVSfp2ZUODULd6qk0tUqNk0ntr896ekvaQYQTGrRW0On
-	 mf8Jex8dpsmrA==
-Message-ID: <6d34c95a-a2ea-46a4-b491-45e7cb86049b@landley.net>
-Date: Sun, 22 Feb 2026 19:27:50 -0600
+	b=E7yTKFH61K6Rf3nyxMlL5gJn8Vu7IRd1pAZWYgnNR9pCVRRJUpvhMLFsUk6Xig3sX
+	 d6NWEP3DpNrj+DxqHNetE2uHwz9ZJUf/MP/SxA4TNEVqYNX1XyMQxsMbqnOItaYmhx
+	 kMG9i8DHBsDuwQZ/6swAy5TFwwx11Zc5Ry3lX1XRq5mq4C6CTDl7cGtAYkgBgq25SO
+	 fh7Lt1Up1B6KsjeaobDjAYsrfx59zhVGH+ott0uRMP1JJ71tbhFsbxkxnwXEXqRvlu
+	 t7uZaYSEx+P719OVfP3zRy8hYDm/Xq10VI5hBE26ZbFU1tWk0vFK0xtefoKtamHS2O
+	 AcHbh4zCO+A7w==
+Message-ID: <7e309fc3-7d55-4e95-8dea-f164a7a96b6c@landley.net>
+Date: Mon, 23 Feb 2026 10:11:05 -0600
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
@@ -87,8 +87,9 @@ MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH 1/2] init: ensure that /dev/console is (nearly) always
  available in initramfs
-To: David Disseldorp <ddiss@suse.de>, Askar Safin <safinaskar@gmail.com>
-Cc: linux-fsdevel@vger.kernel.org, Christian Brauner <brauner@kernel.org>,
+To: David Disseldorp <ddiss@suse.de>
+Cc: Askar Safin <safinaskar@gmail.com>, linux-fsdevel@vger.kernel.org,
+ Christian Brauner <brauner@kernel.org>,
  Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>,
  Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
  linux-kbuild@vger.kernel.org, initramfs@vger.kernel.org,
@@ -97,46 +98,38 @@ Cc: linux-fsdevel@vger.kernel.org, Christian Brauner <brauner@kernel.org>,
 References: <20260219210312.3468980-1-safinaskar@gmail.com>
  <20260219210312.3468980-2-safinaskar@gmail.com>
  <20260220105913.4b62e124.ddiss@suse.de>
+ <6d34c95a-a2ea-46a4-b491-45e7cb86049b@landley.net>
+ <20260223133357.0c3b8f8e.ddiss@suse.de>
 Content-Language: en-US
 From: Rob Landley <rob@landley.net>
-In-Reply-To: <20260220105913.4b62e124.ddiss@suse.de>
+In-Reply-To: <20260223133357.0c3b8f8e.ddiss@suse.de>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
-On 2/19/26 17:59, David Disseldorp wrote:
->> This problem can be solved by using gen_init_cpio.
-
-It used to work, then they broke it. (See below.)
-
->> But I think that proper solution is to ensure that /dev/console
->> is always available, no matter what. This is quality-of-implementation
->> feature. This will reduce number of possible failure modes. And
->> this will make easier for developers to get early boot right.
->> (Early boot issues are very hard to debug.)
+On 2/22/26 20:33, David Disseldorp wrote:
+>> It's an archive format. There are tools that create that archive format
+>> from a directory.
+>>
+>> The kernel itself had a fairly generic one one built-in, which you
+>> _could_ use to create cpio archives with /dev/console as a regular
+>> user... until the kernel guys decided to break it. I carried a patch to
+>> fix that for a little while myself:
+>>
+>> https://landley.net/bin/mkroot/0.8.10/linux-patches/0011-gen_init_cpio-regression.patch
 > 
-> I'd prefer not to go down this path:
-> - I think it's reasonable to expect that users who override the default
->    internal initramfs know what they're doing WRT /dev/console creation.
-> - initramfs can be made up of concatenated cpio archives, so tools which
->    insist on using GNU cpio and run into mknod EPERM issues could append
->    the nodes via gen_init_cpio, while continuing to use GNU cpio for
->    everything else.
+> This seems like a helpful feature to me.
 
-Who said anything about gnu? Busybox has a cpio, toybox has a cpio... 
-once upon a time it was a posix command, removed from the standard for 
-the same reason tar was removed, and that was just as widely ignored.
+It was, but I want mkroot to at least be _able_ to build with vanilla 
+kernels, so couldn't depend on a feature upstream had abandoned.
 
-It's an archive format. There are tools that create that archive format 
-from a directory.
+The real problem isn't cpio, it's that the kernel interface for 
+statically linking a cpio into the kernel wants you to point it at a 
+directory of files for _it_ to cpio up, and when you do that you need 
+root access (or fakeroot) to mknod.
 
-The kernel itself had a fairly generic one one built-in, which you 
-_could_ use to create cpio archives with /dev/console as a regular 
-user... until the kernel guys decided to break it. I carried a patch to 
-fix that for a little while myself:
-
-https://landley.net/bin/mkroot/0.8.10/linux-patches/0011-gen_init_cpio-regression.patch
-
-But I just got tired of fighting lkml.
+You used to be able to point it at one of those generated files (and 
+thus edit the file yourself to add the extra nodes), but that went away 
+the same time they broke the rest of the interface.
 
 > Thanks, David
 
