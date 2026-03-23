@@ -1,120 +1,118 @@
-Received: from cichlid.ash.relay.mailchannels.net (cichlid.ash.relay.mailchannels.net [23.83.222.36])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yx1-f53.google.com (mail-yx1-f53.google.com [74.125.224.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 173CE40DFAB;
-	Tue, 10 Mar 2026 13:31:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.222.36
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64FE523D7DC
+	for <initramfs@vger.kernel.org>; Mon, 23 Mar 2026 03:48:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.224.53
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773149468; cv=pass; b=pyUvJaQBLbQIPGa2cAnhJkjDjZRt7F/VhF45U0Go/CHcsYFDf6wsTxd4SLDNF/Ezd6TBRptHMrFp5nBoSlFRScXigkuUb1k6I+Jo99xc5itPT0ZGIkgLPwhTCpVL3xdyEUGldbOjVZA8Tud9xz2IpbeH9rmhn8sm0/HTLlGXu0Y=
+	t=1774237700; cv=pass; b=my34yibOkTB4HExih9+Ow+5/NL187BvLMnP/fO2Tox3HPrKE329+y/Egl8OJTZoqiCxmxhCZO4KIvpiXUnn61ewJl+r/SWP6Yq8lBny6/MS9D5VRfF6lLK/gDlfbzB5CdpEGaTcrKe3QuCHFvDo7kqBuKd8I3BlAzCZIFtKLoqo=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773149468; c=relaxed/simple;
-	bh=pNzZKas2ZtzHmNNSQQSGpyTKI26YoaTc5IACXsi2rt4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=cWT/q9rntiQit6sD8+fwUX5tb10L6t2DRcMbcO1Cu974/sDAriUa+PtToeGf5LjZmfZPOAvdWoh09ExAywX4u8NpRQgZB71dw2Rb6SwejQdG/UZUNb+AkwhKyqGIXfoJtulkyi4EyomV/1TmbBCUnyt4Wp5Hwm58CCoePmpINHY=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=fdfaOaJr; arc=pass smtp.client-ip=23.83.222.36
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	s=arc-20240116; t=1774237700; c=relaxed/simple;
+	bh=Q0mI2TwYycM5sgLrcd1zuOS4TrakRSO20fAXPQ2Ywts=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=rTM3QRj4iX+Ygktz5QpBskvDLrJoTZFZl5jo/6Gg76lnM/MOnF5a5DMG5g7bWfkslUfQ6VaEJVLWz5xmkIQJlTY7sH4fzpEVM5w3n+kKxDE4KeDzonmTHJgonq8g5YPGOQSJuFFF3djH8uY6LNFXMed9KvrokQBObMFYYwfkxNM=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ZRKnIKUq; arc=pass smtp.client-ip=74.125.224.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="fdfaOaJr"
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 9A17A9227B8;
-	Tue, 10 Mar 2026 12:51:50 +0000 (UTC)
-Received: from pdx1-sub0-mail-a222.dreamhost.com (100-107-106-54.trex-nlb.outbound.svc.cluster.local [100.107.106.54])
-	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id CB51992112E;
-	Tue, 10 Mar 2026 12:51:49 +0000 (UTC)
-ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1773147110;
-	b=hFQA6o2B8SK+clQ6CAcG1qC4T0SUuEzNQhfB1UlPD4c81M3jOw5NyvKa0xRAAcPqhNVa1y
-	OaDfb3wd7JZjHGbnSDYpz1fQr0wzonraOfRBzgdlgOwLFLCiyA+TBR1Jfw6oIlLX5I7ijs
-	ln7NdTTiDBYUYw+F77oeXpaxsJimF6aEbgMn9GenjLC0W7WGnpSMH7rSiX/UrhNm85KJ0D
-	qNXtnEAOkyoQlx53FrFCGOQSm5wSKeRQrCNM/M0vgdhK83ReJ73JMEl0Ls6Lnvy2qeegwc
-	3TsU7/oDhztdxW4zzmY3hrEu9KtuPg+3YW/XAhc2IwNwmOdDECzq9zZjuCwXbA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1773147110;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=X/IhzbasK0cIjsjppiT2+8RzOyLJ0u+k3bxUMCZYXS0=;
-	b=08A6/Tcmwuc5FUFIyqebdLkvcAFOBHlwCezdfc9kYzMHQCLkEgLZDyFEUnwbCsealxVZr6
-	QOByHza47Fa0SAeX+VzcB+SXoOsnoL5UrREpS/egFLUCYmYAd3mwUJFhj/WZClH3MMheLE
-	OSnseDjmvkqfeqt2s9Ceiq8/R4PRwGEtE8VFjtwTb6zyB3MBKuRT9tvfTkEt1I2E8Ax0qN
-	Va2CZBieW1KIkPY6W6tbnpXC4aWN4L+O7nzkHY8c8YqxPy/UqWIDvOR8+4CuRTi9D72Z+r
-	LPALgKAD5qOb/3dIgZXDRDUJwdi8Njh6xBDtPvmgvEAgXXgBMtocCQszf0uGoQ==
-ARC-Authentication-Results: i=1;
-	rspamd-6f5c445b59-k98sl;
-	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
-X-MailChannels-Auth-Id: dreamhost
-X-Irritate-Madly: 6e3306b557cccc9e_1773147110416_1850464333
-X-MC-Loop-Signature: 1773147110415:1444249190
-X-MC-Ingress-Time: 1773147110414
-Received: from pdx1-sub0-mail-a222.dreamhost.com (pop.dreamhost.com
- [64.90.62.162])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.107.106.54 (trex/7.1.3);
-	Tue, 10 Mar 2026 12:51:50 +0000
-Received: from [192.168.88.6] (unknown [209.81.127.98])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
-	(No client certificate requested)
-	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a222.dreamhost.com (Postfix) with ESMTPSA id 4fVYfp6R24zT7;
-	Tue, 10 Mar 2026 05:51:46 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1773147109;
-	bh=X/IhzbasK0cIjsjppiT2+8RzOyLJ0u+k3bxUMCZYXS0=;
-	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
-	b=fdfaOaJrQBNBCd3gR49zIUWuViPoJDCRi1AwbxvMK3LY+021jbsmzYWZL5MtOgK64
-	 3kezyJqpQTobolgVHTCw0i6WhlMpOL8hF90dWbNzyy+Tx+5xcmUuVnKhRm916rZOrh
-	 IglSjyYYw6ttQepI3rfVQl2hWlBhQmDKcJs0YCVF3td/iJ0h/mfGvAseDNxnlyWFef
-	 7OXwJL9fnJ2a2/BxMQTFYCosb/6jpwV5QGn4FiCaY16Kwm3ELHeuQPjyaYK/QBgAnu
-	 YBVafTpAFV/ORIK5s2UGbO4f0Uoar7Do5di9e29sCsFh9q7zIxIbPQfMvNfO9rfmDJ
-	 jSXkF/xmWg20w==
-Message-ID: <54f06055-c5ca-4b8f-9aed-065755e7c1b2@landley.net>
-Date: Tue, 10 Mar 2026 07:51:45 -0500
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZRKnIKUq"
+Received: by mail-yx1-f53.google.com with SMTP id 956f58d0204a3-64ad8435f46so2615560d50.1
+        for <initramfs@vger.kernel.org>; Sun, 22 Mar 2026 20:48:19 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1774237698; cv=none;
+        d=google.com; s=arc-20240605;
+        b=c1BJ8X0z+jEX8Ud/cOK5ewRFwn2fWahL2wqifHkPEsg0/dspjmo+f8k6jSqGEj3lx6
+         nn6J/GzA3X/9rBGZR22qJ2XbZsIqPCfWCD3FYDf37XfSsF9U7r8C0w8RQKYqFFa35vPP
+         x6Rz2hERRFWgatoRa+p+QWYn+pgi+7sT17vFp8l4aIV6x+NRPcEvE4Z4B8ipDjkaHwfr
+         UxHUEoNIEOWELwbU06QbAOABs+WlO5HS/SluWH0M6LZqVWIasZe/XTm/V7mnZjKd1wmL
+         m0UF9wLTDZM3mZ8bLvq5IbD2En9t6BKsFpseXndlPXkQCFYDUeBn8gxLdOWgax3WaQdh
+         WPew==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=Q0mI2TwYycM5sgLrcd1zuOS4TrakRSO20fAXPQ2Ywts=;
+        fh=ST8/muAFFBtED0P+nZtnC7t3uMEYP/hY3ehbS4LEwnU=;
+        b=TbwmUj2DTw2Cz9NAcg/RgsRUF9vA3Qc9xgCB9SBX0WtqmBhLuuKNDus7dV1FQfnYpK
+         oLEA4wShc4aI2hXxGjN11Srrv5QsHB3plaTDy8BSDHqQmXr185vNPX14MLAfmloXysbg
+         ydtT6QMMy4f5T2s9ZsYTdIKZCba9hUd7ymZzUBeAkD4Mafc+MkNhDrVQucHhA+5p9sIR
+         LL5fe+c9mRT0SsfQLoyDOAYEUNZRhIVe4xlDtMdm2LJM1Xmyh4gqt3rGKIfvvxeMu4en
+         dw8iU2ObMqLuFQJx8gm+z2GVLcZW4m6aTDyOmAbN5/3nrgZll12yiYZ00rYl3s4Fiiuy
+         QWNw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1774237698; x=1774842498; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Q0mI2TwYycM5sgLrcd1zuOS4TrakRSO20fAXPQ2Ywts=;
+        b=ZRKnIKUqHlbu9S4/u3j72jUfqdIoL18PVg5Gmli8BuuuKRm2xQKLnConJjZ1oFlk3Y
+         xGs1kNsepaYHj5wv7m0TsRAyRPGrVz9SGMLsB+Lj5tYpR4yjT2LdeJNcNOhJlMmyR1Kj
+         Po0s5IilZHVTbFvR0vgnUUDHbbDcEK6I7yZPXW1kpSe313JkD34rhMbCgTSCrACZbzSp
+         eIjNLhNUsvr8vNQ6JVbOJoBuymfDGbIOT0W26KE1nbWwwVwvH8L0X8/dZvbpsNqI10A2
+         tgJESBzL5i5r/iwAyvU5VlDcNlu16pshZV4YgDeSfA8KGNv3Pn3OY8q+Mw2OYX+9WDac
+         YNbg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774237698; x=1774842498;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=Q0mI2TwYycM5sgLrcd1zuOS4TrakRSO20fAXPQ2Ywts=;
+        b=rwGfmbufJ+Xp9ODz//9rdvHmlLTaVzr/wGICM0Ftfub1SL64bMCNbMxOyH01BKSjxA
+         t/A6QZ2pzBPKQ+eZrf5rxJ6WE5w8v2+Kd6MV8gJ7oHJUW/bGFvWVzOgGXg5/jNKYMSS/
+         u1DAwMl/DA7I3mrJGfYkU75CBqD6HNzTj0TcrRSw0El99Ro6enkR21Stfr4FKa7HL4zf
+         u8pRvX7cqNW9SnRapmyg0D+N5QU4ONeFj4STdCCjYgf21MZF6Mku8jSXTYTeOKzxKuhu
+         ooeoudGZveK2/RtgxOy9DhJptJqhStPF2Pj6OLoEHdpNZNanprmemPMckiJ66RPaEu/U
+         RDrA==
+X-Forwarded-Encrypted: i=1; AJvYcCVlW7mWbrhXTRA38fbO7DS8Hh1v+oSyfILjB4/eCEbaWolU9JZIXy35oY1zFCdPE0apz0zHQs/FipU=@vger.kernel.org
+X-Gm-Message-State: AOJu0Yw75nnVzVbfT20LzMPRugTls7q8MPAv6iPNpHmDwjrf4C7A06Nh
+	ul4MDkzUvWSJGUMzZMLK3Lap2CUpidwvnBTBNk6w4NaI0AmlGFHUDdJYaL/cZJ/MCB1A3X5MU27
+	ilv6YVK/HXjV2D/UZnw1aifFGkCJcDLI=
+X-Gm-Gg: ATEYQzygXgd1kWjI9/1FJ7xlQVmjQq0zo+HnGa2/zN0ExaR8c+E8/IPwfHX9stemASz
+	jCGzOv8HbYJsC91EiQ+f7oPxEJOzv2qJBhtdykul/j9lcO97AdO1pvBnZmZDVQ9X9+UIeysBttt
+	Jli/QrpuwI07dXopLWD3KFP4U9zP0INbSZS1DRReH32/pgpgqGi8aTaMKWH4JAdIH6otucppomL
+	ta4hRSW6mEcnBcgn+AOz7MIb4zUODasdfVn99AyR90PWRmImNTJM7F9c/W79rLaliZB6Ug47ABc
+	4RkdDpM=
+X-Received: by 2002:a05:690e:429b:10b0:64a:ec39:dd4b with SMTP id
+ 956f58d0204a3-64eaa7deab5mr8770494d50.43.1774237698447; Sun, 22 Mar 2026
+ 20:48:18 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: initramfs@vger.kernel.org
 List-Id: <initramfs.vger.kernel.org>
 List-Subscribe: <mailto:initramfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:initramfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
+References: <bd45c86c-e1ea-4995-bb00-df83cc873105@landley.net>
+ <20260307032258.2857157-1-safinaskar@gmail.com> <54f06055-c5ca-4b8f-9aed-065755e7c1b2@landley.net>
+In-Reply-To: <54f06055-c5ca-4b8f-9aed-065755e7c1b2@landley.net>
+From: Askar Safin <safinaskar@gmail.com>
+Date: Mon, 23 Mar 2026 06:47:42 +0300
+X-Gm-Features: AQROBzB-PQlqF6OH6A_aRUOwM_KQYLR0utQ15-12H2PLD6u8em4oEuDUzIPNaAM
+Message-ID: <CAPnZJGAOPV26Owic+MoMUFaJVoofhLOjfmtVi2fi2GwtrVssYA@mail.gmail.com>
 Subject: Re: [PATCH 0/2] init: ensure that /dev/console and /dev/null are
  (nearly) always available in initramfs
-To: Askar Safin <safinaskar@gmail.com>
-Cc: brauner@kernel.org, ddiss@suse.de, initramfs@vger.kernel.org,
- jack@suse.cz, linux-fsdevel@vger.kernel.org, linux-kbuild@vger.kernel.org,
- linux-kernel@vger.kernel.org, nathan@kernel.org, nsc@kernel.org,
- patches@lists.linux.dev, rdunlap@infradead.org, viro@zeniv.linux.org.uk
-References: <bd45c86c-e1ea-4995-bb00-df83cc873105@landley.net>
- <20260307032258.2857157-1-safinaskar@gmail.com>
-Content-Language: en-US
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <20260307032258.2857157-1-safinaskar@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+To: Rob Landley <rob@landley.net>
+Cc: brauner@kernel.org, ddiss@suse.de, initramfs@vger.kernel.org, jack@suse.cz, 
+	linux-fsdevel@vger.kernel.org, linux-kbuild@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, nathan@kernel.org, nsc@kernel.org, 
+	patches@lists.linux.dev, rdunlap@infradead.org, viro@zeniv.linux.org.uk
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 3/6/26 21:22, Askar Safin wrote:
-> Rob, I kindly ask you to test this solution to your problems:
-> 
-> https://lore.kernel.org/all/CAPnZJGDDonspVK1WxDac2omkLJVX=_1Tybn4ne+sf3KyaAuofA@mail.gmail.com/
+On Tue, Mar 10, 2026 at 3:51=E2=80=AFPM Rob Landley <rob@landley.net> wrote=
+:
+>
+> On 3/6/26 21:22, Askar Safin wrote:
+> > Rob, I kindly ask you to test this solution to your problems:
+> >
+> > https://lore.kernel.org/all/CAPnZJGDDonspVK1WxDac2omkLJVX=3D_1Tybn4ne+s=
+f3KyaAuofA@mail.gmail.com/
+>
+> Your earlier suggestion that at some point they fixed the kernel build
+> so I can go "/path/to/dir /path/to/file.txt" (which didn't _used_ to
+> work, I tested it way back when) would presumably solve my problem
+> without kernel patches.
 
-Your earlier suggestion that at some point they fixed the kernel build 
-so I can go "/path/to/dir /path/to/file.txt" (which didn't _used_ to 
-work, I tested it way back when) would presumably solve my problem 
-without kernel patches.
+Cool! Please, write me when you actually test this.
 
-I just haven't been programming much since Gavin "spyware" Newsom passed 
-his stupid "age verification in the OS" bill 
-(https://mstdn.jp/@landley/116194386057190345) where every cloud 
-instance needs to report an "age" to Palantir, implying I'll have to 
-take mkroot down before Jan 1st to avoid $7k/download fines, and I'm 
-looking at maybe getting a job in healthcare or something.
-
-Rob
+--=20
+Askar Safin
