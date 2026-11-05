@@ -1,84 +1,84 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.179
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.182
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793907480;
-	b=Aq/vpFiWldljL3OWyKVm6/G4tOEfQ7e9lGTp2Uwt1ZKkZrEAj2NNTvXaaI8NfjiAkMEA
-	 IyPvaaoksW2sZoIF/x5hcPyLBgbLwxDBdlqJpAn+6LRBy3dlHDe/7WGYzJJd8q3BJu0l/
-	 On52/Vk0BjbK7Fs889aoCIgYSMydEkp0xspJMvyaoMUcj+T8mPckjXXPFWN2m5xjVLxcQ
-	 muNLBIizrYV3u8OadsoDtoGAA2lRRa9ak7B6g+hWCQrixBnC9Y5U/96M96kb6Uf3hpddc
-	 sErwBec4VT/E1VtQ+bmu7rJMFHAYpFu2XeuF4u7ZqWsa3+fs+xL8xUPwSmCFrwHTYAw==
+	t=1793907476;
+	b=jZGvlz7jNU1CpWcRVkR7QmiQYNW3p/5dPcbbeUPFsLrkZBs00Y1e7/XT/xVQK3bKVkVR
+	 /dk/SPv2bEOs0v0Hm+Jr0HEFZyayLycnKmvWVVM7gj8yAz3qd6z/ybCNg1lS1uu3nQUNd
+	 K/Amh1QE1akyhvtrASqv0Rr29dPxBwnXVsja2RiRXOCZnlvBvjyCbxBJSIHSffTf3BoP0
+	 aV51XYQ9nDahSF3rP+lX3K+/JQaDh2uRQ/+zZ/YbjmX1oYnhga3qvlaJzvCT3Gm+IJ+g8
+	 +c1yZa2tETMAQnzaOpWsxXJBpaTZv2DwutHrT6ZaPljPRjW2MikRLVtolnaSOjO/wkg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793907480;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793907476;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
 	 MIME-Version:Content-Transfer-Encoding;
-	bh=ij0g0OsXKPamM88HAz3Lefa+vRljQ+YHmBrQJBa3tGU=;
-	b=hm55QXlaSsxfrBkcYDpfDv8GllOYB0Mny0hHm+w7xmVUbWzujP3Pt9tXTBtAgrDL+iMV
-	 lxGe8CeUcMKTFV8RCTifc2yLLgdEHcYLZQt9Itz1Q5fcfF/znG+Tx+IPOeB6GfZUSNNfV
-	 5E1mDnhFY28DtagMmlKWXPbGaxkggM9qDzTY2isEwMotVJ/7yKgu6oq96erS+NVPpVDBk
-	 dxQBxQ+8MFiGmzhE6F/ALAZw3Qm68c4SJxUaJKv3pxFaQT3x2ON56+1cSE8wi2kxJXa8w
-	 l1ES4cEfRddfVtHlNSZF+u6nHJ6R5B107zoNeKZvj5C8LeEbyMa17OKpM6kMtV6sRBw==
+	bh=GEs52XSVkXr3Lysumh8vBcPCuRt3C+96FDYzKDRWk9o=;
+	b=BgiuWwlbrTVo0dkyAY0GZF1XOMyJPjgQKLLct5o2lbxti8L5OvzlGJPz+mweD0pYfJKw
+	 tHu7RwLS/pR5htNQBNvgwu1nK1WADe1Zu0Kr54hbkt7XCiwWg2s1U4Nnx8GEboF+CIacH
+	 57rPe4Y13r8HVGRxjVJ0/6eCgq3cS8K7K3Yk0LIGmtR3qqcXy9FS0qg7AETsEumFLSj7B
+	 CGfpgkDQH/hM3+k2Zt09KhiBktGyhJq13QRlDPzhU1AUYTioJsuHNVo70RSRa9UYZVnIY
+	 MrfsJnrOX7dB36gDu+d1h5lhg6sW5uMRzj4JkL0LcEMVFBffVSj/7by0t/WkswVMkmA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=arista.com;
 	spf=pass smtp.mailfrom=arista.com;
-	dkim=pass header.d=arista.com header.i=@arista.com header.a=rsa-sha256 header.s=google header.b="U6nh/ArJ";
-	arc=none smtp.remote-ip=74.125.82.179
-Received: from mail-dy1-f179.google.com (mail-dy1-f179.google.com [74.125.82.179])
+	dkim=pass header.d=arista.com header.i=@arista.com header.a=rsa-sha256 header.s=google header.b=CpWYY4HP;
+	arc=none smtp.remote-ip=74.125.82.182
+Received: from mail-dy1-f182.google.com (mail-dy1-f182.google.com [74.125.82.182])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C30760A261E
-	for <initramfs@vger.kernel.org>; Thu,  5 Nov 2026 19:37:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9C30760A261E
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 704F3606F5BE
+	for <initramfs@vger.kernel.org>; Thu,  5 Nov 2026 19:37:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 704F3606F5BE
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=arista.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arista.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=arista.com header.i=@arista.com header.a=rsa-sha256 header.s=google header.b=U6nh/ArJ
-Received: by mail-dy1-f179.google.com with SMTP id 5a478bee46e88-36a18fc7a38so9558eec.1
-        for <initramfs@vger.kernel.org>; Thu, 05 Nov 2026 11:37:59 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=arista.com header.i=@arista.com header.a=rsa-sha256 header.s=google header.b=CpWYY4HP
+Received: by mail-dy1-f182.google.com with SMTP id 5a478bee46e88-35c76e9614aso3072554eec.0
+        for <initramfs@vger.kernel.org>; Thu, 05 Nov 2026 11:37:56 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=arista.com; s=google; t=1793907479; x=1794512279; darn=vger.kernel.org;
+        d=arista.com; s=google; t=1793907476; x=1794512276; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=ij0g0OsXKPamM88HAz3Lefa+vRljQ+YHmBrQJBa3tGU=;
-        b=U6nh/ArJsGmiH+qqcKQih8Mqh4TvgZ90R4kDoGQxu+P1s69CrKUnv9GlDc/DaO/BDg
-         u/woqO/1TVKF45z9hQKyC+68pdGGgvoeNOCHokzk1PxnkX2DWA66g2K/cXAPFv/aD7Yi
-         zoyU1y3R2CaGZIG9DzxfkVmDPMi8YPKpURB5ucW8myb4iofpPRjO/z6Z1ckqirqp2k7L
-         7AfGCykfjmKcMcSv0EfpakF5yj53FyzvMOBPGOV+OCfZELijjzk8uGDk5gjXak3YxEnT
-         /Bd451Q5bOzhWnhMG9tvvDCcENHYeFq///X4qVjMloZHheBXd7PODrk6ljW5JACwPTye
-         lKow==
+        bh=GEs52XSVkXr3Lysumh8vBcPCuRt3C+96FDYzKDRWk9o=;
+        b=CpWYY4HPqsMqathLuCP0SqyPHsMFAQWoskfk2GdP07u48l12UmKTiwONJuvB++DOZo
+         Yclhv2OYTvpyVQe0nGDznRS9Z3hWx2kbCBFvY0pqnRrXO41EfaKHYTGa75im9YoH0HyQ
+         yVlSieODB043s7YTZG83QMLxA1SHJ8toDshd16zaROUJAf2wNKauWeStmi1bLrH6/8Tz
+         mQQW4N4m8vwam53SdfBwr6BB3a+iuCtW3J6Db2OjYNgcUSfpF/y05AZgZRu+kEXd/N4u
+         Ct4MdT86o/xNJxf/iCp+y8jz1OLKeZSYtEQMz8MNbuIitFs0Ewo+oz4HzT9k1iLJwTE9
+         Ebzg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793907479; x=1794512279;
+        d=1e100.net; s=20260707; t=1793907476; x=1794512276;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=ij0g0OsXKPamM88HAz3Lefa+vRljQ+YHmBrQJBa3tGU=;
-        b=FMx4m9ywgb58VCwx47mnRo0+MPk6kMcsCMoAhmU9pGDKXY+fcpdF97dJrPUoEBRAqy
-         tk89yYYw4FGjZzuQBaz0O26B9m7DsNJfSJYR4BUB/zHDlmIEp1tu50fdy+3b+6bWI8FF
-         IgjKoSfXBNgNCdm2YRwqskZ1/AW2B8jCLPcDrilay1iQIIa8EYkYo1ffcWJ9sBSBWsj4
-         N5H2wBsVY4zkQ4T4+Mhi+63fOiLeFF9jMfeiXSYUKjgEia6UnR5wUgx7cYzYiVuQAPFo
-         6hi7jXjHuMiO07RQaF7apn1Y8WeIvDZTUU10loGrB2N6BsIX1qDKziGiY7rBb44U2IMl
-         ssXg==
-X-Forwarded-Encrypted: i=1; AKwUvBydedsU/QiucWFtiCpj0qs9imemK3kmyLeofw0ASg4DpPj7sgsVxbPnchJqZ0ZNsqBWA70Af/ro/nU=@vger.kernel.org
-X-Gm-Message-State: APuU4Z9wqEAQ/JdSSX0jB4/b5xh8UmiaNo3sdirIWUMpuyX7Tk6ck9Jd
-	gvzTzhEhUs4LpI3oePvcHn6n8UbOnuq2VNkdH3eq+WGSuFExsoHDzfcyG5K93TCXLQ==
-X-Gm-Gg: AYBFou3vnaYoZnbKWFc4ntKdInq7pzqUk6vwJrojN93x6984wFMSOpYYKYrPm4C4Hj9
-	r/BOzfjalLUqVGOjY06bdwKwBJ1HETiicDyfGzOso7h531gQPu2pW+HogIRv344IsvFRpv2BJIF
-	Mq1psEZvE9Xni5EqeEjHd41y2UAbeH1vvnXn16/O5FY/oybyDFSUjOq5onEwmHuesFd+OHAXGaO
-	iKCUaxCLP2M5V1QJiQvBL2ruhE2B0u773SMk+rrRNvzfRCtbTmD+4ZLFkuPxAm/DqAzUcmT+60o
-	NAuV4XcGYf5thzX2SQCPCyNlr1wCgWqV991TN27fW/Q6tKfjxnwCF9n12c+LlfOgIzR/AiTPq4F
-	m4KDVgbAbplEwzZwnLbD5taF7B831ko4DqZIcdMX8WQA9XwgIpkZgSzXbToK0vFIMZqm2O0dnzj
-	vuTy1SCvxCjXS5W/AV9XSg2YpLNKFE1JsxZhkYHp1ipxQ/REJscaxT1mx4yWxpEJ3mumGOxqS6X
-	yWXFDuVzfXdrkCWBHUhtIY3gXrbDw5BX2rjv7gFN5v+dXk5ejI74gpRyHZrZw1WSzPW60IXQhwz
-	0lw4rnYAG3T+Ezqo58wNtF3y9rHz4dd0NtAZ1d09QNAktpyrbh1OPm69qAHcm6eESsLWe+sFXVV
-	1YUBQWzTl/cKLvt9JUgVtJNI=
-X-Received: by 2002:a05:7300:10d:b0:36c:c434:b6b5 with SMTP id 5a478bee46e88-36f76621095mr172222eec.17.1793907478524;
-        Thu, 05 Nov 2026 11:37:58 -0800 (PST)
+        bh=GEs52XSVkXr3Lysumh8vBcPCuRt3C+96FDYzKDRWk9o=;
+        b=u/d69LGXSbgHdS9xfR6cDOJLUD7qCWAnHg8I3+zq+TeR7Wn34TxOaC7P3/uTNicrIh
+         SLst3Pzqk3GWzgitG6XOhtG1+Zh3htsu5278euHy5hx221u0RyImT8fpjlPIhQbtrAkf
+         FrXqf3/jA1vKUUkWjhJkGOXbngjIBxGWCMGXHw69kqA4DHkw/EIQcx6MDJDSpmfMy5or
+         HjP5XjlDx0M9UQQGFGNgMql2l/lmBBqodtzSybxirPz00L557BIvXhUuV3BcbfclWDmw
+         j0a7pRp0+ng7JxhEvlIEtRvXy+/6jt23qlTpg3z+NWWCOabSIOVyR6HKaMBtlAJ2L6K4
+         vKvg==
+X-Forwarded-Encrypted: i=1; AKwUvBy0JdHV/BACzmpLMx+SGMxEocJJe6hoCrsr7xtPXx/S4nvTToeXX0gwT+qJgXbTffvb5b9A0dy1ELo=@vger.kernel.org
+X-Gm-Message-State: APuU4Z9ULgVmTgJU3oBHna6qintMRpooaJxkmVtcA7t5GWqlMix7uxFJ
+	CSp+C4PNgp1iwGwo0abswuk5uujGKrcktEifq3LKFa/s6gNweOafhewm3xsb1GwXGg==
+X-Gm-Gg: AYBFou0Y4ToqQwmsPmf71UF9UxG6/mLtT+LNNJZoqKYocSmJWyGlB2T4z/EEoT+gSKH
+	KpeZFO+azuipCBaZ2XBa6AHNSPvsh3fqbodR3BUHD58ndcRxJEdzkJQJ5ntvszqmsUfJaX7H0ED
+	aflr5TlkAuu3EEvq+NzIX5BUK3KtvbSlXPH9WwAUgEw9xxbmh1E9nm8esV7hOQD6cm1i9ge5P3t
+	2dZ4y3QYE+u5xRsaYpU6BRTWJtU/FEWxoDgsxD4Qc2fn8SHS4HAxpQ+jbRzUJTkAK3mHeM2rIai
+	O5qlJpnO2QKHwUqPWwkrMKV810EwUUH825mCEADYloDWq0zwRrGOVbhL+ilYjzGjUhWHlenXaXg
+	4K4LaVpjAAnaPh5ZLi/MaCYY1N0q/0QAAtamiKNnj0EWBzU8l/hqYhnOKPmvgzzu33N8ysLoAQi
+	VJ7usnIxML1u3sfHWjXcillKajDurCGvOkM52ltiyN4BdflWRInnx25k15eoTYpGSxaASsPII4x
+	TMntohgs8UbnABDwtmJoW5YX/IyW0whLixZRimVKEkJozG2/rtEe/utEFPJWXM+uR2HNYqqQReO
+	iCXRoIM/d3cxBUyCqvDWGsLssCyLSCUTG7hzzTtxWbZ5iU/HBPUP6g0MLUmYnqE0ZL/Ug9Nbxb4
+	314HuK41u/mo84V3J15cad1Q=
+X-Received: by 2002:a05:7300:3e97:b0:36d:9900:bb92 with SMTP id 5a478bee46e88-36f75254a98mr150454eec.10.1793907475358;
+        Thu, 05 Nov 2026 11:37:55 -0800 (PST)
 Received: from dannyhu-upstreamLinux.sjc.aristanetworks.com ([74.123.28.19])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36f72ec8a02sm326134eec.11.2026.11.05.11.37.57
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36f72ec8a02sm326134eec.11.2026.11.05.11.37.53
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 05 Nov 2026 11:37:58 -0800 (PST)
+        Thu, 05 Nov 2026 11:37:54 -0800 (PST)
 From: Danny Hu <dannyhu@arista.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
 	Christian Brauner <brauner@kernel.org>
@@ -110,9 +110,9 @@ Cc: Mimi Zohar <zohar@linux.ibm.com>,
 	linux-api@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	bug-cpio@gnu.org
-Subject: [PATCH v6 3/4] initramfs: read metadata from special file METADATA!!!
-Date: Thu,  5 Nov 2026 11:37:42 -0800
-Message-ID: <20261105193743.2654656-4-dannyhu@arista.com>
+Subject: [PATCH v6 1/4] ima: skip algorithm availability check until initramfs unpacking is finished
+Date: Thu,  5 Nov 2026 11:37:40 -0800
+Message-ID: <20261105193743.2654656-2-dannyhu@arista.com>
 X-Mailer: git-send-email 2.51.0
 In-Reply-To: <20261105193743.2654656-1-dannyhu@arista.com>
 References: <20261105193743.2654656-1-dannyhu@arista.com>
@@ -127,274 +127,80 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Roberto Sassu <roberto.sassu@huawei.com>
+With CONFIG_IMA_APPRAISE=y, restoring xattrs during initramfs unpacking
+can deadlock the kernel if the xattr being restored is signed with a hash
+that the kernel does not already have available. This occurs when the
+ima_inode_setxattr() hook calls crypto_has_alg(). crypto_has_alg() may
+synchronously request a module leading to a circular dependency where the
+userspace helper waits for initramfs unpacking to complete while initramfs
+unpacking waits for the userspace helper.
 
-Instead of changing the CPIO format, metadata are parsed from regular files
-with special name 'METADATA!!!'. This file immediately follows the file
-metadata are added to.
+Guard this crypto availability check in validate_hash_algo() until
+initramfs unpacking is complete. This prevents the kernel from requesting
+a module during unpacking and allows security.ima xattrs to be restored
+even if the hash algorithm is unavailable in the running kernel.
+Essentially, this flag distinguishes restoration of existing metadata
+during initial population from setting/changing an xattr during runtime.
 
-This patch checks if the file being extracted has the special name and, if
-yes, creates a buffer with the content of that file and transitions
-to a new dedicated CollectMetadata state to buffer the metadata contents
-in memory without creating a file in the rootfs.
+A benefit of this approach is that once unpacking is complete, all
+subsequent xattr updates go through the same codepath as before which
+preserves the existing behavior during normal userspace operation.
 
-Signed-off-by: Roberto Sassu <roberto.sassu@huawei.com>
-Reported-by: kbuild test robot <lkp@intel.com>
-Signed-off-by: Tianxing Zhang <zhangtianxing3@huawei.com>
-Signed-off-by: Zheng Zengkai <zhengzengkai@huawei.com>
-Signed-off-by: zhoushuiqing <zhoushuiqing2@huawei.com>
-Signed-off-by: zhangguangzhi <zhangguangzhi3@huawei.com>
 Signed-off-by: Danny Hu <dannyhu@arista.com>
 ---
-v6 changes:
- - Introduce a dedicated CollectMetadata state to collect METADATA!!! entries
-   in memory. This state replaces the metadata flag and eliminates the need to
-   reset it on failure paths. Since metadata is collected purely in memory, the
-   entry is no longer extracted as a regular file to the root of the archive.
-   This also has the benefit of separating metadata collection from do_copy.
- - Validate the checksum before setting the xattr with do_parse_metadata
- - Improve bookkeeping of previous_name_buf by setting it only after the target
-   object is created. Clear the buffer on skipped or failed entries to prevent
-   setting metadata on the wrong target. Indicate that previous_name_buf is
-   invalid/not set by having the first byte be the NUL character
- - Remove "Reviewed-by: Jason Yan <yanaijie@huawei.com>" because patch has
-   implementation has significantly changed in the v6 revision
+ security/integrity/ima/ima_appraise.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-v5 changes:
- - clean up metadata buffer when returning from unpack_to_rootfs()
-
- init/initramfs.c | 103 +++++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 90 insertions(+), 13 deletions(-)
-
-diff --git a/init/initramfs.c b/init/initramfs.c
-index d206624d1160..a17c26fde5f5 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -34,6 +34,17 @@
- static __initdata bool csum_present;
- static __initdata u32 io_csum;
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 63b0cb957c65..1403f5653973 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -20,6 +20,14 @@
  
-+static void __init update_csum(const unsigned char *buf, size_t len)
+ #include "ima.h"
+ 
++static bool ima_initramfs_populated __ro_after_init =
++	!IS_ENABLED(CONFIG_BLK_DEV_INITRD);
++
++static void ima_notify_initramfs_populated(void)
 +{
-+	size_t i;
-+
-+	if (!csum_present)
-+		return;
-+
-+	for (i = 0; i < len; i++)
-+		io_csum += buf[i];
++	ima_initramfs_populated = true;
 +}
 +
- static ssize_t __init xwrite(struct file *file, const unsigned char *p,
- 		size_t count, loff_t *pos)
- {
-@@ -50,12 +61,7 @@ static ssize_t __init xwrite(struct file *file, const unsigned char *p,
- 		} else if (rv == 0)
- 			break;
+ #ifdef CONFIG_IMA_APPRAISE_BOOTPARAM
+ static char *ima_appraise_cmdline_default __initdata;
+ core_param(ima_appraise, ima_appraise_cmdline_default, charp, 0);
+@@ -738,6 +746,22 @@ static int validate_hash_algo(struct dentry *dentry,
+ 		if (likely(xattr_hash_algo == ima_hash_algo))
+ 			return 0;
  
--		if (csum_present) {
--			ssize_t i;
--
--			for (i = 0; i < rv; i++)
--				io_csum += p[i];
--		}
-+		update_csum(p, rv);
- 
- 		p += rv;
- 		out += rv;
-@@ -233,6 +239,7 @@ static __initdata enum state {
- 	SkipIt,
- 	GotName,
- 	CopyFile,
-+	CollectMetadata,
- 	GotSymlink,
- 	Reset
- } state, next_state;
-@@ -266,7 +273,7 @@ static void __init read_into(char *buf, unsigned size, enum state next)
- 	}
- }
- 
--static __initdata char *header_buf, *symlink_buf, *name_buf;
-+static __initdata char *header_buf, *symlink_buf, *name_buf, *previous_name_buf;
- static __initdata char *metadata_buf;
- 
- static int __init do_start(void)
-@@ -308,10 +315,10 @@ static int __init do_header(void)
- 	next_header = (next_header + 3) & ~3;
- 	state = SkipIt;
- 	if (name_len <= 0 || name_len > PATH_MAX)
--		return 0;
-+		goto skip;
- 	if (S_ISLNK(mode)) {
- 		if (body_len > PATH_MAX)
--			return 0;
-+			goto skip;
- 		collect = collected = symlink_buf;
- 		remains = N_ALIGN(name_len) + body_len;
- 		next_state = GotSymlink;
-@@ -320,6 +327,11 @@ static int __init do_header(void)
- 	}
- 	if (S_ISREG(mode) || !body_len)
- 		read_into(name_buf, N_ALIGN(name_len), GotName);
-+	else
-+		goto skip;
-+	return 0;
-+skip:
-+	previous_name_buf[0] = '\0';
- 	return 0;
- }
- 
-@@ -471,6 +483,8 @@ static __initdata loff_t wfile_pos;
- 
- static int __init do_name(void)
- {
-+	bool target_ready = false;
++		/*
++		 * IMA validates the crypto algorithm whenever the security.ima
++		 * xattr is set. Restoring xattrs during initramfs unpacking
++		 * can call crypto_has_alg() before unpacking has completed.
++		 *
++		 * If the algo is unavailable, crypto_has_alg() may
++		 * synchronously request a module. The userspace helper waits
++		 * for initramfs unpacking to finish and creates a circular
++		 * dependency.
++		 *
++		 * Skip the algorithm availability check until initramfs is
++		 * populated to avoid this deadlock.
++		 */
++		if (!ima_initramfs_populated)
++			return 0;
 +
- 	state = SkipIt;
- 	next_state = Reset;
- 
-@@ -482,6 +496,19 @@ static int __init do_name(void)
- 		return 1;
- 	}
- 
-+	if (S_ISREG(mode) && strcmp(collected, METADATA_FILENAME) == 0) {
-+		metadata_len = body_len;
-+		if (metadata_len)
-+			metadata_buf = kmalloc(metadata_len, GFP_KERNEL);
-+		else
-+			metadata_buf = NULL;
-+		io_csum = 0;
-+		state = CollectMetadata;
-+		return 0;
-+	}
-+
-+	/* Clear metadata target only after checking entry is not metadata */
-+	previous_name_buf[0] = '\0';
- 	if (strcmp(collected, "TRAILER!!!") == 0) {
- 		free_hash();
- 		return 0;
-@@ -504,24 +531,65 @@ static int __init do_name(void)
- 			if (body_len)
- 				vfs_truncate(&wfile->f_path, body_len);
- 			state = CopyFile;
-+			target_ready = true;
- 		}
- 	} else if (S_ISDIR(mode)) {
--		init_mkdir(collected, mode);
-+		int ret = init_mkdir(collected, mode);
-+
-+		target_ready = !ret || ret == -EEXIST;
- 		init_chown(collected, uid, gid, 0);
- 		init_chmod(collected, mode);
- 		dir_add(collected, name_len, mtime);
- 	} else if (S_ISBLK(mode) || S_ISCHR(mode) ||
- 		   S_ISFIFO(mode) || S_ISSOCK(mode)) {
--		if (maybe_link() == 0) {
--			init_mknod(collected, mode, rdev);
-+		int ml = maybe_link();
-+
-+		if (ml == 0) {
-+			int ret = init_mknod(collected, mode, rdev);
-+
-+			target_ready = !ret || ret == -EEXIST;
- 			init_chown(collected, uid, gid, 0);
- 			init_chmod(collected, mode);
- 			do_utime(collected, mtime);
-+		} else if (ml == 1) {
-+			target_ready = true;
- 		}
- 	}
-+	if (target_ready)
-+		memcpy(previous_name_buf, collected, strlen(collected) + 1);
- 	return 0;
- }
- 
-+static void __init do_process_metadata(const char *buf, size_t len)
-+{
-+	/* Still checksum the body if allocation failed. */
-+	update_csum((const unsigned char *)buf, len);
-+	if (metadata_buf)
-+		memcpy(metadata_buf + (metadata_len - body_len), buf, len);
-+}
-+
-+static int __init do_collect_metadata(void)
-+{
-+	if (byte_count >= body_len) {
-+		do_process_metadata(victim, body_len);
-+		if (csum_present && io_csum != hdr_csum)
-+			error("bad data checksum");
-+		else if (metadata_buf && previous_name_buf[0])
-+			do_parse_metadata(previous_name_buf);
-+		kfree(metadata_buf);
-+		metadata_buf = NULL;
-+		metadata_len = 0;
-+		eat(body_len);
-+		state = SkipIt;
-+		return 0;
-+	}
-+
-+	do_process_metadata(victim, byte_count);
-+	body_len -= byte_count;
-+	eat(byte_count);
-+	return 1;
-+}
-+
- static int __init do_copy(void)
- {
- 	if (byte_count >= body_len) {
-@@ -546,6 +614,7 @@ static int __init do_copy(void)
- 
- static int __init do_symlink(void)
- {
-+	previous_name_buf[0] = '\0';
- 	if (collected[name_len - 1] != '\0') {
- 		pr_err("initramfs symlink without nulterm: %.*s\n",
- 		       (int)name_len, collected);
-@@ -554,7 +623,8 @@ static int __init do_symlink(void)
- 	}
- 	collected[N_ALIGN(name_len) + body_len] = '\0';
- 	clean_path(collected, 0);
--	init_symlink(collected + N_ALIGN(name_len), collected);
-+	if (!init_symlink(collected + N_ALIGN(name_len), collected))
-+		memcpy(previous_name_buf, collected, strlen(collected) + 1);
- 	init_chown(collected, uid, gid, AT_SYMLINK_NOFOLLOW);
- 	do_utime(collected, mtime);
- 	state = SkipIt;
-@@ -569,6 +639,7 @@ static __initdata int (*actions[])(void) = {
- 	[SkipIt]	= do_skip,
- 	[GotName]	= do_name,
- 	[CopyFile]	= do_copy,
-+	[CollectMetadata] = do_collect_metadata,
- 	[GotSymlink]	= do_symlink,
- 	[Reset]		= do_reset,
+ 		/* allow any xattr using an algorithm built in the kernel */
+ 		if (crypto_has_alg(hash_algo_name[xattr_hash_algo], 0, 0))
+ 			return 0;
+@@ -829,6 +853,7 @@ static struct security_hook_list ima_appraise_hooks[] __ro_after_init = {
+ 	LSM_HOOK_INIT(inode_set_acl, ima_inode_set_acl),
+ 	LSM_HOOK_INIT(inode_removexattr, ima_inode_removexattr),
+ 	LSM_HOOK_INIT(inode_remove_acl, ima_inode_remove_acl),
++	LSM_HOOK_INIT(initramfs_populated, ima_notify_initramfs_populated),
  };
-@@ -628,6 +699,7 @@ char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 		char header[CPIO_HDRLEN];
- 		char symlink[PATH_MAX + N_ALIGN(PATH_MAX) + 1];
- 		char name[N_ALIGN(PATH_MAX)];
-+		char prev_name[PATH_MAX + N_ALIGN(PATH_MAX) + 1];
- 	} *bufs = kmalloc_obj(*bufs);
  
- 	if (!bufs)
-@@ -636,6 +708,8 @@ char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 	header_buf = bufs->header;
- 	symlink_buf = bufs->symlink;
- 	name_buf = bufs->name;
-+	previous_name_buf = bufs->prev_name;
-+	previous_name_buf[0] = '\0';
- 
- 	state = Start;
- 	this_header = 0;
-@@ -678,6 +752,9 @@ char * __init unpack_to_rootfs(char *buf, unsigned long len)
- 	dir_utime();
- 	/* free any hardlink state collected without optional TRAILER!!! */
- 	free_hash();
-+	kfree(metadata_buf);
-+	metadata_buf = NULL;
-+	metadata_len = 0;
- 	kfree(bufs);
- 	return message;
- }
+ void __init init_ima_appraise_lsm(const struct lsm_id *lsmid)
 -- 
 2.51.0
 
